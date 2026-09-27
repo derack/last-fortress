@@ -36,6 +36,9 @@ export class Enemy implements DamageableEnemy {
   private slamTimer = 10;
   private phase2 = false;
   private walkPhase = Math.random() * 10;
+  private shredAmount = 0;
+  private shredUntil = 0;
+  private supportTimer = 3; // شفادهنده/احضارکننده
   mesh: THREE.Group;
   private scene: THREE.Scene;
   private ctx: GameContext;
@@ -71,6 +74,11 @@ export class Enemy implements DamageableEnemy {
     return this.mesh.position;
   }
 
+  /** سوییچ LOD مدل واقعی بر اساس فاصله دوربین (بخش ۱۶) — برای Placeholder بی‌هزینه */
+  updateLod(camPos: THREE.Vector3) {
+    this.handle.updateLod(camPos);
+  }
+
   get hpRatio(): number {
     return this.hp / this.maxHp;
   }
@@ -96,12 +104,31 @@ export class Enemy implements DamageableEnemy {
     this.burnUntil = Math.max(this.burnUntil, this.now() + duration);
   }
 
+  /** شکستن زره — زهرخانه/مه سمی */
+  applyShred(amount: number, duration: number) {
+    this.shredAmount = Math.max(this.shredAmount, amount);
+    this.shredUntil = Math.max(this.shredUntil, this.now() + duration);
+  }
+
+  /** ترمیم توسط شفادهنده */
+  heal(amount: number) {
+    if (!this.alive) return;
+    this.hp = Math.min(this.maxHp, this.hp + amount);
+  }
+
+  /** زره مؤثر پس از شکستن */
+  private get effArmor(): number {
+    return this.now() < this.shredUntil
+      ? Math.max(0, this.armor - this.shredAmount)
+      : this.armor;
+  }
+
   private now() {
     return performance.now() / 1000;
   }
 
   /** آسیب بزن — true یعنی دشمن مرد */
-  takeDamage(amount: number, type: string): boolean {
+  takeDamage(amount: number, type: string, pierceArmor = false): boolean {
     if (!this.alive) return false;
 
     // جاخالی عنکبوت
@@ -112,9 +139,10 @@ export class Enemy implements DamageableEnemy {
     }
     this.dodgeCd -= 0.016;
 
-    // مقاومت جادویی
+    // مقاومت جادویی + زره مؤثر (با احتساب شکستن)
     const resist = this.data.resist?.[type as keyof typeof this.data.resist] ?? 1;
-    let dmg = Math.max(1, amount * resist - this.armor * (type === 'physical' ? 1 : 0.4));
+    let dmg = Math.max(1, amount * resist - this.effArmor * (type === 'physical' ? 1 : 0.4));
+    if (pierceArmor) dmg = Math.max(1, amount * resist); // بالیستا — زره نادیده
 
     // سپر (از جادوگر)
     if (this.shieldHp > 0) {
@@ -209,13 +237,26 @@ export class Enemy implements DamageableEnemy {
       }
     }
 
-    // جادوگر — سپر به هم‌رزما
-    if (this.data.shieldGiver) {
-      this.shieldTimer -= dt;
-      if (this.shieldTimer <= 0) {
-        this.shieldTimer = this.data.shieldGiver.interval;
-        this.giveShields();
+    // جادوگر — سپر به هم‌رزما | شفادهنده — ترمیم | احضارکننده — احضار
+    if (this.data.shieldGiver || this.data.healer || this.data.summoner) {
+      this.supportTimer -= dt;
+      if (this.supportTimer <= 0) {
+        if (this.data.shieldGiver) {
+          this.supportTimer = this.data.shieldGiver.interval;
+          this.giveShields();
+        } else if (this.data.healer) {
+          this.supportTimer = this.data.healer.interval;
+          this.healAllies();
+        } else {
+          this.supportTimer = this.data.summoner!.interval;
+          this.summonMinions();
+        }
       }
+    }
+
+    // بازسازی HP (تانک اثری/Boss مکانیکی)
+    if (this.data.regen && this.hp < this.maxHp) {
+      this.hp = Math.min(this.maxHp, this.hp + this.data.regen * dt);
     }
 
     this.updateMeshPos();
@@ -326,6 +367,32 @@ export class Enemy implements DamageableEnemy {
     if (any) {
       this.ctx.vfx.ring(this.mesh.position, 0x8b5cf6, radius, 0.5);
     }
+  }
+
+  private healAllies() {
+    const radius = this.data.healer!.radius;
+    const amount = this.data.healer!.amount;
+    let any = false;
+    for (const e of this.ctx.enemies) {
+      if (!e.alive || e === (this as unknown as DamageableEnemy)) continue;
+      if (e.getPos().distanceTo(this.mesh.position) <= radius && e.hp < e.maxHp) {
+        e.heal(amount);
+        any = true;
+      }
+    }
+    if (any) {
+      this.ctx.vfx.ring(this.mesh.position, 0x4ade80, radius, 0.6);
+      this.ctx.vfx.burst(this.mesh.position.clone().add(new THREE.Vector3(0, 1.2, 0)), 0x4ade80, 10, { speed: 3, life: 0.7, size: 0.5, gravity: -1 });
+    }
+  }
+
+  private summonMinions() {
+    const cfg = this.data.summoner!;
+    for (let i = 0; i < cfg.count; i++) {
+      this.ctx.summonAt(this.mesh.position.clone(), cfg.enemy);
+    }
+    this.ctx.vfx.ring(this.mesh.position, this.data.accent, 4, 0.5);
+    this.handle.animation?.playOneShot('attack', { fade: 0.15, returnToLocomotion: true });
   }
 
   die(byPlayer = true) {

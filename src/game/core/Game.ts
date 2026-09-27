@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { LevelData, MagicId, SaveData } from '../data/types';
 import { TOWERS } from '../data/towers';
 import { ENEMIES } from '../data/enemies';
-import { MAGIC, HEROES } from '../data/magic';
+import { MAGIC } from '../data/magic';
 import { BattleScene } from '../scene/BattleScene';
 import { CameraController } from './CameraController';
 import { InputController, TapHit } from './InputController';
@@ -24,6 +24,7 @@ interface FireBarrageItem {
   time: number;
   pos: THREE.Vector3;
   damage: number;
+  visual: 'fire' | 'arrow';
 }
 
 export class Game {
@@ -70,6 +71,7 @@ export class Game {
   private shieldUntil = 0;
   private fireBarrage: FireBarrageItem[] = [];
   private barrageTimer = 0;
+  private blessingUntil = 0; // برکت آذر
 
   // حالت
   private paused = false;
@@ -88,7 +90,7 @@ export class Game {
   private save: SaveData;
   private totalWavesSurvivedAtStart: number;
 
-  constructor(canvas: HTMLCanvasElement, level: LevelData, quality: string, save: SaveData, language: 'fa' | 'en') {
+  constructor(canvas: HTMLCanvasElement, level: LevelData, quality: string, save: SaveData, language: 'fa' | 'en', heroId = 'arman') {
     this.canvas = canvas;
     this.level = level;
     this.save = save;
@@ -123,15 +125,16 @@ export class Game {
         this.projectiles.push(new Projectile(kind, from, target, opts, this.ctx, this.scene3d.scene));
       },
       chainLightning: (from, first, chains, damage, color) => this.chainLightning(from, first, chains, damage, color),
-      scheduleFireBarrage: (center, radius, count, damage) => this.scheduleFireBarrage(center, radius, count, damage),
-      summonAt: (pos) => this.summonShadow(pos),
+      scheduleFireBarrage: (center, radius, count, damage, visual = 'fire') => this.scheduleFireBarrage(center, radius, count, damage, visual),
+      summonAt: (pos, enemyId) => this.summonShadow(pos, enemyId),
+      requestCoreShield: (duration) => this.requestCoreShield(duration),
       onEnemyKilled: (e) => this.handleKill(e as Enemy),
       onEnemyLeak: (e) => this.handleLeak(e as Enemy),
       heroDamageBuff: 0,
       towerRateBuff: 0,
     };
 
-    this.hero = new Hero(this.scene3d.scene, this.ctx);
+    this.hero = new Hero(heroId, this.scene3d.scene, this.ctx);
     this.input = new InputController(canvas, this.cameraCtrl, (hit) => this.handleTap(hit), this.scene3d.scene);
 
     this.audio.setVolumes(save.settings.music, save.settings.sfx);
@@ -201,9 +204,11 @@ export class Game {
     }
 
     // دشمنان
+    const camPos = this.cameraCtrl.camera.position;
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
       e.update(dt, this.time);
+      e.updateLod(camPos);
       if (!e.alive && e.getPos().y < -2.4) {
         e.remove();
         this.enemies.splice(i, 1);
@@ -229,16 +234,26 @@ export class Game {
 
     // قهرمان
     this.hero.update(dt, this.time);
-    this.ctx.towerRateBuff = this.hero.abilityActiveTime > 0 ? HEROES.arman.abilityBuff / 100 : 0;
+    this.hero.updateLod(this.cameraCtrl.camera.position);
+    const commandBuff = this.hero.data.abilityKind === 'battleCommand' && this.hero.abilityActiveTime > 0
+      ? this.hero.data.abilityBuff / 100 : 0;
+    const blessingBuff = this.time < this.blessingUntil
+      ? (MAGIC.azarBlessing.rateBuffPct ?? 0) : 0;
+    this.ctx.towerRateBuff = commandBuff + blessingBuff;
 
-    // رگبار آتش
+    // رگبار آتش/تیر
     this.barrageTimer -= dt;
     for (let i = this.fireBarrage.length - 1; i >= 0; i--) {
       const item = this.fireBarrage[i];
       item.time -= dt;
       if (item.time <= 0) {
-        const from = item.pos.clone().add(new THREE.Vector3(0, 22, 0));
-        this.projectiles.push(new Projectile('fireball', from, null, { damage: item.damage, splash: 2.6, burn: 4, color: 0xf97316 }, this.ctx, this.scene3d.scene));
+        if (item.visual === 'arrow') {
+          const from = item.pos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 8, 16, (Math.random() - 0.5) * 8));
+          this.projectiles.push(new Projectile('bolt', from, null, { damage: item.damage, color: 0xc084fc }, this.ctx, this.scene3d.scene));
+        } else {
+          const from = item.pos.clone().add(new THREE.Vector3(0, 22, 0));
+          this.projectiles.push(new Projectile('fireball', from, null, { damage: item.damage, splash: 2.6, burn: 4, color: 0xf97316 }, this.ctx, this.scene3d.scene));
+        }
         this.fireBarrage.splice(i, 1);
       }
     }
@@ -340,8 +355,8 @@ export class Game {
     }
   }
 
-  private summonShadow(pos: THREE.Vector3) {
-    const data = ENEMIES.shadow;
+  private summonShadow(pos: THREE.Vector3, enemyId = 'shadow') {
+    const data = ENEMIES[enemyId] ?? ENEMIES.shadow;
     const e = new Enemy(data, 1, this.scene3d.scene, this.ctx);
     // قرار دادن روی نزدیک‌ترین نقطه مسیر
     let best = 0;
@@ -355,7 +370,13 @@ export class Game {
     });
     e.dist = (best / (this.scene3d.pathPoints.length - 1)) * this.scene3d.pathLength;
     this.enemies.push(e);
-    this.vfx.burst(pos.clone().add(new THREE.Vector3(0, 1, 0)), 0xa855f7, 14, { speed: 5, life: 0.6, size: 0.6, gravity: 3 });
+    this.vfx.burst(pos.clone().add(new THREE.Vector3(0, 1, 0)), data.accent, 14, { speed: 5, life: 0.6, size: 0.6, gravity: 3 });
+  }
+
+  /** سپر اثری آریا — مصونیت کامل هسته */
+  private requestCoreShield(duration: number) {
+    this.shieldUntil = Math.max(this.shieldUntil, this.time + duration);
+    this.bus.emit('shield', { active: true, duration });
   }
 
   private handleKill(e: Enemy) {
@@ -520,8 +541,8 @@ export class Game {
   // ===================== جادو =====================
 
   setMagicPending(id: MagicId | null) {
-    const m = MAGIC[id];
-    if (m) {
+    const m = id ? MAGIC[id] : undefined;
+    if (m && id) {
       if (this.magicCd[id] > 0) {
         this.bus.emit('toast', { key: 'magicCooldown', type: 'error' });
         return;
@@ -583,6 +604,7 @@ export class Game {
             time: (i / 12) * (m.duration ?? 4),
             pos: point.clone().add(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r)),
             damage: m.damage ?? 38,
+            visual: 'fire',
           });
         }
         this.audio.play('cannon');
@@ -593,6 +615,36 @@ export class Game {
         this.vfx.ring(this.scene3d.corePos, 0xfbbf24, 6, 0.9);
         this.vfx.burst(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 3, 0)), 0xfbbf24, 40, { speed: 8, life: 1, size: 0.7, gravity: 1, up: 1 });
         this.bus.emit('shield', { active: true, duration: m.duration });
+        break;
+      }
+      case 'deepFreeze': {
+        // یخبندان — کندی شدید + آسیب یخ
+        for (const e of [...this.enemies]) {
+          if (!e.alive) continue;
+          const d = e.getPos().distanceTo(point);
+          if (d <= m.radius) {
+            e.applySlow(m.freezeFactor ?? 0.12, m.duration ?? 4);
+            e.takeDamage((m.damage ?? 60) * (1 - (d / m.radius) * 0.3), 'ice');
+          }
+        }
+        this.vfx.ring(point, 0x67e8f9, m.radius + 1, 1.1);
+        this.vfx.burst(point.clone().add(new THREE.Vector3(0, 1, 0)), 0xa5f3fc, 50, { speed: 7, life: 1.1, size: 0.6, gravity: 1, up: 0.6 });
+        this.audio.play('freeze');
+        this.cameraCtrl.shake(0.3);
+        break;
+      }
+      case 'azarBlessing': {
+        this.blessingUntil = this.time + (m.duration ?? 10);
+        this.vfx.ring(this.scene3d.corePos, 0xfcd34d, 30, 1.4);
+        this.audio.play('upgrade');
+        break;
+      }
+      case 'coreMend': {
+        this.coreHp = Math.min(this.coreMaxHp, this.coreHp + (m.healCore ?? 25));
+        this.vfx.ring(this.scene3d.corePos, 0x4ade80, 6, 1.0);
+        this.vfx.burst(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 3, 0)), 0x4ade80, 36, { speed: 6, life: 1, size: 0.6, gravity: -2, up: 1 });
+        this.audio.play('reward');
+        this.bus.emit('core', { hp: this.coreHp, max: this.coreMaxHp });
         break;
       }
     }
@@ -613,14 +665,18 @@ export class Game {
   }
 
   private heroState() {
+    const data = this.hero.data;
     return {
       level: this.hero.level,
-      xpPct: Math.round((this.hero.xp / (HEROES.arman.xpPerLevel * this.hero.level)) * 100),
+      xpPct: Math.round((this.hero.xp / (data.xpPerLevel * this.hero.level)) * 100),
       abilityCd: Math.round(this.hero.abilityCd * 10) / 10,
-      abilityMax: HEROES.arman.abilityCooldown,
+      abilityMax: data.abilityCooldown,
       deployed: this.hero.deployed,
       hp: Math.round(this.hero.hp),
       maxHp: this.hero.maxHp,
+      heroId: data.id,
+      nameKey: data.nameKey,
+      abilityNameKey: data.abilityNameKey,
     };
   }
 
@@ -654,7 +710,7 @@ export class Game {
     }
   }
 
-  private scheduleFireBarrage(center: THREE.Vector3, radius: number, count: number, damage: number) {
+  private scheduleFireBarrage(center: THREE.Vector3, radius: number, count: number, damage: number, visual: 'fire' | 'arrow' = 'fire') {
     for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
       const r = Math.random() * radius;
@@ -662,6 +718,7 @@ export class Game {
         time: i * 0.3,
         pos: center.clone().add(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r)),
         damage,
+        visual,
       });
     }
   }

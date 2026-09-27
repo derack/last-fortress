@@ -27,6 +27,8 @@ export interface NormalizedModel {
   vfxSource: Record<string, 'model' | 'synthetic'>;
   /** مقیاس اعمال‌شده */
   appliedScale: number;
+  /** گره‌های LOD داخل GLB — نام‌گذاری استاندارد: *LOD1 / *LOD2 */
+  lodNodes: { node: THREE.Object3D; level: 1 | 2 }[];
 }
 
 const NAME_ALIASES: Record<string, string[]> = {
@@ -108,6 +110,14 @@ export function normalizeModel(model: THREE.Group, entry: CharacterAssetEntry, h
 
   inner.add(model);
 
+  // --- گره‌های LOD (بخش ۱۶) — GLBهایی با سوییچ *LOD1/*LOD2 پشتیبانی می‌شوند ---
+  const lodNodes: { node: THREE.Object3D; level: 1 | 2 }[] = [];
+  model.traverse((o) => {
+    const nn = norm(o.name);
+    if (nn.endsWith('lod1')) lodNodes.push({ node: o, level: 1 });
+    else if (nn.endsWith('lod2')) lodNodes.push({ node: o, level: 2 });
+  });
+
   // --- نقاط VFX (بخش ۲۰) ---
   const vfx: Record<string, THREE.Object3D> = {};
   const vfxSource: Record<string, 'model' | 'synthetic'> = {};
@@ -150,7 +160,7 @@ export function normalizeModel(model: THREE.Group, entry: CharacterAssetEntry, h
     vfxSource[key] = 'synthetic';
   }
 
-  return { inner, height, vfx, vfxSource, appliedScale };
+  return { inner, height, vfx, vfxSource, appliedScale, lodNodes };
 }
 
 /** اطلاعات VFX برای دیباگ/گالری */

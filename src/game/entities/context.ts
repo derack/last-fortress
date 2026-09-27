@@ -8,7 +8,7 @@ import type { TargetingMode, DamageType } from '../data/types';
 export interface DamageableEnemy {
   id: number;
   getPos(): THREE.Vector3;
-  takeDamage(amount: number, type: DamageType): boolean; // true = مرگ
+  takeDamage(amount: number, type: DamageType, pierceArmor?: boolean): boolean; // true = مرگ
   alive: boolean;
   data: { boss?: boolean; flying?: boolean; id: string };
   hpRatio: number;
@@ -19,6 +19,8 @@ export interface DamageableEnemy {
   tier: number;
   applySlow(factor: number, duration: number): void;
   applyBurn(dps: number, duration: number): void;
+  applyShred(amount: number, duration: number): void; // شکستن زره
+  heal(amount: number): void; // شفادهنده‌ها
   hasShield(): boolean;
 }
 
@@ -38,10 +40,11 @@ export interface GameContext {
   };
   audio: { play(name: string): void };
   cameraShake(amount: number): void;
-  spawnProjectile(kind: string, from: THREE.Vector3, target: DamageableEnemy, opts: { damage: number; splash?: number; burn?: number; slow?: number; slowDur?: number; color: number }): void;
+  spawnProjectile(kind: string, from: THREE.Vector3, target: DamageableEnemy | null, opts: { damage: number; splash?: number; burn?: number; slow?: number; slowDur?: number; color: number; dmgType?: DamageType; poisonDps?: number; poisonDur?: number; pierceArmor?: boolean }): void;
   chainLightning(from: THREE.Vector3, firstTarget: DamageableEnemy, chains: number, damage: number, color: number): void;
-  scheduleFireBarrage(center: THREE.Vector3, radius: number, count: number, damage: number): void;
-  summonAt(pos: THREE.Vector3): void;
+  scheduleFireBarrage(center: THREE.Vector3, radius: number, count: number, damage: number, visual?: 'fire' | 'arrow'): void;
+  summonAt(pos: THREE.Vector3, enemyId?: string): void;
+  requestCoreShield(duration: number): void; // سپر اثری آریا
   onEnemyKilled(enemy: DamageableEnemy): void;
   onEnemyLeak(enemy: DamageableEnemy): void;
   heroDamageBuff: number; // ضریب افزایش آسیب از قهرمان

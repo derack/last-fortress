@@ -122,6 +122,146 @@ export function buildTowerMesh(towerId: string, level: number): THREE.Group {
       g.add(mesh(new THREE.TorusGeometry(1.3, 0.06, 8, 24), glow(0xf97316), 0, 0.3, 0));
       g.userData.spinRing = g.children[g.children.length - 1];
     }
+  } else if (towerId === 'cannon') {
+    // توپخانه — توپ سنگین فلزی
+    const h = 1.0 + lv * 0.15;
+    g.add(mesh(new THREE.CylinderGeometry(1.25, 1.6, h, 8), mat(0x3a3f45, { metalness: 0.7, roughness: 0.45 }), 0, h / 2, 0));
+    const turret = new THREE.Group();
+    turret.position.y = h + 0.5;
+    const barrel = mesh(new THREE.CylinderGeometry(0.32, 0.42, 1.7, 10), mat(0x22262c, { metalness: 0.85 }), 0, 0.18, 0.55);
+    barrel.rotation.x = Math.PI / 2 - 0.18;
+    turret.add(barrel);
+    turret.add(mesh(new THREE.SphereGeometry(0.55, 10, 8), mat(0x4a5058, { metalness: 0.75 }), 0, 0.1, -0.25));
+    turret.add(mesh(new THREE.SphereGeometry(0.12, 8, 8), glow(accent), 0, 0.5, -0.5));
+    g.add(turret);
+    g.userData.turret = turret;
+    if (level >= 3) {
+      for (const sx of [0.85, -0.85]) g.add(mesh(new THREE.BoxGeometry(0.35, h + 0.5, 0.5), mat(0x2c3036, { metalness: 0.7 }), sx, (h + 0.5) / 2, 0));
+    }
+    if (level >= 5) {
+      const ring = mesh(new THREE.TorusGeometry(1.35, 0.07, 8, 26), glow(accent), 0, 0.25, 0);
+      ring.rotation.x = Math.PI / 2;
+      g.add(ring);
+      g.userData.spinRing = ring;
+      turret.add(mesh(new THREE.OctahedronGeometry(0.3), glow(accent), 0, 0.75, -0.3));
+    }
+  } else if (towerId === 'poison') {
+    // زهرخانه — دیگ و لوله‌های سبز
+    const h = 0.9 + lv * 0.12;
+    g.add(mesh(new THREE.CylinderGeometry(1.1, 1.4, h, 8), mat(0x37402c, { roughness: 0.8 }), 0, h / 2, 0));
+    const cauldron = mesh(new THREE.SphereGeometry(0.75, 12, 10), mat(0x2a3324, { metalness: 0.5, roughness: 0.5 }), 0, h + 0.45, 0);
+    cauldron.scale.y = 0.8;
+    g.add(cauldron);
+    const brew = mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.08, 12), glow(accent), 0, h + 0.78, 0);
+    g.add(brew);
+    g.userData.ember = brew;
+    for (const [dx, dz, s] of [[0.7, 0.5, 0.9], [-0.75, -0.3, 0.7], [0.1, -0.8, 0.8]] as const) {
+      const pipe = mesh(new THREE.CylinderGeometry(0.07 * s, 0.09 * s, 1.1 * s, 6), mat(0x4a5a3a, { metalness: 0.6 }), dx, h + 0.9 * s, dz);
+      pipe.rotation.z = dx > 0 ? -0.35 : 0.35;
+      g.add(pipe);
+      g.add(mesh(new THREE.SphereGeometry(0.1 * s, 6, 6), glow(accent), dx * 1.25, h + 1.35 * s, dz * 1.25));
+    }
+    if (level >= 5) {
+      const ring = mesh(new THREE.TorusGeometry(1.2, 0.06, 8, 24), glow(accent), 0, h + 1.5, 0);
+      ring.rotation.x = Math.PI / 2;
+      g.add(ring);
+      g.userData.spinRing = ring;
+    }
+  } else if (towerId === 'ballista') {
+    // بالیستا — پایه چوبی و بازوی کمان فولادی
+    const h = 1.2 + lv * 0.2;
+    g.add(mesh(new THREE.BoxGeometry(1.3, h, 1.3), mat(0x5a4632, { roughness: 0.85 }), 0, h / 2, 0));
+    const mount = new THREE.Group();
+    mount.position.y = h + 0.45;
+    const rail = mesh(new THREE.BoxGeometry(0.3, 0.22, 2.1), mat(0x4a3a28), 0, 0, 0.25);
+    mount.add(rail);
+    for (const sx of [0.5, -0.5]) {
+      const limb = mesh(new THREE.BoxGeometry(0.1, 0.1, 1.5), mat(0x8a8f98, { metalness: 0.85 }), sx * 1.35, 0.28, 0.75);
+      limb.rotation.y = sx * 0.5;
+      mount.add(limb);
+    }
+    mount.add(mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 5), mat(0x2a2622), 0, 0.28, 0.8));
+    g.add(mount);
+    g.userData.turret = mount;
+    if (level >= 3) {
+      mount.add(mesh(new THREE.BoxGeometry(1.9, 0.16, 0.16), mat(0x6b7280, { metalness: 0.8 }), 0, 0.45, 0.9));
+    }
+    if (level >= 5) {
+      mount.add(mesh(new THREE.OctahedronGeometry(0.26), glow(accent), 0, 0.5, -0.4));
+      const ring = mesh(new THREE.TorusGeometry(1.25, 0.06, 8, 24), glow(accent), 0, 0.3, 0);
+      ring.rotation.x = Math.PI / 2;
+      g.add(ring);
+      g.userData.spinRing = ring;
+    }
+  } else if (towerId === 'arcane') {
+    // رازآسا — سه ستون مدار و هسته پرایسم
+    const h = 1.4 + lv * 0.22;
+    g.add(mesh(new THREE.CylinderGeometry(1.05, 1.35, 0.7, 8), mat(0x2c3644, { metalness: 0.6 }), 0, 0.35, 0));
+    for (let i = 0; i < 3; i++) {
+      const a = (i / 3) * Math.PI * 2;
+      const col = mesh(new THREE.CylinderGeometry(0.14, 0.2, h, 6), mat(0x37455a, { metalness: 0.65 }), Math.cos(a) * 0.75, h / 2 + 0.5, Math.sin(a) * 0.75);
+      g.add(col);
+      g.add(mesh(new THREE.SphereGeometry(0.11, 8, 8), glow(accent), Math.cos(a) * 0.75, h + 0.6, Math.sin(a) * 0.75));
+    }
+    const core = mesh(new THREE.OctahedronGeometry(0.5 + lv * 0.07), glow(accent), 0, h + 1.05, 0);
+    g.add(core);
+    g.userData.spinCrystal = core;
+    if (level >= 3) {
+      const ring = mesh(new THREE.TorusGeometry(1.0, 0.05, 8, 28), glow(accent), 0, h + 1.05, 0);
+      ring.rotation.x = Math.PI / 2.8;
+      g.add(ring);
+      g.userData.spinRing = ring;
+    }
+    if (level >= 5) {
+      for (let i = 0; i < 4; i++) {
+        const a = (i / 4) * Math.PI * 2;
+        g.add(mesh(new THREE.TetrahedronGeometry(0.2), glow(accent), Math.cos(a) * 1.05, h + 1.6, Math.sin(a) * 1.05));
+      }
+    }
+  } else if (towerId === 'temple') {
+    // آذرگاه — محراب مقدس با شعله آذر
+    const h = 0.8 + lv * 0.12;
+    g.add(mesh(new THREE.CylinderGeometry(1.4, 1.7, h, 8), mat(0x8a7a5c, { roughness: 0.8 }), 0, h / 2, 0));
+    g.add(mesh(new THREE.CylinderGeometry(1.0, 1.2, 0.35, 8), mat(0xd9c8a0, { roughness: 0.7 }), 0, h + 0.17, 0));
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+      const pillar = mesh(new THREE.CylinderGeometry(0.13, 0.16, 1.5 + lv * 0.12, 6), mat(0xe8dcc0, { roughness: 0.65 }), Math.cos(a) * 0.95, h + 0.95, Math.sin(a) * 0.95);
+      g.add(pillar);
+      g.add(mesh(new THREE.SphereGeometry(0.12, 8, 8), glow(accent), Math.cos(a) * 0.95, h + 1.8, Math.sin(a) * 0.95));
+    }
+    const flame = mesh(new THREE.ConeGeometry(0.34, 0.9 + lv * 0.1, 7), glow(accent), 0, h + 0.85, 0);
+    g.add(flame);
+    g.userData.spinCrystal = flame;
+    if (level >= 5) {
+      const halo = mesh(new THREE.TorusGeometry(1.45, 0.07, 8, 30), glow(0xfcd34d), 0, h + 2.0, 0);
+      halo.rotation.x = Math.PI / 2;
+      g.add(halo);
+      g.userData.spinRing = halo;
+    }
+  } else if (towerId === 'void') {
+    // برج تهی — منولیت سیاه با چشم تهی
+    const h = 2.4 + lv * 0.35;
+    g.add(mesh(new THREE.CylinderGeometry(0.95, 1.3, 0.6, 6), mat(0x1a1622, { roughness: 0.7 }), 0, 0.3, 0));
+    const mono = mesh(new THREE.BoxGeometry(1.05, h, 0.75), mat(0x14101c, { roughness: 0.45, metalness: 0.3 }), 0, h / 2 + 0.5, 0);
+    mono.rotation.y = Math.PI / 6;
+    g.add(mono);
+    const eye = mesh(new THREE.SphereGeometry(0.26 + lv * 0.03, 10, 10), glow(accent), 0, h * 0.72 + 0.5, 0.42);
+    g.add(eye);
+    g.userData.spinCrystal = eye;
+    g.add(mesh(new THREE.OctahedronGeometry(0.32), glow(accent), 0, h + 0.85, 0));
+    if (level >= 3) {
+      for (const sx of [0.55, -0.55]) {
+        const shard = mesh(new THREE.ConeGeometry(0.14, 0.9, 5), mat(0x1a1622), sx, h * 0.45 + 0.5, 0);
+        shard.rotation.z = sx > 0 ? -0.3 : 0.3;
+        g.add(shard);
+      }
+    }
+    if (level >= 5) {
+      const ring = mesh(new THREE.TorusGeometry(1.15, 0.06, 8, 28), glow(accent), 0, h + 0.85, 0);
+      ring.rotation.x = Math.PI / 2;
+      g.add(ring);
+      g.userData.spinRing = ring;
+    }
   } else if (towerId === 'ice') {
     // یخ — خوشه کریستال یخی
     const h = 1.4 + lv * 0.3;
@@ -271,6 +411,240 @@ export function buildEnemyMesh(data: EnemyData, tier: number): THREE.Group {
     g.add(mesh(new THREE.SphereGeometry(0.06, 5, 5), acc, 0.12, 1.05, 0.5));
     g.add(mesh(new THREE.SphereGeometry(0.06, 5, 5), acc, -0.12, 1.05, 0.5));
     parts.push({ node: wingL, kind: 'wing' }, { node: wingR, kind: 'wing2' });
+  } else if (data.id === 'shadowSoldier') {
+    // سرباز سایه — زره‌پوش با نیزه و سپر
+    const torso = mesh(new THREE.BoxGeometry(0.58, 0.72, 0.4), body, 0, 0.98, 0);
+    g.add(torso);
+    g.add(mesh(new THREE.SphereGeometry(0.25, 8, 8), mat(0x1e1930), 0, 1.55, 0));
+    g.add(mesh(new THREE.SphereGeometry(0.06, 6, 6), acc, 0.1, 1.57, 0.2));
+    g.add(mesh(new THREE.SphereGeometry(0.06, 6, 6), acc, -0.1, 1.57, 0.2));
+    const legL = mesh(new THREE.BoxGeometry(0.19, 0.58, 0.21), body, 0.17, 0.32, 0);
+    const legR = mesh(new THREE.BoxGeometry(0.19, 0.58, 0.21), body, -0.17, 0.32, 0);
+    g.add(legL, legR);
+    const spear = mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.6, 5), mat(0x2a2733), 0.42, 1.05, 0.05);
+    g.add(spear);
+    g.add(mesh(new THREE.ConeGeometry(0.07, 0.3, 5), mat(0x8a8f98, { metalness: 0.8 }), 0.42, 1.9, 0.05));
+    const shield = mesh(new THREE.BoxGeometry(0.1, 0.5, 0.42), mat(0x352a4a, { metalness: 0.5 }), -0.42, 0.95, 0.08);
+    g.add(shield);
+    parts.push({ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' });
+  } else if (data.id === 'spirit') {
+    // روح شفادهنده — موجود شناور با مدارهای نور
+    const veil = mesh(new THREE.ConeGeometry(0.45, 1.2, 8), new THREE.MeshStandardMaterial({ color: data.color, roughness: 0.9, transparent: true, opacity: 0.7 }), 0, 0.85, 0);
+    veil.rotation.x = Math.PI;
+    g.add(veil);
+    g.add(mesh(new THREE.SphereGeometry(0.28, 8, 8), new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.6, transparent: true, opacity: 0.85 }), 0, 1.45, 0));
+    g.add(mesh(new THREE.SphereGeometry(0.08, 6, 6), acc, 0, 1.5, 0.22));
+    const orb1 = mesh(new THREE.SphereGeometry(0.11, 6, 6), acc, 0.5, 1.2, 0);
+    const orb2 = mesh(new THREE.SphereGeometry(0.09, 6, 6), acc, -0.45, 1.0, 0.15);
+    g.add(orb1, orb2);
+    parts.push({ node: orb1, kind: 'pulse' }, { node: orb2, kind: 'bob' }, { node: veil, kind: 'bob' });
+  } else if (data.id === 'hunter') {
+    // شکارچی سایه — خمیده با تیغه‌های دوگانه
+    const torso = mesh(new THREE.BoxGeometry(0.45, 0.62, 0.34), body, 0, 0.9, 0);
+    torso.rotation.x = 0.25;
+    g.add(torso);
+    g.add(mesh(new THREE.SphereGeometry(0.22, 8, 8), mat(0x2c2118), 0, 1.32, 0.1));
+    g.add(mesh(new THREE.BoxGeometry(0.28, 0.07, 0.12), acc, 0, 1.34, 0.26)); // ویزور نارنجی
+    const legL = mesh(new THREE.BoxGeometry(0.15, 0.6, 0.17), body, 0.15, 0.3, 0);
+    const legR = mesh(new THREE.BoxGeometry(0.15, 0.6, 0.17), body, -0.15, 0.3, 0);
+    g.add(legL, legR);
+    const bladeL = mesh(new THREE.BoxGeometry(0.06, 0.55, 0.12), mat(0x9aa0aa, { metalness: 0.85 }), 0.34, 0.85, 0.28);
+    bladeL.rotation.x = 0.7;
+    const bladeR = mesh(new THREE.BoxGeometry(0.06, 0.55, 0.12), mat(0x9aa0aa, { metalness: 0.85 }), -0.34, 0.85, 0.28);
+    bladeR.rotation.x = 0.7;
+    g.add(bladeL, bladeR);
+    parts.push({ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' }, { node: bladeL, kind: 'arm' }, { node: bladeR, kind: 'arm2' });
+  } else if (data.id === 'warMachine') {
+    // ماشین جنگی — پابه‌های چهارگانه با برجک
+    const hull = mesh(new THREE.BoxGeometry(1.0, 0.5, 1.3), mat(0x3f3f46, { metalness: 0.7, roughness: 0.5 }), 0, 1.05, 0);
+    g.add(hull);
+    const turret = mesh(new THREE.CylinderGeometry(0.32, 0.4, 0.42, 8), mat(0x2c2f34, { metalness: 0.75 }), 0, 1.5, 0);
+    g.add(turret);
+    const barrel = mesh(new THREE.CylinderGeometry(0.09, 0.11, 1.2, 8), mat(0x1c1f24, { metalness: 0.85 }), 0, 1.52, 0.75);
+    barrel.rotation.x = Math.PI / 2;
+    g.add(barrel);
+    g.add(mesh(new THREE.SphereGeometry(0.1, 8, 8), acc, 0, 1.72, 0.15)); // چشم قرمز
+    for (const [dx, dz] of [[0.55, 0.45], [-0.55, 0.45], [0.55, -0.45], [-0.55, -0.45]] as const) {
+      const leg = mesh(new THREE.CylinderGeometry(0.09, 0.06, 1.0, 5), mat(0x27272a, { metalness: 0.6 }), dx, 0.45, dz);
+      g.add(leg);
+      parts.push({ node: leg, kind: dx * dz > 0 ? 'leg' : 'leg2' });
+    }
+  } else if (data.id === 'crystalMonster') {
+    // هیولای کریستالی — بدنه سنگی با خارهای کریستال
+    const torso = mesh(new THREE.DodecahedronGeometry(0.55, 0), body, 0, 0.8, 0);
+    torso.scale.set(1, 0.85, 1.15);
+    g.add(torso);
+    for (const [dx, dz, s] of [[0, -0.3, 1.4], [0.3, -0.05, 1.0], [-0.28, -0.1, 0.85], [0.12, 0.28, 0.7]] as const) {
+      const spike = mesh(new THREE.ConeGeometry(0.14 * s, 0.7 * s, 5), acc, dx, 1.15 + 0.2 * s, dz);
+      spike.rotation.x = -0.3 + dz * 0.6;
+      g.add(spike);
+    }
+    g.add(mesh(new THREE.SphereGeometry(0.07, 6, 6), acc, 0.18, 0.92, 0.5));
+    g.add(mesh(new THREE.SphereGeometry(0.07, 6, 6), acc, -0.18, 0.92, 0.5));
+    const legL = mesh(new THREE.BoxGeometry(0.2, 0.4, 0.22), body, 0.28, 0.2, 0);
+    const legR = mesh(new THREE.BoxGeometry(0.2, 0.4, 0.22), body, -0.28, 0.2, 0);
+    g.add(legL, legR);
+    parts.push({ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' });
+  } else if (data.id === 'smallDragon') {
+    // اژدهای کوچک — بال، گردن، دم
+    const bod = mesh(new THREE.SphereGeometry(0.42, 9, 8), body, 0, 1.0, -0.1);
+    bod.scale.set(0.9, 0.9, 1.3);
+    g.add(bod);
+    const neck = mesh(new THREE.CylinderGeometry(0.13, 0.18, 0.55, 6), body, 0, 1.3, 0.35);
+    neck.rotation.x = 0.7;
+    g.add(neck);
+    const head = mesh(new THREE.BoxGeometry(0.3, 0.24, 0.45), body, 0, 1.55, 0.6);
+    g.add(head);
+    g.add(mesh(new THREE.SphereGeometry(0.05, 5, 5), acc, 0.1, 1.6, 0.82));
+    g.add(mesh(new THREE.SphereGeometry(0.05, 5, 5), acc, -0.1, 1.6, 0.82));
+    g.add(mesh(new THREE.ConeGeometry(0.05, 0.2, 4), mat(0x3a2a1a), 0.08, 1.72, 0.5));
+    g.add(mesh(new THREE.ConeGeometry(0.05, 0.2, 4), mat(0x3a2a1a), -0.08, 1.72, 0.5));
+    const wingL = mesh(new THREE.BoxGeometry(1.1, 0.05, 0.55), mat(0x2c1512), 0.62, 1.15, -0.1);
+    const wingR = mesh(new THREE.BoxGeometry(1.1, 0.05, 0.55), mat(0x2c1512), -0.62, 1.15, -0.1);
+    g.add(wingL, wingR);
+    const tail = mesh(new THREE.ConeGeometry(0.12, 0.85, 5), body, 0, 0.95, -0.85);
+    tail.rotation.x = -Math.PI / 2 - 0.35;
+    g.add(tail);
+    parts.push({ node: wingL, kind: 'wing' }, { node: wingR, kind: 'wing2' });
+  } else if (data.id === 'summoner') {
+    // احضارکننده — ردا با گوی بزرگ احضار
+    const robe = mesh(new THREE.ConeGeometry(0.6, 1.65, 8), body, 0, 0.82, 0);
+    g.add(robe);
+    g.add(mesh(new THREE.SphereGeometry(0.27, 8, 8), mat(0x1e1b3a), 0, 1.75, 0));
+    g.add(mesh(new THREE.ConeGeometry(0.3, 0.4, 8), mat(0x1e1b3a), 0, 1.95, 0)); // کلاه‌ریش
+    g.add(mesh(new THREE.SphereGeometry(0.07, 6, 6), acc, 0.1, 1.78, 0.2));
+    g.add(mesh(new THREE.SphereGeometry(0.07, 6, 6), acc, -0.1, 1.78, 0.2));
+    const staff = mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.9, 6), mat(0x1c1917), 0.55, 1.1, 0);
+    g.add(staff);
+    const orb = mesh(new THREE.SphereGeometry(0.24, 10, 8), acc, 0.55, 2.1, 0);
+    g.add(orb);
+    const ring = mesh(new THREE.TorusGeometry(0.34, 0.025, 6, 18), acc, 0.55, 2.1, 0);
+    ring.rotation.x = Math.PI / 2.5;
+    g.add(ring);
+    parts.push({ node: orb, kind: 'pulse' }, { node: ring, kind: 'pulse' });
+  } else if (data.id === 'aetherTank') {
+    // تانک اثری — پوششی زرهی عظیم با هسته اثری
+    const hull = mesh(new THREE.BoxGeometry(1.25, 0.85, 1.5), body, 0, 1.1, 0);
+    g.add(hull);
+    g.add(mesh(new THREE.BoxGeometry(1.45, 0.3, 0.5), mat(0x3f3f46, { metalness: 0.7 }), 0, 1.35, 0.6)); // صفحه جلو
+    g.add(mesh(new THREE.OctahedronGeometry(0.24), acc, 0, 1.15, 0.78)); // هسته فیروزه‌ای
+    const head = mesh(new THREE.BoxGeometry(0.5, 0.35, 0.5), body, 0, 1.7, 0.3);
+    g.add(head);
+    g.add(mesh(new THREE.SphereGeometry(0.07, 6, 6), acc, 0.12, 1.74, 0.56));
+    g.add(mesh(new THREE.SphereGeometry(0.07, 6, 6), acc, -0.12, 1.74, 0.56));
+    for (const [dx, dz] of [[0.6, 0.5], [-0.6, 0.5], [0.6, -0.5], [-0.6, -0.5]] as const) {
+      const leg = mesh(new THREE.CylinderGeometry(0.13, 0.09, 0.9, 6), mat(0x27272a, { metalness: 0.6 }), dx, 0.4, dz);
+      g.add(leg);
+      parts.push({ node: leg, kind: dx * dz > 0 ? 'leg' : 'leg2' });
+    }
+  } else if (data.id === 'destroyer' || data.id === 'fireGiant' || data.id === 'iceGiant') {
+    // نابودگر و غول‌ها — برتن عظیم با شانه‌های سنگی
+    const isFire = data.id === 'fireGiant';
+    const isIce = data.id === 'iceGiant';
+    const torso = mesh(new THREE.BoxGeometry(1.2, 1.1, 0.8), body, 0, 1.4, 0);
+    g.add(torso);
+    g.add(mesh(new THREE.BoxGeometry(1.5, 0.35, 0.9), mat(0x2c2521), 0, 1.9, 0)); // شانه‌ها
+    const head = mesh(new THREE.BoxGeometry(0.5, 0.45, 0.5), body, 0, 2.2, 0);
+    g.add(head);
+    g.add(mesh(new THREE.SphereGeometry(0.08, 6, 6), acc, 0.13, 2.22, 0.28));
+    g.add(mesh(new THREE.SphereGeometry(0.08, 6, 6), acc, -0.13, 2.22, 0.28));
+    // ترک‌های گداخته / یخ‌زده
+    g.add(mesh(new THREE.BoxGeometry(0.09, 0.7, 0.05), acc, 0.25, 1.45, 0.42));
+    g.add(mesh(new THREE.BoxGeometry(0.07, 0.5, 0.05), acc, -0.2, 1.3, 0.42));
+    const armL = mesh(new THREE.BoxGeometry(0.45, 1.2, 0.45), body, 0.9, 1.25, 0);
+    const armR = mesh(new THREE.BoxGeometry(0.45, 1.2, 0.45), body, -0.9, 1.25, 0);
+    g.add(armL, armR);
+    const legL = mesh(new THREE.BoxGeometry(0.42, 0.85, 0.48), body, 0.32, 0.43, 0);
+    const legR = mesh(new THREE.BoxGeometry(0.42, 0.85, 0.48), body, -0.32, 0.43, 0);
+    g.add(legL, legR);
+    if (isFire) {
+      // شاخه‌های گداخته روی شانه
+      g.add(mesh(new THREE.ConeGeometry(0.12, 0.5, 5), mat(0x450a0a), 0.6, 2.25, 0));
+      g.add(mesh(new THREE.ConeGeometry(0.12, 0.5, 5), mat(0x450a0a), -0.6, 2.25, 0));
+      g.add(mesh(new THREE.SphereGeometry(0.16, 8, 8), acc, 0, 2.05, 0.42)); // هسته گداخته
+    }
+    if (isIce) {
+      // شاخ یخی
+      const h1 = mesh(new THREE.ConeGeometry(0.1, 0.6, 5), acc, 0.2, 2.55, 0);
+      h1.rotation.z = 0.35;
+      const h2 = mesh(new THREE.ConeGeometry(0.1, 0.6, 5), acc, -0.2, 2.55, 0);
+      h2.rotation.z = -0.35;
+      g.add(h1, h2);
+    }
+    parts.push({ node: armL, kind: 'arm' }, { node: armR, kind: 'arm2' }, { node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' });
+  } else if (data.id === 'annihilator') {
+    // محوکننده — دستگاه محاسره سه‌لوله
+    const base = mesh(new THREE.CylinderGeometry(0.9, 1.2, 0.55, 8), mat(0x18181b, { metalness: 0.7, roughness: 0.4 }), 0, 0.35, 0);
+    g.add(base);
+    const hull = mesh(new THREE.BoxGeometry(1.4, 0.9, 1.6), body, 0, 1.1, -0.1);
+    g.add(hull);
+    g.add(mesh(new THREE.OctahedronGeometry(0.28), acc, 0, 1.25, 0.72)); // هسته سرخ
+    for (const sx of [0.4, 0, -0.4]) {
+      const bar = mesh(new THREE.CylinderGeometry(0.1, 0.13, 1.5, 8), mat(0x0f0f12, { metalness: 0.85 }), sx, 1.35, 0.95);
+      bar.rotation.x = Math.PI / 2;
+      g.add(bar);
+    }
+    g.add(mesh(new THREE.SphereGeometry(0.12, 8, 8), acc, 0, 1.75, -0.3));
+    for (const [dx, dz] of [[0.7, 0.55], [-0.7, 0.55], [0.7, -0.55], [-0.7, -0.55]] as const) {
+      const leg = mesh(new THREE.CylinderGeometry(0.14, 0.09, 0.85, 6), mat(0x27272a, { metalness: 0.65 }), dx, 0.35, dz);
+      g.add(leg);
+      parts.push({ node: leg, kind: dx * dz > 0 ? 'leg' : 'leg2' });
+    }
+  } else if (data.id === 'blackDragon') {
+    // اژدهای سیاه — بال‌های بزرگ، شاخ، دم بلند
+    const bod = mesh(new THREE.SphereGeometry(0.62, 10, 9), body, 0, 1.35, -0.15);
+    bod.scale.set(1, 0.95, 1.45);
+    g.add(bod);
+    g.add(mesh(new THREE.OctahedronGeometry(0.2), acc, 0, 1.35, 0.5)); // سینه بنفش
+    const neck = mesh(new THREE.CylinderGeometry(0.17, 0.24, 0.8, 6), body, 0, 1.75, 0.5);
+    neck.rotation.x = 0.8;
+    g.add(neck);
+    const head = mesh(new THREE.BoxGeometry(0.4, 0.3, 0.62), body, 0, 2.1, 0.85);
+    g.add(head);
+    g.add(mesh(new THREE.SphereGeometry(0.06, 5, 5), acc, 0.13, 2.16, 1.12));
+    g.add(mesh(new THREE.SphereGeometry(0.06, 5, 5), acc, -0.13, 2.16, 1.12));
+    const hornL = mesh(new THREE.ConeGeometry(0.07, 0.42, 5), mat(0x1c1917), 0.15, 2.32, 0.75);
+    hornL.rotation.x = -0.5;
+    const hornR = mesh(new THREE.ConeGeometry(0.07, 0.42, 5), mat(0x1c1917), -0.15, 2.32, 0.75);
+    hornR.rotation.x = -0.5;
+    g.add(hornL, hornR);
+    const wingL = mesh(new THREE.BoxGeometry(1.8, 0.05, 0.85), mat(0x141018), 1.0, 1.7, -0.2);
+    const wingR = mesh(new THREE.BoxGeometry(1.8, 0.05, 0.85), mat(0x141018), -1.0, 1.7, -0.2);
+    g.add(wingL, wingR);
+    const tail = mesh(new THREE.ConeGeometry(0.16, 1.3, 5), body, 0, 1.2, -1.25);
+    tail.rotation.x = -Math.PI / 2 - 0.3;
+    g.add(tail);
+    parts.push({ node: wingL, kind: 'wing' }, { node: wingR, kind: 'wing2' });
+  } else if (data.id === 'darkLord') {
+    // ارباب تاریکی — زره شاهانه، شنل، تاج شاخ‌دار، شمشیر عظیم
+    const torso = mesh(new THREE.BoxGeometry(0.85, 1.0, 0.55), body, 0, 1.5, 0);
+    g.add(torso);
+    g.add(mesh(new THREE.OctahedronGeometry(0.22), acc, 0, 1.55, 0.3)); // هسته بنفش سینه
+    const head = mesh(new THREE.BoxGeometry(0.42, 0.4, 0.42), mat(0x0c0c10), 0, 2.25, 0);
+    g.add(head);
+    g.add(mesh(new THREE.SphereGeometry(0.06, 6, 6), acc, 0.1, 2.27, 0.24));
+    g.add(mesh(new THREE.SphereGeometry(0.06, 6, 6), acc, -0.1, 2.27, 0.24));
+    // تاج شاخ‌دار
+    for (const [dx, rz] of [[0.18, 0.5], [-0.18, -0.5], [0, 0]] as const) {
+      const horn = mesh(new THREE.ConeGeometry(0.06, 0.45, 5), mat(0x2a2433), dx, 2.62, 0);
+      horn.rotation.z = rz;
+      g.add(horn);
+    }
+    // شنل
+    const cape = mesh(new THREE.BoxGeometry(0.95, 1.5, 0.08), mat(0x1a0f22, { roughness: 0.95 }), 0, 1.35, -0.36);
+    cape.rotation.x = 0.1;
+    g.add(cape);
+    const legL = mesh(new THREE.BoxGeometry(0.26, 0.95, 0.28), body, 0.24, 0.48, 0);
+    const legR = mesh(new THREE.BoxGeometry(0.26, 0.95, 0.28), body, -0.24, 0.48, 0);
+    g.add(legL, legR);
+    // شمشیر عظیم
+    const blade = mesh(new THREE.BoxGeometry(0.16, 1.5, 0.05), mat(0x3f3248, { metalness: 0.85, roughness: 0.25 }), 0.75, 1.35, 0.15);
+    g.add(blade);
+    g.add(mesh(new THREE.BoxGeometry(0.3, 0.08, 0.1), mat(0x2a2433), 0.75, 0.62, 0.15));
+    const shoulderL = mesh(new THREE.SphereGeometry(0.28, 8, 8), mat(0x241d30, { metalness: 0.6 }), 0.55, 1.95, 0);
+    const shoulderR = mesh(new THREE.SphereGeometry(0.28, 8, 8), mat(0x241d30, { metalness: 0.6 }), -0.55, 1.95, 0);
+    g.add(shoulderL, shoulderR);
+    parts.push({ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' });
   }
 
   g.userData.animParts = parts;
@@ -283,36 +657,108 @@ export function buildEnemyMesh(data: EnemyData, tier: number): THREE.Group {
 
 // ---------------------------- قهرمان ----------------------------
 
-export function buildHeroMesh(): THREE.Group {
+export function buildHeroMesh(heroId = 'arman'): THREE.Group {
   const g = new THREE.Group();
   const armor = mat(0x5a5e4a);
   const gold = mat(0xd4a017, { metalness: 0.85, roughness: 0.3 });
 
-  const torso = mesh(new THREE.BoxGeometry(0.62, 0.75, 0.42), armor, 0, 1.0, 0);
-  g.add(torso);
-  g.add(mesh(new THREE.BoxGeometry(0.66, 0.16, 0.46), gold, 0, 1.32, 0)); // سینه‌پوش
-  const head = mesh(new THREE.SphereGeometry(0.27, 10, 10), mat(0xc8a06a), 0, 1.62, 0);
-  g.add(head);
-  const helm = mesh(new THREE.SphereGeometry(0.3, 10, 8, 0, Math.PI * 2, 0, Math.PI / 1.8), gold, 0, 1.7, 0);
-  g.add(helm);
-  const legL = mesh(new THREE.BoxGeometry(0.2, 0.6, 0.22), armor, 0.17, 0.32, 0);
-  const legR = mesh(new THREE.BoxGeometry(0.2, 0.6, 0.22), armor, -0.17, 0.32, 0);
-  g.add(legL, legR);
-  // تفنگ آذری
-  const rifle = new THREE.Group();
-  rifle.position.set(0.42, 1.05, 0.25);
-  const barrel = mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.15, 6), mat(0x2a2d33, { metalness: 0.85 }), 0, 0, 0.3);
-  barrel.rotation.x = Math.PI / 2;
-  rifle.add(barrel);
-  rifle.add(mesh(new THREE.BoxGeometry(0.1, 0.2, 0.3), mat(0x3d412f), 0, -0.1, -0.25));
-  rifle.add(mesh(new THREE.SphereGeometry(0.07, 6, 6), glow(0xffb020), 0, 0, 0.9));
-  g.add(rifle);
-  // شنل
-  const cape = mesh(new THREE.BoxGeometry(0.6, 0.95, 0.06), mat(0x7a1f1f, { roughness: 0.9 }), 0, 0.95, -0.28);
-  cape.rotation.x = 0.12;
-  g.add(cape);
-  g.userData.animParts = [{ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' }];
-  g.userData.rifleTip = new THREE.Vector3(0.42, 1.05, 1.3);
+  if (heroId === 'aria') {
+    // آریا — نگهبان جادویی: ردا، عصا با کریستال، شانه‌پوش
+    const robeMat = mat(0x1e3a4a, { roughness: 0.85 });
+    const robe = mesh(new THREE.ConeGeometry(0.5, 1.35, 8), robeMat, 0, 0.68, 0);
+    g.add(robe);
+    const torso = mesh(new THREE.BoxGeometry(0.5, 0.6, 0.36), mat(0x2c4a5e, { metalness: 0.4 }), 0, 1.15, 0);
+    g.add(torso);
+    g.add(mesh(new THREE.OctahedronGeometry(0.14), glow(0x67e8f9), 0, 1.25, 0.2));
+    const shoulderL = mesh(new THREE.SphereGeometry(0.17, 8, 8), gold, 0.33, 1.42, 0);
+    const shoulderR = mesh(new THREE.SphereGeometry(0.17, 8, 8), gold, -0.33, 1.42, 0);
+    g.add(shoulderL, shoulderR);
+    const head = mesh(new THREE.SphereGeometry(0.24, 10, 10), mat(0xe8c8a0), 0, 1.68, 0);
+    g.add(head);
+    const hood = mesh(new THREE.ConeGeometry(0.3, 0.5, 8), robeMat, 0, 1.86, -0.04);
+    g.add(hood);
+    // عصای کریستال
+    const staff = mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.75, 6), mat(0x2a2d33, { metalness: 0.7 }), 0.48, 1.15, 0.05);
+    g.add(staff);
+    g.add(mesh(new THREE.OctahedronGeometry(0.17), glow(0x67e8f9), 0.48, 2.1, 0.05));
+    g.userData.animParts = [];
+    g.userData.rifleTip = new THREE.Vector3(0.48, 2.1, 0.05);
+  } else if (heroId === 'radin') {
+    // رادین — جنگجوی سنگین: تنپوش عظیم، کلنگ سنگین
+    const steel = mat(0x3d4450, { metalness: 0.75, roughness: 0.35 });
+    const torso = mesh(new THREE.BoxGeometry(0.85, 0.85, 0.55), steel, 0, 1.1, 0);
+    g.add(torso);
+    g.add(mesh(new THREE.BoxGeometry(0.95, 0.2, 0.6), gold, 0, 1.45, 0)); // سینه‌پوش
+    const shoulderL = mesh(new THREE.SphereGeometry(0.26, 8, 8), steel, 0.5, 1.45, 0);
+    const shoulderR = mesh(new THREE.SphereGeometry(0.26, 8, 8), steel, -0.5, 1.45, 0);
+    g.add(shoulderL, shoulderR);
+    const head = mesh(new THREE.SphereGeometry(0.26, 10, 10), mat(0xc8a06a), 0, 1.75, 0);
+    g.add(head);
+    const helm = mesh(new THREE.SphereGeometry(0.3, 10, 8, 0, Math.PI * 2, 0, Math.PI / 1.9), steel, 0, 1.82, 0);
+    g.add(helm);
+    const legL = mesh(new THREE.BoxGeometry(0.28, 0.62, 0.3), armor, 0.22, 0.33, 0);
+    const legR = mesh(new THREE.BoxGeometry(0.28, 0.62, 0.3), armor, -0.22, 0.33, 0);
+    g.add(legL, legR);
+    // کلنگ عظیم
+    const hammer = new THREE.Group();
+    hammer.position.set(0.55, 1.2, 0.2);
+    hammer.add(mesh(new THREE.CylinderGeometry(0.055, 0.055, 1.1, 6), mat(0x2a2d33, { metalness: 0.8 }), 0, 0, 0));
+    hammer.add(mesh(new THREE.BoxGeometry(0.42, 0.26, 0.26), mat(0x6b7280, { metalness: 0.85 }), 0, 0.58, 0));
+    hammer.add(mesh(new THREE.SphereGeometry(0.07, 6, 6), glow(0xf87171), 0, -0.55, 0));
+    g.add(hammer);
+    g.userData.animParts = [{ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' }];
+    g.userData.rifleTip = new THREE.Vector3(0.55, 1.8, 0.2);
+  } else if (heroId === 'nila') {
+    // نیلا — تیرانداز اسرار: زره سبز، کلاه‌ریش، کمان انرژی
+    const cloth = mat(0x2a2438, { roughness: 0.85 });
+    const torso = mesh(new THREE.BoxGeometry(0.5, 0.68, 0.34), mat(0x3a2f52, { metalness: 0.3 }), 0, 1.05, 0);
+    g.add(torso);
+    g.add(mesh(new THREE.OctahedronGeometry(0.1), glow(0xc084fc), 0, 1.15, 0.19));
+    const head = mesh(new THREE.SphereGeometry(0.24, 10, 10), mat(0xd8b890), 0, 1.6, 0);
+    g.add(head);
+    const hood = mesh(new THREE.SphereGeometry(0.29, 10, 8, 0, Math.PI * 2, 0, Math.PI / 1.7), cloth, 0, 1.66, -0.03);
+    g.add(hood);
+    const legL = mesh(new THREE.BoxGeometry(0.18, 0.6, 0.2), cloth, 0.15, 0.32, 0);
+    const legR = mesh(new THREE.BoxGeometry(0.18, 0.6, 0.2), cloth, -0.15, 0.32, 0);
+    g.add(legL, legR);
+    // کمان انرژی
+    const bow = new THREE.Group();
+    bow.position.set(0.42, 1.1, 0.3);
+    const limb = mesh(new THREE.TorusGeometry(0.42, 0.03, 6, 18, Math.PI), mat(0x4a3a62), 0, 0, 0);
+    limb.rotation.z = Math.PI / 2;
+    bow.add(limb);
+    bow.add(mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.8, 4), glow(0xc084fc), 0.42, 0, 0));
+    g.add(bow);
+    g.userData.animParts = [{ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' }];
+    g.userData.rifleTip = new THREE.Vector3(0.42, 1.1, 0.72);
+  } else {
+    // آرمان — فرمانده (پیش‌فرض)
+    const torso = mesh(new THREE.BoxGeometry(0.62, 0.75, 0.42), armor, 0, 1.0, 0);
+    g.add(torso);
+    g.add(mesh(new THREE.BoxGeometry(0.66, 0.16, 0.46), gold, 0, 1.32, 0)); // سینه‌پوش
+    const head = mesh(new THREE.SphereGeometry(0.27, 10, 10), mat(0xc8a06a), 0, 1.62, 0);
+    g.add(head);
+    const helm = mesh(new THREE.SphereGeometry(0.3, 10, 8, 0, Math.PI * 2, 0, Math.PI / 1.8), gold, 0, 1.7, 0);
+    g.add(helm);
+    const legL = mesh(new THREE.BoxGeometry(0.2, 0.6, 0.22), armor, 0.17, 0.32, 0);
+    const legR = mesh(new THREE.BoxGeometry(0.2, 0.6, 0.22), armor, -0.17, 0.32, 0);
+    g.add(legL, legR);
+    // تفنگ آذری
+    const rifle = new THREE.Group();
+    rifle.position.set(0.42, 1.05, 0.25);
+    const barrel = mesh(new THREE.CylinderGeometry(0.06, 0.07, 1.15, 6), mat(0x2a2d33, { metalness: 0.85 }), 0, 0, 0.3);
+    barrel.rotation.x = Math.PI / 2;
+    rifle.add(barrel);
+    rifle.add(mesh(new THREE.BoxGeometry(0.1, 0.2, 0.3), mat(0x3d412f), 0, -0.1, -0.25));
+    rifle.add(mesh(new THREE.SphereGeometry(0.07, 6, 6), glow(0xffb020), 0, 0, 0.9));
+    g.add(rifle);
+    // شنل
+    const cape = mesh(new THREE.BoxGeometry(0.6, 0.95, 0.06), mat(0x7a1f1f, { roughness: 0.9 }), 0, 0.95, -0.28);
+    cape.rotation.x = 0.12;
+    g.add(cape);
+    g.userData.animParts = [{ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' }];
+    g.userData.rifleTip = new THREE.Vector3(0.42, 1.05, 1.3);
+  }
   g.traverse((o) => {
     o.userData.selectable = true;
   });
@@ -406,15 +852,84 @@ export function buildRock(scale = 1): THREE.Group {
   return g;
 }
 
-export function buildHouse(): THREE.Group {
+export function buildHouse(ruined = false): THREE.Group {
   const g = new THREE.Group();
   const wall = mat(0xd6cdb8, { roughness: 0.9 });
   const roof = mat(0x9c4a3a, { roughness: 0.85 });
+  if (ruined) {
+    // ویرانه — دیوارهای شکسته
+    g.add(mesh(new THREE.BoxGeometry(2.2, 1.0, 0.25), wall, 0, 0.5, -0.9));
+    g.add(mesh(new THREE.BoxGeometry(0.25, 0.8, 1.8), wall, -1.0, 0.4, 0.2));
+    g.add(mesh(new THREE.BoxGeometry(0.25, 0.5, 1.4), wall, 1.0, 0.25, 0.2));
+    const rubble = mesh(new THREE.DodecahedronGeometry(0.5, 0), mat(0x8a8578, { roughness: 1 }), 0.3, 0.25, 0.4);
+    rubble.rotation.set(1.2, 0.4, 0.7);
+    g.add(rubble);
+    g.add(mesh(new THREE.BoxGeometry(0.5, 0.3, 0.4), mat(0x6b655a), -0.5, 0.15, 0.6));
+    return g;
+  }
   g.add(mesh(new THREE.BoxGeometry(2.4, 1.6, 2), wall, 0, 0.8, 0));
   const r = mesh(new THREE.ConeGeometry(2, 1.2, 4), roof, 0, 2.2, 0);
   r.rotation.y = Math.PI / 4;
   g.add(r);
   g.add(mesh(new THREE.BoxGeometry(0.6, 0.9, 0.1), mat(0x5d4a36), 0, 0.45, 1.02));
+  return g;
+}
+
+/** کاج — جنگل/توندرا */
+export function buildPineTree(snowy = false): THREE.Group {
+  const g = new THREE.Group();
+  g.add(mesh(new THREE.CylinderGeometry(0.14, 0.22, 1.2, 6), mat(0x4a3a2a), 0, 0.6, 0));
+  const needle = snowy ? mat(0x7a9a8a, { roughness: 0.95 }) : mat(0x2d5a30, { roughness: 0.95 });
+  g.add(mesh(new THREE.ConeGeometry(1.0, 1.5, 7), needle, 0, 1.9, 0));
+  g.add(mesh(new THREE.ConeGeometry(0.72, 1.2, 7), needle, 0, 2.7, 0));
+  g.add(mesh(new THREE.ConeGeometry(0.45, 0.9, 7), needle, 0, 3.4, 0));
+  if (snowy) {
+    g.add(mesh(new THREE.ConeGeometry(0.5, 0.5, 7), mat(0xe8f0f4, { roughness: 0.8 }), 0, 3.75, 0));
+    g.add(mesh(new THREE.ConeGeometry(0.8, 0.55, 7), mat(0xe8f0f4, { roughness: 0.8 }), 0, 2.95, 0));
+  }
+  return g;
+}
+
+/** درخت مرده — آتشفشان/دژ */
+export function buildDeadTree(): THREE.Group {
+  const g = new THREE.Group();
+  const bark = mat(0x2a221c, { roughness: 1 });
+  g.add(mesh(new THREE.CylinderGeometry(0.12, 0.24, 1.7, 5), bark, 0, 0.85, 0));
+  const b1 = mesh(new THREE.CylinderGeometry(0.05, 0.09, 0.9, 5), bark, 0.3, 1.7, 0);
+  b1.rotation.z = -0.7;
+  g.add(b1);
+  const b2 = mesh(new THREE.CylinderGeometry(0.04, 0.08, 0.8, 5), bark, -0.28, 1.5, 0.1);
+  b2.rotation.z = 0.8;
+  g.add(b2);
+  const b3 = mesh(new THREE.CylinderGeometry(0.03, 0.06, 0.6, 5), bark, 0.05, 2.0, -0.12);
+  b3.rotation.x = -0.5;
+  g.add(b3);
+  return g;
+}
+
+/** آقال فلزی — ویرانه‌های ماشین */
+export function buildDebris(): THREE.Group {
+  const g = new THREE.Group();
+  const metal = mat(0x4a4f58, { metalness: 0.7, roughness: 0.5 });
+  const plate = mesh(new THREE.BoxGeometry(1.6, 0.18, 1.1), metal, 0, 0.3, 0);
+  plate.rotation.set(0.12, 0.5, 0.08);
+  g.add(plate);
+  const beam = mesh(new THREE.BoxGeometry(0.2, 1.2, 0.2), metal, 0.5, 0.7, -0.2);
+  beam.rotation.z = 0.35;
+  g.add(beam);
+  g.add(mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.5, 7), mat(0x3a3f45), -0.4, 0.25, 0.3));
+  g.add(mesh(new THREE.SphereGeometry(0.09, 6, 6), glow(0x38bdf8), 0.2, 0.48, 0.2));
+  return g;
+}
+
+/** سنگ سیاه آتشفشانی */
+export function buildObsidianRock(scale = 1): THREE.Group {
+  const g = new THREE.Group();
+  const r = mesh(new THREE.DodecahedronGeometry(0.7, 0), mat(0x16121a, { roughness: 0.35, metalness: 0.25 }), 0, 0.35, 0);
+  r.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
+  r.scale.setScalar(scale);
+  g.add(r);
+  g.add(mesh(new THREE.SphereGeometry(0.06 * scale, 5, 5), glow(0xf97316), 0.2 * scale, 0.3 * scale, 0.3 * scale));
   return g;
 }
 
@@ -431,12 +946,20 @@ export function buildCrystal(color = 0x22d3ee): THREE.Group {
   return g;
 }
 
-export function buildMountain(): THREE.Group {
+export function buildMountain(style: 'normal' | 'snow' | 'dark' | 'obsidian' = 'normal'): THREE.Group {
   const g = new THREE.Group();
-  const m = mat(0x7c8494, { roughness: 1 });
+  const tint = style === 'dark' ? 0x4a3430 : style === 'obsidian' ? 0x241c30 : 0x7c8494;
+  const m = mat(tint, { roughness: 1 });
   const peak = mesh(new THREE.ConeGeometry(9, 16, 6), m, 0, 8, 0);
   g.add(peak);
-  const snow = mesh(new THREE.ConeGeometry(3, 4.5, 6), mat(0xe8eaf0, { roughness: 0.7 }), 0, 13.5, 0);
-  g.add(snow);
+  if (style === 'normal' || style === 'snow') {
+    const snow = mesh(new THREE.ConeGeometry(3, 4.5, 6), mat(0xe8eaf0, { roughness: 0.7 }), 0, 13.5, 0);
+    g.add(snow);
+  } else if (style === 'dark') {
+    g.add(mesh(new THREE.SphereGeometry(0.5, 6, 6), glow(0xf97316), 1.5, 9, 1.5));
+    g.add(mesh(new THREE.SphereGeometry(0.4, 6, 6), glow(0xf97316), -2, 6, -1));
+  } else {
+    g.add(mesh(new THREE.SphereGeometry(0.45, 6, 6), glow(0xa855f7), 1.8, 8, -1.2));
+  }
   return g;
 }

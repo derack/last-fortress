@@ -25,6 +25,8 @@ export function defaultSave(): SaveData {
     },
     achievements: [],
     tutorialDone: false,
+    unlockedHeroes: ['arman'],
+    selectedHero: 'arman',
   };
 }
 
@@ -42,6 +44,9 @@ export function loadSave(): SaveData {
       stats: { ...base.stats, ...data.stats },
       levels: data.levels ?? {},
       achievements: data.achievements ?? [],
+      // مهاجرت ذخیره‌های قدیمی — قهرمانان
+      unlockedHeroes: data.unlockedHeroes?.length ? data.unlockedHeroes : ['arman'],
+      selectedHero: data.selectedHero ?? 'arman',
     };
   } catch {
     return defaultSave();

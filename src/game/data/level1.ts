@@ -101,15 +101,8 @@ export const LEVEL_1: LevelData = {
   ],
 };
 
-/** مناطق ۲ تا ۶ — فعلاً قفل (برای نقشه Campaign) */
-export const REGIONS = [
-  { id: 1, nameKey: 'region1', unlocked: true },
-  { id: 2, nameKey: 'region2', unlocked: false },
-  { id: 3, nameKey: 'region3', unlocked: false },
-  { id: 4, nameKey: 'region4', unlocked: false },
-  { id: 5, nameKey: 'region5', unlocked: false },
-  { id: 6, nameKey: 'region6', unlocked: false },
-];
+// مناطق و مراحل در levels.ts — LEVEL_1 به‌عنوان منطقه ۱ آنجا ثبت شده است
+// (این فایل: مرحله ۱ + دستاوردها)
 
 // ============================================================
 // دستاوردها — ۳۰ دستاورد Data-Driven

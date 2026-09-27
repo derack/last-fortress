@@ -1,11 +1,57 @@
 import * as THREE from 'three';
-import type { LevelData } from '../data/types';
+import type { LevelData, RegionEnv } from '../data/types';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { buildCoreMesh, buildRiftMesh, buildTree, buildRock, buildHouse, buildCrystal, buildMountain } from './models';
+import { buildCoreMesh, buildRiftMesh, buildTree, buildRock, buildHouse, buildCrystal, buildMountain, buildPineTree, buildDeadTree, buildDebris, buildObsidianRock } from './models';
 
 // ============================================================
 // صحنه نبرد — زمین، مسیر دشمن (Curve)، هسته آذر، دروازه، محیط
+// هر منطقه تم محیطی خودش را دارد (بخش محتوای کامل)
 // ============================================================
+
+interface EnvTheme {
+  skyDay: number; skyNight: number;
+  fogDay: number; fogNight: number;
+  groundDay: string; groundNight: string;
+  groundDotDay: string; groundDotNight: string;
+  pathDay: number; pathNight: number;
+  crystal: number;
+  treeStyle: 'leafy' | 'pine' | 'dead' | 'none' | 'mixed';
+  houses: 'village' | 'none' | 'ruin' | 'debris';
+  treeCount: number;
+}
+
+const ENV_THEMES: Record<RegionEnv, EnvTheme> = {
+  plains: {
+    skyDay: 0x87b5d9, skyNight: 0x0a0d1a, fogDay: 0xa9c8e0, fogNight: 0x0a0d1a,
+    groundDay: '#4d7a3e', groundNight: '#22301f', groundDotDay: '70,115,55', groundDotNight: '30,45,28',
+    pathDay: 0x8f8570, pathNight: 0x4a4438, crystal: 0x22d3ee, treeStyle: 'leafy', houses: 'village', treeCount: 44,
+  },
+  forest: {
+    skyDay: 0x4a6b52, skyNight: 0x070b10, fogDay: 0x5d7a64, fogNight: 0x0a1210,
+    groundDay: '#2e4a2a', groundNight: '#131f13', groundDotDay: '40,75,38', groundDotNight: '20,38,20',
+    pathDay: 0x6b5d4a, pathNight: 0x3a332b, crystal: 0xa855f7, treeStyle: 'pine', houses: 'ruin', treeCount: 60,
+  },
+  tundra: {
+    skyDay: 0xb8d4e8, skyNight: 0x0c1522, fogDay: 0xd8e8f4, fogNight: 0x16222e,
+    groundDay: '#c8d8e0', groundNight: '#3a4a58', groundDotDay: '190,205,215', groundDotNight: '70,88,100',
+    pathDay: 0x8ca0b0, pathNight: 0x445260, crystal: 0x7dd3fc, treeStyle: 'pine', houses: 'ruin', treeCount: 34,
+  },
+  volcano: {
+    skyDay: 0x3a1f1a, skyNight: 0x140808, fogDay: 0x54261c, fogNight: 0x200a08,
+    groundDay: '#3a2a24', groundNight: '#1c1210', groundDotDay: '90,52,40', groundDotNight: '48,28,22',
+    pathDay: 0x5a4034, pathNight: 0x302019, crystal: 0xf97316, treeStyle: 'dead', houses: 'none', treeCount: 22,
+  },
+  wastes: {
+    skyDay: 0x9a8f78, skyNight: 0x11131a, fogDay: 0xb0a68c, fogNight: 0x1a1e26,
+    groundDay: '#7a6f5a', groundNight: '#2a2822', groundDotDay: '120,110,88', groundDotNight: '44,42,36',
+    pathDay: 0x8a8070, pathNight: 0x3c3a34, crystal: 0x38bdf8, treeStyle: 'none', houses: 'debris', treeCount: 8,
+  },
+  citadel: {
+    skyDay: 0x241a30, skyNight: 0x0c0814, fogDay: 0x2e2242, fogNight: 0x120c1e,
+    groundDay: '#2a2438', groundNight: '#14101e', groundDotDay: '52,44,68', groundDotNight: '30,24,44',
+    pathDay: 0x453c52, pathNight: 0x262032, crystal: 0xa855f7, treeStyle: 'dead', houses: 'ruin', treeCount: 18,
+  },
+};
 
 export class BattleScene {
   scene: THREE.Scene;
@@ -20,6 +66,8 @@ export class BattleScene {
   private decorSpinners: { obj: THREE.Object3D; speed: number }[] = [];
   private portalPulse = 0;
   private quality: 'low' | 'medium' | 'high' | 'ultra' = 'medium';
+  private theme: EnvTheme;
+  private level: LevelData;
 
   constructor(canvas: HTMLCanvasElement, level: LevelData, quality: 'low' | 'medium' | 'high' | 'ultra') {
     this.quality = quality;
@@ -38,6 +86,8 @@ export class BattleScene {
     this.renderer.toneMappingExposure = 1.05;
 
     const night = level.timeOfDay === 'night';
+    this.theme = ENV_THEMES[level.env] ?? ENV_THEMES.plains;
+    this.level = level;
 
     // نورپردازی محیطی PBR — متریال‌های واقعی GLB (فلز/سنگ/پارچه) درست دیده شوند
     if (quality !== 'low') {
@@ -48,14 +98,15 @@ export class BattleScene {
       pmrem.dispose();
     }
 
-    // آسمان و مه
-    this.scene.background = new THREE.Color(night ? 0x0a0d1a : 0x87b5d9);
-    this.scene.fog = new THREE.Fog(night ? 0x0a0d1a : 0xa9c8e0, 60, 150);
+    // آسمان و مه — بر اساس تم منطقه
+    this.scene.background = new THREE.Color(night ? this.theme.skyNight : this.theme.skyDay);
+    this.scene.fog = new THREE.Fog(night ? this.theme.fogNight : this.theme.fogDay, 55, 145);
 
-    // نورپردازی
+    // نورپردازی — رنگ آفتاب بر اساس تم
+    const sunTint = level.env === 'volcano' ? 0xffb090 : level.env === 'tundra' ? 0xe8f4ff : level.env === 'citadel' ? 0x9a88c8 : 0xfff2d9;
     const hemi = new THREE.HemisphereLight(night ? 0x334466 : 0xbfd9ff, night ? 0x1a1a24 : 0x3f6b3f, night ? 0.7 : 1.0);
     this.scene.add(hemi);
-    const sun = new THREE.DirectionalLight(night ? 0x8899ff : 0xfff2d9, night ? 0.8 : 1.6);
+    const sun = new THREE.DirectionalLight(night ? 0x8899ff : sunTint, night ? 0.8 : 1.6);
     sun.position.set(-30, 45, -20);
     if (this.renderer.shadowMap.enabled) {
       sun.castShadow = true;
@@ -104,7 +155,8 @@ export class BattleScene {
     const c = document.createElement('canvas');
     c.width = c.height = 256;
     const ctx = c.getContext('2d')!;
-    const base = night ? '#22301f' : '#4d7a3e';
+    const base = night ? this.theme.groundNight : this.theme.groundDay;
+    const dot = night ? this.theme.groundDotNight : this.theme.groundDotDay;
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, 256, 256);
     const rnd = (seed: number) => {
@@ -115,13 +167,13 @@ export class BattleScene {
       };
     };
     const r = rnd(12345);
-    for (let i = 0; i < 1400; i++) {
+    const density = this.level.env === 'volcano' || this.level.env === 'citadel' ? 900 : 1400;
+    for (let i = 0; i < density; i++) {
       const x = r() * 256;
       const y = r() * 256;
       const tone = 0.85 + r() * 0.3;
-      ctx.fillStyle = night
-        ? `rgba(${30 * tone},${45 * tone},${28 * tone},0.5)`
-        : `rgba(${70 * tone},${115 * tone},${55 * tone},0.5)`;
+      const [dr, dg, db] = dot.split(',').map(Number);
+      ctx.fillStyle = `rgba(${Math.round(dr * tone)},${Math.round(dg * tone)},${Math.round(db * tone)},0.5)`;
       ctx.fillRect(x, y, 2 + r() * 3, 2 + r() * 3);
     }
     const tex = new THREE.CanvasTexture(c);
@@ -173,7 +225,7 @@ export class BattleScene {
     geo.setIndex(indices);
     geo.computeVertexNormals();
 
-    const mat = new THREE.MeshStandardMaterial({ color: night ? 0x4a4438 : 0x8f8570, roughness: 1 });
+    const mat = new THREE.MeshStandardMaterial({ color: night ? this.theme.pathNight : this.theme.pathDay, roughness: 1 });
     const pathMesh = new THREE.Mesh(geo, mat);
     pathMesh.receiveShadow = this.renderer.shadowMap.enabled;
     this.scene.add(pathMesh);
@@ -204,12 +256,13 @@ export class BattleScene {
     discMesh.receiveShadow = this.renderer.shadowMap.enabled;
     this.scene.add(discMesh);
 
-    // سنگ‌فرش کنار مسیر + نشانگرهای جادویی
+    // سنگ‌فرش کنار مسیر + نشانگرهای جادویی — رنگ کریستال تم
+    const runeColor = this.theme.crystal;
     for (let i = 0; i < pts.length; i += 6) {
       const p = pts[i];
       const rune = new THREE.Mesh(
         new THREE.CircleGeometry(0.5, 6),
-        new THREE.MeshBasicMaterial({ color: night ? 0x4c1d95 : 0x7c5cd6, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false })
+        new THREE.MeshBasicMaterial({ color: runeColor, transparent: true, opacity: night ? 0.55 : 0.4, blending: THREE.AdditiveBlending, depthWrite: false })
       );
       rune.rotation.x = -Math.PI / 2;
       rune.position.set(p.x, 0.09, p.z);
@@ -234,10 +287,11 @@ export class BattleScene {
       };
     };
     const r = rnd(777);
+    const theme = this.theme;
 
-    // کوه‌های دور
+    // کوه‌های دور — رنگ بر اساس تم
     for (let i = 0; i < 7; i++) {
-      const m = buildMountain();
+      const m = buildMountain(theme === ENV_THEMES.volcano ? 'dark' : theme === ENV_THEMES.tundra ? 'snow' : theme === ENV_THEMES.citadel ? 'obsidian' : 'normal');
       const a = (i / 7) * Math.PI * 2 + 0.3;
       const dist = 62 + r() * 14;
       m.position.set(Math.cos(a) * dist, 0, Math.sin(a) * dist);
@@ -246,57 +300,95 @@ export class BattleScene {
       this.scene.add(m);
     }
 
-    // درختان
-    const treeCount = this.quality === 'low' ? 26 : 44;
-    for (let i = 0; i < treeCount; i++) {
-      const x = (r() - 0.5) * 66;
-      const z = (r() - 0.5) * 66;
-      if (nearPath(x, z, 4.5)) continue;
-      if (Math.hypot(x - this.corePos.x, z - this.corePos.z) < 7) continue;
-      const tree = buildTree();
-      tree.position.set(x, 0, z);
-      tree.scale.setScalar(0.7 + r() * 0.8);
-      tree.rotation.y = r() * Math.PI;
-      this.scene.add(tree);
+    // درختان — سبک تم
+    if (theme.treeStyle !== 'none') {
+      const treeCount = this.quality === 'low' ? Math.round(theme.treeCount * 0.6) : theme.treeCount;
+      for (let i = 0; i < treeCount; i++) {
+        const x = (r() - 0.5) * 66;
+        const z = (r() - 0.5) * 66;
+        if (nearPath(x, z, 4.5)) continue;
+        if (Math.hypot(x - this.corePos.x, z - this.corePos.z) < 7) continue;
+        const tree = theme.treeStyle === 'pine'
+          ? buildPineTree(theme === ENV_THEMES.tundra)
+          : theme.treeStyle === 'dead'
+            ? buildDeadTree()
+            : buildTree();
+        tree.position.set(x, 0, z);
+        tree.scale.setScalar(0.7 + r() * 0.8);
+        tree.rotation.y = r() * Math.PI;
+        this.scene.add(tree);
+      }
     }
 
-    // سنگ‌ها
+    // سنگ‌ها / سنگ سیاه آتشفشانی
     for (let i = 0; i < 20; i++) {
       const x = (r() - 0.5) * 64;
       const z = (r() - 0.5) * 64;
       if (nearPath(x, z, 4)) continue;
-      const rock = buildRock(0.5 + r());
+      const rock = this.level.env === 'volcano' || this.level.env === 'citadel'
+        ? buildObsidianRock(0.5 + r())
+        : buildRock(0.5 + r());
       rock.position.set(x, 0, z);
       this.scene.add(rock);
     }
 
-    // روستا — کنار مسیر (حس دشت سبز)
-    const houseSpots = [
-      { x: -20, z: -8 }, { x: -23, z: -12 }, { x: 4, z: -8 }, { x: 8, z: 14 }, { x: 4, z: 18 },
-    ];
-    for (const s of houseSpots) {
-      const h = buildHouse();
-      h.position.set(s.x, 0, s.z);
-      h.rotation.y = r() * Math.PI * 2;
-      this.scene.add(h);
+    // سازه‌ها بر اساس تم
+    if (theme.houses === 'village') {
+      const houseSpots = [
+        { x: -20, z: -8 }, { x: -23, z: -12 }, { x: 4, z: -8 }, { x: 8, z: 14 }, { x: 4, z: 18 },
+      ];
+      for (const s of houseSpots) {
+        const h = buildHouse();
+        h.position.set(s.x, 0, s.z);
+        h.rotation.y = r() * Math.PI * 2;
+        this.scene.add(h);
+      }
+    } else if (theme.houses === 'ruin') {
+      const ruinSpots = [
+        { x: -20, z: -8 }, { x: 6, z: -10 }, { x: 10, z: 16 }, { x: -14, z: 16 },
+      ];
+      for (const s of ruinSpots) {
+        const h = buildHouse(true);
+        h.position.set(s.x, 0, s.z);
+        h.rotation.y = r() * Math.PI * 2;
+        this.scene.add(h);
+      }
+    } else if (theme.houses === 'debris') {
+      const debrisSpots = [
+        { x: -20, z: -8 }, { x: -22, z: -14 }, { x: 6, z: -10 }, { x: 12, z: 14 }, { x: 20, z: 18 }, { x: -12, z: 18 },
+      ];
+      for (const s of debrisSpots) {
+        const d = buildDebris();
+        d.position.set(s.x, 0, s.z);
+        d.rotation.y = r() * Math.PI * 2;
+        this.scene.add(d);
+      }
     }
 
-    // کریستال‌های جادویی درخشان (سایه‌روشن فانتزی-مدرن)
+    // کریستال‌های جادویی — رنگ تم منطقه
     const crystalSpots = [
       { x: -12, z: 12 }, { x: 28, z: -14 }, { x: -26, z: 20 }, { x: 26, z: 10 },
     ];
     for (const s of crystalSpots) {
-      const c = buildCrystal(night ? 0xa855f7 : 0x22d3ee);
+      const c = buildCrystal(theme.crystal);
       c.position.set(s.x, 0, s.z);
       c.scale.setScalar(0.8 + r() * 0.5);
       this.scene.add(c);
       this.decorSpinners.push({ obj: c, speed: 0.5 + r() });
-      const l = new THREE.PointLight(0x22d3ee, night ? 6 : 3, 8, 1.8);
+      const l = new THREE.PointLight(theme.crystal, night ? 6 : 3, 8, 1.8);
       l.position.set(s.x, 1.4, s.z);
       this.scene.add(l);
     }
 
-    void level;
+    // نور قرمز آتشفشان
+    if (this.level.env === 'volcano') {
+      for (const s of [{ x: -18, z: -18 }, { x: 20, z: 20 }]) {
+        const glow = new THREE.PointLight(0xff5a1f, night ? 14 : 8, 18, 1.6);
+        glow.position.set(s.x, 1, s.z);
+        this.scene.add(glow);
+      }
+    }
+
     void pathPts;
   }
 

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   Heart, Coins, Gem, Play, Pause, FastForward, Zap, Flame, Shield, Snowflake,
   Crosshair, X, Star, Home, RotateCcw, Settings, User, Sparkles, ArrowUpCircle,
-  Trash2, Target, Clock,
+  Trash2, Target, Clock, FlaskConical, MoveDiagonal, Sun, Moon,
 } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { TOWERS, TOWER_BUILD_ORDER } from '@/game/data/towers';
@@ -17,12 +17,15 @@ import type { TargetingMode } from '@/game/data/types';
 // HUD نبرد — تمام رابط داخل بازی
 // ============================================================
 
-const TOWER_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const TOWER_ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   sentinel: Crosshair, lightning: Zap, fire: Flame, ice: Snowflake,
+  cannon: Target, poison: FlaskConical, ballista: MoveDiagonal,
+  arcane: Sparkles, temple: Sun, void: Moon,
 };
 
-const MAGIC_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const MAGIC_ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   skyLightning: Zap, fireRain: Flame, arianaShield: Shield,
+  deepFreeze: Snowflake, azarBlessing: Sun, coreMend: Heart,
 };
 
 const TARGET_LABEL: Record<TargetingMode, string> = {
@@ -58,7 +61,7 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
   const game = actions.get();
 
   const corePct = Math.round((st.coreHp / st.coreMaxHp) * 100);
-  const heroData = HEROES.arman;
+  const heroData = HEROES[st.selectedHero] ?? HEROES.arman;
 
   const togglePause = (p: boolean) => {
     game?.setPaused(p);
@@ -194,8 +197,8 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
         </div>
       )}
 
-      {/* ================= جادو (سمت چپ) ================= */}
-      <div className="absolute bottom-4 left-3 flex flex-col gap-2 pointer-events-auto">
+      {/* ================= جادو (سمت چپ — شبکه ۲ ستونه) ================= */}
+      <div className="absolute bottom-4 left-3 grid w-[7.5rem] grid-cols-2 gap-2 pointer-events-auto">
         {st.magicState.map((m) => {
           const M = MAGIC[m.id];
           const Icon = MAGIC_ICONS[m.id] ?? Sparkles;
@@ -225,8 +228,8 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
         })}
       </div>
 
-      {/* ================= قهرمان (دکمه ثابت) ================= */}
-      <div className="absolute bottom-24 left-3 pointer-events-auto">
+      {/* ================= قهرمان (بالای شبکه جادو) ================= */}
+      <div className="absolute bottom-[13.5rem] left-3 pointer-events-auto">
         <button onClick={() => {
           if (!st.hero?.deployed) {
             useGameStore.getState().pushToast('deployHint', 'info');
@@ -251,9 +254,9 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
         </button>
       </div>
 
-      {/* ================= نوار برج‌ها (پایین) ================= */}
+      {/* ================= نوار برج‌ها (پایین — اسکرول افقی) ================= */}
       <div className="absolute inset-x-0 bottom-0 border-t border-amber-400/20 bg-gradient-to-t from-black/90 to-black/50 p-2.5 pointer-events-auto">
-        <div className="flex items-end justify-center gap-2 pb-1">
+        <div className="flex items-end gap-2 overflow-x-auto pb-1 sm:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TOWER_BUILD_ORDER.map((id) => {
             const tw = TOWERS[id];
             const Icon = TOWER_ICONS[id];
@@ -262,11 +265,11 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
             return (
               <button key={id}
                 onClick={() => game?.setBuildMode(active ? null : id)}
-                className={`relative flex w-[4.4rem] flex-col items-center gap-0.5 rounded-xl border px-1 py-2 backdrop-blur-sm transition-all active:scale-95
+                className={`relative flex w-[4.1rem] shrink-0 flex-col items-center gap-0.5 rounded-xl border px-1 py-2 backdrop-blur-sm transition-all active:scale-95
                   ${active ? 'border-white bg-white/15 scale-105' :
                   afford ? 'border-slate-600/60 bg-black/60' : 'border-slate-800/60 bg-black/60 opacity-50'}`}>
                 <Icon className="h-6 w-6" style={{ color: '#' + tw.color.toString(16).padStart(6, '0') }} />
-                <span className="text-[11px] font-black text-slate-200">{t(tw.nameKey)}</span>
+                <span className="whitespace-nowrap text-[11px] font-black text-slate-200">{t(tw.nameKey)}</span>
                 <span className="flex items-center gap-0.5 text-[10px] font-black text-amber-400">
                   <Coins className="h-3 w-3" />
                   {faNum(tw.cost)}
@@ -428,7 +431,7 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
   titleClass: string;
   subtitle: string;
   stars: number;
-  rewards?: { icon: React.ComponentType<{ className?: string }>; value: string; label: string; color: string }[];
+  rewards?: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; value: string; label: string; color: string }[];
   actions: BattleActions;
 }) {
   const backToMap = () => {
@@ -559,7 +562,7 @@ function VolumeSlider({ label, value, onChange }: { label: string; value: number
 }
 
 function MenuActionBtn({ icon: Icon, label, onClick, primary }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string; onClick: () => void; primary?: boolean;
 }) {
   return (

@@ -20,10 +20,10 @@ export interface FallbackCharacter {
   weaponPointLocal?: THREE.Vector3;
 }
 
-export function createFallbackHero(): FallbackCharacter {
-  const g = buildHeroMesh();
+export function createFallbackHero(heroId = 'arman'): FallbackCharacter {
+  const g = buildHeroMesh(heroId);
   g.userData.placeholder = true;
-  g.userData.placeholderReason = 'awaiting arman.glb';
+  g.userData.placeholderReason = `awaiting ${heroId}.glb`;
   g.userData.characterSource = 'procedural-placeholder';
   return {
     group: g,

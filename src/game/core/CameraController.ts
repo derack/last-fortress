@@ -8,7 +8,7 @@ import * as THREE from 'three';
 export class CameraController {
   camera: THREE.PerspectiveCamera;
   private target = new THREE.Vector3(0, 0, 0);
-  private desiredTarget = new THREE.Vector3(0, 0, 0);
+  desiredTarget = new THREE.Vector3(0, 0, 0);
   private radius = 42;
   private desiredRadius = 42;
   private yaw = Math.PI * 0.25;

@@ -1,7 +1,7 @@
 import type { MagicData, HeroData } from './types';
 
 // ============================================================
-// جادوهای بازیکن (Vertical Slice: ۳ جادو از ۶ جادو)
+// جادوهای بازیکن — ۶ جادو (Data-Driven)
 // ============================================================
 
 export const MAGIC: Record<string, MagicData> = {
@@ -39,12 +39,48 @@ export const MAGIC: Record<string, MagicData> = {
     targeted: false,
     color: '#fbbf24',
   },
+  deepFreeze: {
+    id: 'deepFreeze',
+    nameKey: 'magicDeepFreeze',
+    descKey: 'magicDeepFreezeDesc',
+    crystalCost: 18,
+    cooldown: 35,
+    radius: 6,
+    duration: 4,
+    freezeFactor: 0.12,
+    damage: 60,
+    targeted: true,
+    color: '#67e8f9',
+  },
+  azarBlessing: {
+    id: 'azarBlessing',
+    nameKey: 'magicAzarBlessing',
+    descKey: 'magicAzarBlessingDesc',
+    crystalCost: 22,
+    cooldown: 50,
+    radius: 0,
+    duration: 10,
+    rateBuffPct: 0.45,
+    targeted: false,
+    color: '#fcd34d',
+  },
+  coreMend: {
+    id: 'coreMend',
+    nameKey: 'magicCoreMend',
+    descKey: 'magicCoreMendDesc',
+    crystalCost: 20,
+    cooldown: 70,
+    radius: 0,
+    healCore: 25,
+    targeted: false,
+    color: '#4ade80',
+  },
 };
 
-export const MAGIC_IDS = ['skyLightning', 'fireRain', 'arianaShield'];
+export const MAGIC_IDS = ['skyLightning', 'fireRain', 'arianaShield', 'deepFreeze', 'azarBlessing', 'coreMend'];
 
 // ============================================================
-// قهرمان — آرمان، فرمانده آخرین سنگر
+// قهرمانان — ۴ قهرمان قابل بازی با Role متمایز
 // ============================================================
 
 export const HEROES: Record<string, HeroData> = {
@@ -52,17 +88,91 @@ export const HEROES: Record<string, HeroData> = {
     id: 'arman',
     nameKey: 'heroArman',
     titleKey: 'heroArmanTitle',
+    descKey: 'heroArmanDesc',
+    role: 'commander',
     hp: 600,
     damage: 26,
     range: 10,
     fireRate: 2.0,
     moveSpeed: 6,
     xpPerLevel: 120,
+    attackType: 'physical',
+    projectileColor: 0xffd54a,
     abilityNameKey: 'heroCommand',
     abilityDescKey: 'heroCommandDesc',
     abilityCooldown: 32,
     abilityDuration: 8,
     abilityBuff: 40,
+    abilityKind: 'battleCommand',
+    unlockCost: 0,
+  },
+  aria: {
+    id: 'aria',
+    nameKey: 'heroAria',
+    titleKey: 'heroAriaTitle',
+    descKey: 'heroAriaDesc',
+    role: 'guardian',
+    hp: 480,
+    damage: 34,
+    range: 9,
+    fireRate: 1.2,
+    moveSpeed: 5.4,
+    xpPerLevel: 130,
+    attackType: 'magic',
+    projectileColor: 0x67e8f9,
+    splash: 2.6,
+    abilityNameKey: 'heroAegis',
+    abilityDescKey: 'heroAegisDesc',
+    abilityCooldown: 45,
+    abilityDuration: 6,
+    abilityBuff: 100,
+    abilityKind: 'aegisShield',
+    unlockCost: 150,
+  },
+  radin: {
+    id: 'radin',
+    nameKey: 'heroRadin',
+    titleKey: 'heroRadinTitle',
+    descKey: 'heroRadinDesc',
+    role: 'berserker',
+    hp: 1050,
+    damage: 58,
+    range: 2.6,
+    fireRate: 1.4,
+    moveSpeed: 5.2,
+    xpPerLevel: 140,
+    attackType: 'physical',
+    projectileColor: 0xf87171,
+    cleave: 3,
+    abilityNameKey: 'heroFrenzy',
+    abilityDescKey: 'heroFrenzyDesc',
+    abilityCooldown: 38,
+    abilityDuration: 8,
+    abilityBuff: 80,
+    abilityKind: 'warFrenzy',
+    unlockCost: 200,
+  },
+  nila: {
+    id: 'nila',
+    nameKey: 'heroNila',
+    titleKey: 'heroNilaTitle',
+    descKey: 'heroNilaDesc',
+    role: 'ranger',
+    hp: 430,
+    damage: 30,
+    range: 13,
+    fireRate: 2.6,
+    moveSpeed: 6.6,
+    xpPerLevel: 125,
+    attackType: 'physical',
+    projectileColor: 0xc084fc,
+    abilityNameKey: 'heroArrows',
+    abilityDescKey: 'heroArrowsDesc',
+    abilityCooldown: 36,
+    abilityDuration: 0,
+    abilityBuff: 90,
+    abilityKind: 'rainOfArrows',
+    unlockCost: 150,
   },
 };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { Swords, Users, Trophy, Settings, Gem } from 'lucide-react';
+import { Swords, Users, Trophy, Settings, Gem, Map } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { t, faNum } from '@/game/data/i18n';
 
@@ -47,6 +47,7 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
             <Swords className="h-6 w-6" />
             {t('play')}
           </button>
+          <MenuButton icon={Map} label={t('campaign')} onClick={() => setScreen('map')} />
           <MenuButton icon={Users} label={t('heroes')} onClick={() => setScreen('heroes')} />
           <MenuButton icon={Trophy} label={t('achievements')} onClick={() => setScreen('achievements')} badge={save ? save.achievements.length : 0} />
           <MenuButton icon={Settings} label={t('settings')} onClick={() => setScreen('settings')} />

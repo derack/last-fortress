@@ -1,8 +1,12 @@
 import * as THREE from 'three';
+import type { DamageType, ProjectileKind } from '../data/types';
 import type { GameContext, DamageableEnemy } from './context';
 
 // ============================================================
-// پرتابه‌ها — گلوله، گلوله آتشین، برفک — با Object Pool
+// پرتابه‌ها — گلوله/آتشین/برفک/توپ/زهر/پیکان/پرایسم/نفرین
+// ------------------------------------------------------------
+// همه انواع از یک کلاس Data-Driven استفاده می‌کنند:
+// سرعت، هندسه، دنباله و نوع آسیب بر اساس kind
 // ============================================================
 
 interface ProjectileOpts {
@@ -11,7 +15,37 @@ interface ProjectileOpts {
   burn?: number;
   slow?: number;
   slowDur?: number;
+  poisonDps?: number;
+  poisonDur?: number;
+  pierceArmor?: boolean;
+  dmgType?: DamageType;
   color: number;
+}
+
+const KIND_SPEED: Record<string, number> = {
+  bullet: 55,
+  frost: 32,
+  fireball: 20,
+  cannonball: 17,
+  venom: 24,
+  bolt: 70,
+  prism: 40,
+  hex: 30,
+  shard: 35,
+  beam: 80,
+};
+
+function kindGeometry(kind: string): THREE.BufferGeometry {
+  switch (kind) {
+    case 'bullet': return new THREE.SphereGeometry(0.14, 6, 6);
+    case 'frost': return new THREE.OctahedronGeometry(0.22);
+    case 'cannonball': return new THREE.SphereGeometry(0.42, 10, 8);
+    case 'venom': return new THREE.IcosahedronGeometry(0.24, 0);
+    case 'bolt': return new THREE.ConeGeometry(0.09, 0.85, 5);
+    case 'prism': return new THREE.OctahedronGeometry(0.26);
+    case 'hex': return new THREE.TetrahedronGeometry(0.26);
+    default: return new THREE.SphereGeometry(0.34, 8, 8); // fireball / shard / beam
+  }
 }
 
 export class Projectile {
@@ -20,7 +54,7 @@ export class Projectile {
   private lastTargetPos: THREE.Vector3;
   private speed: number;
   private opts: ProjectileOpts;
-  private kind: string;
+  private kind: ProjectileKind | string;
   private alive = true;
   private life = 4;
   private ctx: GameContext;
@@ -35,18 +69,15 @@ export class Projectile {
     this.lastTargetPos = target
       ? target.getPos().clone()
       : from.clone().setY(0.2);
-    this.speed = kind === 'bullet' ? 55 : kind === 'frost' ? 32 : 20;
+    this.speed = KIND_SPEED[kind] ?? 25;
     this.life = 4;
 
-    const geo = kind === 'bullet'
-      ? new THREE.SphereGeometry(0.14, 6, 6)
-      : kind === 'frost'
-        ? new THREE.OctahedronGeometry(0.22)
-        : new THREE.SphereGeometry(0.34, 8, 8);
+    const geo = kindGeometry(kind);
+    const emissive = kind === 'fireball' || kind === 'cannonball' ? 2.2 : 1.6;
     const mat = new THREE.MeshStandardMaterial({
       color: opts.color,
       emissive: opts.color,
-      emissiveIntensity: kind === 'fireball' ? 2.2 : 1.6,
+      emissiveIntensity: emissive,
       roughness: 0.4,
     });
     this.mesh = new THREE.Mesh(geo, mat);
@@ -79,8 +110,12 @@ export class Projectile {
     this.velocity.copy(dir).multiplyScalar(this.speed);
     this.mesh.position.addScaledVector(this.velocity, dt);
 
+    // جهت‌گیری پیکان بالیستا
+    if (this.kind === 'bolt') this.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+
     // دنباله
-    if (this.kind !== 'bullet' && Math.random() < dt * 30) {
+    const trailRate = this.kind === 'bullet' ? 0 : this.kind === 'venom' ? 40 : 30;
+    if (trailRate > 0 && Math.random() < dt * trailRate) {
       this.ctx.vfx.burst(this.mesh.position, this.opts.color, 1, { speed: 0.6, life: 0.3, size: 0.4, gravity: -1 });
     }
     if (this.mesh.position.y < 0.1) {
@@ -89,6 +124,9 @@ export class Projectile {
   }
 
   private impact(scene: THREE.Scene, at: THREE.Vector3) {
+    const dmgType: DamageType = this.opts.dmgType
+      ?? (this.kind === 'fireball' ? 'fire' : this.kind === 'frost' ? 'ice' : 'physical');
+
     if (this.opts.splash) {
       // آسیب ناحیه‌ای
       for (const e of this.ctx.enemies) {
@@ -96,16 +134,22 @@ export class Projectile {
         const d = e.getPos().distanceTo(at);
         if (d <= this.opts.splash) {
           const falloff = 1 - (d / this.opts.splash) * 0.45;
-          e.takeDamage(this.opts.damage * falloff, this.kind === 'fireball' ? 'fire' : 'ice');
+          e.takeDamage(this.opts.damage * falloff, dmgType);
           if (this.opts.burn) e.applyBurn(this.opts.burn, 3);
           if (this.opts.slow) e.applySlow(this.opts.slow, this.opts.slowDur ?? 2);
+          if (this.opts.poisonDps) e.applyBurn(this.opts.poisonDps, this.opts.poisonDur ?? 4);
         }
       }
-      this.ctx.vfx.explosion(at, this.opts.color, this.kind === 'fireball');
-      this.ctx.audio.play(this.kind === 'fireball' ? 'cannon' : 'freeze');
+      this.ctx.vfx.explosion(at, this.opts.color, this.kind === 'fireball' || this.kind === 'cannonball');
+      this.ctx.audio.play(this.kind === 'fireball' || this.kind === 'cannonball' ? 'cannon' : 'freeze');
     } else if (this.target && this.target.alive) {
-      this.target.takeDamage(this.opts.damage, this.kind === 'frost' ? 'ice' : 'physical');
+      this.target.takeDamage(this.opts.damage, dmgType, this.opts.pierceArmor);
       if (this.opts.slow) this.target.applySlow(this.opts.slow, this.opts.slowDur ?? 2);
+      if (this.opts.poisonDps) {
+        this.target.applyBurn(this.opts.poisonDps, this.opts.poisonDur ?? 4);
+        this.ctx.vfx.burst(at, 0x84cc16, 6, { speed: 2.5, life: 0.5, size: 0.45, gravity: 2 });
+      }
+      if (this.opts.burn) this.target.applyBurn(this.opts.burn, 3);
     }
     this.destroy(scene);
   }

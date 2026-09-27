@@ -41,3 +41,34 @@ Stage Summary:
 - خط لوله کامل فعال است: به‌محض قرار گرفتن هر GLB واقعی در public/assets/3d/... با نام‌های README، بدون یک خط تغییر کد، مدل واقعی+انیمیشن+نقاط VFX جایگزین Placeholder می‌شود (با تست موقت اثبات شد)
 - صداقت کامل: در این محیط ابزار تولید Asset سه‌بعدی واقعی وجود ندارد؛ هیچ GLB جعلی به‌عنوان Asset معرفی نشد؛ Placeholderها صریحاً «موقت» برچسب خورده‌اند (userData.placeholder + گالری + کنسول)
 - ۲۹ مشخصات کامل مدل‌سازی آماده است؛ حجم مورد انتظار نهایی GLBها ≈ ۸۵-۱۰۰MB
+
+---
+Task ID: 3
+Agent: main (Super Z)
+Task: گسترش کامل محتوا تا مشخصات ۱۰۲ بندی — ۱۰ برج، ۲۶ دشمن/Boss، ۴ قهرمان، ۶ جادو، ۶ منطقه قابل بازی + LOD
+
+Work Log:
+- types.ts: ProjectileKind×۵ جدید (cannonball/bolt/venom/prism/hex)، TowerData (poisonDps/armorShred/pierceArmor/execute/buffAura/towerHeight)، EnemyData (healer/summoner/regen)، MagicId×۶، HeroData (role/attackType/abilityKind/unlockCost)، RegionEnv شش‌گانه، SaveData (unlockedHeroes/selectedHero)
+- towers.ts: ۶ برج جدید — توپخانه (splash زمینی)، زهرخانه (DoT+شکستن زره)، بالیستا (برد ۱۹+نادیده‌گرفتن زره)، رازآسا (پرایسم جادویی)، آذرگاه (هاله تقویت برج‌ها)، برج تهی (اجرا روی کم‌جان‌ها) — TOWER_BUILD_ORDER ده‌تایی
+- enemies.ts: ۱۳ دشمن + ۴ Boss — shadowSoldier/spirit(شفادهنده)/hunter(جاخالی ۳۰٪)/warMachine/crystalMonster(مقاوم انرژی)/smallDragon(پرنده)/summoner(احضار shadow)/aetherTank(regen)/destroyer + Bossها: annihilator(مکانیکی regen)/fireGiant/iceGiant/blackDragon(پرنده)/darkLord(احضارکننده، Final Boss) — مجموع ۲۶ کاراکتر
+- magic.ts: deepFreeze (کندی ۰٫۱۲)، azarBlessing (+۴۵٪ سرعت شلیک همه برج‌ها)، coreMend (+۲۵ HP هسته) + قهرمانان aria (magic splash + سپر اثری)/radin (melee cleave ۳ + خشم جنگ)/nila (برد ۱۳ + باران تیر)
+- levels.ts (جدید): ۶ منطقه کامل با مسیر منحصربه‌فرد/تم/موج‌های ۱۰تایی/Boss — l1 دشت(plains)/golemKing، l2 جنگل شب(forest)/fireGiant، l3 توندرا(tundra)/iceGiant، l4 آتشفشان(volcano)/blackDragon، l5 ویرانه ماشین(wastes)/annihilator، l6 دژ(citadel)/darkLord + isRegionUnlocked (فتح زنجیره‌ای)
+- i18n: ~۱۱۰ کلید جدید fa/en + parity کامل با اسکریپت diff، اصلاح {۰}→{0}، نام مناطق جدید
+- Enemy.ts: applyShred (شکستن زره مؤثر در takeDamage)، healAllies، summonMinions (summonAt با enemyId)، regen — context.ts به‌روز
+- Tower.ts: ۶ کیس ability جدید (شلیک مرگبار/مه سمی/پیکان شکافنده/انفجار جادویی/ستایش آذر/دهانه تهی)، هاله تقویت پالسی applyLocalBuff، fire() با dmgType + executeBonus
+- Projectile.ts: بازنویسی Data-Driven — سرعت/هندسه/دنباله بر اساس kind، opts جدید (dmgType/poisonDps/pierceArmor)
+- Hero.ts: بازنویسی چندقهرمانی — attack() بر اساس role (شلیک/گوی جادویی splash/کلنگ cleave)، useAbility با ۴ abilityKind، findCluster برای باران تیر
+- Game.ts: heroId پارامتر، ۳ کیس جادوی جدید، requestCoreShield (سپر اثری)، رگبار تیر (visual:'arrow')، heroState پویا، towerRateBuff = فرمان نبرد + برکت آذر
+- BattleScene.ts: ENV_THEMES شش‌گانه (آسمان/مه/زمین/مسیر/کریستال/درخت/سازه)، buildGround/buildPathMesh/buildEnvironment theme-aware، نور آفتاب per-region، نور گداخته آتشفشان
+- models.ts: ۶ برج جدید (توپ/دیگ زهر/بالیستا/پرایسم/محراب/منولیت تهی)، ۱۴ سیلوئت دشمن متمایز، buildHeroMesh(heroId) چهارگانه (آریا ردا+عصا/رادین کلنگ/نیلا کمان+کلاه‌ریش)، buildPineTree/DeadTree/Debris/ObsidianRock، buildMountain(style)، buildHouse(ruined)
+- Asset Pipeline: همه ورودی‌ها phase:'slice'، ۷ ورودی برج جدید در Manifest، createFallbackHero(entry.id) — باگ placeholder قهرمان اشتباه رفع شد
+- LOD (بخش ۱۶): ModelNormalizer تشخیص گره‌های *LOD1/*LOD2، CharacterHandle.updateLod (سه‌سطحی ۲۲/۳۸ با lodBase)، اتصال به حلقه Game برای hero+enemies — برای GLB واقعی فعال، Placeholder بی‌هزینه
+- Save/Store/Shell: unlockedHeroes+selectedHero با مهاجرت، setPendingLevel/setSelectedHero/unlockHero، GameShell از LEVELS[pendingLevelId] + selectedHero
+- UI: CampaignMap بازنویسی (۶ منطقه پویا، unlock زنجیره‌ای، briefing per-region با Boss/دشمنان)، BattleUI (۱۰ برج اسکرول افقی، ۶ جادو گرید ۲×۳، heroData پویا، رفع همپوشانی قهرمان/جادو)، HeroesPanel بازنویسی (بازکردن با کریستال/انتخاب/آمار)، MainMenu دکمه نقشه
+- رفع خطاهای pre-existing تایپ (desiredTarget private، MAGIC[null]، TowerInfo cast، icon style prop)
+- تست مرورگر کامل: نقشه ۶ منطقه با قفل زنجیره‌ای ✓، ساخت توپخانه/زهرخانه/آذرگاه ✓، شلیک و آسیب (hp ۱۰۵→۴۵→۱) ✓، یخبندان و استقرار قهرمان ✓، بازکردن نیلا با کریستال + persist ✓، شکست و اورلی ✓، گالری ۴۰ Asset با برچسب صادقانه ✓، منطقه ۲ تم شب جنگل ✓، shadowSoldier hp دقیق طبق داده ✓، کنسول صفر error ✓، tsc/eslint/build تمیز ✓
+
+Stage Summary:
+- بازی از Vertical Slice به محتوای کامل مشخصات رسید: ۱۰ برج × ۵ سطح، ۲۶ دشمن/Boss با رفتارهای متمایز، ۴ قهرمان Role-محور، ۶ جادو، ۶ منطقه قابل بازی با تم‌های بصری متفاوت
+- خط لوله Asset دست‌نخورده و فعال — GLB واقعی به‌محض قرارگیری جایگزین Placeholder می‌شود؛ LOD scaffold آماده GLBهای multi-LOD
+- صادقانه: هیچ GLB جعلی اضافه نشد؛ تمام ۴۰ Placeholder برچسب «موقت» دارند

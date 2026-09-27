@@ -63,6 +63,10 @@ export class CharacterHandle {
 
   private vfxPoints = new Map<string, THREE.Object3D>();
   private swapCbs = new Set<() => void>();
+  /** گره‌های LOD مدل واقعی — برای سوییچ فاصله‌ای (بخش ۱۶) */
+  private lodNodes: { node: THREE.Object3D; level: 1 | 2 }[] = [];
+  /** گره‌های مدل پایه (خارج از سلسله‌مراتب LOD) */
+  private lodBase: THREE.Object3D[] = [];
   disposed = false;
   private pooled = false;
   /** کلید Pool (assetId|tier) — هنگام acquire تنظیم می‌شود */
@@ -94,6 +98,23 @@ export class CharacterHandle {
     this.swapCbs.add(cb);
     if (this.ready) cb();
     return () => this.swapCbs.delete(cb);
+  }
+
+  /**
+   * بروزرسانی LOD بر اساس فاصله دوربین (بخش ۱۶) — هر فریم از حلقه Gameplay صدا می‌خورد.
+   * ساختار مورد انتظار GLB: مدل پایه + نسخه‌های جایگزین کامل *LOD1/*LOD2
+   *   d < ۲۲ → مدل کامل | ۲۲..۳۸ → LOD1 | d ≥ ۳۸ → LOD2
+   * برای Placeholderها بدون گره LOD هیچ‌کاری نمی‌کند (هزینه صفر).
+   */
+  updateLod(camPos: THREE.Vector3) {
+    if (this.lodNodes.length === 0) return;
+    const d = camPos.distanceTo(this.root.position);
+    const base = d < 22;
+    const mid = d >= 22 && d < 38;
+    for (const n of this.lodBase) n.visible = base;
+    for (const { node, level } of this.lodNodes) {
+      node.visible = level === 1 ? mid : d >= 38;
+    }
   }
 
   /** تنظیم نقاط VFX اولیه (Placeholder) */
@@ -136,6 +157,22 @@ export class CharacterHandle {
     this.proceduralAnimParts = [];
     this.vfxPoints.clear();
     for (const [k, o] of Object.entries(norm.vfx)) this.vfxPoints.set(k, o);
+    // گره‌های LOD مدل واقعی — تفکیک مدل پایه از نسخه‌های LOD
+    this.lodNodes = norm.lodNodes;
+    if (this.lodNodes.length > 0) {
+      const isAncestorOfLod = (n: THREE.Object3D) =>
+        this.lodNodes.some(({ node }) => {
+          let p: THREE.Object3D | null = node;
+          while (p) {
+            if (p === n) return true;
+            p = p.parent;
+          }
+          return false;
+        });
+      this.lodBase = norm.inner.children.filter((c) => !isAncestorOfLod(c));
+    } else {
+      this.lodBase = [];
+    }
 
     this.source = 'glb';
     this.ready = true;
@@ -180,7 +217,7 @@ export class CharacterFactory {
 
   createHeroHandle(heroId = 'arman'): CharacterHandle {
     const entry = findAssetEntry(heroId) ?? findAssetEntry('arman')!;
-    const fb = createFallbackHero();
+    const fb = createFallbackHero(entry.id);
 
     const root = new THREE.Group();
     root.name = `hero_${entry.id}`;

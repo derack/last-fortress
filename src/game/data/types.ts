@@ -14,7 +14,8 @@ export type DamageType = 'physical' | 'magic' | 'fire' | 'ice' | 'shadow' | 'ene
 
 export type TargetingMode = 'first' | 'strongest' | 'weakest' | 'fastest' | 'boss';
 
-export type ProjectileKind = 'bullet' | 'fireball' | 'frost' | 'shard' | 'beam' | 'none';
+export type ProjectileKind = 'bullet' | 'fireball' | 'frost' | 'shard' | 'beam' | 'none'
+  | 'cannonball' | 'bolt' | 'venom' | 'prism' | 'hex';
 
 // ---------------------------- برج‌ها ----------------------------
 
@@ -41,6 +42,15 @@ export interface TowerData {
   slowFactor?: number; // برای یخ
   slowDuration?: number;
   burnDps?: number; // برای آتش
+  poisonDps?: number; // برای زهر
+  poisonDuration?: number;
+  armorShred?: number; // کاهش زره هر اصابت (زهرخانه)
+  pierceArmor?: boolean; // بی‌توجه به زره (بالیستا)
+  executeThreshold?: number; // اجرای دشمن کمتر از این درصد HP (برج تهی)
+  executeMultiplier?: number;
+  buffRadius?: number; // هاله تقویت (آذرگاه)
+  buffRatePct?: number; // درصد افزایش سرعت شلیک برج‌های اطراف
+  towerHeight?: number; // ارتفاع دهانه شلیک (پیش‌فرض ۲.۸)
   color: number; // رنگ نئون UI
   levels: TowerLevelStats[];
 }
@@ -59,6 +69,9 @@ export interface EnemyData {
   flying?: boolean;
   dodgeChance?: number;
   shieldGiver?: { radius: number; amount: number; interval: number };
+  healer?: { radius: number; amount: number; interval: number }; // شفادهنده — ترمیم HP هم‌رزما
+  summoner?: { enemy: string; count: number; interval: number }; // احضارکننده دوره‌ای
+  regen?: number; // HP بازسازی در ثانیه
   boss?: boolean;
   scale: number;
   color: number;
@@ -85,7 +98,7 @@ export interface WaveData {
 
 // ---------------------------- جادو ----------------------------
 
-export type MagicId = 'skyLightning' | 'fireRain' | 'arianaShield';
+export type MagicId = 'skyLightning' | 'fireRain' | 'arianaShield' | 'deepFreeze' | 'azarBlessing' | 'coreMend';
 
 export interface MagicData {
   id: MagicId;
@@ -97,29 +110,47 @@ export interface MagicData {
   damage?: number;
   duration?: number;
   targeted: boolean;
+  /** یخبندان — کندی شدید به‌جای آسیب */
+  freezeFactor?: number;
+  /** برکت آذر — افزایش سرعت شلیک همه برج‌ها */
+  rateBuffPct?: number;
+  /** تندرستی هسته — بازگردانی HP هسته */
+  healCore?: number;
   color: string; // رنگ CSS
 }
 
 // ---------------------------- قهرمان ----------------------------
 
+export type HeroRole = 'commander' | 'guardian' | 'berserker' | 'ranger';
+
 export interface HeroData {
   id: string;
   nameKey: string;
   titleKey: string;
+  role: HeroRole;
   hp: number;
   damage: number;
   range: number;
   fireRate: number;
   moveSpeed: number;
   xpPerLevel: number;
+  attackType: DamageType; // نوع آسیب حمله قهرمان
+  projectileColor: number;
+  splash?: number; // شعاع انفجار حمله (آریا)
+  cleave?: number; // تعداد هدف اضافه حمله زمینی (رادین)
   abilityNameKey: string;
   abilityDescKey: string;
   abilityCooldown: number;
   abilityDuration: number;
-  abilityBuff: number; // درصد افزایش سرعت شلیک برج‌ها
+  abilityBuff: number; // معنی بر اساس abilityKind
+  abilityKind: 'battleCommand' | 'aegisShield' | 'warFrenzy' | 'rainOfArrows';
+  unlockCost: number; // هزینه بازکردن با کریستال — ۰ یعنی رایگان
+  descKey: string;
 }
 
 // ---------------------------- مرحله ----------------------------
+
+export type RegionEnv = 'plains' | 'forest' | 'tundra' | 'volcano' | 'wastes' | 'citadel';
 
 export interface LevelData {
   id: string;
@@ -131,10 +162,21 @@ export interface LevelData {
   startCrystals: number;
   waves: WaveData[];
   timeOfDay: 'day' | 'night';
-  env: 'plains';
+  env: RegionEnv;
   path: Vec2[];
   star2HealthPct: number; // حداقل درصد سلامت برای ستاره دوم
   star3ChallengeKey: string;
+}
+
+// ---------------------------- منطقه ----------------------------
+
+export interface RegionDef {
+  id: number;
+  levelId: string;
+  nameKey: string;
+  env: RegionEnv;
+  /** توضیح کوتاه برای نقشه */
+  tagKey: string;
 }
 
 // ---------------------------- دستاورد ----------------------------
@@ -183,4 +225,8 @@ export interface SaveData {
   stats: PlayerStats;
   achievements: string[];
   tutorialDone: boolean;
+  /** قهرمانان باز‌شده — پیش‌فرض فقط آرمان */
+  unlockedHeroes: string[];
+  /** قهرمان انتخابی برای نبرد */
+  selectedHero: string;
 }

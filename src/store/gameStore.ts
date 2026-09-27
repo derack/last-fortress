@@ -82,6 +82,10 @@ interface GameState {
   battleActive: boolean;
   /** گالری کاراکترها (صفحه توسعه‌دهنده) */
   galleryOpen: boolean;
+  /** مرحله در انتظار شروع — پیش‌فرض منطقه ۱ */
+  pendingLevelId: string;
+  /** قهرمان انتخابی برای نبرد بعدی */
+  selectedHero: string;
 
   // اکشن‌ها
   setScreen: (s: Screen) => void;
@@ -95,6 +99,9 @@ interface GameState {
   pushToast: (key: string, type: string) => void;
   resetAll: () => void;
   setGalleryOpen: (v: boolean) => void;
+  setPendingLevel: (id: string) => void;
+  setSelectedHero: (id: string) => void;
+  unlockHero: (id: string, cost: number) => boolean;
 }
 
 let toastId = 1;
@@ -129,6 +136,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   toasts: [],
   battleActive: false,
   galleryOpen: false,
+  pendingLevelId: 'l1',
+  selectedHero: 'arman',
 
   setScreen: (s) => set({ screen: s }),
 
@@ -233,7 +242,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         setTimeout(() => set({ waveClearedToast: null }), 2600);
         break;
       case 'selectTower':
-        set({ selectedTower: p as TowerInfo });
+        set({ selectedTower: p as unknown as TowerInfo });
         break;
       case 'buildMode':
         set({ buildMode: (p.towerId as string) ?? null });
@@ -284,4 +293,26 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   setGalleryOpen: (v: boolean) => set({ galleryOpen: v }),
+
+  setPendingLevel: (id) => set({ pendingLevelId: id }),
+
+  setSelectedHero: (id) => {
+    set({ selectedHero: id });
+    get().updateSave((s) => {
+      s.selectedHero = id;
+    });
+  },
+
+  /** بازکردن قهرمان با کریستال — false یعنی کریستال ناکافی */
+  unlockHero: (id, cost) => {
+    const { save } = get();
+    if (!save) return false;
+    if (save.unlockedHeroes.includes(id)) return true;
+    if (save.crystals < cost) return false;
+    save.crystals -= cost;
+    save.unlockedHeroes.push(id);
+    persistSave(save);
+    set({ save: { ...save } });
+    return true;
+  },
 }));

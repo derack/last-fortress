@@ -23,6 +23,10 @@ export class Tower implements TowerLike {
   abilityCd = 0;
   private cooldown = 0;
   private rateBuffTime = 0;
+  /** هاله تقویت محلی (از آذرگاه) */
+  private localBuffPct = 0;
+  private localBuffUntil = 0;
+  private auraPulse = 0;
   private scene: THREE.Scene;
   private ctx: GameContext;
   private spinPhase = Math.random() * 10;
@@ -55,7 +59,18 @@ export class Tower implements TowerLike {
     let rate = this.data.levels[this.level - 1].fireRate;
     if (this.rateBuffTime > 0) rate *= 1.6;
     if (this.ctx.towerRateBuff > 0) rate *= 1 + this.ctx.towerRateBuff;
+    if (this.localBuffUntil > this.timeNow() && this.localBuffPct > 0) rate *= 1 + this.localBuffPct;
     return rate;
+  }
+
+  private timeNow() {
+    return performance.now() / 1000;
+  }
+
+  /** دریافت هاله تقویت از آذرگاه */
+  applyLocalBuff(pct: number, duration: number) {
+    this.localBuffPct = Math.max(this.localBuffPct, pct);
+    this.localBuffUntil = Math.max(this.localBuffUntil, this.timeNow() + duration);
   }
 
   get upgradeCost(): number {
@@ -146,6 +161,107 @@ export class Tower implements TowerLike {
         this.ctx.cameraShake(0.2);
         break;
       }
+      case 'cannon': {
+        // شلیک مرگبار — گلوله عظیم سه‌برابر
+        const target = this.pickTarget(inRange);
+        if (!target) {
+          this.abilityCd = 1;
+          return false;
+        }
+        const from = pos.clone().add(new THREE.Vector3(0, this.towerHeight(), 0));
+        this.ctx.spawnProjectile('cannonball', from, target, {
+          damage: this.damage * 3, splash: 5, dmgType: 'physical', color: 0xfbbf24,
+        });
+        this.ctx.audio.play('cannon');
+        this.ctx.cameraShake(0.5);
+        this.ctx.vfx.ring(pos, 0xfbbf24, 4, 0.4);
+        break;
+      }
+      case 'poison': {
+        // مه سمی — زهر سنگین + شکستن شدید زره
+        for (const e of inRange) {
+          e.applyBurn(this.data.poisonDps! * 2.2, 6);
+          e.applyShred(this.data.armorShred! * 3, 8);
+          e.takeDamage(this.damage, 'shadow');
+        }
+        this.ctx.vfx.ring(pos, 0x84cc16, this.range, 1.0);
+        this.ctx.vfx.burst(pos.clone().add(new THREE.Vector3(0, 1.5, 0)), 0x84cc16, 36, { speed: 6, life: 1.2, size: 0.8, gravity: -1.5 });
+        this.ctx.audio.play('magic');
+        break;
+      }
+      case 'ballista': {
+        // پیکان شکافنده — عبور از صف دشمنان
+        const target = this.pickTarget(inRange);
+        if (!target) {
+          this.abilityCd = 1;
+          return false;
+        }
+        const from = pos.clone().add(new THREE.Vector3(0, this.towerHeight(), 0));
+        this.ctx.vfx.bolt(from, target.getPos().clone().add(new THREE.Vector3(0, 1, 0)), 0xd97706, true);
+        const pierceList = inRange
+          .filter((e) => e !== target)
+          .sort((a, b) => a.getPos().distanceTo(target.getPos()) - b.getPos().distanceTo(target.getPos()))
+          .slice(0, 4);
+        target.takeDamage(this.damage * 2, 'physical', true);
+        for (const e of pierceList) {
+          this.ctx.vfx.bolt(target.getPos().clone().add(new THREE.Vector3(0, 1, 0)), e.getPos().clone().add(new THREE.Vector3(0, 1, 0)), 0xd97706);
+          e.takeDamage(this.damage * 1.4, 'physical', true);
+        }
+        this.ctx.audio.play('shoot');
+        this.ctx.cameraShake(0.25);
+        break;
+      }
+      case 'arcane': {
+        // انفجار جادویی در نقطه هدف
+        const target = this.pickTarget(inRange);
+        if (!target) {
+          this.abilityCd = 1;
+          return false;
+        }
+        const at = target.getPos().clone();
+        for (const e of this.ctx.enemies) {
+          if (!e.alive) continue;
+          const d = e.getPos().distanceTo(at);
+          if (d <= 3.6) e.takeDamage(this.damage * 2 * (1 - (d / 3.6) * 0.35), 'magic');
+        }
+        this.ctx.vfx.explosion(at, 0x38bdf8, true);
+        this.ctx.vfx.magicCircle(at, 0x38bdf8, 3.4, 0.8);
+        this.ctx.audio.play('magic');
+        this.ctx.cameraShake(0.3);
+        break;
+      }
+      case 'temple': {
+        // ستایش آذر — دو برابر شدن سرعت شلیک برج‌های نزدیک
+        const radius = this.data.buffRadius ?? 7;
+        for (const t of this.ctx.towers) {
+          if (t.id === this.id) continue;
+          if (t.position.distanceTo(this.position) <= radius + 1) {
+            (t as Tower).applyLocalBuff(1.0, 6);
+          }
+        }
+        this.ctx.vfx.ring(pos, 0xfbbf24, radius + 2, 1.0);
+        this.ctx.vfx.burst(pos.clone().add(new THREE.Vector3(0, 2.5, 0)), 0xfcd34d, 44, { speed: 7, life: 1.1, size: 0.6, gravity: -2, up: 1 });
+        this.ctx.audio.play('upgrade');
+        break;
+      }
+      case 'void': {
+        // دهانه تهی — بلع دشمنان ضعیف
+        const threshold = this.data.executeThreshold ?? 0.35;
+        let devoured = 0;
+        for (const e of inRange) {
+          if (e.hpRatio <= threshold + 0.15 && !e.data.boss) {
+            e.takeDamage(this.damage * 5, 'shadow');
+            devoured++;
+          } else {
+            e.takeDamage(this.damage * 1.5, 'shadow');
+          }
+        }
+        this.ctx.vfx.ring(pos, 0x8b5cf6, this.range, 0.9);
+        this.ctx.vfx.explosion(pos.clone().add(new THREE.Vector3(0, 1, 0)), 0x7c3aed, devoured > 0);
+        this.ctx.audio.play('magic');
+        this.ctx.cameraShake(0.35);
+        break;
+      }
     }
     return true;
   }
@@ -172,6 +288,21 @@ export class Tower implements TowerLike {
     this.abilityCd = Math.max(0, this.abilityCd - dt);
     this.rateBuffTime = Math.max(0, this.rateBuffTime - dt);
     this.cooldown -= dt;
+
+    // هاله تقویت آذرگاه — پالس هر ۰٫۵ ثانیه
+    if (this.data.buffRatePct) {
+      this.auraPulse -= dt;
+      if (this.auraPulse <= 0) {
+        this.auraPulse = 0.5;
+        const radius = this.data.buffRadius ?? 7;
+        for (const t of this.ctx.towers) {
+          if (t.id === this.id) continue;
+          if (t.position.distanceTo(this.position) <= radius) {
+            (t as Tower).applyLocalBuff(this.data.buffRatePct, 0.7);
+          }
+        }
+      }
+    }
 
     // انیمیشن چرخش کریستال‌ها
     this.spinPhase += dt;
@@ -208,10 +339,11 @@ export class Tower implements TowerLike {
   private fire(target: DamageableEnemy) {
     const from = this.position.clone().add(new THREE.Vector3(0, this.towerHeight(), 0));
     const ud = this.mesh.userData;
+    const dt = this.data.damageType;
 
     switch (this.data.projectile) {
       case 'bullet':
-        this.ctx.spawnProjectile('bullet', from, target, { damage: this.damage, color: 0xffd54a });
+        this.ctx.spawnProjectile('bullet', from, target, { damage: this.damage, color: 0xffd54a, dmgType: dt });
         this.ctx.audio.play('shoot');
         if (ud.turret) {
           const tip = from.clone().add(new THREE.Vector3(Math.sin(ud.turret.rotation.y), 0, Math.cos(ud.turret.rotation.y)).multiplyScalar(1.6));
@@ -224,6 +356,7 @@ export class Tower implements TowerLike {
           splash: this.data.splashRadius ?? 2.8,
           burn: this.data.burnDps,
           color: 0xf97316,
+          dmgType: 'fire',
         });
         this.ctx.audio.play('cannon');
         if (ud.ember) {
@@ -236,8 +369,53 @@ export class Tower implements TowerLike {
           slow: this.data.slowFactor ?? 0.55,
           slowDur: this.data.slowDuration ?? 2,
           color: 0x67e8f9,
+          dmgType: 'ice',
         });
         this.ctx.audio.play('freeze');
+        break;
+      case 'cannonball':
+        this.ctx.spawnProjectile('cannonball', from, target, {
+          damage: this.executeBonus(target),
+          splash: this.data.splashRadius ?? 3.4,
+          color: 0xf59e0b,
+          dmgType: 'physical',
+        });
+        this.ctx.audio.play('cannon');
+        break;
+      case 'venom':
+        this.ctx.spawnProjectile('venom', from, target, {
+          damage: this.executeBonus(target),
+          poisonDps: this.data.poisonDps,
+          poisonDur: this.data.poisonDuration ?? 4,
+          color: 0x84cc16,
+          dmgType: 'shadow',
+        });
+        this.ctx.audio.play('shoot');
+        break;
+      case 'bolt':
+        this.ctx.spawnProjectile('bolt', from, target, {
+          damage: this.executeBonus(target),
+          pierceArmor: this.data.pierceArmor,
+          color: 0xd97706,
+          dmgType: 'physical',
+        });
+        this.ctx.audio.play('shoot');
+        break;
+      case 'prism':
+        this.ctx.spawnProjectile('prism', from, target, {
+          damage: this.executeBonus(target),
+          color: 0x38bdf8,
+          dmgType: 'magic',
+        });
+        this.ctx.audio.play('magic');
+        break;
+      case 'hex':
+        this.ctx.spawnProjectile('hex', from, target, {
+          damage: this.executeBonus(target),
+          color: this.data.color,
+          dmgType: dt,
+        });
+        this.ctx.audio.play('magic');
         break;
       case 'none': {
         // صاعقه — زنجیره لحظه‌ای
@@ -249,8 +427,16 @@ export class Tower implements TowerLike {
     }
   }
 
+  /** آسیب نهایی با احتساب اجرای برج تهی */
+  private executeBonus(target: DamageableEnemy): number {
+    if (this.data.executeThreshold && target.hpRatio < this.data.executeThreshold) {
+      return this.damage * (this.data.executeMultiplier ?? 2);
+    }
+    return this.damage;
+  }
+
   private towerHeight(): number {
-    return this.towerId === 'lightning' ? 4.2 : this.towerId === 'fire' ? 2.4 : 2.8;
+    return this.data.towerHeight ?? (this.towerId === 'lightning' ? 4.2 : this.towerId === 'fire' ? 2.4 : 2.8);
   }
 }
 
