@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { LevelData } from '../data/types';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { buildCoreMesh, buildRiftMesh, buildTree, buildRock, buildHouse, buildCrystal, buildMountain } from './models';
 
 // ============================================================
@@ -36,8 +37,18 @@ export class BattleScene {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
 
-    // آسمان و مه
     const night = level.timeOfDay === 'night';
+
+    // نورپردازی محیطی PBR — متریال‌های واقعی GLB (فلز/سنگ/پارچه) درست دیده شوند
+    if (quality !== 'low') {
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      const envScene = new RoomEnvironment();
+      this.scene.environment = pmrem.fromScene(envScene, 0.06).texture;
+      this.scene.environmentIntensity = night ? 0.22 : 0.45;
+      pmrem.dispose();
+    }
+
+    // آسمان و مه
     this.scene.background = new THREE.Color(night ? 0x0a0d1a : 0x87b5d9);
     this.scene.fog = new THREE.Fog(night ? 0x0a0d1a : 0xa9c8e0, 60, 150);
 

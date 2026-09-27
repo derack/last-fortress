@@ -1,10 +1,14 @@
 import * as THREE from 'three';
 import { HEROES } from '../data/magic';
-import { buildHeroMesh } from '../scene/models';
+import { characterFactory, type CharacterHandle } from '../assets';
 import type { GameContext, DamageableEnemy } from './context';
 
 // ============================================================
 // قهرمان آرمان — استقرار، حرکت، حمله خودکار، XP، فرمان نبرد
+// ------------------------------------------------------------
+// Rendering Layer: مدل از Asset Pipeline می‌آید (arman.glb یا
+// Placeholder شفاف در انتظار GLB). Gameplay (HP/XP/حرکت/حمله/
+// توانایی) بدون تغییر باقی مانده است.
 // ============================================================
 
 export class Hero {
@@ -20,19 +24,22 @@ export class Hero {
   abilityCd = 0;
   abilityActiveTime = 0;
   private data = HEROES.arman;
-  private scene: THREE.Scene;
   private ctx: GameContext;
   private walkPhase = 0;
   private muzzleFlash = 0;
   deployed = false;
+  /** Handle سیستم Asset — مدیریت مدل واقعی/Placeholder و انیمیشن */
+  private handle: CharacterHandle;
+  private tmpV = new THREE.Vector3();
 
   constructor(scene: THREE.Scene, ctx: GameContext) {
-    this.scene = scene;
     this.ctx = ctx;
     this.maxHp = this.data.hp;
     this.hp = this.data.hp;
     this.damage = this.data.damage;
-    this.mesh = buildHeroMesh();
+    // Asset Pipeline — مدل واقعی GLB به‌محض آماده شدن درجا سوار می‌شود
+    this.handle = characterFactory.createHeroHandle('arman');
+    this.mesh = this.handle.root;
     this.mesh.position.copy(this.position);
     this.mesh.visible = false; // تا استقرار نیافته پنهان
     scene.add(this.mesh);
@@ -88,6 +95,7 @@ export class Hero {
     this.ctx.vfx.ring(this.position, 0xffb020, 6, 0.7);
     this.ctx.vfx.burst(this.position.clone().add(new THREE.Vector3(0, 2, 0)), 0xffb020, 30, { speed: 6, life: 0.9, size: 0.6, gravity: 2, up: 1 });
     this.ctx.audio.play('magic');
+    this.handle.animation?.playOneShot('skill', { fade: 0.15 });
     return true;
   }
 
@@ -97,12 +105,14 @@ export class Hero {
     this.abilityActiveTime = Math.max(0, this.abilityActiveTime - dt);
 
     // حرکت
+    let moving = false;
     if (this.moveTarget) {
       const dir = this.moveTarget.clone().sub(this.position);
       const dist = dir.length();
       if (dist < 0.3) {
         this.moveTarget = null;
       } else {
+        moving = true;
         dir.normalize();
         const step = Math.min(dist, this.data.moveSpeed * dt);
         this.position.addScaledVector(dir, step);
@@ -112,9 +122,9 @@ export class Hero {
         while (diff < -Math.PI) diff += Math.PI * 2;
         this.mesh.rotation.y += diff * 0.18;
         this.walkPhase += dt * 12;
-        const parts = this.mesh.userData.animParts as { node: THREE.Object3D; kind: string }[] | undefined;
-        if (parts) {
-          for (const p of parts) {
+        // Placeholder: انیمیشن پا پروسیجرال | GLB: انیمیشن اسکلتی
+        if (!this.handle.hasAnimations) {
+          for (const p of this.handle.proceduralAnimParts) {
             p.node.rotation.x = (p.kind === 'leg' ? 1 : -1) * Math.sin(this.walkPhase) * 0.6;
           }
         }
@@ -141,17 +151,34 @@ export class Hero {
       }
     }
 
+    // انیمیشن حرکتی (فقط GLB) — Placeholder با پاهای پروسیجرال کار می‌کند
+    if (this.handle.hasAnimations) {
+      this.handle.animation?.playLocomotion(moving ? 'walk' : 'idle');
+      this.handle.animation?.update(dt);
+    }
+
     this.mesh.position.copy(this.position);
     // فلش دهانه تفنگ
     this.muzzleFlash = Math.max(0, this.muzzleFlash - dt);
   }
 
   private shoot(target: DamageableEnemy) {
-    const tip = this.position.clone().add(new THREE.Vector3(0, 1.15, 0));
-    tip.addScaledVector(new THREE.Vector3(Math.sin(this.mesh.rotation.y), 0, Math.cos(this.mesh.rotation.y)), 1.2);
+    // نقطه شلیک: WeaponPoint واقعی مدل (GLB) یا نقطه محاسبه‌شده (Placeholder)
+    const fallbackTip = this.position
+      .clone()
+      .add(new THREE.Vector3(0, 1.15, 0))
+      .addScaledVector(new THREE.Vector3(Math.sin(this.mesh.rotation.y), 0, Math.cos(this.mesh.rotation.y)), 1.2);
+    const tip = this.handle.vfxWorld('weapon', this.tmpV) ?? this.handle.vfxWorld('muzzle', this.tmpV) ?? fallbackTip;
     this.ctx.vfx.burst(tip, 0xffd54a, 2, { speed: 1.5, life: 0.12, size: 0.35, gravity: 0 });
     this.ctx.vfx.bolt(tip, target.getPos().clone().add(new THREE.Vector3(0, 1, 0)), 0xffd54a);
     this.ctx.audio.play('heroShot');
+    this.handle.animation?.playOneShot('attack', { fade: 0.08, returnToLocomotion: true });
     target.takeDamage(this.damage, 'physical');
+  }
+
+  /** آزادسازی Handle هنگام تخریب بازی */
+  dispose() {
+    this.handle.dispose();
+    if (this.mesh.parent) this.mesh.parent.remove(this.mesh);
   }
 }

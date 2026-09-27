@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { TowerData, TargetingMode } from '../data/types';
 import { TOWERS, CHAIN_JUMP_RADIUS, CHAIN_FALLOFF } from '../data/towers';
-import { buildTowerMesh } from '../scene/models';
+import { characterFactory, type CharacterHandle } from '../assets';
 import type { GameContext, DamageableEnemy, TowerLike } from './context';
 
 // ============================================================
@@ -26,6 +26,8 @@ export class Tower implements TowerLike {
   private scene: THREE.Scene;
   private ctx: GameContext;
   private spinPhase = Math.random() * 10;
+  /** Handle سیستم Asset — GLB اختیاری + سازنده پروسیجرال فعلی */
+  private handle: CharacterHandle;
 
   constructor(id: number, towerId: string, position: THREE.Vector3, scene: THREE.Scene, ctx: GameContext) {
     this.id = id;
@@ -35,7 +37,8 @@ export class Tower implements TowerLike {
     this.scene = scene;
     this.ctx = ctx;
     this.invested = this.data.cost;
-    this.mesh = buildTowerMesh(towerId, 1);
+    this.handle = characterFactory.createTowerHandle(towerId, 1);
+    this.mesh = this.handle.root;
     this.mesh.position.copy(position);
     scene.add(this.mesh);
   }
@@ -73,18 +76,11 @@ export class Tower implements TowerLike {
     if (this.level >= 5) return false;
     this.level++;
     this.invested += this.data.levels[this.level - 1].upgradeCost;
-    // تعویض مدل — Transformation
-    const old = this.mesh;
-    this.scene.remove(old);
-    old.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
-        o.geometry.dispose();
-        const m = o.material;
-        if (Array.isArray(m)) m.forEach((mm) => mm.dispose());
-        else m.dispose();
-      }
-    });
-    this.mesh = buildTowerMesh(this.towerId, this.level);
+    // تعویض مدل — Transformation (از طریق Asset Pipeline)
+    this.scene.remove(this.mesh);
+    this.handle.dispose();
+    this.handle = characterFactory.createTowerHandle(this.towerId, this.level);
+    this.mesh = this.handle.root;
     this.mesh.position.copy(this.position);
     this.scene.add(this.mesh);
     // جلوه ارتقا
@@ -97,14 +93,7 @@ export class Tower implements TowerLike {
     const v = this.sellValue;
     this.alive = false;
     this.scene.remove(this.mesh);
-    this.mesh.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
-        o.geometry.dispose();
-        const m = o.material;
-        if (Array.isArray(m)) m.forEach((mm) => mm.dispose());
-        else m.dispose();
-      }
-    });
+    this.handle.dispose();
     return v;
   }
 

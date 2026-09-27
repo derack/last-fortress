@@ -13,6 +13,7 @@ import { Enemy } from '../entities/Enemy';
 import { Tower } from '../entities/Tower';
 import { Projectile } from '../entities/Projectile';
 import { Hero } from '../entities/Hero';
+import { characterFactory } from '../assets';
 import type { DamageableEnemy, GameContext } from '../entities/context';
 
 // ============================================================
@@ -823,7 +824,10 @@ export class Game {
     cancelAnimationFrame(this.raf);
     this.input.dispose();
     this.audio.dispose();
+    this.hero.dispose();
     for (const e of this.enemies) e.remove();
+    // آزادسازی Poolهای Handle — منابع GLB مشترک در Cache می‌مانند
+    characterFactory.clearPools();
     this.scene3d.dispose();
   }
 }

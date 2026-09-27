@@ -80,6 +80,8 @@ interface GameState {
   tutorialStep: string | null;
   toasts: { id: number; key: string; type: string }[];
   battleActive: boolean;
+  /** گالری کاراکترها (صفحه توسعه‌دهنده) */
+  galleryOpen: boolean;
 
   // اکشن‌ها
   setScreen: (s: Screen) => void;
@@ -92,6 +94,7 @@ interface GameState {
   handleEvent: (event: string, payload: unknown) => void;
   pushToast: (key: string, type: string) => void;
   resetAll: () => void;
+  setGalleryOpen: (v: boolean) => void;
 }
 
 let toastId = 1;
@@ -125,6 +128,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   tutorialStep: null,
   toasts: [],
   battleActive: false,
+  galleryOpen: false,
 
   setScreen: (s) => set({ screen: s }),
 
@@ -278,4 +282,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     setLanguage(save.settings.language);
     set({ save });
   },
+
+  setGalleryOpen: (v: boolean) => set({ galleryOpen: v }),
 }));

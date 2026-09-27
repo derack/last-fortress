@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Trash2, Vibrate } from 'lucide-react';
+import { ArrowRight, Trash2, Vibrate, Boxes } from 'lucide-react';
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { t, faNum } from '@/game/data/i18n';
@@ -12,6 +12,7 @@ import type { Quality } from '@/game/data/types';
 
 export function SettingsPanel() {
   const setScreen = useGameStore((s) => s.setScreen);
+  const setGalleryOpen = useGameStore((s) => s.setGalleryOpen);
   const save = useGameStore((s) => s.save);
   const setLanguage = useGameStore((s) => s.setLanguage);
   const setQuality = useGameStore((s) => s.setQuality);
@@ -78,6 +79,18 @@ export function SettingsPanel() {
               <div className={`h-6 w-11 rounded-full p-0.5 transition-all ${save.settings.haptics ? 'bg-emerald-500' : 'bg-slate-700'}`}>
                 <div className={`h-5 w-5 rounded-full bg-white transition-transform ${save.settings.haptics ? 'translate-x-5' : ''}`} />
               </div>
+            </button>
+          </Section>
+
+          {/* گالری کاراکترها (توسعه‌دهنده) */}
+          <Section title={t('gallery')}>
+            <button onClick={() => setGalleryOpen(true)}
+              className="flex w-full items-center justify-between rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 active:scale-[0.98]">
+              <span className="flex items-center gap-2 font-bold text-sky-200">
+                <Boxes className="h-5 w-5 text-sky-400" />
+                {t('gallery')}
+              </span>
+              <span className="text-xs text-slate-400">{t('galleryDesc')}</span>
             </button>
           </Section>
 
