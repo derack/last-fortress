@@ -213,3 +213,22 @@ Work Log:
 Stage Summary:
 - ضربه آرمان حالا «ضربه پتک» است نه تاب‌خوردن مجسمه: دست ثابت، پتک دور نقطهٔ دست عقب-جلو می‌رود و بدن فقط کمی وزن می‌دهد — دقیقاً همان چیزی که کاربر خواست
 - راه‌حل جنریک است: هر GLB آینده‌ای (قهرمان/دشمن/Boss) که سلاح جداگانه داشته باشد، خودکار همین تاب حمله را می‌گیرد؛ GLB سخت‌افزاری جدیدی لازم نبود
+
+---
+Task ID: 10
+Agent: main (Super Z)
+Task: بازخورد ممیزی کاربر — توقف Gameplay، شروع REAL 3D ASSET PRODUCTION PASS؛ گام صفر: نوشتن Art Bible + Asset Production Specification (فارسی + اصطلاح EN، خروجی PDF) طبق پاسخ‌های تأییدی کاربر (سبک فانتزی تاریک استایلایز / بودجه سبک موبایل / پرامپت AI برای هر کاراکتر / راهنمای گام‌به‌گام Blender+Mixamo / arman.glb موقت با پرچم do-not-ship)
+
+Work Log:
+- داده‌های واقعی Gameplay استخراج شد: magic.ts (۴ قهرمان: arman commander پتک+آذرخش #93c5fd، aria guardian splash #67e8f9، radin berserker cleave3 #f87171، nila ranger برد۱۳ #c084fc)، enemies.ts (۶ دشمن slice + ۱۰ آینده + ۵ Boss با scale/رنگ/مقاومت)، towers.ts (۱۰ برج، ۶ برج اول برای فاز ۴)، bossPhases.ts (شخصیت فاز ۲ هر Boss)، AssetManifest.ts (۲۹ ورودی: مسیر/kebab-case/targetHeight/rotationOffsetDeg/انیمیشن‌های HERO(8)/ENEMY(5)/BOSS(9)/VFX Points)، ModelNormalizer.ts (جدول NAME_ALIASES نقاط VFX — spine02→ChestPoint یعنی اسکلت Mixamo بدون تغییر کار می‌کند)، CharacterFactory (تطبیق فازی نقاط)
+- مسیر تولید سند: docx skill لود شد ولی کاربر PDF+فارسی انتخاب کرد → pdf skill و بارگذاری کامل زنجیره (fonts.md/creative-flow.md/overflow/pagination/typography/palette/cover.md) — RTL → Creative Flow + html2pdf-next.js
+- فونت Vazirmatn (۵ وزن) از jsDelivr دانلود و در download/assets/fonts/ نصب شد (همان فونت بازی — هویت یکدست)
+- سند ساخته شد: HTML تک-فایلی RTL با cover تاریک (الگوی anchor-grid آینه‌شده RTL + Summary Block + خط لنگر طلایی)، فهرست، ۱۰ فصل: خلاصه اجرایی/وضعیت خط لوله/Art Bible (سبک+Do-Don't+قانون IP ضد-Thor/دو اردوگاه/پالت HEX/تناسب اندام/Silhouette-first/PBR)/قرارداد فنی (نام‌گذاری/بودجه موبایل/محور +Z/Rig/فهرست انیمیشن با مدت/نقاط VFX/جدول ۲۹ دارایی/LOD)/گردش کار ۴ ایستگاهی (Master Style Prompt + Negative Prompt سراسری + ۹ گام Mixamo + خروجی GLB بدون Draco + Drop-in)/۱۷ کارت کامل با پرامپت اختصاصی (۴ قهرمان، ۶ دشمن، اژدهای سیاه، ۶ برج با جدول دگردیسی L1→L5 تغییر مدل واقعی)/جداول خلاصه (۴ Boss + ۴ برج + ۱۰ دشمن آینده)/دروازه پذیرش ۸گانه + برنامه حذف Thor
+- QA: poster_validate → رفع FONT_NO_FALLBACK (بایپس @font-face با کامنت) و COVER_TEXT_OVERLAP (فاصله ۴۰px خط/متن + ضخامت divider 8px)؛ نکته: cover_validate فقط برای فایل مستقلِ معتبر است (SKILL.md) — کلاس cover→frontpage و اعتبارسنجی جدا؛ Paged.js در RTL شکست (۲ صفحه!) → --nopaged (Chromium native) → ۲۶ صفحه
+- pdf_qa: FAIL صفر؛ WARNهای باقی‌مانده = آرتیفکت استخراج RTL («—» ابتدای سطر) و عدم تقارن عمدی cover آینه‌ای؛ فاصله آخر صفحه با بخش ۱۰.۵ (دفتر تصمیم‌ها) رفع شد؛ meta.brand (Author=Z.ai)؛ صفر U+FFFD در ۶۴هزار کاراکتر
+- بازبینی بصری ۵ صفحه کلید (pdftoppm): شکل‌دهی حروف فارسی، جدول‌های RTL، توکن‌های کد LTR، سواچ رنگ، بلوک‌های پرامپت تیره — همه صحیح
+
+Stage Summary:
+- تحویل: download/azar-art-bible-asset-spec.pdf (۲۶ صفحه، ۶۶۰KB، وکتور) + سورس download/azar-art-bible-asset-spec.html (قابل ویرایش) + assets/fonts
+- سند = مرجع واحد ۲۹ دارایی؛ قرارداد ۱۰۰٪ هم‌تراز با کد فعلی (AssetManifest/ModelNormalizer/انیمیشن‌ها) → هر GLB منطبق بدون تغییر کد لود می‌شود؛ کاربر می‌تواند پرامپت هر کاراکتر را مستقیم در Meshy/Tripo/Rodin کپی کند
+- گام بعدی پروژه: اجرای گام ۱ جدول ۱۰.۴ — تولید آرمان جدید (کارت ۶.۱) با گردش کار فصل ۵ و پذیرش با فصل ۱۰؛ Gameplay دست‌نخورده ماند (صفر تغییر کد در این تسک)

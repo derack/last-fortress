@@ -1,0 +1,129 @@
+<!-- ============ CH 4 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 04 — TECHNICAL CONTRACT</div>
+  <div class="chapter-title">۴ — قرارداد فنی تولید</div>
+  <div class="divider"></div>
+</div>
+<p>این فصل قرارداد الزامی هر فایل GLB است. هر بند از دو منبع رسمی پروژه استخراج و قفل شده: <span class="code">AssetManifest.ts</span> (مسیر، ارتفاع، انیمیشن، نقاط VFX) و <span class="code">ModelNormalizer.ts</span> (محورها، نام‌های جایگزین نقاط). تولیدکننده‌ای که این فصل را رعایت کند، تضمین دارد فایلش بدون تغییر کد در بازی بالا می‌آید.</p>
+
+<h3>۴.۱ — فایل و نام‌گذاری</h3>
+<ul class="tight">
+<li><b>قالب:</b> glTF 2.0 Binary (<span class="code">.glb</span>) — بدون فشرده‌سازی Draco/Meshopt (لودر فعلی DRACOLoader ندارد).</li>
+<li><b>مسیر و نام:</b> دقیقاً مطابق جدول ۴.۷؛ تک‌کلمه‌ها ساده (<span class="code">arman.glb</span>)، چندکلمه‌ها kebab-case (<span class="code">black-dragon.glb</span>).</li>
+<li><b>نودها:</b> ریشه <span class="code">{id}</span> (مثل <span class="code">arman</span>)؛ مش‌ها <span class="code">{id}_body</span>، <span class="code">{id}_weapon</span> و…؛ خالی/بی‌نام ممنوع.</li>
+<li><b>متریال‌ها:</b> <span class="code">MAT_{id}_{part}</span>؛ تکسچرها <span class="code">T_{id}_{part}_{bc|n|mr}</span> — حداکثر ۳ متریال برای قهرمان، ۲ برای دشمن، ۴ برای Boss/برج.</li>
+<li><b>انیمیشن‌ها:</b> نام کلیپ دقیقاً مطابق جدول ۴.۵ (Case-sensitive)؛ اکشن‌های بی‌نام یا <span class="code">Take 001</span> ممنوع.</li>
+</ul>
+
+<h3>۴.۲ — محورها، جهت و مقیاس</h3>
+<p>همهٔ مدل‌ها با <b>Y-up</b> و <b>Forward = +Z</b> (رو به بیننده در نمای پیش‌فرض three.js) صادر می‌شوند؛ واحد فضا متر است و ۱ واحد دنیا = ۱ متر. اگر ابزار خروجی جهت دیگری بدهد، مقدار <span class="code">rotationOffsetDeg</span> جدول ۴.۷ آن را جبران می‌کند — اما مقدار صفر یعنی بهترین حالت همین صادرِ صحیح است، نه تکیه بر اصلاح بعدی. <span class="code">ModelNormalizer</span> ارتفاع کلی مدل را دقیقاً به <span class="code">targetHeight</span> می‌رساند و پاها را روی Y=0 می‌نشاند، پس مدل باید «شبیه» نسبت درست باشد؛ نرمال‌ساز جبران‌گر نسبت‌های غلط نیست.</p>
+<div class="rule"><b>دو مقیاس جدا از هم:</b> <span class="code">targetHeight</span> ارتفاع فایل پس از نرمال‌سازی است، و ضریب <span class="code">data.scale</span> (فقط دشمنان/Boss) در زمان اجرا روی آن ضرب می‌شود. مثال: غول سنگی King فایلش 2.6m است و با scale 2.2 در دنیا ≈ 5.7m دیده می‌شود. کارت‌ها هر دو مقدار را جدا اعلام می‌کنند؛ تولیدکننده فقط به <span class="code">targetHeight</span> فایل توجه کند.</div>
+
+<h3>۴.۳ — بودجهٔ چندضلعی و تکسچر (سبک موبایل)</h3>
+<p>هدف قفل‌شده 60FPS روی اندروید میان‌رده است؛ بودجه‌های زیر «سقف» هستند نه «هدف برای پر کردن». LOD1 و LOD2 در همین سند تولید نمی‌شوند ولی مدل باید به‌سادگی Decimate شود (تک‌تکه نباشد) تا در فاز بهینه‌سازی بعدی قابل ساخت باشد.</p>
+<table>
+<thead><tr><th>کلاس</th><th style="width:17%">LOD0 (مثلث)</th><th style="width:15%">LOD1 / LOD2</th><th style="width:18%">تکسچر</th><th style="width:15%">حجم فایل</th><th>استخوان</th></tr></thead>
+<tbody>
+<tr><td>قهرمان</td><td>≤ 15,000</td><td>≈ %50 / %20</td><td>2048 (BaseColor+Normal+MR)</td><td>≤ 4–5 MB</td><td>≤ 60</td></tr>
+<tr><td>دشمن عادی/نخبه</td><td>≤ 10,000</td><td>≈ %50 / %20</td><td>1024 / 2048 (نخبه)</td><td>≤ 1.5–3 MB</td><td>≤ 50</td></tr>
+<tr><td>Boss</td><td>≤ 35,000</td><td>≈ %45 / %18</td><td>2048–4096</td><td>≤ 6–8 MB</td><td>≤ 80</td></tr>
+<tr><td>برج</td><td>≤ 12,000</td><td>≈ %50 / %20</td><td>2048</td><td>≤ 2–2.5 MB</td><td>بدون Rig یا ≤ 8</td></tr>
+</tbody></table>
+<p>ابزارهای AI معمولاً ۲۰ تا ۵۰ هزار مثلث تحویل می‌دهند؛ پس کاهش (Decimate) تا سقف کلاس مرحلهٔ الزامی در Blender است. خروجی Topology ترجیحاً چهارضلعی و یکپارچه باشد؛ مش‌های تو در تو (Double Shell) برای شنل/پارچه فقط در Boss مجاز است.</p>
+
+<h3>۴.۴ — الزامات Rig</h3>
+<p>اسکلت استاندارد، اسکلت انسان‌گونهٔ سازگار با Mixamo است (همان سلسله‌مراتب Hips → Spine → Spine1 → Spine2 → Neck → Head و بازو/پا دو طرفه). دلیلی که این انتخاب قفل شده: نقطهٔ <span class="code">ChestPoint</span> در نرمال‌ساز به نام جایگزین <span class="code">spine02</span> هم گوش می‌دهد — یعنی اسکلت Mixamo بدون هیچ کار اضافه‌ای نقاط را صحیح می‌گیرد. پیشوند <span class="code">mixamorig:</span> باید در Blender حذف شود (فصل ۵). قهرمانان یک استخوان اضافه برای سلاح (<span class="code">WeaponBone</span> فرزند دست) دارند.</p>
+<table>
+<thead><tr><th>کاراکتر</th><th style="width:44%">ساختار اسکلت</th><th>حد استخوان</th></tr></thead>
+<tbody>
+<tr><td>آرمان، آریا، رادین، نیلا</td><td>انسان‌گونهٔ Mixamo کامل + <span class="code">WeaponBone</span></td><td>≈ 53+1</td></tr>
+<tr><td>جنگجوی تاریکی / جادوگر / سایه</td><td>انسان‌گونهٔ Mixamo (ساده‌شده مجاز: بدون انگشت)</td><td>≤ 40</td></tr>
+<tr><td>عنکبوت سایه</td><td>Body + Head + 8×(Hip+Knee) + 2×Mandible + Abdomen</td><td>≤ 30</td></tr>
+<tr><td>غول سنگی</td><td>انسان‌گونهٔ سنگین؛ مفاصل زاویه‌دار سنگی؛ بدون انگشت</td><td>≤ 25</td></tr>
+<tr><td>پرندهٔ سایه</td><td>Body + 2×Wing(2 مفصلی) + دنبالهٔ ۱ استخوانه</td><td>≤ 12</td></tr>
+<tr><td>اژدهای سیاه</td><td>Body + Neck×3 + Jaw + Tail×4 + Wing×3 هر طرف + 4 پا×2 مفصل + Toe</td><td>≤ 80</td></tr>
+<tr><td>برج‌ها</td><td>بدون Rig؛ فقط نودهای <span class="code">MuzzlePoint</span> و در صورت نیاز <span class="code">Turret</span> (چرخش برجک)</td><td>—</td></tr>
+</tbody></table>
+
+<h3>۴.۵ — فهرست انیمیشن‌ها (نام کلیپ = قرارداد)</h3>
+<p>نام هر کلیپ باید حرف‌به‌حرف یکی از سه لیست زیر باشد؛ کنترلر انیمیشن با تطبیق فuzzy هم کار می‌کند اما نام دقیق یعنی صفر ریسک. همهٔ کلیپ‌ها <b>In-Place</b> (بدون جابه‌جایی ریشه)، 30FPS، و بدون Root Motion خارج از محل هستند؛ حرکت روی مسیر را خود بازی انجام می‌دهد. کلیپ‌های One-Shot در فریم آخر باید به وضعیتی برگردند که Cut به Idle طبیعی باشد (به‌جز Death که روی فریم آخر Freeze می‌شود).</p>
+<table>
+<thead><tr><th style="width:20%">کلاس</th><th>کلیپ‌ها</th></tr></thead>
+<tbody>
+<tr><td>قهرمان (۸)</td><td><span class="code">Idle</span> · <span class="code">Walk</span> · <span class="code">Run</span> · <span class="code">Attack</span> · <span class="code">Skill</span> · <span class="code">Hit</span> · <span class="code">Death</span> · <span class="code">Victory</span></td></tr>
+<tr><td>دشمن (۵)</td><td><span class="code">Idle</span> · <span class="code">Walk</span> · <span class="code">Attack</span> · <span class="code">Hit</span> · <span class="code">Death</span></td></tr>
+<tr><td>Boss (۹)</td><td><span class="code">Idle</span> · <span class="code">Walk</span> · <span class="code">Attack1</span> · <span class="code">Attack2</span> · <span class="code">SpecialAttack</span> · <span class="code">Roar</span> · <span class="code">Hit</span> · <span class="code">PhaseChange</span> · <span class="code">Death</span></td></tr>
+</tbody></table>
+<table>
+<thead><tr><th style="width:16%">کلیپ</th><th style="width:12%">حلقه</th><th style="width:14%">مدت هدف</th><th>تعریف صحنه</th></tr></thead>
+<tbody>
+<tr><td><span class="code">Idle</span></td><td>بله</td><td>3–5s</td><td>تنفس، تاب خوردن سلاح، پلک؛ دامنهٔ کوچک که VFX پروسیجرال با آن تداخل نکند</td></tr>
+<tr><td><span class="code">Walk</span> / <span class="code">Run</span></td><td>بله</td><td>1.0s / 0.7s</td><td>گام کامل دو-مرحله‌ای؛ Run زاویهٔ تنهٔ جلو و دامنهٔ دست/پا بزرگ‌تر</td></tr>
+<tr><td><span class="code">Attack</span></td><td>خیر</td><td>0.6–0.9s</td><td>Windup → ضربه → Recovery؛ لحظهٔ اصابت نزدیک نیمهٔ کلیپ (هم‌تراز با زمان‌بندی آسیب بازی)</td></tr>
+<tr><td><span class="code">Skill</span></td><td>خیر</td><td>1.2–1.6s</td><td>ژست نمادین توانایی (رفع چکش، برپایی سپر، تیرباران)؛ اوج در میانه</td></tr>
+<tr><td><span class="code">Hit</span></td><td>خیر</td><td>0.3–0.4s</td><td>تلوتلو کوتاه به عقب؛ بدون افتادن</td></tr>
+<tr><td><span class="code">Death</span></td><td>خیر</td><td>1.0–1.5s</td><td>افتادن تا زمین و Freeze؛ پا روی زمین بماند (بازی لاشه را فرو می‌برد)</td></tr>
+<tr><td><span class="code">Victory</span></td><td>قابل حلقه</td><td>1.5–2s</td><td>ژست پیروزی پس از پاک‌سازی موج</td></tr>
+<tr><td><span class="code">Attack1/2</span></td><td>خیر</td><td>0.8–1.2s</td><td>1 = حملهٔ نزدیک، 2 = حملهٔ دور/نفس (Boss)</td></tr>
+<tr><td><span class="code">SpecialAttack</span></td><td>خیر</td><td>1.6–2.2s</td><td>حملهٔ ویژهٔ فاز ۲ با دامنهٔ بزرگ و هشدار بصری پیش از اصابت</td></tr>
+<tr><td><span class="code">Roar</span></td><td>خیر</td><td>1.2–1.8s</td><td>خروش ورود/لحظه‌ساز؛ سر به بالا، باز شدن فک</td></tr>
+<tr><td><span class="code">PhaseChange</span></td><td>خیر</td><td>1.5–2s</td><td>گذار به فاز ۲ — هم‌زمان با بنر و تغییر رنگ VFX بازی</td></tr>
+</tbody></table>
+<p class="tbl-note">قاعدهٔ هندسهٔ متحرک: پاها در Walk/Run نباید از Y&lt;0 بروند؛ سلاح در هیچ کلیپی نباید از کرهٔ برخورد بدنه (شعاع ≈ 0.5m قهرمان) بیرون بزند مگر در اوج Attack.</p>
+
+<h3>۴.۶ — نقاط VFX</h3>
+<p>نقاط اتصال جلوه‌ها، نودهای Empty داخل GLB با نام دقیق زیر هستند. نرمال‌ساز نام‌های جایگزین را هم می‌پذیرد (جدول)، ولی نام استاندارد = صفر ابهام. هر نقطه را به استخوان مرتبط Parent کنید و محور +Y آن را به سمت «بیرون/جلو» بگیرید (سمتی که شعله/برق باید بیرون بزند).</p>
+<table>
+<thead><tr><th style="width:22%">نام استاندارد</th><th>محل درست</th><th style="width:30%">نام‌های جایگزین قابل قبول</th></tr></thead>
+<tbody>
+<tr><td><span class="code">WeaponPoint</span></td><td>نوک/مرکز ضربهٔ سلاح (فرزند WeaponBone)</td><td><span class="code">weapon</span> · <span class="code">righthand</span> · <span class="code">swordtip</span></td></tr>
+<tr><td><span class="code">MuzzlePoint</span></td><td>دهانهٔ لوله/برجک</td><td><span class="code">muzzle</span> · <span class="code">barreltip</span> · <span class="code">guntip</span></td></tr>
+<tr><td><span class="code">MouthPoint</span></td><td>داخل دهانه (نفس/آتش)</td><td><span class="code">mouth</span> · <span class="code">jaw</span> · <span class="code">firepoint</span></td></tr>
+<tr><td><span class="code">StaffPoint</span></td><td>سر عصا/جای گوی</td><td><span class="code">staff</span> · <span class="code">stafftip</span> · <span class="code">orbofstaff</span></td></tr>
+<tr><td><span class="code">HeadPoint</span></td><td>بالاترین نقطهٔ سر</td><td><span class="code">head</span></td></tr>
+<tr><td><span class="code">ChestPoint</span></td><td>میانهٔ سینه (Spine2)</td><td><span class="code">chest</span> · <span class="code">core</span> · <span class="code">spine02</span></td></tr>
+<tr><td><span class="code">HitPoint</span></td><td>مرکز تودهٔ بدن (مرجع اعدادِ خون/شعاع)</td><td><span class="code">hit</span> · <span class="code">center</span></td></tr>
+</tbody></table>
+<p class="tbl-note">اگر نقطه‌ای در مدل نباشد، نرمال‌ساز آن را سینتتیک می‌سازد (بر اساس نسبت ارتفاع) — یعنی بازی هیچ‌وقت بدون VFX نمی‌ماند؛ ولی تولید با نقاط واقعی، کیفیت جلوه‌ها را محسوس بالا می‌برد (مثلاً برق چکش که با تاب Prop-Swing همراه می‌شود).</p>
+
+<h3>۴.۷ — جدول مرجع ۲۹ دارایی (از Manifest)</h3>
+<p>این جدول همان منبع واحد حقیقت پروژه است؛ نام فایل و ارتفاع دقیقاً از <span class="code">AssetManifest.ts</span> نقل شده و تغییرش بدون تغییر کد ممکن نیست. ستون Scale ضریب زمان-اجرا (فقط دشمنان/Boss) است.</p>
+<table>
+<thead><tr><th style="width:26%">فایل (<span class="code">/assets/3d/…</span>)</th><th style="width:24%">نام نمایشی</th><th style="width:13%">targetHeight</th><th style="width:10%">Scale</th><th>نقاط VFX الزامی</th></tr></thead>
+<tbody>
+<tr><td><span class="code">heroes/arman.glb</span></td><td>آرمان — پتک آذری</td><td>1.85 m</td><td>—</td><td>Weapon · Muzzle · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">heroes/aria.glb</span></td><td>آریا</td><td>1.78 m</td><td>—</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">heroes/radin.glb</span></td><td>رادین</td><td>1.95 m</td><td>—</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">heroes/nila.glb</span></td><td>نیلا</td><td>1.75 m</td><td>—</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/shadow-creature.glb</span></td><td>موجود سایه</td><td>1.45 m</td><td>0.8×</td><td>Chest · Hit</td></tr>
+<tr><td><span class="code">enemies/dark-warrior.glb</span></td><td>جنگجوی تاریکی</td><td>1.80 m</td><td>1.0×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/stone-golem.glb</span></td><td>غول سنگی</td><td>2.60 m</td><td>1.35×</td><td>Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/dark-spider.glb</span></td><td>عنکبوت سایه</td><td>1.10 m</td><td>0.95×</td><td>Mouth · Chest · Hit</td></tr>
+<tr><td><span class="code">enemies/dark-mage.glb</span></td><td>جادوگر تاریکی</td><td>1.90 m</td><td>1.0×</td><td>Staff · Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/flying-shadow.glb</span></td><td>پرندهٔ سایه</td><td>1.50 m</td><td>0.9×</td><td>Chest · Hit</td></tr>
+<tr><td><span class="code">enemies/war-machine.glb</span></td><td>ماشین جنگی</td><td>2.20 m</td><td>1.5×</td><td>Muzzle · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/aether-tank.glb</span></td><td>تانک اثری</td><td>2.40 m</td><td>1.65×</td><td>Muzzle · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/small-dragon.glb</span></td><td>اژدهای کوچک</td><td>2.80 m</td><td>1.25×</td><td>Mouth · Chest · Hit</td></tr>
+<tr><td><span class="code">enemies/crystal-monster.glb</span></td><td>هیولای کریستالی</td><td>1.70 m</td><td>1.2×</td><td>Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/hunter.glb</span></td><td>شکارچی</td><td>1.80 m</td><td>1.0×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/destroyer.glb</span></td><td>نابودگر</td><td>2.30 m</td><td>1.6×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/summoner.glb</span></td><td>احضارکننده</td><td>1.90 m</td><td>1.05×</td><td>Staff · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/spirit.glb</span></td><td>روح</td><td>1.50 m</td><td>0.95×</td><td>Chest · Hit</td></tr>
+<tr><td><span class="code">enemies/shadow-soldier.glb</span></td><td>سرباز سایه</td><td>1.75 m</td><td>1.0×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/annihilator.glb</span></td><td>محوکننده</td><td>2.60 m</td><td>2.4×</td><td>Muzzle · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">bosses/stone-golem-king.glb</span></td><td>پادشاه غول سنگی</td><td>2.60 m</td><td>2.2×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">bosses/fire-giant.glb</span></td><td>غول آتش</td><td>3.60 m</td><td>2.6×</td><td>Mouth · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">bosses/ice-giant.glb</span></td><td>غول یخ</td><td>3.60 m</td><td>2.6×</td><td>Mouth · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">bosses/black-dragon.glb</span></td><td>اژدهای سیاه</td><td>4.50 m</td><td>2.6×</td><td>Mouth · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">bosses/dark-lord.glb</span></td><td>ارباب تاریکی</td><td>4.20 m</td><td>2.8×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">towers/sentinel.glb</span></td><td>برج نگهبان</td><td>3.20 m</td><td>—</td><td>Muzzle</td></tr>
+<tr><td><span class="code">towers/lightning.glb</span></td><td>برج صاعقه</td><td>4.40 m</td><td>—</td><td>Chest</td></tr>
+<tr><td><span class="code">towers/fire.glb</span></td><td>برج آتش</td><td>2.90 m</td><td>—</td><td>Muzzle</td></tr>
+<tr><td><span class="code">towers/ice.glb</span></td><td>برج یخ</td><td>4.50 m</td><td>—</td><td>Chest</td></tr>
+<tr><td><span class="code">towers/cannon.glb</span></td><td>توپخانه</td><td>2.80 m</td><td>—</td><td>Muzzle</td></tr>
+<tr><td><span class="code">towers/poison.glb</span></td><td>زهرخانه</td><td>2.90 m</td><td>—</td><td>Muzzle</td></tr>
+<tr><td><span class="code">towers/ballista.glb</span> و <span class="code">arcane.glb</span> · <span class="code">temple.glb</span> · <span class="code">void.glb</span></td><td>بالیستا، رازآسا، آذرگاه، برج تهی</td><td>3.4 / 4.0 / 3.6 / 4.4 m</td><td>—</td><td>Muzzle یا Chest</td></tr>
+</tbody></table>
+
+<h3>۴.۸ — LOD و کارایی</h3>
+<p>در این فاز فقط LOD0 تولید می‌شود، اما سه قانون از حالا الزامی است: (۱) Topology یکپارچه و قابلیت Decimate بدون شکستن UV؛ (۲) حداکثر ۳ مش به‌هم‌چسبیده به‌ازای هر کاراکتر تا Draw Call کنترل بماند؛ (۳) ممنوعیت آلفای شفاف روی پارچه/شنل (Cutout یا Opaque) تا ردیابی شفافیت هزینه نسازد. متن‌های Emissive باید در تکسچر Emissive جدا باشند نه داخل BaseColor، تا سیستم کیفیت پایین بتواند بدون تغییر مدل نورپردازی را سبک کند.</p>

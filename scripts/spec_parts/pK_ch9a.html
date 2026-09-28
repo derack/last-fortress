@@ -1,0 +1,65 @@
+<!-- ============ CH 9 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 09 — PHASE 4</div>
+  <div class="chapter-title">۹ — فاز ۴: شش برج نخست با تغییر مدل واقعی</div>
+  <div class="divider"></div>
+</div>
+<p>قانون طلایی این فاز، همان خواستهٔ مصوب پروژه است: <b>ارتقای سطح باید «تغییر مدل واقعی» باشد، نه Scale</b>. چون <span class="code">ModelNormalizer</span> ارتفاع هر فایل را به <span class="code">targetHeight</span> قفل می‌کند، زبان درستِ پیشرفت، تغییر ساختار است: اضافه‌شدن طبقه، سنگینی‌تر شدن سر، پیدا شدن هستهٔ انرژی، و غلیظ‌تر شدن تزئینات پارسی. بنابراین هر برجِ این فاز <b>پنج فایل</b> دارد (<span class="code">sentinel-l1.glb</span> تا <span class="code">sentinel-l5.glb</span>)؛ فایل اصلیِ اعلام‌شدهٔ Manifest (<span class="code">sentinel.glb</span>) همان فرم L3 است تا مثل الان به‌عنوان جایگزینِ تک‌فایل هم کار کند و اتصال پنج‌فایلی در لایهٔ Asset (TowerFactory — نه منطق نبرد) انجام شود.</p>
+<div class="rule"><b>قواعد مشترک همهٔ برج‌ها:</b> معماری پایه = سکوی پنج‌ضلعی سنگی با قرینهٔ پارسی (هویت مشترک خانواده) • بدون Rig؛ فقط نود <span class="code">Turret</span> (برای برجک چرخان) و <span class="code">MuzzlePoint</span>/<span class="code">ChestPoint</span> • بودجه هر سطح ≤ 12k مثلث، تکسچر 2048، حجم ≤ 2MB • متریال سنگِ فصل ۳.۶ + فلز خانواده • در L5 «دگردیسی» کامل اتفاق می‌افتد: هستهٔ انرژی روشن، تاجِ طلایی، و حجم فعال‌تر — نقطهٔ اوجِ هر خط • تغییر بین سطوح با همان <span class="code">targetHeight</span> (تغییر فرم، نه قد).</div>
+
+<h3>۹.۱ — برج نگهبان (Sentinel) <span class="badge">فیزیکی · ضد هوایی</span></h3>
+<p><b>امضای Silhouette:</b> «چراغ‌دریچهٔ سنگی» — برجکِ چندضلعیِ کوتاه با سرِ تیربارِ دوقلو؛ ساده‌ترین و ماندگارترین فرمِ خانواده.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش</b></td><td>برج اولِ بازی؛ گلولهٔ فیزیکی ضد-هوایی، آتش سریع؛ رنگ نئون UI کهربایی <span class="sw" style="background:#ffb020"></span> <span class="code">#ffb020</span>؛ ارتفاع 3.2m</td></tr>
+<tr><td><b>ساختار</b></td><td>سکوی پنج‌ضلعی + تنهٔ سنگیِ شیار-دار + سرِ برجکِ چرخانِ دوقلو؛ <span class="code">Turret</span> = سرِ چرخان، <span class="code">MuzzlePoint</span> دهانهٔ راست</td></tr>
+<tr><td><b>پالت</b></td><td>سنگ گرم <span class="sw" style="background:#6b655c"></span> · برنز <span class="sw" style="background:#8a6b45"></span> لوله‌ها · طلایی <span class="sw" style="background:#ffb020"></span> خطوط مُهر و نوک برجک</td></tr>
+</tbody></table></div>
+<table class="tbl-keep"><thead><tr><th style="width:9%">سطح</th><th>تغییر مدل واقعی</th></tr></thead>
+<tbody>
+<tr><td><b>L1</b></td><td>سکو + تنهٔ کوتاه + یک لولهٔ تک روی پایهٔ چرخان؛ مهر ساده روی سکو</td></tr>
+<tr><td><b>L2</b></td><td>تنه یک طبقه بلندتر با قرینهٔ دوطرفه؛ لوله دوم اضافه می‌شود (سر دوقلو)</td></tr>
+<tr><td><b>L3</b></td><td>بالاپوش برنزی روی تنه؛ چهار ستونک گوشه‌ها؛ لبهٔ طلایی زیر برجک (فایل اصلی Manifest = همین فرم)</td></tr>
+<tr><td><b>L4</b></td><td>پنجره‌های آتشِ روشن روی تنه؛ سرِ برجک پهن‌تر با زنجیر تغذیه؛ دو پرچم کوچک آذری</td></tr>
+<tr><td><b>L5 — دگردیسی</b></td><td>سکو به قلعهٔ هشت‌ضلعی می‌رسد؛ هستهٔ طلایی روشن بین دو لوله؛ تاجِ چهار-نوک؛ خطوط مُهر تمام تنه Emissive ملایم</td></tr>
+</tbody></table>
+<div class="prompt-label">AI PROMPT — SENTINEL (BASE L3 FORM)</div>
+<div class="prompt">Stylized dark fantasy stone defense tower, pentagon stone base, grooved stone shaft with bronze upper casing, twin-barrel rotating ballista head with golden trim, small Persian corner pillars, amber seal engravings, mobile tower defense building, chunky readable silhouette, no characters, no rig.</div>
+
+<h3>۹.۲ — برج صاعقه (Lightning) <span class="badge">انرژی · زنجیره‌ای</span></h3>
+<p><b>امضای Silhouette:</b> «چنگالِ آسمان» — برجِ بلندِ نوک‌تیز با بازوی میله‌ای که دُرُستهٔ آذرخش روی آن قوس می‌زند؛ بلندترین برجِ خانواده بعد از یخ.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش</b></td><td>صاعقهٔ زنجیره‌ای (2 پرش، افت 72٪)؛ ضد هوایی؛ رنگ UI بنفش <span class="sw" style="background:#8b5cf6"></span> <span class="code">#8b5cf6</span>؛ ارتفاع 4.4m؛ VFX از <span class="code">ChestPoint</span></td></tr>
+<tr><td><b>ساختار</b></td><td>تنهٔ مخروطیِ پله‌ای + میلهٔ مگنتِ خمیده در نوک؛ دندانه‌های رسانا دور تنه؛ بدون برجک چرخان</td></tr>
+<tr><td><b>پالت</b></td><td>سنگ تیره <span class="sw" style="background:#4a4652"></span> · برنج مات <span class="sw" style="background:#a8955f"></span> میله‌ها · بنفش <span class="sw" style="background:#8b5cf6"></span> قوس و هسته (Emissive)</td></tr>
+</tbody></table></div>
+<table class="tbl-keep"><thead><tr><th style="width:9%">سطح</th><th>تغییر مدل واقعی</th></tr></thead>
+<tbody>
+<tr><td><b>L1</b></td><td>تنهٔ سادهٔ مخروطی + یک میلهٔ نوک‌ساده؛ دندانه‌های رسانا فقط پایین</td></tr>
+<tr><td><b>L2</b></td><td>پلهٔ دوم روی تنه؛ میله به چنگالِ دو-شاخه تبدیل می‌شود</td></tr>
+<tr><td><b>L3</b></td><td>حلقهٔ رسانای شناور دور نوک؛ نقش رونِ آذرخش روی تنه؛ دندانه‌ها تمام قد</td></tr>
+<tr><td><b>L4</b></td><td>دو بالابرِ رسانای جانبی؛ قوس بنفش دائمیِ کم‌نور بین چنگال‌ها</td></tr>
+<tr><td><b>L5 — دگردیسی</b></td><td>تنه باز می‌شود و ستونِ انرژیِ بنفش از درون بالا می‌آید؛ چنگال سه-شاخه؛ تاجِ حلقویِ شناور</td></tr>
+</tbody></table>
+<div class="prompt-label">AI PROMPT — LIGHTNING (BASE L3 FORM)</div>
+<div class="prompt">Stylized dark fantasy lightning defense tower, tall stepped conical stone shaft, curved copper conductor rod on top shaped like a fork, floating conductive ring around the tip, rune band with lightning motif, purple energy glow at core, mobile tower defense building, sharp vertical silhouette, no rig.</div>
+
+<h3>۹.۳ — برج آتش (Fire) <span class="badge">آتش · Splash</span></h3>
+<p><b>امضای Silhouette:</b> «اجاقِ محاصره» — برجِ کوتاهِ تنومند با دیگِ گدازه و لولهٔ مشعلِ پهن؛ پهن‌ترین برجِ خانواده نسبت به قد.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش</b></td><td>گوی آتش با Splash 2.8 و سوختن 6/s؛ فقط زمینی؛ رنگ UI نارنجی <span class="sw" style="background:#f97316"></span> <span class="code">#f97316</span>؛ ارتفاع 2.9m؛ VFX از <span class="code">MuzzlePoint</span></td></tr>
+<tr><td><b>ساختار</b></td><td>تنهٔ کوتاهِ قوی + دیگِ گدازه در پشت + لولهٔ مشعلِ پهن رو به جلو؛ دریچه‌های هوا روی تنه</td></tr>
+<tr><td><b>پالت</b></td><td>سنگ سوخته <span class="sw" style="background:#544b45"></span> · برنز سیاه‌شده <span class="sw" style="background:#6e5138"></span> لوله · نارنجی <span class="sw" style="background:#f97316"></span> گدازه و دریچه‌ها (Emissive)</td></tr>
+</tbody></table></div>
+<table class="tbl-keep"><thead><tr><th style="width:9%">سطح</th><th>تغییر مدل واقعی</th></tr></thead>
+<tbody>
+<tr><td><b>L1</b></td><td>تنهٔ کوتاه + لولهٔ مشعل ساده؛ دیگ نیمه‌پنهان پشت</td></tr>
+<tr><td><b>L2</b></td><td>دیگ جلو می‌آید و بزرگ می‌شود؛ دو دریچهٔ هوا باز می‌شود</td></tr>
+<tr><td><b>L3</b></td><td>قاب برنزیِ توربینی دور لوله؛ سه دهانهٔ اضافی روی تنه (دریچه‌های فشار)</td></tr>
+<tr><td><b>L4</b></td><td>لوله دوتکه با رینگ انبساط؛ جوی گدازه از دیگ به لوله (Emissive مسیر)</td></tr>
+<tr><td><b>L5 — دگردیسی</b></td><td>برج به «کورهٔ سه-دهانه» بدل می‌شود؛ سکوی گدازهٔ روشن دور برج؛ تاجِ دودکشِ چهارگوش با شعله‌گیر</td></tr>
+</tbody></table>
+<div class="prompt-label">AI PROMPT — FIRE (BASE L3 FORM)</div>
+<div class="prompt">Stylized dark fantasy fire defense tower, short stout burnt-stone body, wide bronze flamethrower barrel with turbine ring, lava cauldron behind with glowing ember vents on the shaft, orange lava glow in openings, mobile tower defense building, wide sturdy silhouette, no rig.</div>

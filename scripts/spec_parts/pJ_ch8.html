@@ -1,0 +1,36 @@
+<!-- ============ CH 8 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 08 — PHASE 3</div>
+  <div class="chapter-title">۸ — فاز ۳: اژدهای سیاه و Bossهای دیگر</div>
+  <div class="divider"></div>
+</div>
+<p>اژدهای سیاه، Boss منطقهٔ ۴ (آتشفشان) و سخت‌ترین مدل این فاز است؛ به همین دلیل کارت کامل فقط به او داده شده و سه غول و ارباب تاریکی با جدول خلاصه در پایان فصل می‌آیند. اژدها یک «لحظه‌ساز» است: ورودش باید تا ثانیه‌ها بعد از پایان نبرد در ذهن بماند. قاعدهٔ کلی Bossها در این فاز: ۹ کلیپ جدول ۴.۵، بودجه ≤ 35k مثلث، تکسچر 2048–4096، حجم ≤ 6–8MB و مقیاس دنیا با ضریب <span class="code">data.scale</span>.</p>
+
+<h3>۸.۱ — اژدهای سیاه <span class="badge">BOSS — خشم آسمانی</span></h3>
+<p><b>امضای Silhouette:</b> «طوفانِ دو-شاخ» — اژدهایی چهار-پا با گردنِ سه-بندِ S شکل، دو شاخِ رو-به-عقبِ بلند، و دو بالِ پرده‌دارِ بزرگ؛ در پرواز، خطِ بدن مثل موجِ سهمی است و دمِ چهار-بندی نصف طول بدن را می‌سازد.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>Boss پرندهٔ منطقهٔ ۴؛ HP 10500، زره 20، مقاوم آتش 40٪؛ نفس سایه (حملهٔ دور از <span class="code">MouthPoint</span>) و حملهٔ چنگال (Attack1)؛ در فاز ۲ «خشم آسمانی»: سرعت 1.4×، احضار ۲ اژدهای کوچک، و فلج‌کردن دوره‌ای ۲ برج با جادوی سایه</td></tr>
+<tr><td><b>اندام</b></td><td>4.50m ارتفاع ایستاده در فایل (در دنیا 2.6× ≈ 11.7m حس مقیاس)؛ طول کل با دم ≈ 12m؛ دهانهٔ بال‌ها ≈ 14m؛ 8 سرِ کشیده — بدنِ قهرمان کنار پایش مثل اسباب‌بازی دیده شود</td></tr>
+<tr><td><b>پالت</b></td><td>مش-زغالی <span class="sw" style="background:#0a0a0a"></span> <span class="code">#0a0a0a</span> فلس‌ها · بنفش <span class="sw" style="background:#8b5cf6"></span> <span class="code">#8b5cf6</span> غشای بال، چشم‌ها، درز فک و رگهٔ دم (Emissive) · خاکستری دود <span class="sw" style="background:#3a3a42"></span> <span class="code">#3a3a42</span> زیرشکم و غشای بال</td></tr>
+<tr><td><b>متریال</b></td><td>فلسِ ماتِ Roughness 0.7 با شکستِ متقاطع در Normal؛ غشای بال نیمه-شفافِ مجازِ Boss (صحنهٔ نور آتشفشان از پشت می‌درخشد)؛ رگه‌های بنفش Emissive که در <span class="code">PhaseChange</span> شدت می‌گیرند</td></tr>
+<tr><td><b>سر/چهره</b></td><td>جمجمهٔ پهن با دو شاخِ خمیدهٔ رو-به-عقب؛ فکِ مفصلی واقعی (استخوان Jaw) که در <span class="code">Roar</span> و نفس باز می‌شود؛ دندان‌های بزرگِ تقریبی؛ چشم‌های بنفشِ بدون مردمک</td></tr>
+<tr><td><b>بال‌ها</b></td><td>دو بالِ سه-بندی با استخوان‌های لبه‌دار و غشای پرده‌ای؛ لبهٔ بال کمی پاره (سه شکاف ثابت، نه خرت‌وپرت) — امضای شناسایی در پرواز</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Idle/Walk</span>: پروازِ تپندهٔ ثابت (Walk = پیش‌روی بال‌دار) با موجِ S روی گردن؛ <span class="code">Attack1</span>: چنگال دو-ضرب در هوا؛ <span class="code">Attack2</span>: نفس سایه — فک باز، جمع‌شدن گردن، رها شدن (VFX از <span class="code">MouthPoint</span>)؛ <span class="code">SpecialAttack</span>: اوج‌گیری و باران سایهٔ دایره‌ای؛ <span class="code">Roar</span>: فک کامل + باز شدت رگه‌ها؛ <span class="code">PhaseChange</span>: غلتک هوایی + فریاد — لحظهٔ تغییر رنگ VFX به بنفش پررنگ؛ <span class="code">Death</span>: سقوط چرخان و برخورد سنگین با زمین</td></tr>
+<tr><td><b>Rig / VFX</b></td><td>Rig اختصاصی ≤ 80 استخوان: Body/Spine×2/Neck×3/Jaw/Tail×4/Wing×3 هر طرف/4 پا×2 مفصل/Toe؛ <span class="code">MouthPoint/ChestPoint/HeadPoint/HitPoint</span> — فایل <span class="code">bosses/black-dragon.glb</span> · targetHeight 4.50</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — BLACK DRAGON</div>
+<div class="prompt">Stylized dark fantasy black dragon, four-legged winged wyvern with S-curved three-segment neck, two long backward horns, articulated jaw, four-segment tail half of body length, huge three-jointed membrane wings with three clean tears at edges, pitch-black matte scales, glowing purple wing membranes eyes and jaw seams, deep grey belly, boss monster for mobile tower defense, T-pose on ground, strong S-curve soaring silhouette.</div>
+<p><b>یادداشت تولید:</b> Mixamo این ریگ را نمی‌پذیرد؛ مسیر اختصاصی فصل ۵.۳ آخر. سه کلیپ <span class="code">Roar</span>، <span class="code">SpecialAttack</span> و <span class="code">PhaseChange</span> سرمایهٔ اصلی‌اند — بقیهٔ کلیپ‌ها می‌توانند ساده‌تر باشند ولی این سه نباید. اگر ابزار AI مدل پایه را با بال‌های بسته داد، بال‌ها را در Blender باز کنید و غشا را جدا بسازید تا مفاصل سه‌گانه درست کار کند.</p>
+
+<h3>۸.۲ — جدول خلاصهٔ چهار Boss دیگر</h3>
+<p>چهار Boss زیر پس از اژدهای سیاه و با همین قرارداد (۹ کلیپ، سقف 35k مثلث، Rig مطابق فصل ۴) تولید می‌شوند؛ کارت کامل آن‌ها در نسخهٔ بعدی سند داده خواهد شد، اما همین جدول + Phase 2 شخصیتِ کدِ فعلی برای شروع کافی است.</p>
+<table>
+<thead><tr><th style="width:20%">Boss</th><th style="width:26%">امضای Silhouette</th><th style="width:18%">فایل / ارتفاع فایل</th><th style="width:18%">پالت کلیدی</th><th>شخصیت فاز ۲ (از کد فعلی)</th></tr></thead>
+<tbody>
+<tr><td>پادشاه غول سنگی</td><td>غول فصل ۷ با تاجِ سنگیِ شکسته و تخته‌سنگِ دست — «پادشاهِ دفن‌شده»</td><td><span class="code">bosses/stone-golem-king.glb</span> · 2.60m (دنیا ≈5.7m)</td><td>سنگ <span class="sw" style="background:#44403c"></span> + کهربا <span class="sw" style="background:#f59e0b"></span></td><td>پوست سنگی (کاهش 15٪ آسیب) + کوبیدن زمینِ فلج‌کننده + احضار ۲ غول</td></tr>
+<tr><td>غول آتش</td><td>تیتانِ مذاب با شانه‌های آتشفشانی و سینهٔ گدازه — «کورهٔ راه‌رونده»</td><td><span class="code">bosses/fire-giant.glb</span> · 3.60m (دنیا ≈9.4m)</td><td>سرخ‌سیاه <span class="sw" style="background:#450a0a"></span> + نارنجی <span class="sw" style="background:#f97316"></span></td><td>بدن مذاب (مصون از یخ/کندی) + فوران آتشی دوره‌ای + احضار ۳ جنگجو</td></tr>
+<tr><td>غول یخ</td><td>تیتانِ کریستالیِ زاویه‌دار با شانه‌های یخ‌بسته و قلبِ درخشان — «قصرِ وارفته»</td><td><span class="code">bosses/ice-giant.glb</span> · 3.60m (دنیا ≈9.4m)</td><td>آبی‌عمیق <span class="sw" style="background:#0c4a6e"></span> + یخی <span class="sw" style="background:#7dd3fc"></span></td><td>انجماد ابدی (مصون از کندی) + هالهٔ یخ‌زنیِ برج‌ها + بازسازی 12/s</td></tr>
+<tr><td>ارباب تاریکی (Final)</td><td>پادشاهِ شوالیهٔ سایه با کلکِ بلند، شمشیرِ بزرگ و شش چشمِ ریز — «تاجِ شکسته»</td><td><span class="code">bosses/dark-lord.glb</span> · 4.20m (دنیا ≈11.8m)</td><td>زغالی <span class="sw" style="background:#18181b"></span> + بنفش <span class="sw" style="background:#a855f7"></span></td><td>سپر اربابی 1200 + احضار بی‌وقفهٔ سرباز سایه + مقاوم جادو 40٪</td></tr>
+</tbody></table>
+<p class="tbl-note">ارتفاع «دنیا» = targetHeight × data.scale. هر چهار نفر انسان‌گونهٔ سنگین یا تیتان‌وارند و می‌توانند از خط Mixamo (با تنظیم مقیاس) شروع شوند؛ فقط تاج/بال/کلک باید بخش دستی داشته باشند.</p>

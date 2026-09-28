@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>آخرین سنگر — Art Bible و مشخصات تولید Asset</title>
+<style>
+@font-face { font-family/*fb*/: 'Vazirmatn'; src:url('assets/fonts/Vazirmatn-Regular.ttf') format('truetype'); font-weight:400; font-display:swap; }
+@font-face { font-family/*fb*/: 'Vazirmatn'; src:url('assets/fonts/Vazirmatn-Medium.ttf') format('truetype'); font-weight:500; font-display:swap; }
+@font-face { font-family/*fb*/: 'Vazirmatn'; src:url('assets/fonts/Vazirmatn-SemiBold.ttf') format('truetype'); font-weight:600; font-display:swap; }
+@font-face { font-family/*fb*/: 'Vazirmatn'; src:url('assets/fonts/Vazirmatn-Bold.ttf') format('truetype'); font-weight:700; font-display:swap; }
+@font-face { font-family/*fb*/: 'Vazirmatn'; src:url('assets/fonts/Vazirmatn-Black.ttf') format('truetype'); font-weight:900; font-display:swap; }
+
+@page { size: 794px 1123px; margin: 0; }
+
+:root{
+  --c-dark:      #17181c;  /* XL — cover bg            */
+  --c-paper:     #f7f5f1;  /* XL — body bg             */
+  --c-card:      #f0ece3;  /* L  — card bg             */
+  --c-stripe:    #f2eee6;  /* L  — table stripe        */
+  --c-header:    #635a32;  /* M  — table header fill   */
+  --c-border:    #ddd5c4;  /* S  — borders             */
+  --c-accent:    #c8922a;  /* XS — saffron gold accent */
+  --c-text:      #26231c;
+  --c-muted:     #7c7565;
+  --c-dark-text: #f0ead9;
+  --c-dark-muted:#a89f8a;
+}
+
+html, body{
+  margin:0; padding:0; width:794px;
+  background: var(--c-paper);
+  color: var(--c-text);
+  font-family:'Vazirmatn', sans-serif;
+  font-size:13.5px; line-height:1.75;
+  line-break:strict; word-break:normal; overflow-wrap:break-word;
+}
+@media screen{
+  html{ height:auto; display:flex; justify-content:center; background:#222; }
+  body{ transform-origin:top center; margin:20px auto; box-shadow:0 0 30px rgba(0,0,0,.5); }
+}
+*{ box-sizing:border-box; }
+p{ margin:0 0 9px; text-align:justify; }
+p, td, li{ line-break:strict; text-align:justify; }
+
+/* ---------- COVER (fixed page, dark) ---------- */
+.frontpage{ position:relative; width:794px; height:1123px; background:var(--c-dark);
+        break-after:page; overflow:hidden; }
+.cov-l1{ position:absolute; inset:0; overflow:hidden; z-index:1; }
+.cov-grid{ position:absolute; inset:0;
+  background-image:linear-gradient(rgba(200,146,42,.05) 1px, transparent 1px),
+                   linear-gradient(90deg, rgba(200,146,42,.05) 1px, transparent 1px);
+  background-size:56px 56px; }
+.cov-glow{ position:absolute; top:-120px; right:-120px; width:430px; height:430px; border-radius:50%;
+  background:radial-gradient(circle, rgba(200,146,42,.12) 0%, transparent 65%); }
+.cov-l2{ position:absolute; inset:0; z-index:2; }
+.cov-line{ position:absolute; right:78px; top:110px; bottom:230px; width:6px; background:var(--c-accent); }
+.cov-l3{ position:absolute; inset:0; z-index:3; }
+.cov-kicker{ position:absolute; top:168px; right:150px; direction:ltr; text-align:right;
+  font-size:12.5px; letter-spacing:4px; color:var(--c-accent); opacity:.85; font-weight:600; }
+.cov-title{ position:absolute; top:300px; right:150px; left:70px; direction:rtl;
+  font-size:66px; font-weight:900; line-height:1.18; color:var(--c-dark-text); }
+.cov-sub{ position:absolute; top:470px; right:150px; left:70px;
+  font-size:24px; font-weight:500; color:var(--c-accent); }
+.cov-summary{ position:absolute; top:560px; right:150px; width:470px;
+  font-size:15.5px; line-height:1.85; color:var(--c-dark-text); opacity:.85; text-align:justify; }
+.cov-meta{ position:absolute; top:790px; right:150px; font-size:14px; line-height:2.1; color:var(--c-dark-muted); }
+.cov-meta b{ color:var(--c-dark-text); font-weight:600; }
+.cov-footer{ position:absolute; bottom:118px; right:150px; left:70px;
+  font-size:11.5px; color:var(--c-dark-muted); display:flex; justify-content:space-between; }
+.cov-footer .en{ direction:ltr; letter-spacing:2px; }
+
+/* ---------- FLOW CONTENT ---------- */
+.main-content{ padding:54px 62px 48px; }
+.chapter-header{ break-after:avoid; break-inside:avoid; margin-top:26px; margin-bottom:12px; }
+.section-tag{ font-size:10.5px; font-weight:600; letter-spacing:2.5px; color:var(--c-accent); direction:ltr; text-align:right; }
+.chapter-title{ font-size:23px; font-weight:700; line-height:1.35; color:var(--c-text); margin:2px 0 0; }
+.divider{ width:64px; height:8px; background:var(--c-accent); border-radius:3px; margin-top:8px; }
+h3{ font-size:16.5px; font-weight:600; color:var(--c-text); margin:20px 0 8px; break-after:avoid; }
+h4{ font-size:14px; font-weight:600; color:var(--c-header); margin:14px 0 6px; break-after:avoid; }
+
+table{ width:100%; border-collapse:collapse; margin:10px 0 14px; font-size:11.5px; }
+thead{ display:table-header-group; }
+tr{ break-inside:avoid; }
+th{ background:var(--c-header); color:#fff; font-weight:600; padding:6px 8px; text-align:right;
+    border:1px solid #544c2a; font-size:11px; }
+td{ padding:5px 8px; border:1px solid var(--c-border); vertical-align:top; text-align:right; }
+tbody tr:nth-child(odd) td{ background:var(--c-stripe); }
+.tbl-keep{ break-inside:avoid; }
+.tbl-note{ font-size:10.5px; color:var(--c-muted); margin:-8px 0 12px; }
+
+.card{ background:var(--c-card); border:1px solid var(--c-border); border-right:3px solid var(--c-accent);
+  border-radius:8px; padding:13px 16px; margin:0 0 14px; }
+.keep{ break-inside:avoid; }
+.rule{ border-right:3px solid var(--c-accent); background:#f4efe2; border-radius:6px;
+  padding:10px 14px; margin:10px 0 14px; break-inside:avoid; }
+.rule b{ color:var(--c-header); }
+
+.code{ direction:ltr; unicode-bidi:isolate; font-family:'DejaVu Sans Mono', monospace;
+  font-size:.86em; background:#ece5d4; padding:0 4px; border-radius:3px; color:#4a4230; }
+.prompt{ direction:ltr; unicode-bidi:isolate; text-align:left; font-family:'DejaVu Sans Mono', monospace;
+  font-size:10px; line-height:1.6; background:#1d1e24; color:#d8d2c0; padding:11px 13px;
+  border-radius:6px; white-space:pre-wrap; margin:8px 0 4px; break-inside:avoid; }
+.prompt .neg{ color:#c98a8a; }
+.prompt-label{ font-size:10px; font-weight:600; color:var(--c-muted); letter-spacing:1.5px; direction:ltr; text-align:left; margin-top:8px; }
+
+.sw{ display:inline-block; width:11px; height:11px; border-radius:3px; border:1px solid rgba(0,0,0,.25);
+     vertical-align:-1px; margin-left:5px; }
+.badge{ display:inline-block; background:#efe0c3; color:#7a5a17; font-size:10px; font-weight:700;
+  padding:1px 8px; border-radius:10px; margin-inline-start:6px; vertical-align:2px; }
+.badge.red{ background:#efc9c3; color:#8a2f22; }
+.toc{ columns:2; column-gap:34px; margin-top:6px; }
+.toc div{ break-inside:avoid; font-size:12px; padding:4.5px 0; border-bottom:1px dashed var(--c-border); }
+.toc b{ color:var(--c-accent); font-weight:700; margin-inline-end:6px; }
+ul.tight{ margin:4px 0 10px; padding-right:20px; }
+ul.tight li{ margin-bottom:4px; text-align:right; break-inside:avoid; }
+ol.steps{ margin:4px 0 10px; padding-right:22px; }
+ol.steps li{ margin-bottom:7px; text-align:right; break-inside:avoid; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="frontpage">
+  <div class="cov-l1"><div class="cov-grid"></div><div class="cov-glow"></div></div>
+  <div class="cov-l2"><div class="cov-line"></div></div>
+  <div class="cov-l3">
+    <div class="cov-kicker">ART BIBLE &amp; ASSET PRODUCTION SPECIFICATION</div>
+    <div class="cov-title">آخرین سنگر</div>
+    <div class="cov-sub">نگهبانان سرزمین — سند مادر تولید دارایی‌های سه‌بعدی واقعی</div>
+    <div class="cov-summary">این سند، مرجع واحد هویت بصری و قرارداد فنی تولید ۲۹ کاراکتر و برجِ بازی است: از سبک هنری واحد «فانتزی تاریک استایلایز» و پالت رنگ تا بودجهٔ چندضلعی، اسکلت‌بندی (Rig)، فهرست انیمیشن‌ها، نقاط VFX و پرامپت‌های آمادهٔ ابزارهای هوش مصنوعی. هر فایل GLB که طبق این سند تولید شود، بدون حتی یک خط تغییر کد به خط لولهٔ فعلی متصل می‌شود.</div>
+    <div class="cov-meta">
+      <div><b>نسخه:</b> 1.0 &nbsp;•&nbsp; <b>وضعیت:</b> مصوب برای شروع تولید فاز ۱</div>
+      <div><b>دامنه:</b> ۴ قهرمان + ۱۶ دشمن + ۵ Boss + ۱۰ برج</div>
+      <div><b>خط لولهٔ مقصد:</b> AssetManager + ModelNormalizer + CharacterFactory (بدون تغییر Gameplay)</div>
+    </div>
+    <div class="cov-footer">
+      <span>REAL 3D ASSET PRODUCTION PASS — PHASE 1..4</span>
+      <span class="en">AZAR FORTRESS / THREE.JS + GLTF 2.0</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MAIN CONTENT ============ -->
+<div class="main-content">
+
+<div class="chapter-header">
+  <div class="section-tag">TABLE OF CONTENTS</div>
+  <div class="chapter-title">فهرست مطالب</div>
+  <div class="divider"></div>
+</div>
+<div class="toc">
+  <div><b>۱</b> خلاصهٔ اجرایی و تصمیم‌های کلیدی</div>
+  <div><b>۲</b> وضعیت فعلی: خط لوله آماده، محتوا غایب</div>
+  <div><b>۳</b> Art Bible — سبک هنری واحد</div>
+  <div><b>۴</b> قرارداد فنی تولید (Technical Contract)</div>
+  <div><b>۵</b> گردش کار تولید: AI سه‌بعدی + Blender + Mixamo</div>
+  <div><b>۶</b> فاز ۱ — کارت کامل چهار قهرمان</div>
+  <div><b>۷</b> فاز ۲ — کارت کامل شش دشمن نخست</div>
+  <div><b>۸</b> فاز ۳ — Bossها: اژدهای سیاه + جدول بقیه</div>
+  <div><b>۹</b> فاز ۴ — شش برج نخست + جدول بقیه</div>
+  <div><b>۱۰</b> پذیرش، کنترل کیفیت و برنامهٔ جایگزینی آرمان</div>
+</div>

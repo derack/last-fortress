@@ -1,0 +1,49 @@
+<!-- ============ CH 7 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 07 — PHASE 2</div>
+  <div class="chapter-title">۷ — فاز ۲: کارت کامل شش دشمن نخست</div>
+  <div class="divider"></div>
+</div>
+<p>شرط اصلی این فاز، نوشته‌شدن در حافظهٔ بصری بازی است: شش دشمنِ نخست باید در یک قاب، شش موجودِ کاملاً متفاوت به‌نظر برسند — نه شش نمونه از یک هیولا. برای تضمین، ابتدا محورهای تفاوت را روی هر شش نفر قفل می‌کنیم و بعد کارت‌ها می‌آیند. آزمون پذیرش فاز ۲: یک اسکرین‌شات از برخورد هر شش نفر با یک قهرمان، بدون خواندن نام، باید بتوان شش رستهٔ متفاوت را شمرد.</p>
+<table>
+<thead><tr><th style="width:15%">دشمن</th><th style="width:17%">پلان بدن</th><th style="width:16%">حرکت</th><th style="width:18%">خوان حمله</th><th style="width:17%">متریال غالب</th><th>درخشش Accent</th></tr></thead>
+<tbody>
+<tr><td>موجود سایه</td><td>لکهٔ نیمه‌مادهٔ دو-پا</td><td>لغزشِ پیوسته</td><td>گازگرفتنِ چنگال</td><td>گوشتِ سایه</td><td>بنفش <span class="sw" style="background:#a855f7"></span></td></tr>
+<tr><td>جنگجوی تاریکی</td><td>انسانی زره‌پوش</td><td>راه‌رفتنِ نظامی</td><td>شمشیر-تاب</td><td>فلز و پارچهٔ کهنه</td><td>سرخ <span class="sw" style="background:#ef4444"></span></td></tr>
+<tr><td>غول سنگی</td><td>تودهٔ چهار-اندام سنگی</td><td>کوبیدنِ زمین‌گیر</td><td>مشت-دوقلوی از بالا</td><td>سنگ و خزه</td><td>کهربا <span class="sw" style="background:#f59e0b"></span></td></tr>
+<tr><td>عنکبوت سایه</td><td>هشت-پای واقعی</td><td>خزیدنِ تند</td><td>پرش-گاز</td><td>کیتین تیره</td><td>فیروزه <span class="sw" style="background:#22d3ee"></span></td></tr>
+<tr><td>جادوگر تاریکی</td><td>انسانی ردا-پوش</td><td>سُر خوردنِ آرام</td><td>پرتابِ طلسم</td><td>پارچه و استخوان</td><td>بنفش روشن <span class="sw" style="background:#8b5cf6"></span></td></tr>
+<tr><td>پرندهٔ سایه</td><td>شبحِ بال‌دارِ شناور</td><td>پروازِ تپنده</td><td>شیرجه</td><td>مهٔ نیمه‌شفاف</td><td>یاسی <span class="sw" style="background:#c084fc"></span></td></tr>
+</tbody></table>
+<p>قاعدهٔ مشترک اردوگاه تاریک در اندازه‌گیری‌ها: ۵ کلیپ جدول ۴.۵ روی همه الزامی است؛ پاها در <span class="code">Walk</span> هرگز زیر زمین نروند؛ <span class="code">Death</span> برای موجودات نیمه‌ماده = فروپاشی به ذرات/لکه (فرو رفتن در زمین روی فریم آخر) و برای موجودات مادی = افتادن کلاسیک. بودجه: ≤ 10k مثلث، تکسچر 1024 (نخبه 2048)، ≤ 1.5–2MB.</p>
+
+<h3>۷.۱ — موجود سایه <span class="badge">COMMON</span></h3>
+<p><b>امضای Silhouette:</b> «قطرهٔ تاریکیِ ایستاده» — بدنِ بی‌دست‌ون‌پایِ مشخص که از زمین بیرون کشیده شده؛ دو چنگالِ کوتاه به‌جای دست و سرِ بی‌گردن با دو چشمِ بنفش.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>سرباز ارزانِ موج‌های اول؛ HP 55 و سرعت 4.2؛ تهدید در تعداد، نه قدرت</td></tr>
+<tr><td><b>اندام</b></td><td>1.45m در فایل (در دنیا 0.8× = 1.16m)؛ بدون گردن و کمر؛ بدن گلابی‌وار که پایین به زمین می‌چسبد؛ دو «بازوی» چنگالی کوتاه</td></tr>
+<tr><td><b>پالت</b></td><td>زغالی نیلی <span class="sw" style="background:#1f1b2e"></span> <span class="code">#1f1b2e</span> بدنه · بنفش <span class="sw" style="background:#a855f7"></span> <span class="code">#a855f7</span> چشم‌ها و رگه‌های مرکزی (Emissive)</td></tr>
+<tr><td><b>متریال</b></td><td>گوشت سایه: Roughness 0.9، بدون فلز؛ رگه‌های مرکزی روشن‌تر که در <span class="code">Hit</span> فلش بنفش می‌گیرند؛ لبه‌های بدن خاکستری‌تر (فِید به پایین)</td></tr>
+<tr><td><b>سر/چهره</b></td><td>سرِ نرم بدون استخوان صورت؛ فقط دو چشمِ بیضی درخشان و شکاف دهانِ کم‌عمق که در <span class="code">Attack</span> باز می‌شود</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Walk</span>: بدون گام — موج‌زدن پایین‌تنه و لغزش؛ <span class="code">Attack</span>: تورم ناگهانی + گاز دو چنگال؛ <span class="code">Death</span>: ریزش به لکه و محو روی Y=0</td></tr>
+<tr><td><b>Rig / VFX</b></td><td>Rig سادهٔ 8–12 استخوانه (Body/Chest/Head/2 Arm)؛ <span class="code">ChestPoint/HitPoint</span> — فایل <span class="code">enemies/shadow-creature.glb</span> · targetHeight 1.45</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — SHADOW CREATURE</div>
+<div class="prompt">Stylized dark fantasy shadow creature, amorphous upright blob of living shadow, no neck, no distinct legs, body melts into the ground, two short claw arms, glowing violet eyes, purple veins glowing faintly in chest, soft dripping edges, mobile game enemy, clean single mesh, silhouette like a standing ink drop.</div>
+
+<h3>۷.۲ — جنگجوی تاریکی <span class="badge">COMMON</span></h3>
+<p><b>امضای Silhouette:</b> «شبحِ میدانِ جنگ» — انسانی زره‌پوش با شانه‌پوش خاردار و شمشیری که لبه‌اش سرخ می‌تپد؛ عمداً «نسخهٔ معکوسِ» زبان بصری قهرمانان است.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>ستون فقرات موج‌ها؛ زره 3 و HP 130؛ حملهٔ نزدیکِ قابل‌اعتماد برای آموزش خط دفاعی به بازیکن</td></tr>
+<tr><td><b>اندام</b></td><td>1.80m؛ 5 سر (کوتاه‌تر از قهرمان)؛ قوز ۱۵°؛ بازوهای کمی بلندتر از طبیعی؛ شانه 2.0</td></tr>
+<tr><td><b>پالت</b></td><td>فلز کهنهٔ بنفش-خاکستری <span class="sw" style="background:#3b3648"></span> <span class="code">#3b3648</span> زره · سرخ <span class="sw" style="background:#ef4444"></span> <span class="code">#ef4444</span> لبهٔ شمشیر و شکاف کلاه‌خود (Emissive)</td></tr>
+<tr><td><b>متریال</b></td><td>فلز ماتِ جنگ‌زده با Roughness 0.6 و فرورفتگی‌های گلوله‌مانند؛ پارچهٔ زیرین پاره؛ زنگار در BaseColor</td></tr>
+<tr><td><b>سر/چهره</b></td><td>کلاه‌خود بستهٔ ساده با شکاف دید که فقط دو چشمِ سرخِ خاموش از آن بیرون می‌زند؛ هیچ پوست انسانی نمایش داده نشود (حسِ بی‌روح)</td></tr>
+<tr><td><b>سلاح</b></td><td>شمشیر پهنِ تیغه‌خشن 1.1m با لبهٔ سرخ Emissive؛ مش مجزای <span class="code">warrior_weapon</span> روی <span class="code">WeaponBone</span></td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Walk</span>: راه‌رفتن نظامی سنگین با تاب شمشیر پایین؛ <span class="code">Attack</span>: تاب مورب با صدای برش (Windup واضح ۶ فریم)؛ <span class="code">Death</span>: افتادن روبه‌جلو روی زانو سپس زمین</td></tr>
+<tr><td><b>Rig / VFX</b></td><td>انسان‌گونهٔ Mixamo ساده (≤ 40 استخوان)؛ <span class="code">WeaponPoint/ChestPoint/HeadPoint/HitPoint</span> — فایل <span class="code">enemies/dark-warrior.glb</span> · targetHeight 1.80</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — DARK WARRIOR</div>
+<div class="prompt">Stylized dark fantasy corrupted soldier, hunched humanoid in battered purple-grey plate armor with spiked shoulder pad, torn cloth under armor, closed simple helmet with eye slit and two dim red eyes, glowing red sword edge, heavy broad sword, no skin visible, undead knight feel, mobile game enemy, strong readable silhouette, opposite of hero color language.</div>

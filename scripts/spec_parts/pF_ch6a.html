@@ -1,0 +1,42 @@
+<!-- ============ CH 6 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 06 — PHASE 1</div>
+  <div class="chapter-title">۶ — فاز ۱: کارت کامل چهار قهرمان</div>
+  <div class="divider"></div>
+</div>
+<p>چهار قهرمان، پرمشغله‌ترین مدل‌های بازی‌اند: همیشه یک‌نفر روی صحنه است، دوربین نزدیک می‌شود و ویترای هویت بازی دستِ آن‌هاست. هر کارت با «امضای Silhouette» شروع می‌شود (همان جمله‌ای که آزمون فصل ۳ روی آن سنجیده می‌شود)، بعد جدول مشخصات، و در پایان پرامپت آماده. همهٔ چهار نفر یک انسان‌گونهٔ Mixamo کامل با <span class="code">WeaponBone</span> می‌گیرند و هشت کلیپ جدول ۴.۵ روی همه الزامی است.</p>
+<p><b>قاعدهٔ مشترک قهرمانان:</b> پالت بدنه از خانوادهٔ گرم اردوگاه روشن (فصل ۳.۳)، یک Accent اشباع اختصاصی (هم‌خوان با رنگ پرتابه در دادهٔ Gameplay)، زره «خوانا و لایه‌لایه» با نقش پارسی در سطح مُهر، بدون شنل/دامن بلند (خوانایی خط زمین)، و سلاح به‌عنوان مش مجزا با نام <span class="code">{id}_weapon</span> تا هم در Rig به <span class="code">WeaponBone</span> وصل شود و هم مسیر بهبودهای آینده باز بماند. بودجه: ≤ 15k مثلث، تکسچر 2048، ≤ 4–5MB.</p>
+
+<h3>۶.۱ — آرمان <span class="badge">COMMANDER — پتک آذری</span></h3>
+<p><b>امضای Silhouette:</b> «سنگ‌تراشِ طوفان» — جنگجوی پهن‌شانه با پتکِ تبر-چکشِ بلند که نوک کریستالی‌اش بالای سر آذرخش می‌گیرد؛ بدون شنل، خط بدن مثل برجِ کوتاهِ چهارگوش.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>فرمانده؛ حملهٔ انرژی/آذرخش با برد 10، توانایی فرمان نبرد (+40% آتش تیمی)، آئورای پیوستهٔ آذرخش روی سر پتک</td></tr>
+<tr><td><b>اندام</b></td><td>1.85m پس از نرمال‌سازی؛ 6.8 سر؛ شانه 2.3؛ بالاتنهٔ قوی، کمر باریک؛ سن ظاهری ≈ ۳۵ سال</td></tr>
+<tr><td><b>پالت</b></td><td>فولاد آبی‌خاکستری <span class="sw" style="background:#5d6b7a"></span> <span class="code">#5d6b7a</span> پایهٔ زره · طلایی آذر <span class="sw" style="background:#f0b03c"></span> <span class="code">#f0b03c</span> تزئینات و کریستال · لاجورد سرامیک <span class="sw" style="background:#2e5f8a"></span> <span class="code">#2e5f8a</span> سربند · Accent انرژی آذرخش <span class="sw" style="background:#93c5fd"></span> <span class="code">#93c5fd</span> (Emissive کریستال)</td></tr>
+<tr><td><b>زره و پوشش</b></td><td>زره صفحه‌ای سینه با نقش ترنج حکاکی‌شده؛ شانه‌پوش دوتکهٔ چهارگوش؛ پیش‌بازوی چرمِ پرشمار؛ سربند لاجوردی کوتاه؛ دامن‌کوتاهِ تسمه‌ای سنگین (نه دامن بلند)</td></tr>
+<tr><td><b>سلاح — پتک آذری</b></td><td>تبر-چکش یک‌دسته: سر چکش مستطیلی سنگی با وجه تبر در سمت مقابل، حکاکی ترنج روی وجوه، کریستال آذرخش نوک‌دار <span class="code">#93c5fd</span>؛ دستهٔ چوب‌فلزی با یراق طلایی؛ طول کل ≈ 1.4m — مش مجزای <span class="code">arman_weapon</span></td></tr>
+<tr><td><b>سر/چهره/مو</b></td><td>چهرهٔ استایلایزِ خوش‌عنفوان با ریش کوتاه مشکی و سبیل پیوسته؛ موی مشکی با بافت سادهٔ پسِ سر؛ پیشانی‌بند فلزی طلایی با نگین آبی — نه کلاه‌خود کامل (چهره باید خوانا بماند)</td></tr>
+<tr><td><b>اکسسوری</b></td><td>کمربند با قفل مُهر آذر؛ دو حلقهٔ یراق روی سربند؛ زنجیر کوتاه از شانه به سینه‌پوش (بدون شنل)</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Attack</span>: چرخش <span class="code">WeaponBone</span> پتک را از بالای شانه (≈ −60°) به جلو (≈ +45°) می‌چرخاند تا ضربه؛ <span class="code">Skill</span>: پتک بالا رفته و نوک کریستال به آسمان (لحظهٔ فرمان)؛ Idle تاب آرام پتک</td></tr>
+<tr><td><b>VFX / فایل</b></td><td><span class="code">WeaponPoint</span> نوک کریستال · <span class="code">MuzzlePoint</span> همان نقطه (پیست پرتابهٔ برد-دور) · <span class="code">ChestPoint/HeadPoint/HitPoint</span> استاندارد — فایل <span class="code">heroes/arman.glb</span> · targetHeight 1.85</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — ARMAN / REPLACE THOR</div>
+<div class="prompt">Stylized dark fantasy Persian storm-commander, broad-shouldered male warrior age 35, layered steel-blue plate armor with engraved Persian toranj medallion, golden trim, indigo sash, no cape, short black beard, metal forehead band with blue gem, wielding a long war-maul: rectangular stone hammer head with axe edge and glowing light-blue crystal tip, wooden-metal haft with golden rings, hammer held in right hand resting on shoulder, heroic 3/4 stance, strong silhouette like a short square tower.</div>
+
+<h3>۶.۲ — آریا <span class="badge">GUARDIAN — سپر اثری</span></h3>
+<p><b>امضای Silhouette:</b> «چراغِ محافظ» — بانوی جادوان با بالاپوشِ زره‌دار و عصای دوگویِ بلند که گویِ بالایش همیشه روشن است؛ فرم عمودیِ کشیده با دامنِ کوتاهِ لایه‌دار.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>نگهبان؛ گوی جادویی انفجاری (Splash 2.6) با رنگ فیروزه‌ای، توانایی سپر اثری؛ ترکیب دفاع + پشتیبانی</td></tr>
+<tr><td><b>اندام</b></td><td>1.78m؛ 7 سر؛ بدن کشیده و چابک، شانه 1.9؛ سن ظاهری ≈ ۳۰ سال؛ ایستای آرام و متعادل</td></tr>
+<tr><td><b>پالت</b></td><td>سفید-کرم سرد <span class="sw" style="background:#d9d4c6"></span> <span class="code">#d9d4c6</span> پایهٔ پارچه · لاجورد <span class="sw" style="background:#2e5f8a"></span> <span class="code">#2e5f8a</span> پاپیون‌ها و حاشیه · برنز <span class="sw" style="background:#8a6b45"></span> <span class="code">#8a6b45</span> زره‌های سبک · Accent جادو فیروزه <span class="sw" style="background:#67e8f9"></span> <span class="code">#67e8f9</span> (Emissive گوی)</td></tr>
+<tr><td><b>زره و پوشش</b></td><td>بالاپوش زره‌دار سبک روی ردای بلند-کوتاه (دامن تا زانو با لایهٔ زیرین کوتاه‌تر)؛ بازوبند برنزی؛ شال کمر با گره مُهر؛ روسری/کلاه‌پارچهٔ ملایم پشت سر (نه حجاب کامل، نه موی آزاد کامل — بستنی نیمه‌بسته)</td></tr>
+<tr><td><b>سلاح — عصای اثیر</b></td><td>عصای 1.7m با سرِ دو-حلقه‌ای برنزی که گوی فیروزه‌ای شناور را نگه می‌دارد؛ حلقهٔ پایین‌تر با ریسهٔ حکاکی؛ مش مجزای <span class="code">aria_weapon</span></td></tr>
+<tr><td><b>سر/چهره/مو</b></td><td>چهرهٔ آرام و هوشیار؛ چشم‌های فیروزه‌ای روشن (Emissive ملایم)؛ موی تیره با بافت بلند بسته و دو لایهٔ آزاد جلوی صورت؛ نگین پیشانی کوچک</td></tr>
+<tr><td><b>اکسسوری</b></td><td>دو اسکرول کاغذی آویخته از کمربند؛ طلسم دایره‌ای روی سینه‌پوش؛ رد پای نورانی خفیف زیر پا در Skill (از VFX بازی، نه مدل)</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Attack</span>: تاب عصا از کنار با توقف کوتاه در اوج؛ <span class="code">Skill</span>: عصا عمودی، دو دست، گوی به آسمان — سپر دایره‌ای از <span class="code">StaffPoint</span>؛ Idle تنفس با شناوری آرام گوی (Gimmick: گوی فقط با Idle نمی‌لرزد — در همهٔ کلیپ‌ها روی سر عصا قفل بماند)</td></tr>
+<tr><td><b>VFX / فایل</b></td><td><span class="code">StaffPoint</span> مرکز گوی · <span class="code">WeaponPoint</span> سر عصا · <span class="code">ChestPoint/HeadPoint/HitPoint</span> — فایل <span class="code">heroes/aria.glb</span> · targetHeight 1.78</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — ARIA</div>
+<div class="prompt">Stylized dark fantasy Persian guardian sorceress female age 30, elegant tall posture, cream-blue layered robe with light bronze plate on chest and shoulders, indigo trim with Persian motifs, half-tied dark hair with forehead gem, glowing turquoise eyes, holding a tall 1.7m staff with double bronze ring head and floating glowing turquoise orb, orb always lit, calm protective stance, vertical clean silhouette, no cape.</div>

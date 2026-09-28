@@ -1,0 +1,54 @@
+<!-- ============ CH 5 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 05 — PRODUCTION WORKFLOW</div>
+  <div class="chapter-title">۵ — گردش کار تولید: AI سه‌بعدی + Blender + Mixamo</div>
+  <div class="divider"></div>
+</div>
+<p>گردش کار رسمی چهار ایستگاه دارد: <b>(۱) تولید مدل پایه</b> با ابزارهای متن-به-سه‌بعدی (Meshy / Tripo / Rodin) یا آرتیست؛ <b>(۲) پاک‌سازی و کاهش چندضلعی</b> در Blender؛ <b>(۳) Rig و انیمیشن</b> با Mixamo (کاراکترهای انسان‌گونه) یا دستی (چهارنفس، اژدها)؛ <b>(۴) خروجی GLB و پذیرش</b> در گالری بازی. هر کارت از فصل‌های ۶ تا ۹، پرامپت آمادهٔ ایستگاه ۱ را دارد؛ این فصل بقیهٔ مسیر را گام‌به‌گام قفل می‌کند.</p>
+
+<h3>۵.۱ — ایستگاه ۱: ابزارهای AI سه‌بعدی</h3>
+<p>مسیر پیشنهادی مسیر دو-مرحله‌ای است: اول یک Concept دو-بعدی (تصویر) با متن پرامپت کارت تولید کنید، بعد با حالت Image-to-3D مدل بگیرید؛ کیفیت و کنترل Silhouette به‌مراتب بالاتر از Text-to-3D خالص است. تنظیمات پیشنهادی همهٔ ابزارها: <b>Symmetry = ON</b> (به‌جز اژدها و عنکبوت در جزئیات ثانویه)، <b>PBR = ON</b>، <b>Topology = Quad</b>، هدف چندضلعی: بالاترین حالت ابزار (کاهش بعداً در Blender انجام می‌شود)، خروجی: <span class="code">GLB</span> یا <span class="code">FBX</span>.</p>
+<div class="rule"><b>Master Style Prompt</b> (شروع همهٔ پرامپت‌ها — در کارت‌ها با [CHARACTER] جایگزین می‌شود):</div>
+<div class="prompt">Stylized dark fantasy game character, mobile tower-defense style, strong readable silhouette, hand-crafted feel, chunky readable armor shapes, PBR metal-rough, warm earthy palette with golden accents, clean topology, single mesh group, T-pose / A-pose, centered, full body, [CHARACTER], 3/4 hero pose, no text, no logo.</div>
+<p><b>Negative Prompt سراسری</b> (به همه اضافه شود):</p>
+<div class="prompt"><span class="neg">photorealistic face, anime eyes, Roblox proportions, Marvel Thor, Mjolnir disc hammer, red cape, copyrighted characters, realistic human skin, messy topology, double shells, floating parts, asymmetry errors, baked shadows in albedo, neon oversaturation, blurry textures, text, watermark.</span></div>
+<p>هر پرامپت کارت، توصیف اختصاصی <span class="code">[CHARACTER]</span> است و با دو قطعه بالا کامل می‌شود. اگر ابزار از Image-to-3D پشتیبانی نمی‌کند، همان متن را مستقیم در Text-to-3D بدهید و نتیجه را با آزمون Silhouette فصل ۳ بسننجید؛ رد شدن = بازتولید، نه رتوش در Blender.</p>
+
+<h3>۵.۲ — ایستگاه ۲: پاک‌سازی در Blender</h3>
+<ol class="steps">
+<li><b>Import:</b> <span class="code">File → Import → glTF 2.0</span>. بررسی اول: مدل رو به +Z؟ پاها روی Y=0؟ اگر نه، همین‌جا می‌چرخانیم و <span class="code">Ctrl+A → All Transforms</span> می‌زنیم.</li>
+<li><b>ادغام مش‌های اضافی:</b> قطعات ریز را به حداکثر ۳ مش برسانید (<span class="code">Ctrl+J</span>)؛ چیزهای شناور بدون کاربرد حذف شود.</li>
+<li><b>کاهش چندضلعی:</b> سقف‌های فصل ۴: قهرمان 15k، دشمن 10k، Boss 35k، برج 12k. مسیر: <span class="code">Decimate Modifier (Collapse)</span> با Ratio آزمایشی 0.4–0.6 و بررسی <span class="code">Viewport Overlays → Statistics</span>. UVها را قبل از اعمال چک کنید که نپاشند.</li>
+<li><b>نام‌گذاری:</b> مش‌ها <span class="code">{id}_body</span> و…، متریال‌ها <span class="code">MAT_{id}_{part}</span>؛ نود بی‌نام نماند.</li>
+<li><b>بررسی متریال:</b> Principled BSDF؛ شفافیت حذف (Opaque)؛ Emissive فقط نقاط کانونی؛ تعداد متریال ≤ ۳.</li>
+<li><b>Export FBX برای Mixamo:</b> فقط مش انتخابی، Scale 1.0، Forward = −Z? — دقت: Mixamo مبدأ FBX خودش را دارد؛ خروجی با پیش‌فرض Blender + تیک <span class="code">Apply Transform</span> بدهید و در ایستگاه ۳ دوباره جهت را وارسی کنید.</li>
+</ol>
+
+<h3>۵.۳ — ایستگاه ۳: Rig و انیمیشن با Mixamo (گام‌به‌گام)</h3>
+<ol class="steps">
+<li><b>Upload:</b> FBX کاراکتر را در <span class="code">mixamo.com</span> بگذارید؛ در ویزارد Auto-Rigger، نشانگرها را روی چانه، مچ‌ها، آرنج‌ها، زانوها و کشاله بگذارید و «Next» را تا پایان بزنید.</li>
+<li><b>کلیپ‌ها:</b> از کتابخانهٔ Mixamo نزدیک‌ترین Idle / Walking / Running / Any Idle Attack / Hit React / Death / Cheer را انتخاب کنید؛ Speed و Arm-Space را طوری تنظیم کنید که ژست پایه با کاراکتر بخواند.</li>
+<li><b>دانلود:</b> اولین کلیپ را <b>With Skin</b> (FBX Binary، 30fps) بگیرید؛ بقیهٔ کلیپ‌ها را <b>Without Skin</b> با همان تنظیمات دانلود کنید — اسکلت همه یکسان است و در Blender مستقیم روی همان استخوان‌ها می‌نشیند.</li>
+<li><b>Import به Blender:</b> هر ۸ (یا ۵/۹) فایل را در یک صحنه بیاورید؛ هر فایل یک Action می‌سازد.</li>
+<li><b>پاک‌سازی نام استخوان:</b> پیشوند <span class="code">mixamorig:</span> را حذف کنید (اسکریپت کوچک یا دستی روی ۲۰ استخوان اصلی) تا تطبیق نقطهٔ <span class="code">spine02 → ChestPoint</span> تضمین شود.</li>
+<li><b>تغییر نام Action‌ها:</b> دقیقاً به قرارداد فصل ۴: <span class="code">Idle</span>، <span class="code">Walk</span>، <span class="code">Run</span>، <span class="code">Attack</span>، <span class="code">Skill</span>، <span class="code">Hit</span>، <span class="code">Death</span>، <span class="code">Victory</span>. برای Skill و Victory، از کلیپ‌های نزدیک Mixamo رتاگِ دستی جزئی (۸–۱۲ فریم اصلاح پوز ژست نمادین) کافی است.</li>
+<li><b>In-Place کردن:</b> اگر کلیپ جابه‌جایی ریشه دارد، منحنی X/Y جابه‌جایی Hips را حذف کنید (فقط bob عمودی بماند).</li>
+<li><b>حفظ اکشن‌ها:</b> هر Action را یا در <span class="code">NLA Editor → Push Down</span> ببرید یا Fake User (F) فعال کنید — وگرنه در خروجی GLB گم می‌شود. این رایج‌ترین گم‌شدگی انیمیشن در کل این گردش کار است.</li>
+</ol>
+<p><b>Rig دستی (عنکبوت، پرنده، اژدها):</b> Mixamo این‌ها را نمی‌پذیرد؛ اسکلت فصل ۴ را دستی بسازید، Skin Weight بدهید و کلیپ‌ها را با کلید-فریم دستی از روی توصیف صحنهٔ جدول ۴.۵ بسازید. برای اژدهای سیاه، سرمایه‌گذاری اصلی روی <span class="code">Roar</span>، <span class="code">SpecialAttack</span> (نفس سایه) و چرخهٔ بال‌زدن <span class="code">Idle/Walk</span> است؛ همین سه، ۸۰٪ حس Boss را می‌سازند.</p>
+
+<h3>۵.۴ — ایستگاه ۴: خروجی GLB</h3>
+<ol class="steps">
+<li><b>نقاط VFX:</b> Emptyهای نام‌دار فصل ۴ را بسازید و به استخوان مربوط Parent کنید (<span class="code">WeaponPoint → WeaponBone</span>، <span class="code">ChestPoint → Spine2</span>، …)؛ جهت +Y هر Empty به سمت بیرون/جلو.</li>
+<li><b>Export:</b> <span class="code">File → Export → glTF 2.0 (.glb)</span> — Format = <b>glTF Binary</b>؛ Include = Selected Objects؛ Transform = +Y Up (پیش‌فرض)؛ Data = <b>Apply Modifiers ✓</b>، UV Maps ✓، Normals ✓؛ Material = Export؛ Animation = <b>Animation mode: Actions</b> با تیک همهٔ Actionهای هدف، <span class="code">Sampling ✓</span>، FPS صحنه = 30.</li>
+<li><b>ممنوع:</b> تیک Draco Compression (لودر فعلی پشتیبانی نمی‌کند)، تیک Shape Keys بی‌استفاده، تکسچر بالاتر از سقف کلاس.</li>
+<li><b>سنجش حجم:</b> فایل را با سقف جدول ۴.۳ بسنجید؛ اگر سنگین است اول تکسچر را JPG/فشرده‌تر کنید (بزرگ‌ترین سهم)، بعد دوباره نگاه به مثلث‌ها.</li>
+</ol>
+
+<h3>۵.۵ — پذیرش در بازی (Drop-in)</h3>
+<ol class="steps">
+<li>فایل را در مسیر دقیق جدول ۴.۷ بگذارید (<span class="code">public/assets/3d/…</span>).</li>
+<li>سرور dev را بالا بیاورید و <span class="code">?gallery=1</span> را باز کنید: نشان «مدل واقعی GLB» باید سبز شود؛ ارتفاع نمایش‌داده‌شده باید با <span class="code">targetHeight</span> برابر باشد؛ هر کلیپ را از منوی گالری یک‌بار اجرا کنید.</li>
+<li>نبرد واقعی: کاراکتر را بکار بگیرید و سه چیز را ببینید — Crossfade نرم بین حرکت‌ها، خروج VFX از نقطهٔ درست (به‌ویژه برق چکش آرمان که باید با تاب سلاح حرکت کند)، و نبود پاز/افت فریم هنگام Spawn دسته‌ای.</li>
+<li>چک‌لیست کامل پذیرش در فصل ۱۰ است؛ فقط بعد از تیک همهٔ بندها، دارایی «تحویل‌شده» حساب می‌شود.</li>
+</ol>

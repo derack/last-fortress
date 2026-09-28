@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>آخرین سنگر — Art Bible و مشخصات تولید Asset</title>
+<style>
+@font-face { font-family/*fb*/: 'Vazirmatn'; src:url('assets/fonts/Vazirmatn-Regular.ttf') format('truetype'); font-weight:400; font-display:swap; }
+@font-face { font-family/*fb*/: 'Vazirmatn'; src:url('assets/fonts/Vazirmatn-Medium.ttf') format('truetype'); font-weight:500; font-display:swap; }
+@font-face { font-family/*fb*/: 'Vazirmatn'; src:url('assets/fonts/Vazirmatn-SemiBold.ttf') format('truetype'); font-weight:600; font-display:swap; }
+@font-face { font-family/*fb*/: 'Vazirmatn'; src:url('assets/fonts/Vazirmatn-Bold.ttf') format('truetype'); font-weight:700; font-display:swap; }
+@font-face { font-family/*fb*/: 'Vazirmatn'; src:url('assets/fonts/Vazirmatn-Black.ttf') format('truetype'); font-weight:900; font-display:swap; }
+
+@page { size: 794px 1123px; margin: 0; }
+
+:root{
+  --c-dark:      #17181c;  /* XL — cover bg            */
+  --c-paper:     #f7f5f1;  /* XL — body bg             */
+  --c-card:      #f0ece3;  /* L  — card bg             */
+  --c-stripe:    #f2eee6;  /* L  — table stripe        */
+  --c-header:    #635a32;  /* M  — table header fill   */
+  --c-border:    #ddd5c4;  /* S  — borders             */
+  --c-accent:    #c8922a;  /* XS — saffron gold accent */
+  --c-text:      #26231c;
+  --c-muted:     #7c7565;
+  --c-dark-text: #f0ead9;
+  --c-dark-muted:#a89f8a;
+}
+
+html, body{
+  margin:0; padding:0; width:794px;
+  background: var(--c-paper);
+  color: var(--c-text);
+  font-family:'Vazirmatn', sans-serif;
+  font-size:13.5px; line-height:1.75;
+  line-break:strict; word-break:normal; overflow-wrap:break-word;
+}
+@media screen{
+  html{ height:auto; display:flex; justify-content:center; background:#222; }
+  body{ transform-origin:top center; margin:20px auto; box-shadow:0 0 30px rgba(0,0,0,.5); }
+}
+*{ box-sizing:border-box; }
+p{ margin:0 0 9px; text-align:justify; }
+p, td, li{ line-break:strict; text-align:justify; }
+
+/* ---------- COVER (fixed page, dark) ---------- */
+.frontpage{ position:relative; width:794px; height:1123px; background:var(--c-dark);
+        break-after:page; overflow:hidden; }
+.cov-l1{ position:absolute; inset:0; overflow:hidden; z-index:1; }
+.cov-grid{ position:absolute; inset:0;
+  background-image:linear-gradient(rgba(200,146,42,.05) 1px, transparent 1px),
+                   linear-gradient(90deg, rgba(200,146,42,.05) 1px, transparent 1px);
+  background-size:56px 56px; }
+.cov-glow{ position:absolute; top:-120px; right:-120px; width:430px; height:430px; border-radius:50%;
+  background:radial-gradient(circle, rgba(200,146,42,.12) 0%, transparent 65%); }
+.cov-l2{ position:absolute; inset:0; z-index:2; }
+.cov-line{ position:absolute; right:78px; top:110px; bottom:230px; width:6px; background:var(--c-accent); }
+.cov-l3{ position:absolute; inset:0; z-index:3; }
+.cov-kicker{ position:absolute; top:168px; right:150px; direction:ltr; text-align:right;
+  font-size:12.5px; letter-spacing:4px; color:var(--c-accent); opacity:.85; font-weight:600; }
+.cov-title{ position:absolute; top:300px; right:150px; left:70px; direction:rtl;
+  font-size:66px; font-weight:900; line-height:1.18; color:var(--c-dark-text); }
+.cov-sub{ position:absolute; top:470px; right:150px; left:70px;
+  font-size:24px; font-weight:500; color:var(--c-accent); }
+.cov-summary{ position:absolute; top:560px; right:150px; width:470px;
+  font-size:15.5px; line-height:1.85; color:var(--c-dark-text); opacity:.85; text-align:justify; }
+.cov-meta{ position:absolute; top:790px; right:150px; font-size:14px; line-height:2.1; color:var(--c-dark-muted); }
+.cov-meta b{ color:var(--c-dark-text); font-weight:600; }
+.cov-footer{ position:absolute; bottom:118px; right:150px; left:70px;
+  font-size:11.5px; color:var(--c-dark-muted); display:flex; justify-content:space-between; }
+.cov-footer .en{ direction:ltr; letter-spacing:2px; }
+
+/* ---------- FLOW CONTENT ---------- */
+.main-content{ padding:54px 62px 48px; }
+.chapter-header{ break-after:avoid; break-inside:avoid; margin-top:26px; margin-bottom:12px; }
+.section-tag{ font-size:10.5px; font-weight:600; letter-spacing:2.5px; color:var(--c-accent); direction:ltr; text-align:right; }
+.chapter-title{ font-size:23px; font-weight:700; line-height:1.35; color:var(--c-text); margin:2px 0 0; }
+.divider{ width:64px; height:8px; background:var(--c-accent); border-radius:3px; margin-top:8px; }
+h3{ font-size:16.5px; font-weight:600; color:var(--c-text); margin:20px 0 8px; break-after:avoid; }
+h4{ font-size:14px; font-weight:600; color:var(--c-header); margin:14px 0 6px; break-after:avoid; }
+
+table{ width:100%; border-collapse:collapse; margin:10px 0 14px; font-size:11.5px; }
+thead{ display:table-header-group; }
+tr{ break-inside:avoid; }
+th{ background:var(--c-header); color:#fff; font-weight:600; padding:6px 8px; text-align:right;
+    border:1px solid #544c2a; font-size:11px; }
+td{ padding:5px 8px; border:1px solid var(--c-border); vertical-align:top; text-align:right; }
+tbody tr:nth-child(odd) td{ background:var(--c-stripe); }
+.tbl-keep{ break-inside:avoid; }
+.tbl-note{ font-size:10.5px; color:var(--c-muted); margin:-8px 0 12px; }
+
+.card{ background:var(--c-card); border:1px solid var(--c-border); border-right:3px solid var(--c-accent);
+  border-radius:8px; padding:13px 16px; margin:0 0 14px; }
+.keep{ break-inside:avoid; }
+.rule{ border-right:3px solid var(--c-accent); background:#f4efe2; border-radius:6px;
+  padding:10px 14px; margin:10px 0 14px; break-inside:avoid; }
+.rule b{ color:var(--c-header); }
+
+.code{ direction:ltr; unicode-bidi:isolate; font-family:'DejaVu Sans Mono', monospace;
+  font-size:.86em; background:#ece5d4; padding:0 4px; border-radius:3px; color:#4a4230; }
+.prompt{ direction:ltr; unicode-bidi:isolate; text-align:left; font-family:'DejaVu Sans Mono', monospace;
+  font-size:10px; line-height:1.6; background:#1d1e24; color:#d8d2c0; padding:11px 13px;
+  border-radius:6px; white-space:pre-wrap; margin:8px 0 4px; break-inside:avoid; }
+.prompt .neg{ color:#c98a8a; }
+.prompt-label{ font-size:10px; font-weight:600; color:var(--c-muted); letter-spacing:1.5px; direction:ltr; text-align:left; margin-top:8px; }
+
+.sw{ display:inline-block; width:11px; height:11px; border-radius:3px; border:1px solid rgba(0,0,0,.25);
+     vertical-align:-1px; margin-left:5px; }
+.badge{ display:inline-block; background:#efe0c3; color:#7a5a17; font-size:10px; font-weight:700;
+  padding:1px 8px; border-radius:10px; margin-inline-start:6px; vertical-align:2px; }
+.badge.red{ background:#efc9c3; color:#8a2f22; }
+.toc{ columns:2; column-gap:34px; margin-top:6px; }
+.toc div{ break-inside:avoid; font-size:12px; padding:4.5px 0; border-bottom:1px dashed var(--c-border); }
+.toc b{ color:var(--c-accent); font-weight:700; margin-inline-end:6px; }
+ul.tight{ margin:4px 0 10px; padding-right:20px; }
+ul.tight li{ margin-bottom:4px; text-align:right; break-inside:avoid; }
+ol.steps{ margin:4px 0 10px; padding-right:22px; }
+ol.steps li{ margin-bottom:7px; text-align:right; break-inside:avoid; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="frontpage">
+  <div class="cov-l1"><div class="cov-grid"></div><div class="cov-glow"></div></div>
+  <div class="cov-l2"><div class="cov-line"></div></div>
+  <div class="cov-l3">
+    <div class="cov-kicker">ART BIBLE &amp; ASSET PRODUCTION SPECIFICATION</div>
+    <div class="cov-title">آخرین سنگر</div>
+    <div class="cov-sub">نگهبانان سرزمین — سند مادر تولید دارایی‌های سه‌بعدی واقعی</div>
+    <div class="cov-summary">این سند، مرجع واحد هویت بصری و قرارداد فنی تولید ۲۹ کاراکتر و برجِ بازی است: از سبک هنری واحد «فانتزی تاریک استایلایز» و پالت رنگ تا بودجهٔ چندضلعی، اسکلت‌بندی (Rig)، فهرست انیمیشن‌ها، نقاط VFX و پرامپت‌های آمادهٔ ابزارهای هوش مصنوعی. هر فایل GLB که طبق این سند تولید شود، بدون حتی یک خط تغییر کد به خط لولهٔ فعلی متصل می‌شود.</div>
+    <div class="cov-meta">
+      <div><b>نسخه:</b> 1.0 &nbsp;•&nbsp; <b>وضعیت:</b> مصوب برای شروع تولید فاز ۱</div>
+      <div><b>دامنه:</b> ۴ قهرمان + ۱۶ دشمن + ۵ Boss + ۱۰ برج</div>
+      <div><b>خط لولهٔ مقصد:</b> AssetManager + ModelNormalizer + CharacterFactory (بدون تغییر Gameplay)</div>
+    </div>
+    <div class="cov-footer">
+      <span>REAL 3D ASSET PRODUCTION PASS — PHASE 1..4</span>
+      <span class="en">AZAR FORTRESS / THREE.JS + GLTF 2.0</span>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MAIN CONTENT ============ -->
+<div class="main-content">
+
+<div class="chapter-header">
+  <div class="section-tag">TABLE OF CONTENTS</div>
+  <div class="chapter-title">فهرست مطالب</div>
+  <div class="divider"></div>
+</div>
+<div class="toc">
+  <div><b>۱</b> خلاصهٔ اجرایی و تصمیم‌های کلیدی</div>
+  <div><b>۲</b> وضعیت فعلی: خط لوله آماده، محتوا غایب</div>
+  <div><b>۳</b> Art Bible — سبک هنری واحد</div>
+  <div><b>۴</b> قرارداد فنی تولید (Technical Contract)</div>
+  <div><b>۵</b> گردش کار تولید: AI سه‌بعدی + Blender + Mixamo</div>
+  <div><b>۶</b> فاز ۱ — کارت کامل چهار قهرمان</div>
+  <div><b>۷</b> فاز ۲ — کارت کامل شش دشمن نخست</div>
+  <div><b>۸</b> فاز ۳ — Bossها: اژدهای سیاه + جدول بقیه</div>
+  <div><b>۹</b> فاز ۴ — شش برج نخست + جدول بقیه</div>
+  <div><b>۱۰</b> پذیرش، کنترل کیفیت و برنامهٔ جایگزینی آرمان</div>
+</div>
+<!-- ============ CH 1 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 01</div>
+  <div class="chapter-title">۱ — خلاصهٔ اجرایی و تصمیم‌های کلیدی</div>
+  <div class="divider"></div>
+</div>
+<p>بازی «آخرین سنگر: نگهبانان سرزمین» از نظر معماری نرم‌افزار، خط لولهٔ دارایی و Gameplay در وضعیت پایدار و تأییدشده قرار دارد؛ اما رشتهٔ سه‌بعدی واقعی هنوز تولید نشده است. بررسی کامل پروژه نشان می‌دهد که در فهرست <span class="code">AssetManifest</span> فقط یک فایل واقعی وجود دارد (<span class="code">arman.glb</span>) که خودش هم به‌دلیل نداشتن اسکلت و اشکال مالکیت فکری (مدل Thor از Marvel با متادیتای Sketchfab) قابل قبول به‌عنوان دارایی نهایی نیست. بنابراین فاز بعدی پروژه فقط و فقط یک چیز است: <b>تولید انبوه دارایی‌های سه‌بعدی واقعی</b> — بدون هیچ تغییر بزرگ در Gameplay.</p>
+<p>این سند دو نقش دارد. نقش نخست <b>Art Bible</b> است: قفل‌کردن سبک بصری واحد به‌نام «فانتزی تاریک استایلایز» (Dark Fantasy Stylized) با مرجع‌های قابل لمس، پالت رنگ کدگذاری‌شده با HEX، سیستم تناسب اندام و زبان متریال، تا ۲۹ کاراکتر و برجِ این بازی هم‌خانواده به‌نظر برسند و نه یک مجموعهٔ ناهمگون که یک کاراکتر شبیه Marvel، یکی شبیه Roblox و یکی شبیه Anime باشد. نقش دوم <b>Asset Production Specification</b> است: قرارداد فنی دقیق هر فایل GLB — نام‌گذاری، محور Forward، ارتفاع هدف، بودجهٔ چندضلعی و تکسچر، سطح‌های LOD، الزامات Rig، فهرست دقیق انیمیشن‌ها، نقاط اتصال VFX و پرامپت آمادهٔ ابزارهای هوش مصنوعی برای هر کاراکتر.</p>
+<div class="rule"><b>تصمیم‌های قفل‌شدهٔ این سند:</b> سبک = فانتزی تاریک استایلایز • بودجه = سبک موبایل (۸ تا ۱۵ هزار مثلث برای قهرمان، تکسچر ۱ تا ۲K، هدف 60FPS روی اندروید) • زبان سند = فارسی با اصطلاحات انگلیسی • مدل فعلی آرمان فقط موقت است و پرچم <span class="code">do-not-ship</span> می‌خورد • انیمیشن اسکلتی داخل GLB اولویت دارد و کنترلر پروسیجرال فعلی فقط نقش جایگزین (Fallback) را دارد • هیچ تغییری در Gameplay مجاز نیست.</div>
+<h3>۱.۱ — چهار فاز تولید</h3>
+<div class="tbl-keep"><table>
+<thead><tr><th style="width:12%">فاز</th><th style="width:38%">محتوا</th><th style="width:22%">تعداد کارت کامل در این سند</th><th>معیار خروج از فاز</th></tr></thead>
+<tbody>
+<tr><td><b>فاز ۱</b></td><td>چهار قهرمان: آرمان، آریا، رادین، نیلا (مدل + Rig + ۸ انیمیشن + نقاط VFX)</td><td>۴ کارت کامل</td><td>هر چهار GLB در گالری و نبرد تأیید شوند</td></tr>
+<tr><td><b>فاز ۲</b></td><td>شش دشمن نخست Vertical Slice: سایه، جنگجوی تاریکی، غول سنگی، عنکبوت، جادوگر، پرندهٔ سایه</td><td>۶ کارت کامل</td><td>شش دشمن کاملاً متمایز در یک صحنه، بدون شباهت خانوادگی</td></tr>
+<tr><td><b>فاز ۳</b></td><td>Bossها شروع از اژدهای سیاه (بیشترین ضربهٔ بصری)</td><td>۱ کارت کامل + جدول ۴ Boss دیگر</td><td>صحنهٔ Boss موج ۱۰ منطقهٔ ۴ تأیید شود</td></tr>
+<tr><td><b>فاز ۴</b></td><td>شش برج نخست با تغییر مدل واقعی بین سطح‌ها (نه فقط Scale)</td><td>۶ کارت کامل + جدول ۴ برج دیگر</td><td>ارتقا L1 تا L5 تغییر شکل واقعی نشان دهد</td></tr>
+</tbody></table></div>
+<p>ترتیب فازها عمدی است: قهرمانان ابتدا تولید می‌شوند چون بیشترین زمان روی صحنه را دارند و خط لولهٔ انیمیشن (Idle/Walk/Run/Attack/Skill) را کامل آزمایش می‌کنند؛ سپس دشمنان با تنوع حرکتی (چهارنفس، پرنده، شناور)؛ سپس اژدهای سیاه به‌عنوان سخت‌ترین Rig؛ و در پایان برج‌ها که ساده‌ترین ساختار را دارند ولی قانون «تغییر مدل واقعی در ارتقا» را اضافه می‌کنند. دارایی‌های دشمنان منطقه‌های ۲ تا ۶ و Bossهای باقی‌مانده پس از این چهار فاز، با همان قرارداد و فقط با جدول خلاصه تولید می‌شوند.</p>
+
+<!-- ============ CH 2 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 02</div>
+  <div class="chapter-title">۲ — وضعیت فعلی: خط لوله آماده، محتوا غایب</div>
+  <div class="divider"></div>
+</div>
+<p>خط لولهٔ دارایی پروژه از نظر مهندسی کامل و تست‌شده است و این یعنی هیچ سهمی از این سند به «تعویض کد» اختصاص ندارد؛ همهٔ تمرکز روی تولید فایل است. مسیر فعلی به این صورت کار می‌کند: هر فایل GLB که در مسیر <span class="code">public/assets/3d/…</span> با نام اعلام‌شده در Manifest قرار بگیرد، <span class="code">AssetManager</span> آن را در Splash Screen پیش‌بارگذاری می‌کند، <span class="code">ModelNormalizer</span> ارتفاعش را به <span class="code">targetHeight</span> دقیق می‌رساند، پاها را روی زمین می‌نشاند، جهت را اصلاح می‌کند و نقاط VFX را یا از داخل مدل پیدا می‌کند یا به‌صورت سینتتیک می‌سازد؛ سپس <span class="code">CharacterFactory</span> با الگوی Handle پایدار و Object Pool، مدل را بی‌درنگ جای Placeholder می‌نشاند — بدون توقف نبرد و بدون تغییر دادهٔ Gameplay.</p>
+<h3>۲.۱ — قابلیت‌های آمادهٔ خط لوله</h3>
+<ul class="tight">
+<li><b>بارگذاری خودکار:</b> GLTFLoader با Cache مثبت/منفی، preload موازی با نوار Progress فارسی و عدم Crash در نبود فایل.</li>
+<li><b>انیمیشن دو-حالته:</b> اگر GLB اسکلت و کلیپ داشته باشد، <span class="code">AnimationMixer</span> با Crossfade نرم اجرا می‌شود؛ اگر نداشته باشد، کنترلر پروسیجرال فعلی (شامل سیستم تازگی Prop-Swing برای سلاح مجزا) وارد عمل می‌شود. یعنی هر دو نوع فایل سالم می‌مانند، ولی <b>خروجی نهایی باید Rigged باشد</b>.</li>
+<li><b>نرمال‌سازی:</b> ارتفاع دقیق به <span class="code">targetHeight</span>، نشاندن پا روی زمین، مرکزسازی، <span class="code">rotationOffsetDeg</span> و استخراج نقاط VFX از نام نودها (بدون حساسیت به بزرگی حروف و با نام‌های جایگزین).</li>
+<li><b>گالری اعتبارسنجی:</b> مسیر <span class="code">?gallery=1</span> نمایش‌دهندهٔ وضعیت هر دارایی، انتخاب انیمیشن، مشخصات و نتیجهٔ ۸ بررسی <span class="code">AssetValidator</span> است — ابزار پذیرش هر GLB همین‌جاست.</li>
+</ul>
+<h3>۲.۲ — شکاف محتوا در یک نگاه</h3>
+<table>
+<thead><tr><th>دسته</th><th>فایل واقعی موجود</th><th>غایب</th><th>وضعیت آرمان فعلی</th></tr></thead>
+<tbody>
+<tr><td>قهرمانان (۴)</td><td>۱ (آرمان)</td><td>آریا، رادین، نیلا</td><td rowspan="4">مدل Thor Marvel — بدون اسکلت، بدون انیمیشن، نقض IP؛ فقط Placeholder زنده تا رسیدن GLB اختصاصی؛ در بیلد انتشار <b>ممنوع</b></td></tr>
+<tr><td>دشمنان (۱۶)</td><td>۰</td><td>هر ۱۶ مورد</td></tr>
+<tr><td>Boss (۵)</td><td>۰</td><td>هر ۵ مورد</td></tr>
+<tr><td>برج‌ها (۱۰)</td><td>۰ (برج‌ها مدل Primitive درونی دارند)</td><td>هر ۱۰ مورد</td></tr>
+</tbody></table>
+<p class="tbl-note">منبع: شمارش فایل‌های موجود در <span class="code">public/assets/3d/</span> در برابر ۲۹ ورودی <span class="code">AssetManifest.ts</span>؛ محیط/جلوه‌ها خارج از دامنهٔ این سند است.</p>
+<p>نتیجهٔ این شکاف، اولویت‌بندی این سند است: هر چیزی که برای تصمیم‌گیری تولید لازم است — سبک، بودجه، Rig، انیمیشن، VFX، پرامپت — در فصل‌های ۳ تا ۵ به‌صورت سراسری و در فصل‌های ۶ تا ۹ به‌صورت کارتِ تک‌تکِ کاراکترها آمده است. تولیدکننده (ابزار AI، آرتیست یا ترکیب هر دو) باید فقط این سند را داشته باشد؛ هیچ دانشی از کد درونی لازم نیست.</p>
+<!-- ============ CH 3 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 03 — ART BIBLE</div>
+  <div class="chapter-title">۳ — Art Bible: سبک هنری واحد</div>
+  <div class="divider"></div>
+</div>
+<p>هدف این فصل ساده است: اگر ۲۹ مدل این بازی را بدون نام در یک ردیف بگذاریم، هر بیننده‌ای باید بگوید «این‌ها از یک بازی‌اند». برای رسیدن به آن، همهٔ تولیدکنندگان — انسانی یا هوش مصنوعی — به یک زبان مشترک نیاز دارند. این فصل آن زبان است و فصل ۴ قرارداد فنی آن؛ هر دو الزام‌آورند و هیچ کارتی از فصل‌های ۶ تا ۹ حق خروج از این دو فصل را ندارد.</p>
+
+<h3>۳.۱ — سبک: فانتزی تاریک استایلایز</h3>
+<p>سبک رسمی بازی <b>Dark Fantasy Stylized</b> است: تفسیر استایلایز‌شده و خوانا از فانتزی تاریک، نه واقع‌گرایی خام و نه کارتونی ملایم. مرجع‌های لحن: <b>Bastion</b> و <b>Orcs Must Die</b> در خوانایی و شوخ‌طبعی کنترل‌شده، <b>Warcraft III Reforged</b> در نسبت‌های قهرمان‌گونه و زره‌های خوانا، و <b>Dota 2</b> در قدرت Silhouette و درام رنگ. جزئیات پارسی (نقش‌های هندسی، خطوط ترنج، رنگ لاجورد و زعفران) در قهرمانان به‌عنوان هویت متمایز بازی رعایت می‌شود اما در سطح «مُهر هویت»، نه شلوغی.</p>
+<div class="tbl-keep"><table>
+<thead><tr><th style="width:50%">انجام بده (Do)</th><th>انجام نده (Don't)</th></tr></thead>
+<tbody>
+<tr><td>Silhouette قوی و خوانا از هر زاویه؛ زاویهٔ ربع (۳/۴) باید «امضای» کاراکتر را نشان دهد</td><td>جزئیات کوچک‌تر از ۲ سانتی‌متر بازی؛ پراکندگی جزئیاتی که Silhouette را بپوشاند</td></tr>
+<tr><td>پروفایل کاراکتری: چشم‌ها/چهرهٔ استایلایز با بینی و چانهٔ خوانا در فاصلهٔ دوربین نبرد</td><td>چهرهٔ فوتورئالیستیک؛ چشم‌های Anime بزرگ؛ نسبت‌های Roblox</td></tr>
+<tr><td>زره با قطعات بزرگ و لبه‌های مشخص؛ سایهٔ پرداختی روی هم (Layered Armor)</td><td>کپی مستقیم زره/سلاح برندهای موجود (Marvel Thor، Warcraft، Diablo)</td></tr>
+<tr><td>پالت محدود به این سند؛ رنگ اشباع فقط روی نقاط کانونی (چشم، جادو، آرم)</td><td>رنگین‌کمان؛ بیش از دو رنگ اشباع روی یک کاراکتر</td></tr>
+<tr><td>همهٔ سلاح‌ها «خوانا و قابل تعریف در یک جمله»</td><td>سلاح‌های ترکیبی گیج‌کننده با بیش از دو زبان طراحی</td></tr>
+</tbody></table></div>
+<div class="rule"><b>قانون IP (الزامی):</b> مدل فعلی آرمان (Thor با چکش دیسکی و شنل قرمز Marvel) در هر شکل و اندازه‌ای ممنوع است. چکش آرمان جدید باید «تبر-چکش سنگی آذری» باشد: سر چکش مستطیلی با نقش ترنج، انتهای برّا، و کریستال آذرخش — نه دیسک، نه چکش Mjölnir، نه شنل. هیچ مدل خروجی نباید نام/برند/IP شناخته‌شده‌ای را در متادیتا یا ظاهر تکرار کند.</div>
+
+<h3>۳.۲ — دو اردوگاه، دو زبان بصری</h3>
+<p>کل تعارض بازی بین «نگهبانان سرزمین» و «سپاه سایه» است، پس جدایی بصری باید در یک نگاه کامل باشد: نگهبانان گرم، فلزی و ساخته‌شده‌اند؛ سایه‌ها سرد، ارگانیک و متلاشی‌شده.</p>
+<table>
+<thead><tr><th style="width:22%">ویژگی</th><th style="width:39%">نگهبانان (قهرمانان، برج‌ها)</th><th>سپاه سایه (دشمنان، Bossها)</th></tr></thead>
+<tbody>
+<tr><td>هندسه</td><td>فرم‌های صیقل‌خورده، لبه‌های برش‌خوردهٔ مهندسی، تقارن نسبی</td><td>فرم‌های ناهمگون، پیکر خمیده یا کشیده، عدم تقارن عمدی</td></tr>
+<tr><td>متریال</td><td>فلز مات + طلاکاری + پارچهٔ سربند</td><td>چوب پوسیده، استخوان، سنگ ترک‌خورده، گوشت سایه‌ای نیمه‌شفاف</td></tr>
+<tr><td>نور روی مدل</td><td>سطح‌های روشن با Roughness متوسط (نقطهٔ کانونی خوانا)</td><td>سطح‌های جاذب نور؛ درخشش فقط از چشم/جادو (Emissive محدود)</td></tr>
+<tr><td>زبان نقش</td><td>ترنج، خطوط هندسی پارسی، حکاکی ساده</td><td>شیارهای رون‌مانند تاریک، ترک‌های نورانی بنفش</td></tr>
+<tr><td>حرکت</td><td>ایستاده، ریشه‌دار، تعادل</td><td>خزنده، شناور، غیرقابل‌پیش‌بینی</td></tr>
+</tbody></table>
+
+<h3>۳.۳ — پالت رنگ سراسری</h3>
+<p>پالت زیر مرجع واحد رنگ است؛ رنگ‌های اختصاصی هر کاراکتر در کارت‌های خود از همین خانواده انتخاب شده‌اند و با مقادیر <span class="code">color</span> و <span class="code">accent</span> موجود در دادهٔ Gameplay هم‌خوان‌اند. قاعده: هر کاراکتر حداکثر یک رنگ اشباع «تأکیدی» دارد و بقیهٔ بدنه از رنگ‌های خنثی همان اردوگاه ساخته می‌شود.</p>
+<table>
+<thead><tr><th style="width:30%">نقش رنگ</th><th style="width:20%">HEX</th><th>کاربرد</th></tr></thead>
+<tbody>
+<tr><td>طلایی آذر (Accent اردوگاه روشن)</td><td><span class="code">#f0b03c</span><span class="sw" style="background:#f0b03c"></span></td><td>لبه‌های فلزی، مُهرها، کریستال انرژی قهرمانان و برج‌ها</td></tr>
+<tr><td>لاجورد سرامیک</td><td><span class="code">#2e5f8a</span><span class="sw" style="background:#2e5f8a"></span></td><td>رنگ ثانویهٔ زره نگهبانان، پرچم‌ها</td></tr>
+<tr><td>برنز مات</td><td><span class="code">#8a6b45</span><span class="sw" style="background:#8a6b45"></span></td><td>مکمل فلز پایه، قاب‌ها، یراق‌آلات</td></tr>
+<tr><td>سنگ خاکستری گرم</td><td><span class="code">#6b655c</span><span class="sw" style="background:#6b655c"></span></td><td>پایهٔ برج‌ها، سنگ‌کاری، غول سنگی (نسخهٔ روشن)</td></tr>
+<tr><td>بنفش سایه (Accent اردوگاه تاریک)</td><td><span class="code">#a855f7</span><span class="sw" style="background:#a855f7"></span></td><td>چشم‌ها، رگه‌های جادوی تاریکی، ردپای سایه</td></tr>
+<tr><td>نیلی تاریک</td><td><span class="code">#312e81</span><span class="sw" style="background:#312e81"></span></td><td>پارچهٔ جادوگران سایه، هالهٔ طلسم</td></tr>
+<tr><td>زغالی</td><td><span class="code">#26231c</span><span class="sw" style="background:#26231c"></span></td><td>بدنهٔ پایهٔ دشمنان، تاریکی درون</td></tr>
+<tr><td>سبز بیمار</td><td><span class="code">#84cc16</span><span class="sw" style="background:#84cc16"></span></td><td>فقط سم/زهر — ممنوع در اردوگاه روشن</td></tr>
+</tbody></table>
+<p>قاعدهٔ اشباع: رنگ‌های بزرگ (بیش از نیمی از بدنه) باید اشباع پایین داشته باشند؛ رنگ‌های بالا فقط روی قطعات کوچک و نقاط کانونی با شدت کامل می‌درخشند. این همان قانونی است که باعث می‌شود اسکرین‌شات نبرد «گرم و تاریک» بماند و رنگ‌ها به رقابت با نور آذر هستهٔ مرکزی نپردازند.</p>
+
+<h3>۳.۴ — سیستم تناسب اندام</h3>
+<p>واحد اندازه‌گیری سند، «سر» (Head Unit) است و ارتفاع نهایی هر کاراکتر با <span class="code">targetHeight</span> فصل ۴ قفل می‌شود. اختلاف عمدی بین قهرمان و دشمن: قهرمانان کشیده و ورزیده، دشمنان انسانی چند سرِ کوتاه‌تر و خمیده‌تر تا در نگاه فوری «رستهٔ نظامی» مقابل «گلهٔ تاریکی» خوانده شود.</p>
+<table>
+<thead><tr><th>کلاس</th><th style="width:16%">نسبت سر</th><th style="width:18%">شانه (×عرض سر)</th><th style="width:22%">قد واقعی (m)</th><th>نکتهٔ هویتی</th></tr></thead>
+<tbody>
+<tr><td>قهرمان (انسانی)</td><td>6.5 – 7.2</td><td>2.1 – 2.4</td><td>1.75 – 1.95</td><td>کمر باریک، سینهٔ باز، ایستا و بلند</td></tr>
+<tr><td>دشمن انسانی‌وار</td><td>4.5 – 5.5</td><td>1.6 – 2.0</td><td>1.45 – 1.9</td><td>قوز ۱۰ تا ۲۰ درجه، بازوهای بلندتر از طبیعی</td></tr>
+<tr><td>غول سنگی / ماشین</td><td>3.0 – 4.0</td><td>2.6 – 3.2</td><td>2.2 – 2.8</td><td>تودهٔ حجم؛ سرِ کوچک داخل توده</td></tr>
+<tr><td>چهارنفس (عنکبوت)</td><td>—</td><td>—</td><td>1.0 – 1.2 (ارتفاع)</td><td>عرض ≥ قد؛ ۸ پا، شکم تپنده</td></tr>
+<tr><td>پرنده / شناور</td><td>4.0 – 5.0</td><td>—</td><td>1.5 – 2.8</td><td>پاها آویزان یا بدون پا؛ سایهٔ زمینی از پایین خوانا</td></tr>
+<tr><td>Boss</td><td>5.0 – 8.0</td><td>2.4 – 3.4</td><td>3.6 – 5.7 (در دنیا)</td><td>در مقیاس دنیا با ضریب <span class="code">data.scale</span> بزرگ می‌شود</td></tr>
+</tbody></table>
+
+<h3>۳.۵ — قانون Silhouette-First</h3>
+<p>هر کاراکتر قبل از مدلسازی، در یک جمله تعریف Silhouette می‌شود و همان جمله در کارت خودش آمده است. آزمون پذیرش ساده است: نسخهٔ مشکی توپرِ مدل (بدون رنگ و تکسچر) در زاویهٔ ۳/۴ باید بدون تردید از سه رقیب نزدیکش تشخیص داده شود. اگر دو کاراکتر آزمون را شکست بخورند، مدل غالب باید تغییر کند؛ این آزمون در فصل ۱۰ به چک‌لیست پذیرش اضافه شده است.</p>
+<ul class="tight">
+<li><b>یک قله:</b> هر کاراکتر فقط یک «قلهٔ» بلند دارد (چکش، عصا، تاج، شاخ) — دو قله یعنی ابهام.</li>
+<li><b>خط زمین خوانا:</b> پاها یا پایهٔ نشیمن در نمای جانبی حتماً فضای منفی مشخص بسازند؛ دامن و شنلِ بلند ممنوع است مگر در Boss.</li>
+<li><b>دست‌ها در بازی‌اند:</b> محل پایان بازو و شروع سلاح باید در Silhouette خوانا باشد؛ سلاح‌ها به بازو «چسبیده» به‌نظر نرسند.</li>
+</ul>
+
+<h3>۳.۶ — زبان متریال (PBR)</h3>
+<p>خط لوله با فلوز PBR «Metal-Rough» کار می‌کند (BaseColor + Metallic + Roughness + Normal). متریال‌ها باید در نور صحنهٔ نبرد — آفتابِ متغیر مناطق و درخشش هستهٔ آذر — خوانا بمانند، پس کف بازتاب کم و Roughness پایه بالا انتخاب می‌شود و فقط نقاط کانونی جلای می‌گیرند.</p>
+<table>
+<thead><tr><th>متریال</th><th style="width:14%">Metallic</th><th style="width:14%">Roughness</th><th>یادداشت</th></tr></thead>
+<tbody>
+<tr><td>فلز زرهٔ قهرمان</td><td>0.8 – 1.0</td><td>0.35 – 0.55</td><td>خراش‌های روشن در Normal؛ رنگ پایهٔ خنثی گرم</td></tr>
+<tr><td>طلای آذری</td><td>1.0</td><td>0.25 – 0.35</td><td>فقط روی تزئینات کوچک؛ حداکثر ۱۰٪ سطح</td></tr>
+<tr><td>پارچه/چرم</td><td>0.0</td><td>0.7 – 0.9</td><td>سربند و پوشش؛ بافت باسکیت خفیف در Normal</td></tr>
+<tr><td>سنگ برج/غول</td><td>0.0</td><td>0.85 – 0.95</td><td>ترک و فسیل در Normal؛ AO داخلی در BaseColor</td></tr>
+<tr><td>سایهٔ نیمه‌ماده</td><td>0.0</td><td>0.9</td><td>BaseColor تیرهٔ نیلی؛ Emissive بنفش فقط در چشم/رگه</td></tr>
+<tr><td>کریستال انرژی</td><td>0.0</td><td>0.15 – 0.3</td><td>Emissive ملایم هم‌رنگ Accent؛ مرزهای شفاف ممنوع (بلندر آلفا)</td></tr>
+</tbody></table>
+<p>تکسچرِ تکراری ممنوع نیست اما مشترک‌سازی هوشمندانه توصیه می‌شود: سنگ و چوب دو اردوگاه می‌توانند از یک آتلاس مشترک استفاده کنند تا حجم نهایی APK پایین بماند. جزئیات روشنایی‌محور (Emissive) هرگز جای BaseColor را نمی‌گیرد؛ اگر چیزی باید بدرخشد، صرفاً یک ناحیهٔ کوچک Emissive اضافه می‌شود نه کل متریال روشن.</p>
+<!-- ============ CH 4 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 04 — TECHNICAL CONTRACT</div>
+  <div class="chapter-title">۴ — قرارداد فنی تولید</div>
+  <div class="divider"></div>
+</div>
+<p>این فصل قرارداد الزامی هر فایل GLB است. هر بند از دو منبع رسمی پروژه استخراج و قفل شده: <span class="code">AssetManifest.ts</span> (مسیر، ارتفاع، انیمیشن، نقاط VFX) و <span class="code">ModelNormalizer.ts</span> (محورها، نام‌های جایگزین نقاط). تولیدکننده‌ای که این فصل را رعایت کند، تضمین دارد فایلش بدون تغییر کد در بازی بالا می‌آید.</p>
+
+<h3>۴.۱ — فایل و نام‌گذاری</h3>
+<ul class="tight">
+<li><b>قالب:</b> glTF 2.0 Binary (<span class="code">.glb</span>) — بدون فشرده‌سازی Draco/Meshopt (لودر فعلی DRACOLoader ندارد).</li>
+<li><b>مسیر و نام:</b> دقیقاً مطابق جدول ۴.۷؛ تک‌کلمه‌ها ساده (<span class="code">arman.glb</span>)، چندکلمه‌ها kebab-case (<span class="code">black-dragon.glb</span>).</li>
+<li><b>نودها:</b> ریشه <span class="code">{id}</span> (مثل <span class="code">arman</span>)؛ مش‌ها <span class="code">{id}_body</span>، <span class="code">{id}_weapon</span> و…؛ خالی/بی‌نام ممنوع.</li>
+<li><b>متریال‌ها:</b> <span class="code">MAT_{id}_{part}</span>؛ تکسچرها <span class="code">T_{id}_{part}_{bc|n|mr}</span> — حداکثر ۳ متریال برای قهرمان، ۲ برای دشمن، ۴ برای Boss/برج.</li>
+<li><b>انیمیشن‌ها:</b> نام کلیپ دقیقاً مطابق جدول ۴.۵ (Case-sensitive)؛ اکشن‌های بی‌نام یا <span class="code">Take 001</span> ممنوع.</li>
+</ul>
+
+<h3>۴.۲ — محورها، جهت و مقیاس</h3>
+<p>همهٔ مدل‌ها با <b>Y-up</b> و <b>Forward = +Z</b> (رو به بیننده در نمای پیش‌فرض three.js) صادر می‌شوند؛ واحد فضا متر است و ۱ واحد دنیا = ۱ متر. اگر ابزار خروجی جهت دیگری بدهد، مقدار <span class="code">rotationOffsetDeg</span> جدول ۴.۷ آن را جبران می‌کند — اما مقدار صفر یعنی بهترین حالت همین صادرِ صحیح است، نه تکیه بر اصلاح بعدی. <span class="code">ModelNormalizer</span> ارتفاع کلی مدل را دقیقاً به <span class="code">targetHeight</span> می‌رساند و پاها را روی Y=0 می‌نشاند، پس مدل باید «شبیه» نسبت درست باشد؛ نرمال‌ساز جبران‌گر نسبت‌های غلط نیست.</p>
+<div class="rule"><b>دو مقیاس جدا از هم:</b> <span class="code">targetHeight</span> ارتفاع فایل پس از نرمال‌سازی است، و ضریب <span class="code">data.scale</span> (فقط دشمنان/Boss) در زمان اجرا روی آن ضرب می‌شود. مثال: غول سنگی King فایلش 2.6m است و با scale 2.2 در دنیا ≈ 5.7m دیده می‌شود. کارت‌ها هر دو مقدار را جدا اعلام می‌کنند؛ تولیدکننده فقط به <span class="code">targetHeight</span> فایل توجه کند.</div>
+
+<h3>۴.۳ — بودجهٔ چندضلعی و تکسچر (سبک موبایل)</h3>
+<p>هدف قفل‌شده 60FPS روی اندروید میان‌رده است؛ بودجه‌های زیر «سقف» هستند نه «هدف برای پر کردن». LOD1 و LOD2 در همین سند تولید نمی‌شوند ولی مدل باید به‌سادگی Decimate شود (تک‌تکه نباشد) تا در فاز بهینه‌سازی بعدی قابل ساخت باشد.</p>
+<table>
+<thead><tr><th>کلاس</th><th style="width:17%">LOD0 (مثلث)</th><th style="width:15%">LOD1 / LOD2</th><th style="width:18%">تکسچر</th><th style="width:15%">حجم فایل</th><th>استخوان</th></tr></thead>
+<tbody>
+<tr><td>قهرمان</td><td>≤ 15,000</td><td>≈ %50 / %20</td><td>2048 (BaseColor+Normal+MR)</td><td>≤ 4–5 MB</td><td>≤ 60</td></tr>
+<tr><td>دشمن عادی/نخبه</td><td>≤ 10,000</td><td>≈ %50 / %20</td><td>1024 / 2048 (نخبه)</td><td>≤ 1.5–3 MB</td><td>≤ 50</td></tr>
+<tr><td>Boss</td><td>≤ 35,000</td><td>≈ %45 / %18</td><td>2048–4096</td><td>≤ 6–8 MB</td><td>≤ 80</td></tr>
+<tr><td>برج</td><td>≤ 12,000</td><td>≈ %50 / %20</td><td>2048</td><td>≤ 2–2.5 MB</td><td>بدون Rig یا ≤ 8</td></tr>
+</tbody></table>
+<p>ابزارهای AI معمولاً ۲۰ تا ۵۰ هزار مثلث تحویل می‌دهند؛ پس کاهش (Decimate) تا سقف کلاس مرحلهٔ الزامی در Blender است. خروجی Topology ترجیحاً چهارضلعی و یکپارچه باشد؛ مش‌های تو در تو (Double Shell) برای شنل/پارچه فقط در Boss مجاز است.</p>
+
+<h3>۴.۴ — الزامات Rig</h3>
+<p>اسکلت استاندارد، اسکلت انسان‌گونهٔ سازگار با Mixamo است (همان سلسله‌مراتب Hips → Spine → Spine1 → Spine2 → Neck → Head و بازو/پا دو طرفه). دلیلی که این انتخاب قفل شده: نقطهٔ <span class="code">ChestPoint</span> در نرمال‌ساز به نام جایگزین <span class="code">spine02</span> هم گوش می‌دهد — یعنی اسکلت Mixamo بدون هیچ کار اضافه‌ای نقاط را صحیح می‌گیرد. پیشوند <span class="code">mixamorig:</span> باید در Blender حذف شود (فصل ۵). قهرمانان یک استخوان اضافه برای سلاح (<span class="code">WeaponBone</span> فرزند دست) دارند.</p>
+<table>
+<thead><tr><th>کاراکتر</th><th style="width:44%">ساختار اسکلت</th><th>حد استخوان</th></tr></thead>
+<tbody>
+<tr><td>آرمان، آریا، رادین، نیلا</td><td>انسان‌گونهٔ Mixamo کامل + <span class="code">WeaponBone</span></td><td>≈ 53+1</td></tr>
+<tr><td>جنگجوی تاریکی / جادوگر / سایه</td><td>انسان‌گونهٔ Mixamo (ساده‌شده مجاز: بدون انگشت)</td><td>≤ 40</td></tr>
+<tr><td>عنکبوت سایه</td><td>Body + Head + 8×(Hip+Knee) + 2×Mandible + Abdomen</td><td>≤ 30</td></tr>
+<tr><td>غول سنگی</td><td>انسان‌گونهٔ سنگین؛ مفاصل زاویه‌دار سنگی؛ بدون انگشت</td><td>≤ 25</td></tr>
+<tr><td>پرندهٔ سایه</td><td>Body + 2×Wing(2 مفصلی) + دنبالهٔ ۱ استخوانه</td><td>≤ 12</td></tr>
+<tr><td>اژدهای سیاه</td><td>Body + Neck×3 + Jaw + Tail×4 + Wing×3 هر طرف + 4 پا×2 مفصل + Toe</td><td>≤ 80</td></tr>
+<tr><td>برج‌ها</td><td>بدون Rig؛ فقط نودهای <span class="code">MuzzlePoint</span> و در صورت نیاز <span class="code">Turret</span> (چرخش برجک)</td><td>—</td></tr>
+</tbody></table>
+
+<h3>۴.۵ — فهرست انیمیشن‌ها (نام کلیپ = قرارداد)</h3>
+<p>نام هر کلیپ باید حرف‌به‌حرف یکی از سه لیست زیر باشد؛ کنترلر انیمیشن با تطبیق فuzzy هم کار می‌کند اما نام دقیق یعنی صفر ریسک. همهٔ کلیپ‌ها <b>In-Place</b> (بدون جابه‌جایی ریشه)، 30FPS، و بدون Root Motion خارج از محل هستند؛ حرکت روی مسیر را خود بازی انجام می‌دهد. کلیپ‌های One-Shot در فریم آخر باید به وضعیتی برگردند که Cut به Idle طبیعی باشد (به‌جز Death که روی فریم آخر Freeze می‌شود).</p>
+<table>
+<thead><tr><th style="width:20%">کلاس</th><th>کلیپ‌ها</th></tr></thead>
+<tbody>
+<tr><td>قهرمان (۸)</td><td><span class="code">Idle</span> · <span class="code">Walk</span> · <span class="code">Run</span> · <span class="code">Attack</span> · <span class="code">Skill</span> · <span class="code">Hit</span> · <span class="code">Death</span> · <span class="code">Victory</span></td></tr>
+<tr><td>دشمن (۵)</td><td><span class="code">Idle</span> · <span class="code">Walk</span> · <span class="code">Attack</span> · <span class="code">Hit</span> · <span class="code">Death</span></td></tr>
+<tr><td>Boss (۹)</td><td><span class="code">Idle</span> · <span class="code">Walk</span> · <span class="code">Attack1</span> · <span class="code">Attack2</span> · <span class="code">SpecialAttack</span> · <span class="code">Roar</span> · <span class="code">Hit</span> · <span class="code">PhaseChange</span> · <span class="code">Death</span></td></tr>
+</tbody></table>
+<table>
+<thead><tr><th style="width:16%">کلیپ</th><th style="width:12%">حلقه</th><th style="width:14%">مدت هدف</th><th>تعریف صحنه</th></tr></thead>
+<tbody>
+<tr><td><span class="code">Idle</span></td><td>بله</td><td>3–5s</td><td>تنفس، تاب خوردن سلاح، پلک؛ دامنهٔ کوچک که VFX پروسیجرال با آن تداخل نکند</td></tr>
+<tr><td><span class="code">Walk</span> / <span class="code">Run</span></td><td>بله</td><td>1.0s / 0.7s</td><td>گام کامل دو-مرحله‌ای؛ Run زاویهٔ تنهٔ جلو و دامنهٔ دست/پا بزرگ‌تر</td></tr>
+<tr><td><span class="code">Attack</span></td><td>خیر</td><td>0.6–0.9s</td><td>Windup → ضربه → Recovery؛ لحظهٔ اصابت نزدیک نیمهٔ کلیپ (هم‌تراز با زمان‌بندی آسیب بازی)</td></tr>
+<tr><td><span class="code">Skill</span></td><td>خیر</td><td>1.2–1.6s</td><td>ژست نمادین توانایی (رفع چکش، برپایی سپر، تیرباران)؛ اوج در میانه</td></tr>
+<tr><td><span class="code">Hit</span></td><td>خیر</td><td>0.3–0.4s</td><td>تلوتلو کوتاه به عقب؛ بدون افتادن</td></tr>
+<tr><td><span class="code">Death</span></td><td>خیر</td><td>1.0–1.5s</td><td>افتادن تا زمین و Freeze؛ پا روی زمین بماند (بازی لاشه را فرو می‌برد)</td></tr>
+<tr><td><span class="code">Victory</span></td><td>قابل حلقه</td><td>1.5–2s</td><td>ژست پیروزی پس از پاک‌سازی موج</td></tr>
+<tr><td><span class="code">Attack1/2</span></td><td>خیر</td><td>0.8–1.2s</td><td>1 = حملهٔ نزدیک، 2 = حملهٔ دور/نفس (Boss)</td></tr>
+<tr><td><span class="code">SpecialAttack</span></td><td>خیر</td><td>1.6–2.2s</td><td>حملهٔ ویژهٔ فاز ۲ با دامنهٔ بزرگ و هشدار بصری پیش از اصابت</td></tr>
+<tr><td><span class="code">Roar</span></td><td>خیر</td><td>1.2–1.8s</td><td>خروش ورود/لحظه‌ساز؛ سر به بالا، باز شدن فک</td></tr>
+<tr><td><span class="code">PhaseChange</span></td><td>خیر</td><td>1.5–2s</td><td>گذار به فاز ۲ — هم‌زمان با بنر و تغییر رنگ VFX بازی</td></tr>
+</tbody></table>
+<p class="tbl-note">قاعدهٔ هندسهٔ متحرک: پاها در Walk/Run نباید از Y&lt;0 بروند؛ سلاح در هیچ کلیپی نباید از کرهٔ برخورد بدنه (شعاع ≈ 0.5m قهرمان) بیرون بزند مگر در اوج Attack.</p>
+
+<h3>۴.۶ — نقاط VFX</h3>
+<p>نقاط اتصال جلوه‌ها، نودهای Empty داخل GLB با نام دقیق زیر هستند. نرمال‌ساز نام‌های جایگزین را هم می‌پذیرد (جدول)، ولی نام استاندارد = صفر ابهام. هر نقطه را به استخوان مرتبط Parent کنید و محور +Y آن را به سمت «بیرون/جلو» بگیرید (سمتی که شعله/برق باید بیرون بزند).</p>
+<table>
+<thead><tr><th style="width:22%">نام استاندارد</th><th>محل درست</th><th style="width:30%">نام‌های جایگزین قابل قبول</th></tr></thead>
+<tbody>
+<tr><td><span class="code">WeaponPoint</span></td><td>نوک/مرکز ضربهٔ سلاح (فرزند WeaponBone)</td><td><span class="code">weapon</span> · <span class="code">righthand</span> · <span class="code">swordtip</span></td></tr>
+<tr><td><span class="code">MuzzlePoint</span></td><td>دهانهٔ لوله/برجک</td><td><span class="code">muzzle</span> · <span class="code">barreltip</span> · <span class="code">guntip</span></td></tr>
+<tr><td><span class="code">MouthPoint</span></td><td>داخل دهانه (نفس/آتش)</td><td><span class="code">mouth</span> · <span class="code">jaw</span> · <span class="code">firepoint</span></td></tr>
+<tr><td><span class="code">StaffPoint</span></td><td>سر عصا/جای گوی</td><td><span class="code">staff</span> · <span class="code">stafftip</span> · <span class="code">orbofstaff</span></td></tr>
+<tr><td><span class="code">HeadPoint</span></td><td>بالاترین نقطهٔ سر</td><td><span class="code">head</span></td></tr>
+<tr><td><span class="code">ChestPoint</span></td><td>میانهٔ سینه (Spine2)</td><td><span class="code">chest</span> · <span class="code">core</span> · <span class="code">spine02</span></td></tr>
+<tr><td><span class="code">HitPoint</span></td><td>مرکز تودهٔ بدن (مرجع اعدادِ خون/شعاع)</td><td><span class="code">hit</span> · <span class="code">center</span></td></tr>
+</tbody></table>
+<p class="tbl-note">اگر نقطه‌ای در مدل نباشد، نرمال‌ساز آن را سینتتیک می‌سازد (بر اساس نسبت ارتفاع) — یعنی بازی هیچ‌وقت بدون VFX نمی‌ماند؛ ولی تولید با نقاط واقعی، کیفیت جلوه‌ها را محسوس بالا می‌برد (مثلاً برق چکش که با تاب Prop-Swing همراه می‌شود).</p>
+
+<h3>۴.۷ — جدول مرجع ۲۹ دارایی (از Manifest)</h3>
+<p>این جدول همان منبع واحد حقیقت پروژه است؛ نام فایل و ارتفاع دقیقاً از <span class="code">AssetManifest.ts</span> نقل شده و تغییرش بدون تغییر کد ممکن نیست. ستون Scale ضریب زمان-اجرا (فقط دشمنان/Boss) است.</p>
+<table>
+<thead><tr><th style="width:26%">فایل (<span class="code">/assets/3d/…</span>)</th><th style="width:24%">نام نمایشی</th><th style="width:13%">targetHeight</th><th style="width:10%">Scale</th><th>نقاط VFX الزامی</th></tr></thead>
+<tbody>
+<tr><td><span class="code">heroes/arman.glb</span></td><td>آرمان — پتک آذری</td><td>1.85 m</td><td>—</td><td>Weapon · Muzzle · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">heroes/aria.glb</span></td><td>آریا</td><td>1.78 m</td><td>—</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">heroes/radin.glb</span></td><td>رادین</td><td>1.95 m</td><td>—</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">heroes/nila.glb</span></td><td>نیلا</td><td>1.75 m</td><td>—</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/shadow-creature.glb</span></td><td>موجود سایه</td><td>1.45 m</td><td>0.8×</td><td>Chest · Hit</td></tr>
+<tr><td><span class="code">enemies/dark-warrior.glb</span></td><td>جنگجوی تاریکی</td><td>1.80 m</td><td>1.0×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/stone-golem.glb</span></td><td>غول سنگی</td><td>2.60 m</td><td>1.35×</td><td>Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/dark-spider.glb</span></td><td>عنکبوت سایه</td><td>1.10 m</td><td>0.95×</td><td>Mouth · Chest · Hit</td></tr>
+<tr><td><span class="code">enemies/dark-mage.glb</span></td><td>جادوگر تاریکی</td><td>1.90 m</td><td>1.0×</td><td>Staff · Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/flying-shadow.glb</span></td><td>پرندهٔ سایه</td><td>1.50 m</td><td>0.9×</td><td>Chest · Hit</td></tr>
+<tr><td><span class="code">enemies/war-machine.glb</span></td><td>ماشین جنگی</td><td>2.20 m</td><td>1.5×</td><td>Muzzle · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/aether-tank.glb</span></td><td>تانک اثری</td><td>2.40 m</td><td>1.65×</td><td>Muzzle · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/small-dragon.glb</span></td><td>اژدهای کوچک</td><td>2.80 m</td><td>1.25×</td><td>Mouth · Chest · Hit</td></tr>
+<tr><td><span class="code">enemies/crystal-monster.glb</span></td><td>هیولای کریستالی</td><td>1.70 m</td><td>1.2×</td><td>Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/hunter.glb</span></td><td>شکارچی</td><td>1.80 m</td><td>1.0×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/destroyer.glb</span></td><td>نابودگر</td><td>2.30 m</td><td>1.6×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/summoner.glb</span></td><td>احضارکننده</td><td>1.90 m</td><td>1.05×</td><td>Staff · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/spirit.glb</span></td><td>روح</td><td>1.50 m</td><td>0.95×</td><td>Chest · Hit</td></tr>
+<tr><td><span class="code">enemies/shadow-soldier.glb</span></td><td>سرباز سایه</td><td>1.75 m</td><td>1.0×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">enemies/annihilator.glb</span></td><td>محوکننده</td><td>2.60 m</td><td>2.4×</td><td>Muzzle · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">bosses/stone-golem-king.glb</span></td><td>پادشاه غول سنگی</td><td>2.60 m</td><td>2.2×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">bosses/fire-giant.glb</span></td><td>غول آتش</td><td>3.60 m</td><td>2.6×</td><td>Mouth · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">bosses/ice-giant.glb</span></td><td>غول یخ</td><td>3.60 m</td><td>2.6×</td><td>Mouth · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">bosses/black-dragon.glb</span></td><td>اژدهای سیاه</td><td>4.50 m</td><td>2.6×</td><td>Mouth · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">bosses/dark-lord.glb</span></td><td>ارباب تاریکی</td><td>4.20 m</td><td>2.8×</td><td>Weapon · Chest · Head · Hit</td></tr>
+<tr><td><span class="code">towers/sentinel.glb</span></td><td>برج نگهبان</td><td>3.20 m</td><td>—</td><td>Muzzle</td></tr>
+<tr><td><span class="code">towers/lightning.glb</span></td><td>برج صاعقه</td><td>4.40 m</td><td>—</td><td>Chest</td></tr>
+<tr><td><span class="code">towers/fire.glb</span></td><td>برج آتش</td><td>2.90 m</td><td>—</td><td>Muzzle</td></tr>
+<tr><td><span class="code">towers/ice.glb</span></td><td>برج یخ</td><td>4.50 m</td><td>—</td><td>Chest</td></tr>
+<tr><td><span class="code">towers/cannon.glb</span></td><td>توپخانه</td><td>2.80 m</td><td>—</td><td>Muzzle</td></tr>
+<tr><td><span class="code">towers/poison.glb</span></td><td>زهرخانه</td><td>2.90 m</td><td>—</td><td>Muzzle</td></tr>
+<tr><td><span class="code">towers/ballista.glb</span> و <span class="code">arcane.glb</span> · <span class="code">temple.glb</span> · <span class="code">void.glb</span></td><td>بالیستا، رازآسا، آذرگاه، برج تهی</td><td>3.4 / 4.0 / 3.6 / 4.4 m</td><td>—</td><td>Muzzle یا Chest</td></tr>
+</tbody></table>
+
+<h3>۴.۸ — LOD و کارایی</h3>
+<p>در این فاز فقط LOD0 تولید می‌شود، اما سه قانون از حالا الزامی است: (۱) Topology یکپارچه و قابلیت Decimate بدون شکستن UV؛ (۲) حداکثر ۳ مش به‌هم‌چسبیده به‌ازای هر کاراکتر تا Draw Call کنترل بماند؛ (۳) ممنوعیت آلفای شفاف روی پارچه/شنل (Cutout یا Opaque) تا ردیابی شفافیت هزینه نسازد. متن‌های Emissive باید در تکسچر Emissive جدا باشند نه داخل BaseColor، تا سیستم کیفیت پایین بتواند بدون تغییر مدل نورپردازی را سبک کند.</p>
+<!-- ============ CH 5 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 05 — PRODUCTION WORKFLOW</div>
+  <div class="chapter-title">۵ — گردش کار تولید: AI سه‌بعدی + Blender + Mixamo</div>
+  <div class="divider"></div>
+</div>
+<p>گردش کار رسمی چهار ایستگاه دارد: <b>(۱) تولید مدل پایه</b> با ابزارهای متن-به-سه‌بعدی (Meshy / Tripo / Rodin) یا آرتیست؛ <b>(۲) پاک‌سازی و کاهش چندضلعی</b> در Blender؛ <b>(۳) Rig و انیمیشن</b> با Mixamo (کاراکترهای انسان‌گونه) یا دستی (چهارنفس، اژدها)؛ <b>(۴) خروجی GLB و پذیرش</b> در گالری بازی. هر کارت از فصل‌های ۶ تا ۹، پرامپت آمادهٔ ایستگاه ۱ را دارد؛ این فصل بقیهٔ مسیر را گام‌به‌گام قفل می‌کند.</p>
+
+<h3>۵.۱ — ایستگاه ۱: ابزارهای AI سه‌بعدی</h3>
+<p>مسیر پیشنهادی مسیر دو-مرحله‌ای است: اول یک Concept دو-بعدی (تصویر) با متن پرامپت کارت تولید کنید، بعد با حالت Image-to-3D مدل بگیرید؛ کیفیت و کنترل Silhouette به‌مراتب بالاتر از Text-to-3D خالص است. تنظیمات پیشنهادی همهٔ ابزارها: <b>Symmetry = ON</b> (به‌جز اژدها و عنکبوت در جزئیات ثانویه)، <b>PBR = ON</b>، <b>Topology = Quad</b>، هدف چندضلعی: بالاترین حالت ابزار (کاهش بعداً در Blender انجام می‌شود)، خروجی: <span class="code">GLB</span> یا <span class="code">FBX</span>.</p>
+<div class="rule"><b>Master Style Prompt</b> (شروع همهٔ پرامپت‌ها — در کارت‌ها با [CHARACTER] جایگزین می‌شود):</div>
+<div class="prompt">Stylized dark fantasy game character, mobile tower-defense style, strong readable silhouette, hand-crafted feel, chunky readable armor shapes, PBR metal-rough, warm earthy palette with golden accents, clean topology, single mesh group, T-pose / A-pose, centered, full body, [CHARACTER], 3/4 hero pose, no text, no logo.</div>
+<p><b>Negative Prompt سراسری</b> (به همه اضافه شود):</p>
+<div class="prompt"><span class="neg">photorealistic face, anime eyes, Roblox proportions, Marvel Thor, Mjolnir disc hammer, red cape, copyrighted characters, realistic human skin, messy topology, double shells, floating parts, asymmetry errors, baked shadows in albedo, neon oversaturation, blurry textures, text, watermark.</span></div>
+<p>هر پرامپت کارت، توصیف اختصاصی <span class="code">[CHARACTER]</span> است و با دو قطعه بالا کامل می‌شود. اگر ابزار از Image-to-3D پشتیبانی نمی‌کند، همان متن را مستقیم در Text-to-3D بدهید و نتیجه را با آزمون Silhouette فصل ۳ بسننجید؛ رد شدن = بازتولید، نه رتوش در Blender.</p>
+
+<h3>۵.۲ — ایستگاه ۲: پاک‌سازی در Blender</h3>
+<ol class="steps">
+<li><b>Import:</b> <span class="code">File → Import → glTF 2.0</span>. بررسی اول: مدل رو به +Z؟ پاها روی Y=0؟ اگر نه، همین‌جا می‌چرخانیم و <span class="code">Ctrl+A → All Transforms</span> می‌زنیم.</li>
+<li><b>ادغام مش‌های اضافی:</b> قطعات ریز را به حداکثر ۳ مش برسانید (<span class="code">Ctrl+J</span>)؛ چیزهای شناور بدون کاربرد حذف شود.</li>
+<li><b>کاهش چندضلعی:</b> سقف‌های فصل ۴: قهرمان 15k، دشمن 10k، Boss 35k، برج 12k. مسیر: <span class="code">Decimate Modifier (Collapse)</span> با Ratio آزمایشی 0.4–0.6 و بررسی <span class="code">Viewport Overlays → Statistics</span>. UVها را قبل از اعمال چک کنید که نپاشند.</li>
+<li><b>نام‌گذاری:</b> مش‌ها <span class="code">{id}_body</span> و…، متریال‌ها <span class="code">MAT_{id}_{part}</span>؛ نود بی‌نام نماند.</li>
+<li><b>بررسی متریال:</b> Principled BSDF؛ شفافیت حذف (Opaque)؛ Emissive فقط نقاط کانونی؛ تعداد متریال ≤ ۳.</li>
+<li><b>Export FBX برای Mixamo:</b> فقط مش انتخابی، Scale 1.0، Forward = −Z? — دقت: Mixamo مبدأ FBX خودش را دارد؛ خروجی با پیش‌فرض Blender + تیک <span class="code">Apply Transform</span> بدهید و در ایستگاه ۳ دوباره جهت را وارسی کنید.</li>
+</ol>
+
+<h3>۵.۳ — ایستگاه ۳: Rig و انیمیشن با Mixamo (گام‌به‌گام)</h3>
+<ol class="steps">
+<li><b>Upload:</b> FBX کاراکتر را در <span class="code">mixamo.com</span> بگذارید؛ در ویزارد Auto-Rigger، نشانگرها را روی چانه، مچ‌ها، آرنج‌ها، زانوها و کشاله بگذارید و «Next» را تا پایان بزنید.</li>
+<li><b>کلیپ‌ها:</b> از کتابخانهٔ Mixamo نزدیک‌ترین Idle / Walking / Running / Any Idle Attack / Hit React / Death / Cheer را انتخاب کنید؛ Speed و Arm-Space را طوری تنظیم کنید که ژست پایه با کاراکتر بخواند.</li>
+<li><b>دانلود:</b> اولین کلیپ را <b>With Skin</b> (FBX Binary، 30fps) بگیرید؛ بقیهٔ کلیپ‌ها را <b>Without Skin</b> با همان تنظیمات دانلود کنید — اسکلت همه یکسان است و در Blender مستقیم روی همان استخوان‌ها می‌نشیند.</li>
+<li><b>Import به Blender:</b> هر ۸ (یا ۵/۹) فایل را در یک صحنه بیاورید؛ هر فایل یک Action می‌سازد.</li>
+<li><b>پاک‌سازی نام استخوان:</b> پیشوند <span class="code">mixamorig:</span> را حذف کنید (اسکریپت کوچک یا دستی روی ۲۰ استخوان اصلی) تا تطبیق نقطهٔ <span class="code">spine02 → ChestPoint</span> تضمین شود.</li>
+<li><b>تغییر نام Action‌ها:</b> دقیقاً به قرارداد فصل ۴: <span class="code">Idle</span>، <span class="code">Walk</span>، <span class="code">Run</span>، <span class="code">Attack</span>، <span class="code">Skill</span>، <span class="code">Hit</span>، <span class="code">Death</span>، <span class="code">Victory</span>. برای Skill و Victory، از کلیپ‌های نزدیک Mixamo رتاگِ دستی جزئی (۸–۱۲ فریم اصلاح پوز ژست نمادین) کافی است.</li>
+<li><b>In-Place کردن:</b> اگر کلیپ جابه‌جایی ریشه دارد، منحنی X/Y جابه‌جایی Hips را حذف کنید (فقط bob عمودی بماند).</li>
+<li><b>حفظ اکشن‌ها:</b> هر Action را یا در <span class="code">NLA Editor → Push Down</span> ببرید یا Fake User (F) فعال کنید — وگرنه در خروجی GLB گم می‌شود. این رایج‌ترین گم‌شدگی انیمیشن در کل این گردش کار است.</li>
+</ol>
+<p><b>Rig دستی (عنکبوت، پرنده، اژدها):</b> Mixamo این‌ها را نمی‌پذیرد؛ اسکلت فصل ۴ را دستی بسازید، Skin Weight بدهید و کلیپ‌ها را با کلید-فریم دستی از روی توصیف صحنهٔ جدول ۴.۵ بسازید. برای اژدهای سیاه، سرمایه‌گذاری اصلی روی <span class="code">Roar</span>، <span class="code">SpecialAttack</span> (نفس سایه) و چرخهٔ بال‌زدن <span class="code">Idle/Walk</span> است؛ همین سه، ۸۰٪ حس Boss را می‌سازند.</p>
+
+<h3>۵.۴ — ایستگاه ۴: خروجی GLB</h3>
+<ol class="steps">
+<li><b>نقاط VFX:</b> Emptyهای نام‌دار فصل ۴ را بسازید و به استخوان مربوط Parent کنید (<span class="code">WeaponPoint → WeaponBone</span>، <span class="code">ChestPoint → Spine2</span>، …)؛ جهت +Y هر Empty به سمت بیرون/جلو.</li>
+<li><b>Export:</b> <span class="code">File → Export → glTF 2.0 (.glb)</span> — Format = <b>glTF Binary</b>؛ Include = Selected Objects؛ Transform = +Y Up (پیش‌فرض)؛ Data = <b>Apply Modifiers ✓</b>، UV Maps ✓، Normals ✓؛ Material = Export؛ Animation = <b>Animation mode: Actions</b> با تیک همهٔ Actionهای هدف، <span class="code">Sampling ✓</span>، FPS صحنه = 30.</li>
+<li><b>ممنوع:</b> تیک Draco Compression (لودر فعلی پشتیبانی نمی‌کند)، تیک Shape Keys بی‌استفاده، تکسچر بالاتر از سقف کلاس.</li>
+<li><b>سنجش حجم:</b> فایل را با سقف جدول ۴.۳ بسنجید؛ اگر سنگین است اول تکسچر را JPG/فشرده‌تر کنید (بزرگ‌ترین سهم)، بعد دوباره نگاه به مثلث‌ها.</li>
+</ol>
+
+<h3>۵.۵ — پذیرش در بازی (Drop-in)</h3>
+<ol class="steps">
+<li>فایل را در مسیر دقیق جدول ۴.۷ بگذارید (<span class="code">public/assets/3d/…</span>).</li>
+<li>سرور dev را بالا بیاورید و <span class="code">?gallery=1</span> را باز کنید: نشان «مدل واقعی GLB» باید سبز شود؛ ارتفاع نمایش‌داده‌شده باید با <span class="code">targetHeight</span> برابر باشد؛ هر کلیپ را از منوی گالری یک‌بار اجرا کنید.</li>
+<li>نبرد واقعی: کاراکتر را بکار بگیرید و سه چیز را ببینید — Crossfade نرم بین حرکت‌ها، خروج VFX از نقطهٔ درست (به‌ویژه برق چکش آرمان که باید با تاب سلاح حرکت کند)، و نبود پاز/افت فریم هنگام Spawn دسته‌ای.</li>
+<li>چک‌لیست کامل پذیرش در فصل ۱۰ است؛ فقط بعد از تیک همهٔ بندها، دارایی «تحویل‌شده» حساب می‌شود.</li>
+</ol>
+<!-- ============ CH 6 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 06 — PHASE 1</div>
+  <div class="chapter-title">۶ — فاز ۱: کارت کامل چهار قهرمان</div>
+  <div class="divider"></div>
+</div>
+<p>چهار قهرمان، پرمشغله‌ترین مدل‌های بازی‌اند: همیشه یک‌نفر روی صحنه است، دوربین نزدیک می‌شود و ویترای هویت بازی دستِ آن‌هاست. هر کارت با «امضای Silhouette» شروع می‌شود (همان جمله‌ای که آزمون فصل ۳ روی آن سنجیده می‌شود)، بعد جدول مشخصات، و در پایان پرامپت آماده. همهٔ چهار نفر یک انسان‌گونهٔ Mixamo کامل با <span class="code">WeaponBone</span> می‌گیرند و هشت کلیپ جدول ۴.۵ روی همه الزامی است.</p>
+<p><b>قاعدهٔ مشترک قهرمانان:</b> پالت بدنه از خانوادهٔ گرم اردوگاه روشن (فصل ۳.۳)، یک Accent اشباع اختصاصی (هم‌خوان با رنگ پرتابه در دادهٔ Gameplay)، زره «خوانا و لایه‌لایه» با نقش پارسی در سطح مُهر، بدون شنل/دامن بلند (خوانایی خط زمین)، و سلاح به‌عنوان مش مجزا با نام <span class="code">{id}_weapon</span> تا هم در Rig به <span class="code">WeaponBone</span> وصل شود و هم مسیر بهبودهای آینده باز بماند. بودجه: ≤ 15k مثلث، تکسچر 2048، ≤ 4–5MB.</p>
+
+<h3>۶.۱ — آرمان <span class="badge">COMMANDER — پتک آذری</span></h3>
+<p><b>امضای Silhouette:</b> «سنگ‌تراشِ طوفان» — جنگجوی پهن‌شانه با پتکِ تبر-چکشِ بلند که نوک کریستالی‌اش بالای سر آذرخش می‌گیرد؛ بدون شنل، خط بدن مثل برجِ کوتاهِ چهارگوش.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>فرمانده؛ حملهٔ انرژی/آذرخش با برد 10، توانایی فرمان نبرد (+40% آتش تیمی)، آئورای پیوستهٔ آذرخش روی سر پتک</td></tr>
+<tr><td><b>اندام</b></td><td>1.85m پس از نرمال‌سازی؛ 6.8 سر؛ شانه 2.3؛ بالاتنهٔ قوی، کمر باریک؛ سن ظاهری ≈ ۳۵ سال</td></tr>
+<tr><td><b>پالت</b></td><td>فولاد آبی‌خاکستری <span class="sw" style="background:#5d6b7a"></span> <span class="code">#5d6b7a</span> پایهٔ زره · طلایی آذر <span class="sw" style="background:#f0b03c"></span> <span class="code">#f0b03c</span> تزئینات و کریستال · لاجورد سرامیک <span class="sw" style="background:#2e5f8a"></span> <span class="code">#2e5f8a</span> سربند · Accent انرژی آذرخش <span class="sw" style="background:#93c5fd"></span> <span class="code">#93c5fd</span> (Emissive کریستال)</td></tr>
+<tr><td><b>زره و پوشش</b></td><td>زره صفحه‌ای سینه با نقش ترنج حکاکی‌شده؛ شانه‌پوش دوتکهٔ چهارگوش؛ پیش‌بازوی چرمِ پرشمار؛ سربند لاجوردی کوتاه؛ دامن‌کوتاهِ تسمه‌ای سنگین (نه دامن بلند)</td></tr>
+<tr><td><b>سلاح — پتک آذری</b></td><td>تبر-چکش یک‌دسته: سر چکش مستطیلی سنگی با وجه تبر در سمت مقابل، حکاکی ترنج روی وجوه، کریستال آذرخش نوک‌دار <span class="code">#93c5fd</span>؛ دستهٔ چوب‌فلزی با یراق طلایی؛ طول کل ≈ 1.4m — مش مجزای <span class="code">arman_weapon</span></td></tr>
+<tr><td><b>سر/چهره/مو</b></td><td>چهرهٔ استایلایزِ خوش‌عنفوان با ریش کوتاه مشکی و سبیل پیوسته؛ موی مشکی با بافت سادهٔ پسِ سر؛ پیشانی‌بند فلزی طلایی با نگین آبی — نه کلاه‌خود کامل (چهره باید خوانا بماند)</td></tr>
+<tr><td><b>اکسسوری</b></td><td>کمربند با قفل مُهر آذر؛ دو حلقهٔ یراق روی سربند؛ زنجیر کوتاه از شانه به سینه‌پوش (بدون شنل)</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Attack</span>: چرخش <span class="code">WeaponBone</span> پتک را از بالای شانه (≈ −60°) به جلو (≈ +45°) می‌چرخاند تا ضربه؛ <span class="code">Skill</span>: پتک بالا رفته و نوک کریستال به آسمان (لحظهٔ فرمان)؛ Idle تاب آرام پتک</td></tr>
+<tr><td><b>VFX / فایل</b></td><td><span class="code">WeaponPoint</span> نوک کریستال · <span class="code">MuzzlePoint</span> همان نقطه (پیست پرتابهٔ برد-دور) · <span class="code">ChestPoint/HeadPoint/HitPoint</span> استاندارد — فایل <span class="code">heroes/arman.glb</span> · targetHeight 1.85</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — ARMAN / REPLACE THOR</div>
+<div class="prompt">Stylized dark fantasy Persian storm-commander, broad-shouldered male warrior age 35, layered steel-blue plate armor with engraved Persian toranj medallion, golden trim, indigo sash, no cape, short black beard, metal forehead band with blue gem, wielding a long war-maul: rectangular stone hammer head with axe edge and glowing light-blue crystal tip, wooden-metal haft with golden rings, hammer held in right hand resting on shoulder, heroic 3/4 stance, strong silhouette like a short square tower.</div>
+
+<h3>۶.۲ — آریا <span class="badge">GUARDIAN — سپر اثری</span></h3>
+<p><b>امضای Silhouette:</b> «چراغِ محافظ» — بانوی جادوان با بالاپوشِ زره‌دار و عصای دوگویِ بلند که گویِ بالایش همیشه روشن است؛ فرم عمودیِ کشیده با دامنِ کوتاهِ لایه‌دار.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>نگهبان؛ گوی جادویی انفجاری (Splash 2.6) با رنگ فیروزه‌ای، توانایی سپر اثری؛ ترکیب دفاع + پشتیبانی</td></tr>
+<tr><td><b>اندام</b></td><td>1.78m؛ 7 سر؛ بدن کشیده و چابک، شانه 1.9؛ سن ظاهری ≈ ۳۰ سال؛ ایستای آرام و متعادل</td></tr>
+<tr><td><b>پالت</b></td><td>سفید-کرم سرد <span class="sw" style="background:#d9d4c6"></span> <span class="code">#d9d4c6</span> پایهٔ پارچه · لاجورد <span class="sw" style="background:#2e5f8a"></span> <span class="code">#2e5f8a</span> پاپیون‌ها و حاشیه · برنز <span class="sw" style="background:#8a6b45"></span> <span class="code">#8a6b45</span> زره‌های سبک · Accent جادو فیروزه <span class="sw" style="background:#67e8f9"></span> <span class="code">#67e8f9</span> (Emissive گوی)</td></tr>
+<tr><td><b>زره و پوشش</b></td><td>بالاپوش زره‌دار سبک روی ردای بلند-کوتاه (دامن تا زانو با لایهٔ زیرین کوتاه‌تر)؛ بازوبند برنزی؛ شال کمر با گره مُهر؛ روسری/کلاه‌پارچهٔ ملایم پشت سر (نه حجاب کامل، نه موی آزاد کامل — بستنی نیمه‌بسته)</td></tr>
+<tr><td><b>سلاح — عصای اثیر</b></td><td>عصای 1.7m با سرِ دو-حلقه‌ای برنزی که گوی فیروزه‌ای شناور را نگه می‌دارد؛ حلقهٔ پایین‌تر با ریسهٔ حکاکی؛ مش مجزای <span class="code">aria_weapon</span></td></tr>
+<tr><td><b>سر/چهره/مو</b></td><td>چهرهٔ آرام و هوشیار؛ چشم‌های فیروزه‌ای روشن (Emissive ملایم)؛ موی تیره با بافت بلند بسته و دو لایهٔ آزاد جلوی صورت؛ نگین پیشانی کوچک</td></tr>
+<tr><td><b>اکسسوری</b></td><td>دو اسکرول کاغذی آویخته از کمربند؛ طلسم دایره‌ای روی سینه‌پوش؛ رد پای نورانی خفیف زیر پا در Skill (از VFX بازی، نه مدل)</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Attack</span>: تاب عصا از کنار با توقف کوتاه در اوج؛ <span class="code">Skill</span>: عصا عمودی، دو دست، گوی به آسمان — سپر دایره‌ای از <span class="code">StaffPoint</span>؛ Idle تنفس با شناوری آرام گوی (Gimmick: گوی فقط با Idle نمی‌لرزد — در همهٔ کلیپ‌ها روی سر عصا قفل بماند)</td></tr>
+<tr><td><b>VFX / فایل</b></td><td><span class="code">StaffPoint</span> مرکز گوی · <span class="code">WeaponPoint</span> سر عصا · <span class="code">ChestPoint/HeadPoint/HitPoint</span> — فایل <span class="code">heroes/aria.glb</span> · targetHeight 1.78</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — ARIA</div>
+<div class="prompt">Stylized dark fantasy Persian guardian sorceress female age 30, elegant tall posture, cream-blue layered robe with light bronze plate on chest and shoulders, indigo trim with Persian motifs, half-tied dark hair with forehead gem, glowing turquoise eyes, holding a tall 1.7m staff with double bronze ring head and floating glowing turquoise orb, orb always lit, calm protective stance, vertical clean silhouette, no cape.</div>
+<h3>۶.۳ — رادین <span class="badge">BERSERKER — خشم جنگ</span></h3>
+<p><b>امضای Silhouette:</b> «کوهِ خشم» — بلندترین قهرمان، سینهٔ جلو، تبرِ دو-دستیِ سنگین که تیشه‌اش پهن‌تر از سر است؛ پوستِ خال‌خال و موی وحشی، بدون کلاه — فرم مثل دکلِ مورب.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>برک‌کننده؛ حملهٔ نزدیک با Cleave 3 هدف، HP بالا (1050)، توانایی خشم جنگ (+80% سرعت حمله)</td></tr>
+<tr><td><b>اندام</b></td><td>1.95m (بلندترین)؛ 6.5 سر؛ تودهٔ عضلانی سنگین، شانه 2.4؛ زخم‌های قدیمی روی بازو و سینه؛ سن ظاهری ≈ ۳۸ سال</td></tr>
+<tr><td><b>پالت</b></td><td>برنز تیره <span class="sw" style="background:#6e5138"></span> <span class="code">#6e5138</span> زره‌های ناقص · چرم سرخ‌گِلی <span class="sw" style="background:#8a4438"></span> <span class="code">#8a4438</span> کمربند و بند · پوست <span class="sw" style="background:#c99b74"></span> <span class="code">#c99b74</span> · Accent خشم سرخ <span class="sw" style="background:#f87171"></span> <span class="code">#f87171</span> (نقش‌ها و چشم‌ها در خشم)</td></tr>
+<tr><td><b>زره و پوشش</b></td><td>زره نیم‌تنهٔ نامتقارن (پلاک سینهٔ راست، شانه‌پوش تک‌طرف)، پیش‌بازوی چرمی ضخیم، کمرِ پهن با مُهری سرخ؛ شلوار بستهٔ جنگی با ساق‌بند؛ پوست گرگِ خاکستری روی یک شانه (کوتاه، نه شنل بلند)</td></tr>
+<tr><td><b>سلاح — تبر جنگ</b></td><td>تبر دو-دستی 1.6m: تیشهٔ پهن با دو قوس برنده، عقب‌تیزهٔ چکشی، دستهٔ پیچ‌دار با نوار سرخ؛ نقش مُهر آذر روی گونهٔ تیشه؛ مش مجزای <span class="code">radin_weapon</span></td></tr>
+<tr><td><b>سر/چهره/مو</b></td><td>صورت تیز و پرموج؛ موی مشکی-قهوه‌ای وحشی و نیم‌بسته با دو تراشهٔ استخوانی؛ ته‌ریش پراکنده؛ یک گوشِ بریده (عدم تقارن عمدی چهره)</td></tr>
+<tr><td><b>اکسسوری</b></td><td>دستبند استخوانی؛ حلقه‌های تسمه روی سینه‌پوش؛ جای خال‌کوبیِ سرخِ ساده روی بازوی راست (در BaseColor، نه Normal)</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Attack</span>: تاب مورب سنگین از بالا-چپ به پایین-راست با وزن‌گذاری کامل (Cleave باید از قوس تیشه خوانده شود)؛ <span class="code">Skill</span>: تبر روی زمین + چرخش خروشان؛ Walk سنگین و کمی زانوخم</td></tr>
+<tr><td><b>VFX / فایل</b></td><td><span class="code">WeaponPoint</span> میانهٔ لبهٔ تیشه · <span class="code">ChestPoint/HeadPoint/HitPoint</span> — فایل <span class="code">heroes/radin.glb</span> · targetHeight 1.95</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — RADIN</div>
+<div class="prompt">Stylized dark fantasy Persian berserker male age 38, tallest hero, massive muscular build, asymmetric bronze plate armor with one shoulder plate, wolf pelt over one shoulder, thick leather belts with red seal, scarred chest, wild half-tied black hair with bone pins, torn ear, fierce face, wielding a heavy 1.6m two-handed battle axe with wide curved double blade and red-wrapped haft, forward aggressive stance, no cape, readable strong diagonal silhouette.</div>
+
+<h3>۶.۴ — نیلا <span class="badge">RANGER — باران تیر</span></h3>
+<p><b>امضای Silhouette:</b> «بادِ شامگاه» — چابک‌ترین و ظریف‌ترین قهرمان با کمانِ کوتاهِ خمیده و کولهٔ تیرِ بلند؛ کلاهِ نوک‌دارِ رو به عقب، فرم مثل پیکانِ بسته.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>تیراندازِ برد-بلند (13) با آتش سریع 2.6 در ثانیه؛ تیرهای بنفش؛ توانایی باران تیر روی خوشهٔ دشمن</td></tr>
+<tr><td><b>اندام</b></td><td>1.75m؛ 7.2 سر (کشیده‌ترین)؛ بدن سبک و چابک، شانه 1.8؛ سن ظاهری ≈ ۲۸ سال</td></tr>
+<tr><td><b>پالت</b></td><td>سبز-خاکستری تیرهٔ شب <span class="sw" style="background:#4a5548"></span> <span class="code">#4a5548</span> لباس پایه · چرم قهوه‌ای <span class="sw" style="background:#7a5a3a"></span> <span class="code">#7a5a3a</span> کوله و بند · نقرهٔ مات <span class="sw" style="background:#a8adb5"></span> <span class="code">#a8adb5</span> یراق کمان · Accent تیر بنفش <span class="sw" style="background:#c084fc"></span> <span class="code">#c084fc</span> (نوک تیرها و نقش کمربند)</td></tr>
+<tr><td><b>زره و پوشش</b></td><td>بالاپوش چرمی سبک با پلاک‌های کوچک؛ کلاهِ چرمی نوک‌دارِ خم‌شده به عقب؛ کولهٔ تیرِ بلندِ پشتِ شانهٔ راست؛ شالِ گردنِ تنگ؛ شلوار بستهٔ تیراندازی؛ بدون هیچ پارچهٔ آویزانِ گشاد (تشخیص حرکت سریع)</td></tr>
+<tr><td><b>سلاح — کمان و تیر</b></td><td>کمان کوتاه خمیدهٔ 1.2m با دو زه‌گیر نقره‌ای و نقش باریک حکاکی؛ تیرهای با نوک بنفش Emissive؛ کمان مش مجزای <span class="code">nila_weapon</span>؛ کولهٔ تیر بخشی از بدنه (نه مجزا)</td></tr>
+<tr><td><b>سر/چهره/مو</b></td><td>چهرهٔ هوشیار با گونه‌های برجسته؛ موی تیرهٔ بسته در بافت بلندِ جنگی با چند لایهٔ آزاد؛ چشم‌های کهربایی؛ نقاشی جنگیِ خفیف زیر چشم راست</td></tr>
+<tr><td><b>اکسسوری</b></td><td>بازوبند چرمی تیراندازی روی ساعد چپ؛ دو انگشتر فلزی باریک؛ کیسهٔ کوچک حبوب روی کمربند</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Attack</span> (دو نسخه در یک کلیپ نگیرد — فقط قوس کشیده): کشیدن تیر تا گوش با ثبات ۴ فریم، رها شدن با بازگشت الاستیک کمان؛ <span class="code">Skill</span>: پرش کوتاه و تیراندازی مورب به آسمان (باران تیر)؛ Walk/Run بی‌صدا و بهینه — سرِ بالا ثابت بماند (حس نشانه‌روی)</td></tr>
+<tr><td><b>VFX / فایل</b></td><td><span class="code">WeaponPoint</span> نوک کمان (سمت پرتاب تیر) · <span class="code">ChestPoint/HeadPoint/HitPoint</span> — فایل <span class="code">heroes/nila.glb</span> · targetHeight 1.75</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — NILA</div>
+<div class="prompt">Stylized dark fantasy Persian night-ranger female age 28, slim agile build, dark green-grey leather light armor with small plates, pointed leather hat bent backwards, long quiver on right shoulder, tight neck scarf, hunting pants, amber eyes, war paint under one eye, tied long dark hair, holding a short 1.2m recurve bow with silver arrow rests, arrows with glowing purple tips, silent predator stance, compact arrow-like silhouette, no cape, no loose fabric.</div>
+<!-- ============ CH 7 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 07 — PHASE 2</div>
+  <div class="chapter-title">۷ — فاز ۲: کارت کامل شش دشمن نخست</div>
+  <div class="divider"></div>
+</div>
+<p>شرط اصلی این فاز، نوشته‌شدن در حافظهٔ بصری بازی است: شش دشمنِ نخست باید در یک قاب، شش موجودِ کاملاً متفاوت به‌نظر برسند — نه شش نمونه از یک هیولا. برای تضمین، ابتدا محورهای تفاوت را روی هر شش نفر قفل می‌کنیم و بعد کارت‌ها می‌آیند. آزمون پذیرش فاز ۲: یک اسکرین‌شات از برخورد هر شش نفر با یک قهرمان، بدون خواندن نام، باید بتوان شش رستهٔ متفاوت را شمرد.</p>
+<table>
+<thead><tr><th style="width:15%">دشمن</th><th style="width:17%">پلان بدن</th><th style="width:16%">حرکت</th><th style="width:18%">خوان حمله</th><th style="width:17%">متریال غالب</th><th>درخشش Accent</th></tr></thead>
+<tbody>
+<tr><td>موجود سایه</td><td>لکهٔ نیمه‌مادهٔ دو-پا</td><td>لغزشِ پیوسته</td><td>گازگرفتنِ چنگال</td><td>گوشتِ سایه</td><td>بنفش <span class="sw" style="background:#a855f7"></span></td></tr>
+<tr><td>جنگجوی تاریکی</td><td>انسانی زره‌پوش</td><td>راه‌رفتنِ نظامی</td><td>شمشیر-تاب</td><td>فلز و پارچهٔ کهنه</td><td>سرخ <span class="sw" style="background:#ef4444"></span></td></tr>
+<tr><td>غول سنگی</td><td>تودهٔ چهار-اندام سنگی</td><td>کوبیدنِ زمین‌گیر</td><td>مشت-دوقلوی از بالا</td><td>سنگ و خزه</td><td>کهربا <span class="sw" style="background:#f59e0b"></span></td></tr>
+<tr><td>عنکبوت سایه</td><td>هشت-پای واقعی</td><td>خزیدنِ تند</td><td>پرش-گاز</td><td>کیتین تیره</td><td>فیروزه <span class="sw" style="background:#22d3ee"></span></td></tr>
+<tr><td>جادوگر تاریکی</td><td>انسانی ردا-پوش</td><td>سُر خوردنِ آرام</td><td>پرتابِ طلسم</td><td>پارچه و استخوان</td><td>بنفش روشن <span class="sw" style="background:#8b5cf6"></span></td></tr>
+<tr><td>پرندهٔ سایه</td><td>شبحِ بال‌دارِ شناور</td><td>پروازِ تپنده</td><td>شیرجه</td><td>مهٔ نیمه‌شفاف</td><td>یاسی <span class="sw" style="background:#c084fc"></span></td></tr>
+</tbody></table>
+<p>قاعدهٔ مشترک اردوگاه تاریک در اندازه‌گیری‌ها: ۵ کلیپ جدول ۴.۵ روی همه الزامی است؛ پاها در <span class="code">Walk</span> هرگز زیر زمین نروند؛ <span class="code">Death</span> برای موجودات نیمه‌ماده = فروپاشی به ذرات/لکه (فرو رفتن در زمین روی فریم آخر) و برای موجودات مادی = افتادن کلاسیک. بودجه: ≤ 10k مثلث، تکسچر 1024 (نخبه 2048)، ≤ 1.5–2MB.</p>
+
+<h3>۷.۱ — موجود سایه <span class="badge">COMMON</span></h3>
+<p><b>امضای Silhouette:</b> «قطرهٔ تاریکیِ ایستاده» — بدنِ بی‌دست‌ون‌پایِ مشخص که از زمین بیرون کشیده شده؛ دو چنگالِ کوتاه به‌جای دست و سرِ بی‌گردن با دو چشمِ بنفش.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>سرباز ارزانِ موج‌های اول؛ HP 55 و سرعت 4.2؛ تهدید در تعداد، نه قدرت</td></tr>
+<tr><td><b>اندام</b></td><td>1.45m در فایل (در دنیا 0.8× = 1.16m)؛ بدون گردن و کمر؛ بدن گلابی‌وار که پایین به زمین می‌چسبد؛ دو «بازوی» چنگالی کوتاه</td></tr>
+<tr><td><b>پالت</b></td><td>زغالی نیلی <span class="sw" style="background:#1f1b2e"></span> <span class="code">#1f1b2e</span> بدنه · بنفش <span class="sw" style="background:#a855f7"></span> <span class="code">#a855f7</span> چشم‌ها و رگه‌های مرکزی (Emissive)</td></tr>
+<tr><td><b>متریال</b></td><td>گوشت سایه: Roughness 0.9، بدون فلز؛ رگه‌های مرکزی روشن‌تر که در <span class="code">Hit</span> فلش بنفش می‌گیرند؛ لبه‌های بدن خاکستری‌تر (فِید به پایین)</td></tr>
+<tr><td><b>سر/چهره</b></td><td>سرِ نرم بدون استخوان صورت؛ فقط دو چشمِ بیضی درخشان و شکاف دهانِ کم‌عمق که در <span class="code">Attack</span> باز می‌شود</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Walk</span>: بدون گام — موج‌زدن پایین‌تنه و لغزش؛ <span class="code">Attack</span>: تورم ناگهانی + گاز دو چنگال؛ <span class="code">Death</span>: ریزش به لکه و محو روی Y=0</td></tr>
+<tr><td><b>Rig / VFX</b></td><td>Rig سادهٔ 8–12 استخوانه (Body/Chest/Head/2 Arm)؛ <span class="code">ChestPoint/HitPoint</span> — فایل <span class="code">enemies/shadow-creature.glb</span> · targetHeight 1.45</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — SHADOW CREATURE</div>
+<div class="prompt">Stylized dark fantasy shadow creature, amorphous upright blob of living shadow, no neck, no distinct legs, body melts into the ground, two short claw arms, glowing violet eyes, purple veins glowing faintly in chest, soft dripping edges, mobile game enemy, clean single mesh, silhouette like a standing ink drop.</div>
+
+<h3>۷.۲ — جنگجوی تاریکی <span class="badge">COMMON</span></h3>
+<p><b>امضای Silhouette:</b> «شبحِ میدانِ جنگ» — انسانی زره‌پوش با شانه‌پوش خاردار و شمشیری که لبه‌اش سرخ می‌تپد؛ عمداً «نسخهٔ معکوسِ» زبان بصری قهرمانان است.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>ستون فقرات موج‌ها؛ زره 3 و HP 130؛ حملهٔ نزدیکِ قابل‌اعتماد برای آموزش خط دفاعی به بازیکن</td></tr>
+<tr><td><b>اندام</b></td><td>1.80m؛ 5 سر (کوتاه‌تر از قهرمان)؛ قوز ۱۵°؛ بازوهای کمی بلندتر از طبیعی؛ شانه 2.0</td></tr>
+<tr><td><b>پالت</b></td><td>فلز کهنهٔ بنفش-خاکستری <span class="sw" style="background:#3b3648"></span> <span class="code">#3b3648</span> زره · سرخ <span class="sw" style="background:#ef4444"></span> <span class="code">#ef4444</span> لبهٔ شمشیر و شکاف کلاه‌خود (Emissive)</td></tr>
+<tr><td><b>متریال</b></td><td>فلز ماتِ جنگ‌زده با Roughness 0.6 و فرورفتگی‌های گلوله‌مانند؛ پارچهٔ زیرین پاره؛ زنگار در BaseColor</td></tr>
+<tr><td><b>سر/چهره</b></td><td>کلاه‌خود بستهٔ ساده با شکاف دید که فقط دو چشمِ سرخِ خاموش از آن بیرون می‌زند؛ هیچ پوست انسانی نمایش داده نشود (حسِ بی‌روح)</td></tr>
+<tr><td><b>سلاح</b></td><td>شمشیر پهنِ تیغه‌خشن 1.1m با لبهٔ سرخ Emissive؛ مش مجزای <span class="code">warrior_weapon</span> روی <span class="code">WeaponBone</span></td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Walk</span>: راه‌رفتن نظامی سنگین با تاب شمشیر پایین؛ <span class="code">Attack</span>: تاب مورب با صدای برش (Windup واضح ۶ فریم)؛ <span class="code">Death</span>: افتادن روبه‌جلو روی زانو سپس زمین</td></tr>
+<tr><td><b>Rig / VFX</b></td><td>انسان‌گونهٔ Mixamo ساده (≤ 40 استخوان)؛ <span class="code">WeaponPoint/ChestPoint/HeadPoint/HitPoint</span> — فایل <span class="code">enemies/dark-warrior.glb</span> · targetHeight 1.80</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — DARK WARRIOR</div>
+<div class="prompt">Stylized dark fantasy corrupted soldier, hunched humanoid in battered purple-grey plate armor with spiked shoulder pad, torn cloth under armor, closed simple helmet with eye slit and two dim red eyes, glowing red sword edge, heavy broad sword, no skin visible, undead knight feel, mobile game enemy, strong readable silhouette, opposite of hero color language.</div>
+<h3>۷.۳ — غول سنگی <span class="badge">ELITE</span></h3>
+<p><b>امضای Silhouette:</b> «خرابه‌ای که راه می‌رود» — تودهٔ موربِ سنگ با سرِ فرورفته بین شانه‌ها و دو ساعدِ صخره‌وار که بزرگ‌تر از سرند؛ بدون دم و گردنِ مشخص.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>تانکِ موج؛ HP 550، زره 10، مقاوم آتش 70٪؛ کند (1.4) اما دروازه‌شکن — آموزش «زره‌شکنی» به بازیکن</td></tr>
+<tr><td><b>اندام</b></td><td>2.60m در فایل (در دنیا 1.35× ≈ 3.5m)؛ 3.5 سر؛ شانه 3.0؛ سینه‌ای از بلوک‌های روی‌هم؛ سر کوچکِ فرورفته</td></tr>
+<tr><td><b>پالت</b></td><td>سنگ گرم <span class="sw" style="background:#57534e"></span> <span class="code">#57534e</span> بدنه · کهربا <span class="sw" style="background:#f59e0b"></span> <span class="code">#f59e0b</span> رگهٔ مذابِ درون شکاف‌ها (Emissive) · خزهٔ تیره در پشت و شانه‌ها</td></tr>
+<tr><td><b>متریال</b></td><td>سنگ Roughness 0.95 با ترک‌های عمیق در Normal؛ شکاف‌های بدن کهربایی Emissive که با ضربه روشن‌تر می‌شوند؛ خزه و خاک در بلوک‌های بالایی</td></tr>
+<tr><td><b>سر/چهره</b></td><td>صورتِ حکاکی‌شدهٔ خشن و خلاصه: دو چشمِ کهرباییِ عمیق، دهانِ ترک‌خورده؛ شبیه ستارهٔ قبور، نه هیولای گوشتی</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Walk</span>: استپ‌های سنگین با لرزش زمین (Gameplay لرزش می‌سازد؛ انیمیشن فقط فرود سنگین بدهد)؛ <span class="code">Attack</span>: دو مشت از بالا با Windup بلند و صحنهٔ زمین‌کوبی؛ <span class="code">Death</span>: فروپاشی به بلوک‌ها روی زمین</td></tr>
+<tr><td><b>Rig / VFX</b></td><td>انسان‌گونهٔ سنگینِ ساده ≤ 25 استخوان؛ <span class="code">ChestPoint</span> مرکز رگهٔ مذاب · <span class="code">HeadPoint/HitPoint</span> — فایل <span class="code">enemies/stone-golem.glb</span> · targetHeight 2.60</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — STONE GOLEM</div>
+<div class="prompt">Stylized dark fantasy stone golem, massive hunched rock body of stacked boulders, tiny carved face sunk between shoulders, thick rocky forearms larger than head, amber molten glow in body cracks, patches of dark moss, no neck, no tail, ancient ruin walking, mobile game elite enemy, chunky readable silhouette.</div>
+
+<h3>۷.۴ — عنکبوت سایه <span class="badge">COMMON</span></h3>
+<p><b>امضای Silhouette:</b> «سایهٔ هشت-تیغه» — شکمِ تپندهٔ بالا و هشت پای بلندِ خمیده که دور بدن یک تاجِ تیز می‌سازند؛ عرضِ بیشتر از ارتفاع، خواناترین خط از نمای بالا.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>آشوبگرِ سریع؛ جاخالی 22٪ (Dodge)، HP 75، سرعت 3.8؛ با خوشه‌های تندِ عنکبوت، فلش‌های بازیکن را جذب می‌کند</td></tr>
+<tr><td><b>اندام</b></td><td>1.10m ارتفاع (در دنیا 0.95×)؛ عرض ≈ 1.6m با پاها؛ بدن دو-بخشی: سر-سینهٔ جلو و شکمِ تپندهٔ عقبِ بالاتر</td></tr>
+<tr><td><b>پالت</b></td><td>کیتین زغالی <span class="sw" style="background:#292524"></span> <span class="code">#292524</span> بدنه و پاها · فیروزه <span class="sw" style="background:#22d3ee"></span> <span class="code">#22d3ee</span> چشم‌ها و نقش‌های شکم (Emissive) · موهای محو خاکستری روی مفاصل</td></tr>
+<tr><td><b>متریال</b></td><td>کیتینِ براقِ مات با Roughness 0.45 فقط روی بالای شکم (نقطهٔ کانونی)؛ مفاصل پارچه‌ایِ تیره؛ نقش فیروزه‌ایِ شکم مثل رون‌های تاریکی — «قلب» موجود</td></tr>
+<tr><td><b>سر/چهره</b></td><td>شش چشمِ ریز فیروزه‌ای در دو ردیف؛ دو بند-انگشتِ (Chelicera) آویزان جلوی دهان که در <span class="code">Attack</span> باز می‌شوند؛ بدون زبان و دندان انسانی</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Walk</span>: حرکت متقاطعِ پاها (خزش تند، نه عقب‌گرد معلق) — سه پا همیشه روی زمین؛ <span class="code">Attack</span>: فشار عقبِ کوتاه + پرشِ گاز با باز شدن بندها؛ <span class="code">Death</span>: جمع شدن پاها زیر بدن و خاموشی چشم‌ها</td></tr>
+<tr><td><b>Rig / VFX</b></td><td>Rig اختصاصی ≤ 30 استخوان (Body/Head/Abdomen/8×2/Mandible×2)؛ <span class="code">MouthPoint/ChestPoint/HitPoint</span> — فایل <span class="code">enemies/dark-spider.glb</span> · targetHeight 1.10</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — DARK SPIDER</div>
+<div class="prompt">Stylized dark fantasy shadow spider, true eight-legged arachnid, high pulsing abdomen behind, long bent legs forming a spiky crown around the body, six small glowing cyan eyes, two hanging mandibles, dark chitin shell with cyan rune patterns on abdomen, silhouette wider than tall, mobile game fast enemy, clean readable legs from top view.</div>
+
+<h3>۷.۵ — جادوگر تاریکی <span class="badge">ELITE — سپر آور</span></h3>
+<p><b>امضای Silhouette:</b> «ستونِ رون» — ردای بلندِ مثلثی که پاها را می‌بلعد، کلاهِ گنبدیِ شبیه مقبره، و عصای تاج‌دارِ بالا؛ فرم ایستا و آیینی مثل یک ستادهٔ سنگی.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>پشتیبانِ خطرناک؛ هر ۶ ثانیه به هم‌رزمان شعاع 7 سپر 45 می‌دهد — اولویت شکارِ بازیکن؛ مقاوم سایه 50٪</td></tr>
+<tr><td><b>اندام</b></td><td>1.90m (با کلاه)؛ 5.5 سر؛ بدنِ لاغرِ پنهان در ردا؛ شانه 1.6؛ ایستای خمیدهٔ آیینی</td></tr>
+<tr><td><b>پالت</b></td><td>نیلی تاریک <span class="sw" style="background:#312e81"></span> <span class="code">#312e81</span> ردا · بنفش روشن <span class="sw" style="background:#8b5cf6"></span> <span class="code">#8b5cf6</span> حاشیهٔ ردا، گوی عصا و چشم‌ها (Emissive) · استخوان خاموش <span class="sw" style="background:#d8d0bd"></span> <span class="code">#d8d0bd</span> تزئینات</td></tr>
+<tr><td><b>متریال</b></td><td>پارچهٔ سنگین Roughness 0.85 با نقش رونِ بافته در حاشیه؛ استخوان‌های خشک به‌عنوان قفل ردا؛ بدون هیچ فلز درخشان</td></tr>
+<tr><td><b>سر/چهره</b></td><td>کلاه گنبدیِ تیز؛ سایه به‌جای صورت؛ فقط چشم‌های بنفشِ درخشان و استخوان فکِ پایینِ نمایان — «نیمه‌مردگان آیینی»</td></tr>
+<tr><td><b>سلاح</b></td><td>عصای 1.8m با تاج استخوانی که گوی بنفش را در آغوش می‌گیرد؛ مش مجزای <span class="code">warlock_weapon</span></td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Walk</span>: سُرخوردنِ آرام (ردا حرکت نمی‌کند، فقط موج می‌گیرد)؛ <span class="code">Attack</span>: بلند کردن عصا و پرتاب گوی از <span class="code">StaffPoint</span>؛ <span class="code">Skill-Idle</span>: هنگام سپر دادن، گوی به بالا و پالس دایره‌ای (VFX بازی)؛ <span class="code">Death</span>: فروپاشی ردا روی زمین و خاموشی گوی</td></tr>
+<tr><td><b>Rig / VFX</b></td><td>انسان‌گونهٔ Mixamo ساده؛ <span class="code">StaffPoint/WeaponPoint/ChestPoint/HeadPoint/HitPoint</span> — فایل <span class="code">enemies/dark-mage.glb</span> · targetHeight 1.90</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — DARK MAGE</div>
+<div class="prompt">Stylized dark fantasy cult mage, tall triangular heavy robe swallowing the legs, dome-shaped grave-like hat, skeletal lower jaw under shadow, glowing violet eyes, bone clasps locking the robe, tall 1.8m staff with bone crown holding a glowing violet orb, ritual hunched stance, static pillar-like silhouette, mobile game support enemy.</div>
+
+<h3>۷.۶ — پرندهٔ سایه <span class="badge">COMMON — هوایی</span></h3>
+<p><b>امضای Silhouette:</b> «مُهرِ تاریکی در باد» — بدنِ مه‌آلودِ بی-پا با دو بالِ لبه‌دارِ بلند و دنبالهٔ نوک‌تیز؛ خطِ پرواز مثل کایتِ کجِ خمیده.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>تهدید هوایی؛ از برج‌های ضد-هوایی رد نمی‌شود مگر آن‌ها را وادار به شکار کند؛ HP 90، سرعت 3.4؛ آموزش اولویت‌بندی برج</td></tr>
+<tr><td><b>اندام</b></td><td>1.50m طول بدن (در دنیا 0.9×)؛ دهانهٔ بال‌ها ≈ 2.2m؛ بدون پا — بدن به دنبالهٔ نوک‌دار ختم می‌شود</td></tr>
+<tr><td><b>پالت</b></td><td>نیلی-زغالی <span class="sw" style="background:#1e1b2e"></span> <span class="code">#1e1b2e</span> بدنه · یاسی <span class="sw" style="background:#c084fc"></span> <span class="code">#c084fc</span> رگه‌های بال و چشم (Emissive) · لبهٔ بال‌ها محو به شفافِ مجازِ همین موجود (استثنای قانون آلفا فقط این‌جاست)</td></tr>
+<tr><td><b>متریال</b></td><td>مهٔ نیمه‌ماده: BaseColor تیرهٔ نیلی، Emissive رگه‌ای؛ ساختار استخوانیِ داخلیِ محو فقط در ریشهٔ بال‌ها</td></tr>
+<tr><td><b>سر/چهره</b></td><td>سرِ شاهین‌وارِ بی‌منقارِ مشخص؛ یک جفت چشمِ یاسی؛ هالهٔ صورتِ روشن‌تر مثل نقاب</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Idle/Walk</span>: بال‌زدنِ پیوسته با فاز متقاطع دو بال (بدون «شنا کردن»)؛ <span class="code">Attack</span>: شیرجهٔ نیم‌چرخ با کشیدن بال‌ها؛ <span class="code">Death</span>: سقوط با تکان و فروپاشی به دود روی زمین (Gameplay فرو می‌برد)</td></tr>
+<tr><td><b>Rig / VFX</b></td><td>Rig ≤ 12 استخوان (Body/Head/Tail/2×Wing دو مفصلی)؛ <span class="code">ChestPoint/HitPoint</span> — فایل <span class="code">enemies/flying-shadow.glb</span> · targetHeight 1.50</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — FLYING SHADOW</div>
+<div class="prompt">Stylized dark fantasy flying wraith, legless smoky body with sharp pointed tail, two long blade-edged wings with faint purple glowing veins, falcon-like head with glowing eyes, semi-ethereal mist edges only at wing tips, diving kite-like silhouette, mobile game flying enemy, clean silhouette from below.</div>
+<!-- ============ CH 8 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 08 — PHASE 3</div>
+  <div class="chapter-title">۸ — فاز ۳: اژدهای سیاه و Bossهای دیگر</div>
+  <div class="divider"></div>
+</div>
+<p>اژدهای سیاه، Boss منطقهٔ ۴ (آتشفشان) و سخت‌ترین مدل این فاز است؛ به همین دلیل کارت کامل فقط به او داده شده و سه غول و ارباب تاریکی با جدول خلاصه در پایان فصل می‌آیند. اژدها یک «لحظه‌ساز» است: ورودش باید تا ثانیه‌ها بعد از پایان نبرد در ذهن بماند. قاعدهٔ کلی Bossها در این فاز: ۹ کلیپ جدول ۴.۵، بودجه ≤ 35k مثلث، تکسچر 2048–4096، حجم ≤ 6–8MB و مقیاس دنیا با ضریب <span class="code">data.scale</span>.</p>
+
+<h3>۸.۱ — اژدهای سیاه <span class="badge">BOSS — خشم آسمانی</span></h3>
+<p><b>امضای Silhouette:</b> «طوفانِ دو-شاخ» — اژدهایی چهار-پا با گردنِ سه-بندِ S شکل، دو شاخِ رو-به-عقبِ بلند، و دو بالِ پرده‌دارِ بزرگ؛ در پرواز، خطِ بدن مثل موجِ سهمی است و دمِ چهار-بندی نصف طول بدن را می‌سازد.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش در نبرد</b></td><td>Boss پرندهٔ منطقهٔ ۴؛ HP 10500، زره 20، مقاوم آتش 40٪؛ نفس سایه (حملهٔ دور از <span class="code">MouthPoint</span>) و حملهٔ چنگال (Attack1)؛ در فاز ۲ «خشم آسمانی»: سرعت 1.4×، احضار ۲ اژدهای کوچک، و فلج‌کردن دوره‌ای ۲ برج با جادوی سایه</td></tr>
+<tr><td><b>اندام</b></td><td>4.50m ارتفاع ایستاده در فایل (در دنیا 2.6× ≈ 11.7m حس مقیاس)؛ طول کل با دم ≈ 12m؛ دهانهٔ بال‌ها ≈ 14m؛ 8 سرِ کشیده — بدنِ قهرمان کنار پایش مثل اسباب‌بازی دیده شود</td></tr>
+<tr><td><b>پالت</b></td><td>مش-زغالی <span class="sw" style="background:#0a0a0a"></span> <span class="code">#0a0a0a</span> فلس‌ها · بنفش <span class="sw" style="background:#8b5cf6"></span> <span class="code">#8b5cf6</span> غشای بال، چشم‌ها، درز فک و رگهٔ دم (Emissive) · خاکستری دود <span class="sw" style="background:#3a3a42"></span> <span class="code">#3a3a42</span> زیرشکم و غشای بال</td></tr>
+<tr><td><b>متریال</b></td><td>فلسِ ماتِ Roughness 0.7 با شکستِ متقاطع در Normal؛ غشای بال نیمه-شفافِ مجازِ Boss (صحنهٔ نور آتشفشان از پشت می‌درخشد)؛ رگه‌های بنفش Emissive که در <span class="code">PhaseChange</span> شدت می‌گیرند</td></tr>
+<tr><td><b>سر/چهره</b></td><td>جمجمهٔ پهن با دو شاخِ خمیدهٔ رو-به-عقب؛ فکِ مفصلی واقعی (استخوان Jaw) که در <span class="code">Roar</span> و نفس باز می‌شود؛ دندان‌های بزرگِ تقریبی؛ چشم‌های بنفشِ بدون مردمک</td></tr>
+<tr><td><b>بال‌ها</b></td><td>دو بالِ سه-بندی با استخوان‌های لبه‌دار و غشای پرده‌ای؛ لبهٔ بال کمی پاره (سه شکاف ثابت، نه خرت‌وپرت) — امضای شناسایی در پرواز</td></tr>
+<tr><td><b>انیمیشن‌های حساس</b></td><td><span class="code">Idle/Walk</span>: پروازِ تپندهٔ ثابت (Walk = پیش‌روی بال‌دار) با موجِ S روی گردن؛ <span class="code">Attack1</span>: چنگال دو-ضرب در هوا؛ <span class="code">Attack2</span>: نفس سایه — فک باز، جمع‌شدن گردن، رها شدن (VFX از <span class="code">MouthPoint</span>)؛ <span class="code">SpecialAttack</span>: اوج‌گیری و باران سایهٔ دایره‌ای؛ <span class="code">Roar</span>: فک کامل + باز شدت رگه‌ها؛ <span class="code">PhaseChange</span>: غلتک هوایی + فریاد — لحظهٔ تغییر رنگ VFX به بنفش پررنگ؛ <span class="code">Death</span>: سقوط چرخان و برخورد سنگین با زمین</td></tr>
+<tr><td><b>Rig / VFX</b></td><td>Rig اختصاصی ≤ 80 استخوان: Body/Spine×2/Neck×3/Jaw/Tail×4/Wing×3 هر طرف/4 پا×2 مفصل/Toe؛ <span class="code">MouthPoint/ChestPoint/HeadPoint/HitPoint</span> — فایل <span class="code">bosses/black-dragon.glb</span> · targetHeight 4.50</td></tr>
+</tbody></table></div>
+<div class="prompt-label">AI PROMPT — BLACK DRAGON</div>
+<div class="prompt">Stylized dark fantasy black dragon, four-legged winged wyvern with S-curved three-segment neck, two long backward horns, articulated jaw, four-segment tail half of body length, huge three-jointed membrane wings with three clean tears at edges, pitch-black matte scales, glowing purple wing membranes eyes and jaw seams, deep grey belly, boss monster for mobile tower defense, T-pose on ground, strong S-curve soaring silhouette.</div>
+<p><b>یادداشت تولید:</b> Mixamo این ریگ را نمی‌پذیرد؛ مسیر اختصاصی فصل ۵.۳ آخر. سه کلیپ <span class="code">Roar</span>، <span class="code">SpecialAttack</span> و <span class="code">PhaseChange</span> سرمایهٔ اصلی‌اند — بقیهٔ کلیپ‌ها می‌توانند ساده‌تر باشند ولی این سه نباید. اگر ابزار AI مدل پایه را با بال‌های بسته داد، بال‌ها را در Blender باز کنید و غشا را جدا بسازید تا مفاصل سه‌گانه درست کار کند.</p>
+
+<h3>۸.۲ — جدول خلاصهٔ چهار Boss دیگر</h3>
+<p>چهار Boss زیر پس از اژدهای سیاه و با همین قرارداد (۹ کلیپ، سقف 35k مثلث، Rig مطابق فصل ۴) تولید می‌شوند؛ کارت کامل آن‌ها در نسخهٔ بعدی سند داده خواهد شد، اما همین جدول + Phase 2 شخصیتِ کدِ فعلی برای شروع کافی است.</p>
+<table>
+<thead><tr><th style="width:20%">Boss</th><th style="width:26%">امضای Silhouette</th><th style="width:18%">فایل / ارتفاع فایل</th><th style="width:18%">پالت کلیدی</th><th>شخصیت فاز ۲ (از کد فعلی)</th></tr></thead>
+<tbody>
+<tr><td>پادشاه غول سنگی</td><td>غول فصل ۷ با تاجِ سنگیِ شکسته و تخته‌سنگِ دست — «پادشاهِ دفن‌شده»</td><td><span class="code">bosses/stone-golem-king.glb</span> · 2.60m (دنیا ≈5.7m)</td><td>سنگ <span class="sw" style="background:#44403c"></span> + کهربا <span class="sw" style="background:#f59e0b"></span></td><td>پوست سنگی (کاهش 15٪ آسیب) + کوبیدن زمینِ فلج‌کننده + احضار ۲ غول</td></tr>
+<tr><td>غول آتش</td><td>تیتانِ مذاب با شانه‌های آتشفشانی و سینهٔ گدازه — «کورهٔ راه‌رونده»</td><td><span class="code">bosses/fire-giant.glb</span> · 3.60m (دنیا ≈9.4m)</td><td>سرخ‌سیاه <span class="sw" style="background:#450a0a"></span> + نارنجی <span class="sw" style="background:#f97316"></span></td><td>بدن مذاب (مصون از یخ/کندی) + فوران آتشی دوره‌ای + احضار ۳ جنگجو</td></tr>
+<tr><td>غول یخ</td><td>تیتانِ کریستالیِ زاویه‌دار با شانه‌های یخ‌بسته و قلبِ درخشان — «قصرِ وارفته»</td><td><span class="code">bosses/ice-giant.glb</span> · 3.60m (دنیا ≈9.4m)</td><td>آبی‌عمیق <span class="sw" style="background:#0c4a6e"></span> + یخی <span class="sw" style="background:#7dd3fc"></span></td><td>انجماد ابدی (مصون از کندی) + هالهٔ یخ‌زنیِ برج‌ها + بازسازی 12/s</td></tr>
+<tr><td>ارباب تاریکی (Final)</td><td>پادشاهِ شوالیهٔ سایه با کلکِ بلند، شمشیرِ بزرگ و شش چشمِ ریز — «تاجِ شکسته»</td><td><span class="code">bosses/dark-lord.glb</span> · 4.20m (دنیا ≈11.8m)</td><td>زغالی <span class="sw" style="background:#18181b"></span> + بنفش <span class="sw" style="background:#a855f7"></span></td><td>سپر اربابی 1200 + احضار بی‌وقفهٔ سرباز سایه + مقاوم جادو 40٪</td></tr>
+</tbody></table>
+<p class="tbl-note">ارتفاع «دنیا» = targetHeight × data.scale. هر چهار نفر انسان‌گونهٔ سنگین یا تیتان‌وارند و می‌توانند از خط Mixamo (با تنظیم مقیاس) شروع شوند؛ فقط تاج/بال/کلک باید بخش دستی داشته باشند.</p>
+<!-- ============ CH 9 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 09 — PHASE 4</div>
+  <div class="chapter-title">۹ — فاز ۴: شش برج نخست با تغییر مدل واقعی</div>
+  <div class="divider"></div>
+</div>
+<p>قانون طلایی این فاز، همان خواستهٔ مصوب پروژه است: <b>ارتقای سطح باید «تغییر مدل واقعی» باشد، نه Scale</b>. چون <span class="code">ModelNormalizer</span> ارتفاع هر فایل را به <span class="code">targetHeight</span> قفل می‌کند، زبان درستِ پیشرفت، تغییر ساختار است: اضافه‌شدن طبقه، سنگینی‌تر شدن سر، پیدا شدن هستهٔ انرژی، و غلیظ‌تر شدن تزئینات پارسی. بنابراین هر برجِ این فاز <b>پنج فایل</b> دارد (<span class="code">sentinel-l1.glb</span> تا <span class="code">sentinel-l5.glb</span>)؛ فایل اصلیِ اعلام‌شدهٔ Manifest (<span class="code">sentinel.glb</span>) همان فرم L3 است تا مثل الان به‌عنوان جایگزینِ تک‌فایل هم کار کند و اتصال پنج‌فایلی در لایهٔ Asset (TowerFactory — نه منطق نبرد) انجام شود.</p>
+<div class="rule"><b>قواعد مشترک همهٔ برج‌ها:</b> معماری پایه = سکوی پنج‌ضلعی سنگی با قرینهٔ پارسی (هویت مشترک خانواده) • بدون Rig؛ فقط نود <span class="code">Turret</span> (برای برجک چرخان) و <span class="code">MuzzlePoint</span>/<span class="code">ChestPoint</span> • بودجه هر سطح ≤ 12k مثلث، تکسچر 2048، حجم ≤ 2MB • متریال سنگِ فصل ۳.۶ + فلز خانواده • در L5 «دگردیسی» کامل اتفاق می‌افتد: هستهٔ انرژی روشن، تاجِ طلایی، و حجم فعال‌تر — نقطهٔ اوجِ هر خط • تغییر بین سطوح با همان <span class="code">targetHeight</span> (تغییر فرم، نه قد).</div>
+
+<h3>۹.۱ — برج نگهبان (Sentinel) <span class="badge">فیزیکی · ضد هوایی</span></h3>
+<p><b>امضای Silhouette:</b> «چراغ‌دریچهٔ سنگی» — برجکِ چندضلعیِ کوتاه با سرِ تیربارِ دوقلو؛ ساده‌ترین و ماندگارترین فرمِ خانواده.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش</b></td><td>برج اولِ بازی؛ گلولهٔ فیزیکی ضد-هوایی، آتش سریع؛ رنگ نئون UI کهربایی <span class="sw" style="background:#ffb020"></span> <span class="code">#ffb020</span>؛ ارتفاع 3.2m</td></tr>
+<tr><td><b>ساختار</b></td><td>سکوی پنج‌ضلعی + تنهٔ سنگیِ شیار-دار + سرِ برجکِ چرخانِ دوقلو؛ <span class="code">Turret</span> = سرِ چرخان، <span class="code">MuzzlePoint</span> دهانهٔ راست</td></tr>
+<tr><td><b>پالت</b></td><td>سنگ گرم <span class="sw" style="background:#6b655c"></span> · برنز <span class="sw" style="background:#8a6b45"></span> لوله‌ها · طلایی <span class="sw" style="background:#ffb020"></span> خطوط مُهر و نوک برجک</td></tr>
+</tbody></table></div>
+<table class="tbl-keep"><thead><tr><th style="width:9%">سطح</th><th>تغییر مدل واقعی</th></tr></thead>
+<tbody>
+<tr><td><b>L1</b></td><td>سکو + تنهٔ کوتاه + یک لولهٔ تک روی پایهٔ چرخان؛ مهر ساده روی سکو</td></tr>
+<tr><td><b>L2</b></td><td>تنه یک طبقه بلندتر با قرینهٔ دوطرفه؛ لوله دوم اضافه می‌شود (سر دوقلو)</td></tr>
+<tr><td><b>L3</b></td><td>بالاپوش برنزی روی تنه؛ چهار ستونک گوشه‌ها؛ لبهٔ طلایی زیر برجک (فایل اصلی Manifest = همین فرم)</td></tr>
+<tr><td><b>L4</b></td><td>پنجره‌های آتشِ روشن روی تنه؛ سرِ برجک پهن‌تر با زنجیر تغذیه؛ دو پرچم کوچک آذری</td></tr>
+<tr><td><b>L5 — دگردیسی</b></td><td>سکو به قلعهٔ هشت‌ضلعی می‌رسد؛ هستهٔ طلایی روشن بین دو لوله؛ تاجِ چهار-نوک؛ خطوط مُهر تمام تنه Emissive ملایم</td></tr>
+</tbody></table>
+<div class="prompt-label">AI PROMPT — SENTINEL (BASE L3 FORM)</div>
+<div class="prompt">Stylized dark fantasy stone defense tower, pentagon stone base, grooved stone shaft with bronze upper casing, twin-barrel rotating ballista head with golden trim, small Persian corner pillars, amber seal engravings, mobile tower defense building, chunky readable silhouette, no characters, no rig.</div>
+
+<h3>۹.۲ — برج صاعقه (Lightning) <span class="badge">انرژی · زنجیره‌ای</span></h3>
+<p><b>امضای Silhouette:</b> «چنگالِ آسمان» — برجِ بلندِ نوک‌تیز با بازوی میله‌ای که دُرُستهٔ آذرخش روی آن قوس می‌زند؛ بلندترین برجِ خانواده بعد از یخ.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش</b></td><td>صاعقهٔ زنجیره‌ای (2 پرش، افت 72٪)؛ ضد هوایی؛ رنگ UI بنفش <span class="sw" style="background:#8b5cf6"></span> <span class="code">#8b5cf6</span>؛ ارتفاع 4.4m؛ VFX از <span class="code">ChestPoint</span></td></tr>
+<tr><td><b>ساختار</b></td><td>تنهٔ مخروطیِ پله‌ای + میلهٔ مگنتِ خمیده در نوک؛ دندانه‌های رسانا دور تنه؛ بدون برجک چرخان</td></tr>
+<tr><td><b>پالت</b></td><td>سنگ تیره <span class="sw" style="background:#4a4652"></span> · برنج مات <span class="sw" style="background:#a8955f"></span> میله‌ها · بنفش <span class="sw" style="background:#8b5cf6"></span> قوس و هسته (Emissive)</td></tr>
+</tbody></table></div>
+<table class="tbl-keep"><thead><tr><th style="width:9%">سطح</th><th>تغییر مدل واقعی</th></tr></thead>
+<tbody>
+<tr><td><b>L1</b></td><td>تنهٔ سادهٔ مخروطی + یک میلهٔ نوک‌ساده؛ دندانه‌های رسانا فقط پایین</td></tr>
+<tr><td><b>L2</b></td><td>پلهٔ دوم روی تنه؛ میله به چنگالِ دو-شاخه تبدیل می‌شود</td></tr>
+<tr><td><b>L3</b></td><td>حلقهٔ رسانای شناور دور نوک؛ نقش رونِ آذرخش روی تنه؛ دندانه‌ها تمام قد</td></tr>
+<tr><td><b>L4</b></td><td>دو بالابرِ رسانای جانبی؛ قوس بنفش دائمیِ کم‌نور بین چنگال‌ها</td></tr>
+<tr><td><b>L5 — دگردیسی</b></td><td>تنه باز می‌شود و ستونِ انرژیِ بنفش از درون بالا می‌آید؛ چنگال سه-شاخه؛ تاجِ حلقویِ شناور</td></tr>
+</tbody></table>
+<div class="prompt-label">AI PROMPT — LIGHTNING (BASE L3 FORM)</div>
+<div class="prompt">Stylized dark fantasy lightning defense tower, tall stepped conical stone shaft, curved copper conductor rod on top shaped like a fork, floating conductive ring around the tip, rune band with lightning motif, purple energy glow at core, mobile tower defense building, sharp vertical silhouette, no rig.</div>
+
+<h3>۹.۳ — برج آتش (Fire) <span class="badge">آتش · Splash</span></h3>
+<p><b>امضای Silhouette:</b> «اجاقِ محاصره» — برجِ کوتاهِ تنومند با دیگِ گدازه و لولهٔ مشعلِ پهن؛ پهن‌ترین برجِ خانواده نسبت به قد.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش</b></td><td>گوی آتش با Splash 2.8 و سوختن 6/s؛ فقط زمینی؛ رنگ UI نارنجی <span class="sw" style="background:#f97316"></span> <span class="code">#f97316</span>؛ ارتفاع 2.9m؛ VFX از <span class="code">MuzzlePoint</span></td></tr>
+<tr><td><b>ساختار</b></td><td>تنهٔ کوتاهِ قوی + دیگِ گدازه در پشت + لولهٔ مشعلِ پهن رو به جلو؛ دریچه‌های هوا روی تنه</td></tr>
+<tr><td><b>پالت</b></td><td>سنگ سوخته <span class="sw" style="background:#544b45"></span> · برنز سیاه‌شده <span class="sw" style="background:#6e5138"></span> لوله · نارنجی <span class="sw" style="background:#f97316"></span> گدازه و دریچه‌ها (Emissive)</td></tr>
+</tbody></table></div>
+<table class="tbl-keep"><thead><tr><th style="width:9%">سطح</th><th>تغییر مدل واقعی</th></tr></thead>
+<tbody>
+<tr><td><b>L1</b></td><td>تنهٔ کوتاه + لولهٔ مشعل ساده؛ دیگ نیمه‌پنهان پشت</td></tr>
+<tr><td><b>L2</b></td><td>دیگ جلو می‌آید و بزرگ می‌شود؛ دو دریچهٔ هوا باز می‌شود</td></tr>
+<tr><td><b>L3</b></td><td>قاب برنزیِ توربینی دور لوله؛ سه دهانهٔ اضافی روی تنه (دریچه‌های فشار)</td></tr>
+<tr><td><b>L4</b></td><td>لوله دوتکه با رینگ انبساط؛ جوی گدازه از دیگ به لوله (Emissive مسیر)</td></tr>
+<tr><td><b>L5 — دگردیسی</b></td><td>برج به «کورهٔ سه-دهانه» بدل می‌شود؛ سکوی گدازهٔ روشن دور برج؛ تاجِ دودکشِ چهارگوش با شعله‌گیر</td></tr>
+</tbody></table>
+<div class="prompt-label">AI PROMPT — FIRE (BASE L3 FORM)</div>
+<div class="prompt">Stylized dark fantasy fire defense tower, short stout burnt-stone body, wide bronze flamethrower barrel with turbine ring, lava cauldron behind with glowing ember vents on the shaft, orange lava glow in openings, mobile tower defense building, wide sturdy silhouette, no rig.</div>
+<h3>۹.۴ — برج یخ (Ice) <span class="badge">یخ · کندی</span></h3>
+<p><b>امضای Silhouette:</b> «قندیلِ معکوس» — بلندترین برج، تنهٔ بلورینِ رشدیافته از پایین به بالا با شاخه‌های یخیِ جانبی؛ مثل یک بلورِ معدنی که از زمین کاشته شده.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش</b></td><td>پرتاب Frost با کندی 55٪ برای 2 ثانیه؛ ضد هوایی؛ رنگ UI فیروزه <span class="sw" style="background:#22d3ee"></span> <span class="code">#22d3ee</span>؛ ارتفاع 4.5m؛ VFX از <span class="code">ChestPoint</span></td></tr>
+<tr><td><b>ساختار</b></td><td>سکوی برفی + تنهٔ بلوریِ چند-وجهی + دو شاخهٔ یخی جانبی؛ قلبِ درخشان در میانهٔ تنه</td></tr>
+<tr><td><b>پالت</b></td><td>سنگ یخ‌زده <span class="sw" style="background:#586270"></span> · بلور <span class="sw" style="background:#b8e4f2"></span> تنه · فیروزه <span class="sw" style="background:#22d3ee"></span> قلب و نوک‌ها (Emissive)</td></tr>
+</tbody></table></div>
+<table class="tbl-keep"><thead><tr><th style="width:9%">سطح</th><th>تغییر مدل واقعی</th></tr></thead>
+<tbody>
+<tr><td><b>L1</b></td><td>تنهٔ بلوریِ سادهٔ تک-شاخه؛ قلب کم‌نور</td></tr>
+<tr><td><b>L2</b></td><td>شاخهٔ دوم جانبی؛ لبه‌های تنه پله‌ای می‌شود (رشد بلور)</td></tr>
+<tr><td><b>L3</b></td><td>قلبِ روشن با قابِ برنجیِ یخ‌زده؛ سه قندیل آویزان از شاخه‌ها</td></tr>
+<tr><td><b>L4</b></td><td>شاخهٔ سمتِ مقابل؛ حلقهٔ برفِ شناور دور قلب؛ نوک‌های یخی سر شاخه‌ها</td></tr>
+<tr><td><b>L5 — دگردیسی</b></td><td>تاجِ کریستالیِ چند-شاخهٔ کامل؛ قلب به ستون نور تبدیل می‌شود؛ پایه به گلدانِ یخیِ قرینه‌دار</td></tr>
+</tbody></table>
+<div class="prompt-label">AI PROMPT — ICE (BASE L3 FORM)</div>
+<div class="prompt">Stylized dark fantasy ice defense tower, tallest tower, grown crystal body of faceted pale-blue ice, two side ice branches, glowing cyan crystal core with frosted bronze ring frame, hanging icicles, snowy pentagon base, mobile tower defense building, inverted icicle vertical silhouette, no rig.</div>
+
+<h3>۹.۵ — توپخانه (Cannon) <span class="badge">فیزیکی · Splash بزرگ</span></h3>
+<p><b>امضای Silhouette:</b> «گُنِ فولادی» — کوتاه‌ترین برج با مورب‌ترین لوله؛ فرم مثل قوطیِ توپِ قلعه‌ای روی سکوی سنگی.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش</b></td><td>گلولهٔ توپ با Splash 3.4؛ فقط زمینی؛ آتش کند اما سنگین؛ رنگ UI کهربا <span class="sw" style="background:#f59e0b"></span> <span class="code">#f59e0b</span>؛ ارتفاع 2.8m؛ VFX از <span class="code">MuzzlePoint</span></td></tr>
+<tr><td><b>ساختار</b></td><td>سکوی سنگیِ پهن + گونِهٔ فولادیِ چرخان با لولهٔ ضخیمِ مورب؛ بالابرِ فنری زیر لوله</td></tr>
+<tr><td><b>پالت</b></td><td>سنگ <span class="sw" style="background:#6b655c"></span> · فولاد تیره <span class="sw" style="background:#3d4046"></span> گونِه · کهربا <span class="sw" style="background:#f59e0b"></span> حلقه‌های لوله (Emissive در شلیک)</td></tr>
+</tbody></table></div>
+<table class="tbl-keep"><thead><tr><th style="width:9%">سطح</th><th>تغییر مدل واقعی</th></tr></thead>
+<tbody>
+<tr><td><b>L1</b></td><td>گونِهٔ ساده با لولهٔ کوتاه؛ سکوی بدون حفاظ</td></tr>
+<tr><td><b>L2</b></td><td>لوله بلندتر با حلقهٔ تقویت؛ سه حفاظِ سنگیِ جانبی روی سکو</td></tr>
+<tr><td><b>L3</b></td><td>فنر و بازوی بالابر واقعی زیر لوله؛ مخزن گلوله کنار گونِه</td></tr>
+<tr><td><b>L4</b></td><td>لوله دوتکه با سرِ پهن‌تر (دهانهٔ فن‌شکل)؛ دومین مخزن و زنجیر تغذیه</td></tr>
+<tr><td><b>L5 — دگردیسی</b></td><td>گونِه دوتایی (یک لوله سنگین + یک تندشلیک)؛ سکو به قلعهٔ توپخانه‌ای با کیسه‌های شن می‌رسد؛ تاج کهربایی روشن</td></tr>
+</tbody></table>
+<div class="prompt-label">AI PROMPT — CANNON (BASE L3 FORM)</div>
+<div class="prompt">Stylized dark fantasy cannon tower, shortest fortress tower, wide stone platform with three small stone shields, rotating steel gun mount with thick diagonal barrel, visible spring lift arm under barrel, cannonball crate beside, amber ring bands on barrel, mobile tower defense building, no rig.</div>
+
+<h3>۹.۶ — زهرخانه (Poison) <span class="badge">سایه · DoT</span></h3>
+<p><b>امضای Silhouette:</b> «قطره‌چکانِ مرداب» — برجِ نازکِ مارپیچ با کوزهٔ سبزِ آویزان و نوکِ قطره‌چکان؛ کشیده اما نه بلند — حسِ همیشه‌چکه‌زن.</p>
+<div class="card"><table style="margin:0">
+<tbody>
+<tr><td style="width:26%"><b>نقش</b></td><td>پرتاب Venom با زهر 14/s به‌مدت 4s و شکستن زره 2 در هر اصابت؛ فقط زمینی؛ رنگ UI سبز بیمار <span class="sw" style="background:#84cc16"></span> <span class="code">#84cc16</span>؛ ارتفاع 2.9m؛ VFX از <span class="code">MuzzlePoint</span></td></tr>
+<tr><td><b>ساختار</b></td><td>تنهٔ مارپیچِ سنگی + کوزهٔ جوشانِ سبز در میانه + نوکِ قطره‌چکانِ فلزی؛ لوله‌های قطره از کوزه به نوک</td></tr>
+<tr><td><b>پالت</b></td><td>سنگ مرطوب <span class="sw" style="background:#4f5248"></span> · برنج اکسیدزده <span class="sw" style="background:#5f7a52"></span> کوزه · سبز بیمار <span class="sw" style="background:#84cc16"></span> مایع و قطره‌ها (Emissive)</td></tr>
+</tbody></table></div>
+<table class="tbl-keep"><thead><tr><th style="width:9%">سطح</th><th>تغییر مدل واقعی</th></tr></thead>
+<tbody>
+<tr><td><b>L1</b></td><td>تنهٔ مارپیچِ ساده + کوزهٔ کوچک؛ یک لولهٔ قطره</td></tr>
+<tr><td><b>L2</b></td><td>کوزه بزرگ‌تر با درپوش قفل‌شده؛ دومین لولهٔ قطره؛ خزه روی پایه‌ها</td></tr>
+<tr><td><b>L3</b></td><td>حلقهٔ جمع‌آوری دور تنه؛ نوک قطره‌چکان فلزیِ سه-سوراخ؛ حباب‌های روشن کوزه</td></tr>
+<tr><td><b>L4</b></td><td>دومین کوزهٔ بالاتر با سیمون لوله؛ سرشاخهٔ سم‌پاش کنار نوک</td></tr>
+<tr><td><b>L5 — دگردیسی</b></td><td>برج به «چاهِ سم» بدل می‌شود: کوزهٔ مرکزی بزرگ و دو شاخهٔ سم‌پاشِ قرینه؛ استخرِ سبزِ روشن دور پایه</td></tr>
+</tbody></table>
+<div class="prompt-label">AI PROMPT — POISON (BASE L3 FORM)</div>
+<div class="prompt">Stylized dark fantasy poison defense tower, narrow spiral stone body, bubbling green cauldron mid-shaft with locked lid, metal drip nozzle at top with three holes, dripping green tubes from cauldron to nozzle, mossy wet stone, sick green glowing liquid, mobile tower defense building, dripping silhouette, no rig.</div>
+
+<h3>۹.۷ — جدول خلاصهٔ چهار برج دیگر و دشمنان آینده</h3>
+<p>چهار برج بازشوندهٔ ستاره‌ای و ده دشمن منطقه‌های ۲ تا ۶ پس از فاز ۴ و با همین قرارداد تولید می‌شوند؛ خلاصهٔ طراحی زیر برای برنامه‌ریزی کافی است.</p>
+<table>
+<thead><tr><th style="width:22%">برج</th><th style="width:30%">امضای Silhouette</th><th style="width:14%">ارتفاع</th><th style="width:18%">Accent</th><th>امضای نقش</th></tr></thead>
+<tbody>
+<tr><td>بالیستا</td><td>کمانِ عظیمِ سوارِ بر چرخِ سنگی — برد 14 تا 19</td><td>3.4m</td><td><span class="sw" style="background:#d97706"></span> <span class="code">#d97706</span></td><td>پیکان شکافندهٔ ضد-زره، ضد هوایی</td></tr>
+<tr><td>رازآسا (Arcane)</td><td>منشورِ شناورِ سه-وجهی روی قابِ حلقه‌دار</td><td>4.0m</td><td><span class="sw" style="background:#38bdf8"></span> <span class="code">#38bdf8</span></td><td>پرتاب Prism جادویی، ضد هوایی</td></tr>
+<tr><td>آذرگاه (Temple)</td><td>آتشکدهٔ کوچک با گنبدِ ترنج‌دار و شعلهٔ مرکزی</td><td>3.6m</td><td><span class="sw" style="background:#fbbf24"></span> <span class="code">#fbbf24</span></td><td>هالهٔ +25% سرعت شلیک برج‌های اطراف</td></tr>
+<tr><td>برج تهی (Void)</td><td>ستونِ وارونهٔ تاریک با دهانهٔ سیاهِ معلق</td><td>4.4m</td><td><span class="sw" style="background:#8b5cf6"></span> <span class="code">#8b5cf6</span></td><td>اجرا (Execute) روی دشمنان کمتر از 35% جان</td></tr>
+</tbody></table>
+<table>
+<thead><tr><th style="width:20%">دشمن آینده</th><th style="width:34%">امضای Silhouette</th><th style="width:12%">فایل / قد</th><th>قلاب طراحی</th></tr></thead>
+<tbody>
+<tr><td>سرباز سایه</td><td>جنگجوی لاغرِ کلاه‌دار با سلاحِ برندهٔ کج — نسخهٔ سبکِ جنگجو</td><td><span class="code">shadow-soldier.glb</span> · 1.75</td><td>یار احضارشدنیِ ارباب تاریکی</td></tr>
+<tr><td>روح</td><td>شبحِ بی-پایِ ریسه‌دار با قفسِ سینهٔ نیمه‌شفاف</td><td><span class="code">spirit.glb</span> · 1.50</td><td>شفادهندهٔ هم‌رزما (26 در 4.5s)</td></tr>
+<tr><td>شکارچی</td><td>چهار-دستِ چابکِ سرخ-قهوه با چنگال‌های قلابی</td><td><span class="code">hunter.glb</span> · 1.80</td><td>جاخالی 30% — ضد شلیک تک‌تیر</td></tr>
+<tr><td>ماشین جنگی</td><td>مربعِ فولادیِ چهار-چرخ با منجنیقِ جلو</td><td><span class="code">war-machine.glb</span> · 2.20</td><td>زره 16، مقاوم فیزیکی</td></tr>
+<tr><td>هیولای کریستالی</td><td>خوشهٔ کریستالِ راه-رفته با شانه‌های تیز</td><td><span class="code">crystal-monster.glb</span> · 1.70</td><td>مقاوم انرژی/یخ، آسیب‌پذیر فیزیک</td></tr>
+<tr><td>اژدهای کوچک</td><td>اژدهای دو-پایِ جوان با بال‌های کوتاه</td><td><span class="code">small-dragon.glb</span> · 2.80</td><td>پرنده؛ فرزندِ احضاریِ اژدهای سیاه</td></tr>
+<tr><td>احضارکننده</td><td>مراسم‌دارِ ردا-دار با بندِ طلسمِ معلق دور بدن</td><td><span class="code">summoner.glb</span> · 1.90</td><td>هر 9s دو موجود سایه احضار می‌کند</td></tr>
+<tr><td>تانک اثری</td><td>خرچنگِ زرهیِ نیم-شفاف با هستهٔ روشن</td><td><span class="code">aether-tank.glb</span> · 2.40</td><td>بازسازی 14/s — نیاز به آتش پیوسته</td></tr>
+<tr><td>نابودگر</td><td>گاومیشِ زره‌دار با کلاه‌خودِ خاردار و شانه‌های دُرُسته</td><td><span class="code">destroyer.glb</span> · 2.30</td><td>زره 24؛ دیوارِ متحرکِ موج آخر</td></tr>
+<tr><td>محوکننده</td><td>ماشینِ جنگیِ چهار-پایِ مکانیکی با لیزرِ مرکزی</td><td><span class="code">annihilator.glb</span> · 2.60</td><td>Boss-مانند؛ بازسازی 22/s و لیزر فلج‌کنندهٔ برج</td></tr>
+</tbody></table>
+<!-- ============ CH 10 ============ -->
+<div class="chapter-header">
+  <div class="section-tag">CHAPTER 10 — ACCEPTANCE &amp; QC</div>
+  <div class="chapter-title">۱۰ — پذیرش، کنترل کیفیت و برنامهٔ جایگزینی آرمان</div>
+  <div class="divider"></div>
+</div>
+<p>یک دارایی فقط وقتی «تحویل‌شده» حساب می‌شود که هر دو دروازهٔ زیر را کامل عبور کند: دروازهٔ فنی (ابزارهای خودکار خط لوله) و دروازهٔ هنری (آزمون‌های این سند). این دو دروازه عمداً سخت‌گیرانه‌اند — هزینهٔ ردکردن یک فایل در همین مرحله چند دقیقه است و هزینهٔ کشفش داخل نبرد، بازتولید کامل.</p>
+
+<h3>۱۰.۱ — دروازهٔ فنی (چک‌لیست پذیرش هر فایل)</h3>
+<table>
+<thead><tr><th style="width:6%">#</th><th style="width:34%">بررسی</th><th style="width:34%">معیار قبولی</th><th>ابزار</th></tr></thead>
+<tbody>
+<tr><td>۱</td><td>مسیر و نام فایل</td><td>دقیقاً مطابق جدول ۴.۷</td><td>چشمی + مسیر</td></tr>
+<tr><td>۲</td><td>باز شدن در لودر</td><td>بدون خطا و بدون فشرده‌سازی Draco</td><td>GLTFLoader / گالری</td></tr>
+<tr><td>۳</td><td>ارتفاع پس از نرمال‌سازی</td><td>= <span class="code">targetHeight</span> جدول ۴.۷</td><td>گالری (نمایش ارتفاع)</td></tr>
+<tr><td>۴</td><td>جهت Forward</td><td>رو به +Z در نمای پیش‌فرض</td><td>گالری (چرخش)</td></tr>
+<tr><td>۵</td><td>نقاط VFX واقعی</td><td>حذف برچسب «سینتتیک» برای نقاط الزامی کارت</td><td>گالری (وضعیت نقاط)</td></tr>
+<tr><td>۶</td><td>کلیپ‌های الزامی</td><td>همهٔ کلیپ‌های کلاس با نام دقیق، اجرای سالم</td><td>گالری (منوی انیمیشن)</td></tr>
+<tr><td>۷</td><td>بودجه مثلث/تکسچر/حجم</td><td>داخل سقف‌های جدول ۴.۳</td><td>Blender + حجم فایل</td></tr>
+<tr><td>۸</td><td>مقیاس استخوان‌ها</td><td>بدون استخوان با Scale نابرابر 100%</td><td>Blender</td></tr>
+</tbody></table>
+
+<h3>۱۰.۲ — دروازهٔ هنری (آزمون‌های سند)</h3>
+<ul class="tight">
+<li><b>آزمون Silhouette فصل ۳:</b> نسخهٔ مشکی توپر در زاویهٔ ۳/۴، قابل تشخیص از نزدیک‌ترین هم‌کلاس بدون نام.</li>
+<li><b>آزمون قاب:</b> اسکرین‌شات واقعی نبرد با نور صحنه؛ رنگ Accent باید بدون فشار درست خوانده شود و هیچ Emissive‌ای با هستهٔ آذر نرقد.</li>
+<li><b>آزمون حرکت:</b> Crossfade هر چهار زوج Idle↔Walk↔Run↔Attack ببینید؛ هیچ پرش پوزی و هیچ لغزش پا (Foot Slide) قابل قبول نیست.</li>
+<li><b>آزمون VFX:</b> برق/شعله دقیقاً از نقطهٔ درست بیرون می‌زند و با حرکت بدن/سلاح می‌ماند (برای آرمان: تاب پتک در Attack).</li>
+<li><b>آزمون عملکرد:</b> Spawn دسته‌ای ۲۰ عددی از دشمن + ۸ برج روی دستگاه هدف (اندروید میان‌رده) بدون افت زیر 50FPS.</li>
+</ul>
+
+<h3>۱۰.۳ — برنامهٔ جایگزینی آرمان (حذف Thor)</h3>
+<p>مدل فعلی <span class="code">arman.glb</span> تا رسیدن نسخهٔ اختصاصی، به‌عنوان Placeholder زنده می‌ماند تا گالری و نبرد بی‌مدل نمانند — اما با این وضعیت رسمی:</p>
+<ul class="tight">
+<li>پرچم <b><span class="code">do-not-ship</span></b>: این فایل در هیچ بیلد انتشار (APK/AAB) مجاز نیست؛ فقط محیط توسعه.</li>
+<li>اولین خروجی فاز ۱ باید آرمان باشد (کارت ۶.۱) تا ریسک IP زودتر بسته شود؛ از لحظهٔ تأیید آرمانِ جدید، فایل Thor از مخزن حذف و تاریخچهٔ بیلد پاک می‌شود.</li>
+<li>معیار حذف: آرمان جدید دروازهٔ فنی ۸گانه + دروازهٔ هنری را کامل پاس کند و آئورای آذرخش/VFX فعلی روی <span class="code">WeaponPoint</span> آن بی‌نقص کار کند — هیچ سازوکار خاصی برای سوئیچ لازم نیست؛ جایگزینی فایل همانی است که خط لوله امروز هم انجام می‌دهد.</li>
+</ul>
+
+<h3>۱۰.۴ — ترتیب اجرا و نقطهٔ شروع</h3>
+<table>
+<thead><tr><th style="width:12%">گام</th><th style="width:34%">اقدام</th><th style="width:26%">خروجی قابل پذیرش</th><th>وابستگی</th></tr></thead>
+<tbody>
+<tr><td>۱</td><td>تولید آرمان (کارت ۶.۱) با گردش کار فصل ۵</td><td><span class="code">arman.glb</span> جدید + ۸ کلیپ</td><td>هیچ — همین امروز شروع می‌شود</td></tr>
+<tr><td>۲</td><td>سه قهرمان دیگر (۶.۲ تا ۶.۴)</td><td>سه GLB تأییدشده</td><td>الگوی کلیپ آرمان</td></tr>
+<tr><td>۳</td><td>شش دشمن نخست (۷.۱ تا ۷.۶)</td><td>شش GLB متمایز</td><td>بودجه و قرارداد فصل ۴</td></tr>
+<tr><td>۴</td><td>اژدهای سیاه (۸.۱) و سپس چهار Boss خلاصهٔ ۸.۲</td><td>پنج GLB Boss</td><td>تجربهٔ Rig دستی از عنکبوت/پرنده</td></tr>
+<tr><td>۵</td><td>شش برج × ۵ سطح (۹.۱ تا ۹.۶) + اتصال پنج‌فایلی در TowerFactory</td><td>۳۰ فایل سطح + ۶ فایل L3</td><td>قرارداد نام سطح‌بندی</td></tr>
+<tr><td>۶</td><td>ده دشمن آینده + چهار برج دیگر (جدول‌های ۹.۷)</td><td>کارت‌های نسخهٔ ۱.۱ سند</td><td>تثبیت کامل فازهای ۱-۴</td></tr>
+</tbody></table>
+<h3>۱۰.۵ — نسخه‌ها و دفترِ تصمیم‌ها</h3>
+<p>این سند به‌صورت کنترل‌شده تغییر می‌کند؛ هر تغییر قراردادی (سبک، بودجه، نام‌گذاری یا انیمیشن) باید با یک ردیف در جدول زیر ثبت شود تا ۲۹ دارایی همیشه به یک مرجع واحد متصل بمانند. نسخهٔ جاری مبنای تولید فاز ۱ است و تا اعلام نسخهٔ بعد، هیچ انحرافی از بندهای آن مجاز نیست.</p>
+<table class="tbl-keep">
+<thead><tr><th style="width:10%">نسخه</th><th style="width:16%">تاریخ</th><th style="width:44%">تغییرات کلیدی</th><th>وضعیت</th></tr></thead>
+<tbody>
+<tr><td><b>1.0</b></td><td>مصوب — شروع فاز ۱</td><td>قفل سبک «فانتزی تاریک استایلایز»، بودجهٔ سبک موبایل، قرارداد فنی ۴.۱ تا ۴.۸، کارت‌های کامل فازهای ۱ تا ۴، پرامپت‌های AI، گردش کار Blender/Mixamo و دروازه‌های پذیرش</td><td>جاری</td></tr>
+<tr><td>1.1 (برنامه)</td><td>پس از فاز ۴</td><td>کارت کامل چهار Boss باقی‌مانده و ده دشمن آینده بر اساس جدول‌های خلاصهٔ ۸.۲ و ۹.۷</td><td>آینده</td></tr>
+<tr><td>1.2 (برنامه)</td><td>پس از پذیرش ۲۵ دارایی</td><td>بودجه‌بندی مجدد بر اساس عملکرد واقعی روی دستگاه هدف و افزودن LOD1/LOD2 به قرارداد</td><td>آینده</td></tr>
+</tbody></table>
+<p>با پذیرش این نسخه، فاز ۱ از گام ۱ (تولید آرمان طبق کارت ۶.۱ و گردش کار فصل ۵) آغاز می‌شود و خروجی‌ها به‌ترتیب در گالری بازی (<span class="code">?gallery=1</span>) و نبرد واقعی، با دروازه‌های فصل ۱۰ پذیرش خواهند شد.</p>
+
+</div><!-- /main-content -->
+</body>
+</html>
