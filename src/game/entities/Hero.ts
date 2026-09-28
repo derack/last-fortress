@@ -82,8 +82,34 @@ export class Hero {
     this.position.y = 0;
     this.mesh.visible = true;
     this.deployed = true;
+    // بلافاصله رو به نزدیک‌ترین نقطه مسیر بایستد — موقعیت گارد طبیعی
+    const pathPt = this.nearestPathPoint();
+    if (pathPt) this.mesh.rotation.y = Math.atan2(pathPt.x - pos.x, pathPt.z - pos.z);
     this.ctx.vfx.ring(pos, this.data.projectileColor, 3, 0.6);
     this.ctx.vfx.burst(pos.clone().add(new THREE.Vector3(0, 1, 0)), this.data.projectileColor, 20, { speed: 4, life: 0.6, size: 0.5, gravity: 4 });
+  }
+
+  /** نزدیک‌ترین نقطه مسیر — برای جهت‌گیری پیش‌فرض قهرمان */
+  private nearestPathPoint(): THREE.Vector3 | null {
+    let best: THREE.Vector3 | null = null;
+    let bestD = Infinity;
+    for (const p of this.ctx.pathPoints) {
+      const d = (p.x - this.position.x) ** 2 + (p.z - this.position.z) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = p;
+      }
+    }
+    return best;
+  }
+
+  /** چرخش نرم و مستقل از فریم‌ریت به سمت نقطه هدف */
+  private turnToward(target: THREE.Vector3, dt: number, rate = 7) {
+    const wantRot = Math.atan2(target.x - this.position.x, target.z - this.position.z);
+    let diff = wantRot - this.mesh.rotation.y;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    this.mesh.rotation.y += diff * Math.min(1, rate * dt);
   }
 
   moveTo(pos: THREE.Vector3) {
@@ -193,11 +219,7 @@ export class Hero {
         dir.normalize();
         const step = Math.min(dist, this.data.moveSpeed * dt);
         this.position.addScaledVector(dir, step);
-        const wantRot = Math.atan2(dir.x, dir.z);
-        let diff = wantRot - this.mesh.rotation.y;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        this.mesh.rotation.y += diff * 0.18;
+        this.turnToward(this.moveTarget, dt, 9);
         this.walkPhase += dt * 12;
         // Placeholder: انیمیشن پا پروسیجرال | GLB: انیمیشن اسکلتی
         if (!this.handle.hasAnimations) {
@@ -217,14 +239,12 @@ export class Hero {
         this.cooldown = 1 / this.fireRate;
         this.attack(target, targets);
       }
-      // ایستادن رو به نزدیک‌ترین دشمن
+      // ایستادن رو به دشمن جلوی صف — و اگر دشمنی در برد نیست، رو به مسیر (پایش گارد)
       if (target) {
-        const dir = target.getPos().clone().sub(this.position);
-        const wantRot = Math.atan2(dir.x, dir.z);
-        let diff = wantRot - this.mesh.rotation.y;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        this.mesh.rotation.y += diff * 0.1;
+        this.turnToward(target.getPos(), dt, 7);
+      } else {
+        const pathPt = this.nearestPathPoint();
+        if (pathPt) this.turnToward(pathPt, dt, 2.5);
       }
     }
 

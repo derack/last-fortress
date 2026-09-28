@@ -80,6 +80,9 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
 
   return (
     <div className="absolute inset-0 z-10 pointer-events-none">
+      {/* وینیت سینمایی — عمق بیشتر تصویر */}
+      <div className="battle-vignette absolute inset-0" />
+
       {/* ================= نوار بالا ================= */}
       <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-black/70 to-transparent p-3 pointer-events-auto">
         {/* سلامت هسته */}

@@ -53,7 +53,7 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
   return (
     <div className="absolute inset-0 z-20 flex flex-col bg-gradient-to-b from-[#0b0f1c] to-[#101828]">
       {/* هدر — در حالت iframe دکمه بستن روی قاب والد است */}
-      <div className="flex items-center gap-3 border-b border-amber-400/20 bg-black/40 px-4 py-3">
+      <div className="panel-header flex items-center gap-3 border-b border-amber-400/20 bg-black/40 px-4 py-3">
         {!standalone && (
           <button onClick={goBack}
             className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-600/50 bg-black/40 text-slate-300 active:scale-95">

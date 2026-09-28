@@ -92,7 +92,9 @@ export class Tower implements TowerLike {
   }
 
   get upgradeCost(): number {
-    return this.level < 5 ? this.data.levels[this.level].upgradeCost : -1;
+    // upgradeCost سطح فعلی = هزینه ارتقا از همین سطح به سطح بعد
+    // (قبلاً levels[this.level] خوانده می‌شد که در لول ۴ هزینه لول ۵ یعنی ۰ را نشان می‌داد!)
+    return this.level < 5 ? this.data.levels[this.level - 1].upgradeCost : -1;
   }
 
   get sellValue(): number {
@@ -107,8 +109,10 @@ export class Tower implements TowerLike {
 
   upgrade(): boolean {
     if (this.level >= 5) return false;
+    // هزینه قبل از افزایش سطح ثبت می‌شود — همان مبلغی که Game کسر کرده
+    const cost = this.data.levels[this.level - 1].upgradeCost;
     this.level++;
-    this.invested += this.data.levels[this.level - 1].upgradeCost;
+    this.invested += cost;
     // تعویض مدل — Transformation (از طریق Asset Pipeline)
     this.scene.remove(this.mesh);
     this.handle.dispose();

@@ -80,8 +80,14 @@ export class Game {
   private buildMode: string | null = null;
   private heroSelectMode = false;
   private selectedTower: Tower | null = null;
-  private ghostMesh: THREE.Mesh | null = null;
+  /** پیش‌نمایش محل ساخت — دیسک سبز/قرمز + حلقه برد */
+  private ghostGroup: THREE.Group | null = null;
+  private ghostDisc: THREE.Mesh | null = null;
+  private ghostRing: THREE.Mesh | null = null;
   private ghostValid = false;
+  /** گرید قابل‌ساخت — فقط در حالت ساخت دیده می‌شود */
+  private buildGrid: THREE.Mesh | null = null;
+  private ghostPulse = 0;
   private time = 0;
   private raf = 0;
   private lastFrame = 0;
@@ -138,6 +144,8 @@ export class Game {
 
     this.hero = new Hero(heroId, this.scene3d.scene, this.ctx);
     this.input = new InputController(canvas, this.cameraCtrl, (hit) => this.handleTap(hit), this.scene3d.scene);
+    // پیش‌نمایش محل ساخت — حرکت موس/درگ انگشت
+    this.input.onGroundHover = (pt) => this.updateGhost(pt);
 
     this.audio.setVolumes(save.settings.music, save.settings.sfx);
   }
@@ -232,6 +240,16 @@ export class Game {
       const p = this.projectiles[i];
       p.update(dt, this.scene3d.scene);
       if (!p.isAlive) this.projectiles.splice(i, 1);
+    }
+
+    // نبض پیش‌نمایش ساخت
+    if (this.ghostGroup && this.ghostGroup.visible) {
+      this.ghostPulse += dt * 4;
+      const pulse = 0.32 + Math.sin(this.ghostPulse) * 0.1;
+      const color = this.ghostValid ? 0x22c55e : 0xef4444;
+      (this.ghostDisc!.material as THREE.MeshBasicMaterial).opacity = pulse;
+      (this.ghostDisc!.material as THREE.MeshBasicMaterial).color.setHex(color);
+      (this.ghostRing!.material as THREE.MeshBasicMaterial).color.setHex(color);
     }
 
     // قهرمان
@@ -437,14 +455,12 @@ export class Game {
     this.buildMode = towerId;
     this.magicPending = null;
     this.heroSelectMode = false;
-    this.ghostMesh?.removeFromParent();
-    this.ghostMesh = null;
+    this.clearGhost();
     if (towerId) {
-      const geo = new THREE.CylinderGeometry(1.7, 1.7, 0.3, 8);
-      const mat = new THREE.MeshBasicMaterial({ color: TOWERS[towerId].color, transparent: true, opacity: 0.4 });
-      this.ghostMesh = new THREE.Mesh(geo, mat);
-      this.ghostMesh.visible = false;
-      this.scene3d.scene.add(this.ghostMesh);
+      this.createGhost(towerId);
+      this.setBuildGridVisible(true);
+    } else {
+      this.setBuildGridVisible(false);
     }
     this.bus.emit('buildMode', { towerId });
   }
@@ -453,8 +469,96 @@ export class Game {
     this.heroSelectMode = on;
     this.buildMode = null;
     this.magicPending = null;
-    this.ghostMesh?.removeFromParent();
-    this.ghostMesh = null;
+    this.clearGhost();
+    this.setBuildGridVisible(false);
+  }
+
+  // ------------------- پیش‌نمایش محل ساخت برج -------------------
+
+  /** ساخت Ghost — دیسک پایه + حلقه برد برج (سبز/قرمز هوشمند) */
+  private createGhost(towerId: string) {
+    const data = TOWERS[towerId];
+    this.ghostGroup = new THREE.Group();
+    this.ghostGroup.visible = false;
+
+    // دیسک پایه — محل دقیق قرارگیری
+    this.ghostDisc = new THREE.Mesh(
+      new THREE.CircleGeometry(1.85, 28),
+      new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.35, depthWrite: false })
+    );
+    this.ghostDisc.rotation.x = -Math.PI / 2;
+    this.ghostDisc.position.y = 0.12;
+    this.ghostGroup.add(this.ghostDisc);
+
+    // حلقه برد — شعاع واقعی شلیک برج سطح ۱
+    const range = data.levels[0].range;
+    this.ghostRing = new THREE.Mesh(
+      new THREE.RingGeometry(Math.max(0.1, range - 0.22), range, 72),
+      new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.4, depthWrite: false, side: THREE.DoubleSide })
+    );
+    this.ghostRing.rotation.x = -Math.PI / 2;
+    this.ghostRing.position.y = 0.1;
+    this.ghostGroup.add(this.ghostRing);
+
+    this.scene3d.scene.add(this.ghostGroup);
+  }
+
+  /** پاک‌سازی کامل Ghost */
+  private clearGhost() {
+    if (this.ghostGroup) {
+      this.ghostGroup.traverse((o) => {
+        if (o instanceof THREE.Mesh) {
+          o.geometry.dispose();
+          (o.material as THREE.Material).dispose();
+        }
+      });
+      this.ghostGroup.removeFromParent();
+      this.ghostGroup = null;
+      this.ghostDisc = null;
+      this.ghostRing = null;
+    }
+  }
+
+  /** بروزرسانی Ghost — اسنپ روی تایل + اعتبارسنجی (سبز/قرمز) */
+  private updateGhost(point: THREE.Vector3) {
+    if (!this.buildMode || !this.ghostGroup || !this.ghostDisc || !this.ghostRing) return;
+    const data = TOWERS[this.buildMode];
+    const x = Math.round(point.x / 2) * 2;
+    const z = Math.round(point.z / 2) * 2;
+    const valid = this.scene3d.canBuild(x, z, this.towers.map((t) => t.position)) && this.coins >= data.cost;
+    this.ghostValid = valid;
+    const color = valid ? 0x22c55e : 0xef4444;
+    (this.ghostDisc.material as THREE.MeshBasicMaterial).color.setHex(color);
+    (this.ghostRing.material as THREE.MeshBasicMaterial).color.setHex(color);
+    this.ghostGroup.position.set(x, 0, z);
+    this.ghostGroup.visible = true;
+  }
+
+  /** گرید زمین در حالت ساخت — تایل‌های دوتایی */
+  private setBuildGridVisible(v: boolean) {
+    if (v && !this.buildGrid) {
+      const c = document.createElement('canvas');
+      c.width = c.height = 512;
+      const g = c.getContext('2d')!;
+      g.strokeStyle = 'rgba(120, 220, 255, 0.55)';
+      g.lineWidth = 2;
+      const step = 512 / 16; // ۱۶ تایل در هر بعد — هر تایل ۲ واحد جهانی
+      for (let i = 0; i <= 16; i++) {
+        g.beginPath(); g.moveTo(i * step, 0); g.lineTo(i * step, 512); g.stroke();
+        g.beginPath(); g.moveTo(0, i * step); g.lineTo(512, i * step); g.stroke();
+      }
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(17, 17);
+      this.buildGrid = new THREE.Mesh(
+        new THREE.PlaneGeometry(68, 68),
+        new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.1, depthWrite: false })
+      );
+      this.buildGrid.rotation.x = -Math.PI / 2;
+      this.buildGrid.position.y = 0.06;
+      this.scene3d.scene.add(this.buildGrid);
+    }
+    if (this.buildGrid) this.buildGrid.visible = v;
   }
 
   tryBuild(towerId: string, point: THREE.Vector3): boolean {
@@ -486,6 +590,10 @@ export class Game {
     this.audio.play('place');
     this.vfx.ring(tower.position, data.color, 4, 0.5);
     this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+    // خروج از حالت ساخت — هماهنگ با رویداد buildMode
+    this.buildMode = null;
+    this.clearGhost();
+    this.setBuildGridVisible(false);
     this.bus.emit('buildMode', { towerId: null });
     if (!this.save.tutorialDone) this.bus.emit('tutorial', 'wave');
     return true;
@@ -582,8 +690,8 @@ export class Game {
     this.magicPending = id;
     this.buildMode = null;
     this.heroSelectMode = false;
-    this.ghostMesh?.removeFromParent();
-    this.ghostMesh = null;
+    this.clearGhost();
+    this.setBuildGridVisible(false);
     this.bus.emit('magicPending', { id });
   }
 
@@ -766,8 +874,8 @@ export class Game {
         this.emitTowerInfo();
         this.buildMode = null;
         this.heroSelectMode = false;
-        this.ghostMesh?.removeFromParent();
-        this.ghostMesh = null;
+        this.clearGhost();
+        this.setBuildGridVisible(false);
         this.audio.play('tap');
         return;
       }
@@ -789,10 +897,10 @@ export class Game {
       return;
     }
 
-    // حالت ساخت
+    // حالت ساخت — اول پیش‌نمایش در نقطه تپ، بعد ساخت
     if (this.buildMode) {
+      this.updateGhost(hit.ground);
       this.tryBuild(this.buildMode, hit.ground);
-      this.vfx.ring(hit.ground, 0xffffff, 2, 0.3);
       return;
     }
 
@@ -904,6 +1012,14 @@ export class Game {
     this.audio.dispose();
     this.hero.dispose();
     for (const e of this.enemies) e.remove();
+    this.clearGhost();
+    if (this.buildGrid) {
+      this.buildGrid.geometry.dispose();
+      ((this.buildGrid.material as THREE.MeshBasicMaterial).map)?.dispose();
+      (this.buildGrid.material as THREE.Material).dispose();
+      this.buildGrid.removeFromParent();
+      this.buildGrid = null;
+    }
     // آزادسازی Poolهای Handle — منابع GLB مشترک در Cache می‌مانند
     characterFactory.clearPools();
     this.scene3d.dispose();

@@ -23,6 +23,8 @@ export class InputController {
   private lastY = 0;
   private pinchStartDist = 0;
   private pinchMoved = false;
+  /** پیش‌نمایش محل ساخت — هنگام حرکت اشاره‌گر صدا می‌خورد (موسی/درگ موبایل) */
+  onGroundHover: ((ground: THREE.Vector3) => void) | null = null;
 
   constructor(
     private dom: HTMLElement,
@@ -67,6 +69,14 @@ export class InputController {
   };
 
   private onMove = (e: PointerEvent) => {
+    // موس — hover بدون فشردن دکمه (پیش‌نمایش محل ساخت روی دسکتاپ)
+    if (e.pointerType === 'mouse' && this.pointers.size === 0) {
+      if (this.onGroundHover) {
+        const pt = this.pickGround(e.clientX, e.clientY);
+        if (pt) this.onGroundHover(pt);
+      }
+      return;
+    }
     if (!this.pointers.has(e.pointerId)) return;
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
 
@@ -78,6 +88,11 @@ export class InputController {
       const total = Math.hypot(e.clientX - this.startX, e.clientY - this.startY);
       if (total > 10) this.moved = true;
       if (this.moved) this.cameraCtrl.pan(dx, dy);
+      // پیش‌نمایش محل ساخت زیر انگشت هنگام درگ
+      if (this.onGroundHover) {
+        const pt = this.pickGround(e.clientX, e.clientY);
+        if (pt) this.onGroundHover(pt);
+      }
     } else if (this.pointers.size === 2) {
       const [a, b] = [...this.pointers.values()];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
@@ -109,6 +124,18 @@ export class InputController {
       if (hit) this.onTap(hit);
     }
   };
+
+  /** فقط نقطه زمین — بدون برخورد با اشیاء (سبک، برای hover هر حرکت) */
+  private pickGround(clientX: number, clientY: number): THREE.Vector3 | null {
+    const rect = this.dom.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1
+    );
+    this.raycaster.setFromCamera(ndc, this.cameraCtrl.camera);
+    const pt = new THREE.Vector3();
+    return this.raycaster.ray.intersectPlane(this.groundPlane, pt) ? pt : null;
+  }
 
   /** پرتاب پرتو: نقطه زمین + برخورد با اشیاء قابل انتخاب */
   private pick(clientX: number, clientY: number): TapHit | null {

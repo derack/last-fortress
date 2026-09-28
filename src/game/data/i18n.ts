@@ -99,6 +99,9 @@ const fa: Record<string, string> = {
 
   // منوی صفحات iframe
   menuPagesHint: 'صفحات از همین‌جا در قاب خودشان باز می‌شوند',
+  pageLoading: 'در حال بارگذاری…',
+  pageError: 'خطا در نمایش صفحه',
+  pageRetry: 'تلاش دوباره',
 
   towerSentinel: 'نگهبان',
   towerSentinelDesc: 'توپ مسلسل پیشرفته با شلیک سریع — تعادل کامل',
@@ -449,6 +452,9 @@ const en: Record<string, string> = {
 
   // iframe page menu
   menuPagesHint: 'Pages open right here inside their own frames',
+  pageLoading: 'Loading…',
+  pageError: 'Page failed to render',
+  pageRetry: 'Try again',
 
   towerSentinel: 'Sentinel',
   towerSentinelDesc: 'Advanced gatling turret with rapid fire — perfectly balanced',

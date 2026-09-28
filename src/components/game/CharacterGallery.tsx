@@ -297,7 +297,7 @@ export function CharacterGallery({ onClose }: { onClose: () => void }) {
   return (
     <div className="absolute inset-0 z-50 flex flex-col bg-[#0b0d13]">
       {/* هدر */}
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+      <div className="panel-header flex items-center justify-between border-b border-white/10 px-4 py-3">
         <div>
           <h1 className="text-lg font-bold text-amber-300">{t('gallery')}</h1>
           <p className="text-xs text-slate-400">{t('galleryDesc')}</p>

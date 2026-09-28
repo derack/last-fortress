@@ -84,7 +84,7 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
       <div className="absolute bottom-32 left-14 h-8 w-5 -rotate-12 bg-violet-400/40 blur-[1px]" />
 
       {/* محتوا */}
-      <div className="relative z-10 flex h-full flex-col items-center justify-between py-8">
+      <div className="relative z-10 flex h-full flex-col items-center justify-between pb-28 pt-8">
         <div className="mt-16 text-center">
           <h1 className="game-title text-5xl font-black tracking-tight text-transparent md:text-6xl
             bg-gradient-to-b from-amber-100 via-amber-300 to-orange-500 bg-clip-text
@@ -108,26 +108,7 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
           </p>
         </div>
 
-        {/* نوار صفحات — هر صفحه در iframe مستقل باز می‌شود */}
-        <div className="w-full max-w-md px-4">
-          <div className="flex items-stretch justify-center gap-1.5 rounded-2xl border border-slate-600/40
-            bg-black/50 p-1.5 backdrop-blur-sm">
-            {PAGES.map(({ id, icon: Icon, labelKey }) => {
-              const active = activePage === id;
-              return (
-                <button key={id} onClick={() => (active ? closePage() : openPage(id))}
-                  className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-all active:scale-95
-                    ${active
-                    ? 'border border-amber-400/60 bg-amber-500/20 text-amber-200'
-                    : 'border border-transparent text-slate-300 hover:text-amber-200'}`}>
-                  <Icon className="h-5 w-5" />
-                  <span className="text-[10px] font-black leading-none">{t(labelKey)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
+        {/* نشان کریستال */}
         <div className="mb-1 flex flex-col items-center gap-1">
           {save && (
             <div className="flex items-center gap-2 rounded-full border border-cyan-400/30 bg-black/40 px-4 py-1.5 text-sm font-bold text-cyan-300">
@@ -139,13 +120,36 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
         </div>
       </div>
 
-      {/* ================= قاب صفحات iframe ================= */}
+      {/* ================= نوار صفحات — همیشه بالای iframe و قابل کلیک ================= */}
+      <div className="absolute inset-x-0 bottom-0 z-40 px-4 pb-4">
+        <div className="mx-auto flex max-w-md items-stretch justify-center gap-1.5 rounded-2xl border border-slate-600/40
+          bg-black/70 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md">
+          {PAGES.map(({ id, icon: Icon, labelKey }) => {
+            const active = activePage === id;
+            return (
+              <button key={id} onClick={() => (active ? closePage() : openPage(id))}
+                className={`relative flex flex-1 flex-col items-center gap-1 rounded-xl px-1 py-2 transition-all active:scale-95
+                  ${active
+                  ? 'border border-amber-400/60 bg-amber-500/20 text-amber-200 shadow-[0_0_16px_rgba(245,158,11,0.25)]'
+                  : 'border border-transparent text-slate-300 hover:text-amber-200'}`}>
+                <Icon className="h-5 w-5" />
+                <span className="text-[10px] font-black leading-none">{t(labelKey)}</span>
+                {openPages.includes(id) && !active && (
+                  <span className="absolute left-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-amber-400/90" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ================= قاب صفحات iframe — نوار تب پایین آزاد می‌ماند ================= */}
       {openPages.map((id) => {
         const active = activePage === id;
         const label = t(PAGES.find((p) => p.id === id)?.labelKey ?? id);
         return (
           <div key={id}
-            className={`absolute inset-x-2 inset-y-[7%] z-30 flex-col overflow-hidden rounded-2xl
+            className={`absolute inset-x-2 top-[4%] bottom-[104px] z-30 flex-col overflow-hidden rounded-2xl
               border border-amber-400/30 bg-[#0b0f1c] shadow-[0_0_40px_rgba(0,0,0,0.6)] backdrop-blur-md
               ${active ? 'flex' : 'hidden'}`}>
             {/* نوار عنوان */}

@@ -298,3 +298,18 @@ input[type="range"]::-webkit-slider-thumb {
   background: #f59e0b;
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
 }
+
+/* ============================================================
+   حالت iframe — هدر داخلی پنل‌ها مخفی می‌شود (تیتر روی قاب والد
+   هست؛ تکرار دوباره هدر داخل قاب فضا را هدر می‌دهد)
+   ============================================================ */
+html[data-standalone='1'] .panel-header {
+  display: none !important;
+}
+
+/* وینیت سینمایی نبرد — عمق بیشتر تصویر */
+.battle-vignette {
+  background: radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, 0.42) 100%);
+}
+
+/* css-cache-bust-v2 */

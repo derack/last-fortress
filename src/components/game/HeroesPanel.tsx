@@ -37,7 +37,7 @@ export function HeroesPanel() {
 
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-gradient-to-b from-[#0b0f1c] to-[#101828]">
-      <div className="flex items-center gap-3 border-b border-amber-400/20 bg-black/40 px-4 py-3">
+      <div className="panel-header flex items-center gap-3 border-b border-amber-400/20 bg-black/40 px-4 py-3">
         <button onClick={goBack}
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-600/50 bg-black/40 text-slate-300 active:scale-95">
           <ArrowRight className="h-5 w-5" />

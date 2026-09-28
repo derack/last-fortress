@@ -6,6 +6,8 @@ import { buildCoreMesh, buildRiftMesh, buildTree, buildRock, buildHouse, buildCr
 // ============================================================
 // صحنه نبرد — زمین، مسیر دشمن (Curve)، هسته آذر، دروازه، محیط
 // هر منطقه تم محیطی خودش را دارد (بخش محتوای کامل)
+// ارتقای بصری: گنبد آسمان گرادیانی، ستاره‌های شب، نور Rim،
+// سنگ‌ریزه لبه مسیر، زمین لکه‌دار غنی‌تر
 // ============================================================
 
 interface EnvTheme {
@@ -18,6 +20,13 @@ interface EnvTheme {
   treeStyle: 'leafy' | 'pine' | 'dead' | 'none' | 'mixed';
   houses: 'village' | 'none' | 'ruin' | 'debris';
   treeCount: number;
+}
+
+/** شبه‌تصادفی قطعی برای جانمایی پایدار دکور */
+function rnd2(a: number, b: number): number {
+  let s = (a * 7919 + b * 104729 + 12345) % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return ((s * 16807) % 2147483647) / 2147483647;
 }
 
 const ENV_THEMES: Record<RegionEnv, EnvTheme> = {
@@ -65,6 +74,7 @@ export class BattleScene {
   riftPos: THREE.Vector3;
   private decorSpinners: { obj: THREE.Object3D; speed: number }[] = [];
   private portalPulse = 0;
+  private starPoints: THREE.Points | null = null;
   private quality: 'low' | 'medium' | 'high' | 'ultra' = 'medium';
   private theme: EnvTheme;
   private level: LevelData;
@@ -102,6 +112,12 @@ export class BattleScene {
     this.scene.background = new THREE.Color(night ? this.theme.skyNight : this.theme.skyDay);
     this.scene.fog = new THREE.Fog(night ? this.theme.fogNight : this.theme.fogDay, 55, 145);
 
+    // گنبد آسمان گرادیانی — افق روشن‌تر، سمت سقف عمیق‌تر (جای رنگ تخت)
+    this.buildSkyDome(night);
+
+    // ستاره‌های شب — فقط در مناطق تاریک
+    if (night && quality !== 'low') this.buildStars();
+
     // نورپردازی — رنگ آفتاب بر اساس تم
     const sunTint = level.env === 'volcano' ? 0xffb090 : level.env === 'tundra' ? 0xe8f4ff : level.env === 'citadel' ? 0x9a88c8 : 0xfff2d9;
     const hemi = new THREE.HemisphereLight(night ? 0x334466 : 0xbfd9ff, night ? 0x1a1a24 : 0x3f6b3f, night ? 0.7 : 1.0);
@@ -120,6 +136,11 @@ export class BattleScene {
       sun.shadow.bias = -0.0004;
     }
     this.scene.add(sun);
+
+    // نور پرکننده از سمت مخالف — عمق و حجم بهتر مدل‌ها (بدون سایه)
+    const rim = new THREE.DirectionalLight(sunTint, night ? 0.22 : 0.45);
+    rim.position.set(28, 18, 26);
+    this.scene.add(rim);
 
     // زمین
     this.buildGround(night);
@@ -149,6 +170,69 @@ export class BattleScene {
     this.buildEnvironment(level, pts, night);
   }
 
+  // ------------------- آسمان -------------------
+
+  /** گنبد آسمان با گرادیان عمودی — افق روشن، اوج تیره */
+  private buildSkyDome(night: boolean) {
+    const sky = new THREE.Color(night ? this.theme.skyNight : this.theme.skyDay);
+    const horizon = sky.clone().lerp(new THREE.Color(night ? 0x2a3550 : 0xf2e2c4), night ? 0.35 : 0.45);
+    const zenith = sky.clone().lerp(new THREE.Color(night ? 0x04060f : 0x3a6ba8), night ? 0.55 : 0.35);
+    const mat = new THREE.ShaderMaterial({
+      side: THREE.BackSide,
+      depthWrite: false,
+      fog: false,
+      uniforms: {
+        topColor: { value: zenith },
+        bottomColor: { value: horizon },
+      },
+      vertexShader: `
+        varying vec3 vPos;
+        void main() {
+          vPos = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        uniform vec3 topColor;
+        uniform vec3 bottomColor;
+        varying vec3 vPos;
+        void main() {
+          float h = clamp(normalize(vPos).y, 0.0, 1.0);
+          gl_FragColor = vec4(mix(bottomColor, topColor, pow(h, 0.65)), 1.0);
+        }`,
+    });
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(300, 24, 14), mat);
+    dome.position.y = -8;
+    dome.renderOrder = -10;
+    this.scene.add(dome);
+  }
+
+  /** ستاره‌های نقطه‌ای روی نیم‌کره بالایی */
+  private buildStars() {
+    const N = 320;
+    const pos = new Float32Array(N * 3);
+    let s = 424242;
+    const rnd = () => {
+      s = (s * 16807) % 2147483647;
+      return s / 2147483647;
+    };
+    for (let i = 0; i < N; i++) {
+      const a = rnd() * Math.PI * 2;
+      const elev = 0.12 + rnd() * 0.85; // بالاتر از افق
+      const r = 260;
+      pos[i * 3] = Math.cos(a) * r * Math.cos(elev * Math.PI * 0.5);
+      pos[i * 3 + 1] = Math.sin(elev * Math.PI * 0.5) * r;
+      pos[i * 3 + 2] = Math.sin(a) * r * Math.cos(elev * Math.PI * 0.5);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    this.starPoints = new THREE.Points(
+      geo,
+      new THREE.PointsMaterial({ color: 0xcfe0ff, size: 1.6, sizeAttenuation: false, transparent: true, opacity: 0.75, fog: false, depthWrite: false })
+    );
+    this.starPoints.renderOrder = -9;
+    this.scene.add(this.starPoints);
+  }
+
   // ------------------- زمین -------------------
 
   private buildGround(night: boolean) {
@@ -175,6 +259,23 @@ export class BattleScene {
       const [dr, dg, db] = dot.split(',').map(Number);
       ctx.fillStyle = `rgba(${Math.round(dr * tone)},${Math.round(dg * tone)},${Math.round(db * tone)},0.5)`;
       ctx.fillRect(x, y, 2 + r() * 3, 2 + r() * 3);
+    }
+    // لکه‌های بزرگ نرم — بافت زمین یکنواخت نباشد (چمن/خاک/خاکستر)
+    const blobs = 26;
+    const [br, bg, bb] = dot.split(',').map(Number);
+    for (let i = 0; i < blobs; i++) {
+      const x = r() * 256;
+      const y = r() * 256;
+      const rad = 14 + r() * 30;
+      const dark = r() > 0.5;
+      const grad = ctx.createRadialGradient(x, y, 2, x, y, rad);
+      const a = 0.1 + r() * 0.1;
+      grad.addColorStop(0, dark ? `rgba(${Math.round(br * 0.55)},${Math.round(bg * 0.55)},${Math.round(bb * 0.55)},${a})` : `rgba(${Math.min(255, br * 1.45)},${Math.min(255, bg * 1.45)},${Math.min(255, bb * 1.45)},${a})`);
+      grad.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(x, y, rad, 0, Math.PI * 2);
+      ctx.fill();
     }
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -267,6 +368,41 @@ export class BattleScene {
       rune.rotation.x = -Math.PI / 2;
       rune.position.set(p.x, 0.09, p.z);
       this.scene.add(rune);
+    }
+
+    // سنگ‌ریزه لبه مسیر — مرز بصری مسیر (InstancedMesh — هزینه نزدیک صفر)
+    if (this.quality !== 'low') {
+      const stoneGeo = new THREE.DodecahedronGeometry(0.16, 0);
+      const stoneMat = new THREE.MeshStandardMaterial({ color: night ? this.theme.pathNight : this.theme.pathDay, roughness: 0.95 });
+      const step = 3;
+      const count = Math.floor(pts.length / step) * 2;
+      if (count > 0) {
+        const stones = new THREE.InstancedMesh(stoneGeo, stoneMat, count);
+        const m4 = new THREE.Matrix4();
+        const q = new THREE.Quaternion();
+        const sc = new THREE.Vector3();
+        const pv = new THREE.Vector3();
+        let idx = 0;
+        for (let i = 1; i < pts.length - 1 && idx < count; i += step) {
+          const a = pts[i - 1];
+          const b = pts[i + 1];
+          const dir = new THREE.Vector3(b.x - a.x, 0, b.z - a.z).normalize();
+          const side = new THREE.Vector3(-dir.z, 0, dir.x);
+          for (const sgn of [1, -1]) {
+            if (idx >= count) break;
+            const jitter = 0.5 + rnd2(i, sgn) * 0.4;
+            pv.set(pts[i].x + side.x * (3.35 + jitter * 0.5), 0.05, pts[i].z + side.z * (3.35 + jitter * 0.5));
+            q.setFromEuler(new THREE.Euler(rnd2(i, sgn) * Math.PI, rnd2(i + 7, sgn) * Math.PI, 0));
+            sc.setScalar(0.7 + rnd2(i + 13, sgn) * 0.9);
+            m4.compose(pv, q, sc);
+            stones.setMatrixAt(idx++, m4);
+          }
+        }
+        stones.count = idx;
+        stones.castShadow = false;
+        stones.receiveShadow = this.renderer.shadowMap.enabled;
+        this.scene.add(stones);
+      }
     }
   }
 

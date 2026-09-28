@@ -23,7 +23,7 @@ export interface TowerLevelStats {
   damage: number;
   range: number;
   fireRate: number; // شلیک در ثانیه
-  upgradeCost: number; // هزینه ارتقا به این سطح (سطح ۱ = هزینه ساخت)
+  upgradeCost: number; // هزینه ارتقا «از» این سطح به سطح بعد (سطح ۵ = ۰ یعنی حداکثر)
 }
 
 export interface TowerData {

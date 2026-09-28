@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Component, useEffect, type ReactNode } from 'react';
 import { useGameStore } from '@/store/gameStore';
+import { t } from '@/game/data/i18n';
 import { CampaignMap } from './CampaignMap';
 import { HeroesPanel } from './HeroesPanel';
 import { AchievementsPanel } from './AchievementsPanel';
@@ -25,6 +26,48 @@ export function isStandalonePage(v: string): v is StandalonePageId {
   return ['map', 'heroes', 'achievements', 'settings', 'gallery'].includes(v);
 }
 
+// ------------------------------------------------------------
+// ErrorBoundary — اگر پنلی خطا بدهد، صفحه هرگز سفید/خالی نمی‌ماند
+// ------------------------------------------------------------
+class PanelErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="fixed inset-0 flex flex-col items-center justify-center gap-3 bg-[#0b0f1c] p-8 text-center">
+          <div className="text-4xl">⚠️</div>
+          <p className="text-lg font-black text-amber-200">{t('pageError')}</p>
+          <p className="max-w-xs text-xs leading-5 text-slate-400">{this.state.error.message}</p>
+          <button
+            onClick={() => { this.setState({ error: null }); useGameStore.getState().initSave(); }}
+            className="rounded-xl border border-amber-400/40 bg-amber-500/20 px-6 py-2 text-sm font-black text-amber-200 active:scale-95">
+            {t('pageRetry')}
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// ------------------------------------------------------------
+// لودینگ برنددار — به‌جای صفحه خالی
+// ------------------------------------------------------------
+function PageLoading() {
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center gap-4 bg-[#0b0f1c]">
+      <div className="core-crystal h-14 w-14 rotate-45 animate-pulse rounded-lg bg-gradient-to-br
+        from-amber-200 via-amber-400 to-orange-600 shadow-[0_0_50px_14px_rgba(245,158,11,0.4)]" />
+      <p className="text-sm font-bold text-slate-400">{t('pageLoading')}</p>
+    </div>
+  );
+}
+
 export function StandaloneScreen({ id }: { id: StandalonePageId }) {
   const initSave = useGameStore((s) => s.initSave);
   const save = useGameStore((s) => s.save);
@@ -33,6 +76,15 @@ export function StandaloneScreen({ id }: { id: StandalonePageId }) {
   useEffect(() => {
     useGameStore.getState().initSave();
   }, [initSave]);
+
+  // نشانگر حالت iframe — پنل‌ها هدر داخلی خودشان را مخفی می‌کنند
+  // (تیتر و دکمه بستن روی قاب والد هست؛ تکرار نمی‌شود)
+  useEffect(() => {
+    document.documentElement.dataset.standalone = '1';
+    return () => {
+      delete document.documentElement.dataset.standalone;
+    };
+  }, []);
 
   // پل ذخیره — هر تغییر به والد اطلاع داده می‌شود
   useEffect(() => {
@@ -55,43 +107,20 @@ export function StandaloneScreen({ id }: { id: StandalonePageId }) {
     window.parent.postMessage({ type: 'closePage' }, '*');
   };
 
-  // تا ذخیره لود نشده، قاب خالی (بدون پرش)
+  // تا ذخیره لود نشود — لودینگ برنددار (هرگز خالی نمی‌ماند)
   if (!save) {
-    return <div className="fixed inset-0 bg-[#0b0f1c]" />;
+    return <PageLoading />;
   }
 
-  switch (id) {
-    case 'map':
-      return (
-        <div className="fixed inset-0 bg-[#0b0f1c]">
-          <CampaignMap onStart={startBattle} />
-        </div>
-      );
-    case 'heroes':
-      return (
-        <div className="fixed inset-0 bg-[#0b0f1c]">
-          <HeroesPanel />
-        </div>
-      );
-    case 'achievements':
-      return (
-        <div className="fixed inset-0 bg-[#0b0f1c]">
-          <AchievementsPanel />
-        </div>
-      );
-    case 'settings':
-      return (
-        <div className="fixed inset-0 bg-[#0b0f1c]">
-          <SettingsPanel />
-        </div>
-      );
-    case 'gallery':
-      return (
-        <div className="fixed inset-0 bg-[#0b0f1c]">
-          <CharacterGallery onClose={closePage} />
-        </div>
-      );
-    default:
-      return <div className="fixed inset-0 bg-[#0b0f1c]" />;
-  }
+  return (
+    <PanelErrorBoundary>
+      <div className="fixed inset-0 bg-[#0b0f1c]">
+        {id === 'map' && <CampaignMap onStart={startBattle} />}
+        {id === 'heroes' && <HeroesPanel />}
+        {id === 'achievements' && <AchievementsPanel />}
+        {id === 'settings' && <SettingsPanel />}
+        {id === 'gallery' && <CharacterGallery onClose={closePage} />}
+      </div>
+    </PanelErrorBoundary>
+  );
 }
