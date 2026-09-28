@@ -9,10 +9,16 @@ import * as THREE from 'three';
 // ایده: کل مدل داخل یک «پیوت» سوار می‌شود و کنترلر همان API
 // CharacterAnimationController را با حرکت بدنه‌صلب (Rigid-Body)
 // پیاده می‌کند:
-//   • Idle   — نفس‌کشیدن (بوب ملایم + تاب خوردن + نگاه چپ‌وراست)
+//   • Idle   — نفس‌کشیدن (بوب ملایم + تاب خیلی ملایم + نگاه چپ‌وراست)
 //   • Walk   — بونس قدم + خم‌شدن به جلو + تلوتلو جانبی (فرکانس ∝ سرعت)
 //   • Run    — همان با دامنه و فرکانس بیشتر
-//   • Attack — One-Shot: کمانش به عقب → اسمش رو به جلو با لانژ → بازیابی
+//   • Attack — One-Shot: بدن فقط کمی جلو می‌رود؛ «سلاح جدا» (مثل پتک
+//             آرمان) دور نقطهٔ دست تاب می‌خورد: عقب-بالا → کوبیدن جلو
+//
+// ویژگی Prop-Swing: اگر مدل یک مش جداگانهٔ کوچک و کشیده داشته باشد
+// (پتک/شمشیر/عصا که از بدن مجزا است)، به‌صورت خودکار پیدا می‌شود،
+// دور «نقطهٔ گریپ» (انتهای دسته سمت بدن) یک پیوت ساخته می‌شود و در
+// حمله/مهارت تاب می‌خورد — دست ثابت می‌ماند و سلاح حرکت می‌کند.
 //   • Hit    — فلینچ کوتاه به عقب
 //   • Skill  — ژست قدرت (بالا رفتن + کمانش)
 //   • Roar   — جیغ/فاز۲ Boss
@@ -38,6 +44,7 @@ interface OneShotPose {
   lift: number; // جابجایی عمودی
   lunge: number; // یورش به جلو (+Z محلی)
   yaw: number; // چرخش جزئی
+  prop?: number; // زاویه سلاح جدا (رادیان حول محور تاب) — اختیاری
 }
 
 interface OneShotProfile {
@@ -52,39 +59,42 @@ const easeInOutCubic = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
 // ---------- پروفایل‌های One-Shot ----------
-// hamper: کمانش عقب (winding) → اسمش پرقدرت جلو (SMASH_PITCH) → بازیابی نرم
-const SMASH_PITCH = 0.62;
+// فلسفهٔ جدید حمله (بازخورد کاربر: «دست پتک‌دار عقب-جلو، خودش کمتر تاب»):
+//   بدن فقط کمی جلو می‌رود (pitch ≤ ۰٫۱۲ — قبلاً ۰٫۶۲!) و بیانِ ضربه
+//   با «تاب سلاح» دور نقطهٔ دست انجام می‌شود: عقب-بالا → کوبیدن جلو
+const PROP_WINDUP = -0.8; // بالا کشیدن پتک به عقب (رادیان)
+const PROP_SMASH = 0.6; // کوبیدن پتک به جلو/پایین (رادیان)
 
 const PROFILES: Record<string, OneShotProfile> = {
   attack: {
-    duration: 0.52,
+    duration: 0.55,
     eval: (u) => {
       if (u < 0.26) {
-        // کمانش به عقب — جمع کردن انرژی
+        // عقب — بالا کشیدن پتک (جمع کردن انرژی؛ بدن تقریباً ثابت)
         const t = easeOutCubic(u / 0.26);
-        return { pitch: -0.24 * t, roll: 0.02 * t, lift: 0.045 * t, lunge: -0.06 * t, yaw: 0 };
+        return { pitch: -0.05 * t, roll: 0.01 * t, lift: 0.015 * t, lunge: -0.025 * t, yaw: 0, prop: PROP_WINDUP * t };
       }
       if (u < 0.5) {
-        // اسمش — رها کردن سریع رو به جلو
+        // جلو — کوبیدن سریع پتک + یورش کوچک بدن
         const t = easeInQuad((u - 0.26) / 0.24);
-        const pitch = THREE.MathUtils.lerp(-0.24, SMASH_PITCH, t);
         return {
-          pitch,
-          roll: -0.03 * t,
-          lift: THREE.MathUtils.lerp(0.045, -0.05, t),
-          lunge: 0.34 * t,
+          pitch: THREE.MathUtils.lerp(-0.05, 0.12, t),
+          roll: -0.012 * t,
+          lift: THREE.MathUtils.lerp(0.015, -0.02, t),
+          lunge: 0.13 * t,
           yaw: 0,
+          prop: THREE.MathUtils.lerp(PROP_WINDUP, PROP_SMASH, t),
         };
       }
-      // بازیابی
+      // بازیابی — پتک نرم به دست برمی‌گردد
       const t = easeInOutCubic((u - 0.5) / 0.5);
-      const pitch = THREE.MathUtils.lerp(SMASH_PITCH, 0, t);
       return {
-        pitch,
-        roll: -0.03 * (1 - t),
-        lift: THREE.MathUtils.lerp(-0.05, 0, t),
-        lunge: 0.34 * (1 - t),
+        pitch: THREE.MathUtils.lerp(0.12, 0, t),
+        roll: -0.012 * (1 - t),
+        lift: THREE.MathUtils.lerp(-0.02, 0, t),
+        lunge: 0.13 * (1 - t),
         yaw: 0,
+        prop: THREE.MathUtils.lerp(PROP_SMASH, 0, t),
       };
     },
   },
@@ -92,14 +102,14 @@ const PROFILES: Record<string, OneShotProfile> = {
     duration: 0.26,
     eval: (u) => {
       const s = Math.sin(u * Math.PI);
-      return { pitch: -0.2 * s, roll: 0.07 * s, lift: -0.02 * s, lunge: -0.1 * s, yaw: 0 };
+      return { pitch: -0.2 * s, roll: 0.07 * s, lift: -0.02 * s, lunge: -0.1 * s, yaw: 0, prop: -0.14 * s };
     },
   },
   skill: {
     duration: 0.75,
     eval: (u) => {
       const s = Math.sin(u * Math.PI);
-      return { pitch: -0.16 * s, roll: 0, lift: 0.1 * s, lunge: 0, yaw: 0 };
+      return { pitch: -0.16 * s, roll: 0, lift: 0.1 * s, lunge: 0, yaw: 0, prop: -0.95 * s };
     },
   },
   roar: {
@@ -141,6 +151,10 @@ export class ProceduralAnimationController {
   private h: number; // ارتفاع مدل — برای جبران‌های عمودی
   private amp: number; // ضریب دامنه بر اساس ارتفاع (دشمن کوچک ← دامنه کمتر)
 
+  // --- سلاح جدا (Prop-Swing) ---
+  private propPivot: THREE.Object3D | null = null;
+  private propAxis: 'x' | 'z' = 'x';
+
   /**
    * @param inner گروه نرمال‌شده (normalizedModel) — همه فرزندانش داخل پیوت می‌روند
    * @param modelHeight ارتفاع نهایی مدل به World Unit
@@ -152,6 +166,84 @@ export class ProceduralAnimationController {
     inner.add(this.pivot);
     this.h = Math.max(0.3, modelHeight);
     this.amp = THREE.MathUtils.clamp(modelHeight / 1.85, 0.65, 1.25);
+    this.setupPropSwing(inner);
+  }
+
+  // ------------------------- سلاح جدا (Prop-Swing) -------------------------
+
+  /**
+   * اگر مدل یک مش جداگانهٔ «کوچک + کشیده» داشته باشد (پتک/شمشیر/عصا)،
+   * دور نقطهٔ گریپ (انتهای دسته سمت بدن) پیوت می‌سازد تا در حمله/مهارت
+   * سلاح عقب-جلو تاب بخورد — مثل ضربهٔ دست. معیارها محافظه‌کارانه‌اند:
+   *   • حجم مش < ۱۰٪ حجم بزرگ‌ترین مش (بدن)
+   *   • یک بُعد کاملاً غالب (≥ ۱٫۴× بُردهای دیگر) — یعنی «دسته» دارد
+   * گریپ = انتهای دسته نزدیک‌تر به مرکز بدن | محور تاب = محور افقی عمود بر دسته
+   * نقاط VFX سینتتیک سلاح (weaponpoint/...) هم سوار پیوت می‌شوند تا جرقه‌ها
+   * دنبال تاب خوردن پتک بروند.
+   * هر خطایی بی‌صدا رد می‌شود — هیچ‌وقت مسیر رندر نمی‌شکند.
+   */
+  private setupPropSwing(inner: THREE.Object3D) {
+    try {
+      inner.updateMatrixWorld(true);
+      const invPivot = new THREE.Matrix4().copy(this.pivot.matrixWorld).invert();
+
+      // همه مش‌ها زیر پیوت + bbox در فضای پیوت (فضای محلی مدل نرمال‌شده)
+      const parts: { node: THREE.Mesh; box: THREE.Box3; vol: number }[] = [];
+      this.pivot.traverse((o) => {
+        if (!(o as THREE.Mesh).isMesh) return;
+        const box = new THREE.Box3().setFromObject(o).applyMatrix4(invPivot);
+        const s = box.getSize(new THREE.Vector3());
+        parts.push({ node: o as THREE.Mesh, box, vol: Math.max(1e-8, s.x * s.y * s.z) });
+      });
+      if (parts.length < 2) return;
+      parts.sort((a, b) => b.vol - a.vol);
+      const body = parts[0];
+      const prop = parts[parts.length - 1];
+      if (prop.vol > body.vol * 0.1) return; // عضو جداگانهٔ واضح نیست
+
+      const ps = prop.box.getSize(new THREE.Vector3());
+      const axes = ['x', 'y', 'z'] as const;
+      let handle: 'x' | 'y' | 'z' = 'x';
+      for (const a of axes) if (ps[a] > ps[handle]) handle = a;
+      const others = axes.filter((a) => a !== handle);
+      if (ps[handle] < Math.max(ps[others[0]], ps[others[1]]) * 1.4) return; // کشیده نیست (سپر/گرد)
+
+      const bodyC = body.box.getCenter(new THREE.Vector3());
+      const propC = prop.box.getCenter(new THREE.Vector3());
+      const sgn = bodyC[handle] >= propC[handle] ? 1 : -1;
+      const grip = propC.clone();
+      grip[handle] = propC[handle] + sgn * ps[handle] * 0.5; // انتهای دسته سمت بدن
+      const tip = propC.clone();
+      tip[handle] = propC[handle] - sgn * ps[handle] * 0.5; // سرِ سلاح
+
+      // پیوت در فضای والدِ مش سلاح
+      const parent = prop.node.parent ?? this.pivot;
+      const pp = new THREE.Object3D();
+      pp.name = 'propPivot';
+      parent.add(pp);
+      pp.position.copy(grip.clone().applyMatrix4(this.pivot.matrixWorld));
+      pp.position.copy(parent.worldToLocal(pp.position));
+      pp.attach(prop.node); // حفظ ترنسفورم جهانی — مدل نمی‌پرد
+
+      // محور تاب = محور افقی عمود بر دسته
+      this.propPivot = pp;
+      this.propAxis = handle === 'x' ? 'z' : 'x';
+
+      // نقاط VFX سینتتیک سلاح → روی پیوت پتک (دنبال تاب می‌روند)
+      inner.updateMatrixWorld(true);
+      const tipWorld = tip.applyMatrix4(this.pivot.matrixWorld);
+      for (const nm of ['synthetic_weaponpoint', 'synthetic_muzzlepoint', 'synthetic_staffpoint']) {
+        const wp = inner.getObjectByName(nm);
+        if (!wp) continue;
+        pp.add(wp);
+        wp.position.copy(pp.worldToLocal(tipWorld.clone()));
+        wp.rotation.set(0, 0, 0);
+        wp.scale.set(1, 1, 1);
+      }
+    } catch {
+      // تشخیص سلاح اختیاری است — هرگز نباید رندر را ببندد
+      this.propPivot = null;
+    }
   }
 
   // ------------------------- API مشترک با CharacterAnimationController -------------------------
@@ -244,13 +336,16 @@ export class ProceduralAnimationController {
     let lift = 0;
     let yaw = 0;
     let lunge = 0;
+    let prop = 0; // زاویه سلاح جدا
 
     if (this.loco === 'idle') {
-      // تنفس — دو سینو هم‌پوشان + تاب ملایم + نگاه اطراف
+      // تنفس — بوب ملایم + تاب خیلی ملایم (کمتر از قبل — بازخورد کاربر)
       lift += (Math.sin(this.time * 2.1) * 0.016 + Math.sin(this.time * 1.23) * 0.006) * this.amp;
-      pitch += Math.sin(this.time * 1.4) * 0.012;
-      roll += Math.sin(this.time * 0.9) * 0.02;
-      yaw += Math.sin(this.time * 0.55) * 0.025;
+      pitch += Math.sin(this.time * 1.4) * 0.008;
+      roll += Math.sin(this.time * 0.9) * 0.012;
+      yaw += Math.sin(this.time * 0.55) * 0.015;
+      // پتک با تنفس میلی‌متری همراهی می‌کند (در دست احساس می‌شود، نه لق)
+      prop += Math.sin(this.time * 2.1 + 0.6) * 0.028;
     } else {
       // walk / run — بونس قدم هم‌گام با سرعت واقعی
       const baseFreq = this.loco === 'run' ? 12 : 9;
@@ -262,6 +357,8 @@ export class ProceduralAnimationController {
       pitch += (this.loco === 'run' ? 0.15 : 0.06) + Math.sin(this.phase * 2) * 0.018 * runK;
       roll += Math.sin(this.phase) * 0.05 * runK;
       yaw += Math.sin(this.phase) * 0.035 * runK;
+      // پتک هنگام راه رفتن با ریتم قدم کمی تاب می‌خورد
+      prop += Math.sin(this.phase) * 0.06 * runK;
     }
 
     // ---------- همپوشانی One-Shot (شروع/پایان صفر → ترکیب نرم) ----------
@@ -272,9 +369,10 @@ export class ProceduralAnimationController {
       lift += p.lift * this.amp;
       yaw += p.yaw;
       lunge += p.lunge * this.amp;
+      prop += p.prop ?? 0;
     }
 
-    this.applyPose(pitch, roll, lift, lunge, yaw);
+    this.applyPose(pitch, roll, lift, lunge, yaw, prop);
   }
 
   dispose() {
@@ -289,8 +387,12 @@ export class ProceduralAnimationController {
    * جبران عمودی کوچک (0.18·H·(1−cosθ)) مانع فرو رفتن ظاهری بدن در زمین می‌شود؛
    * کلیپ جزئیِ پشت بافت زمین از نمای بالا پنهان است.
    */
-  private applyPose(pitch: number, roll: number, lift: number, lunge: number, yaw: number) {
+  private applyPose(pitch: number, roll: number, lift: number, lunge: number, yaw: number, prop = 0) {
     this.pivot.rotation.set(pitch, yaw, roll);
     this.pivot.position.set(0, lift + 0.18 * this.h * (1 - Math.cos(pitch)), lunge);
+    if (this.propPivot) {
+      this.propPivot.rotation.set(0, 0, 0);
+      this.propPivot.rotation[this.propAxis] = prop;
+    }
   }
 }

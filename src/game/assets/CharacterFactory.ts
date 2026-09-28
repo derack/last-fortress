@@ -90,9 +90,10 @@ export class CharacterHandle {
     return this.animation?.hasAnimations ?? false;
   }
 
-  /** گره نقطه VFX — weapon / muzzle / mouth / staff / head / chest / hit */
+  /** گره نقطه VFX — weapon / muzzle / mouth / staff / head / chest / hit (تطبیق فازی با پسوند Point) */
   vfx(name: string): THREE.Object3D | null {
-    return this.vfxPoints.get(name.toLowerCase()) ?? null;
+    const k = name.toLowerCase();
+    return this.vfxPoints.get(k) ?? this.vfxPoints.get(`${k}point`) ?? null;
   }
 
   /** موقعیت جهانی نقطه VFX — اگر نبود null */
