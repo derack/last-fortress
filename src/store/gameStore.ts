@@ -42,6 +42,8 @@ export interface HeroInfo {
   deployed: boolean;
   hp: number;
   maxHp: number;
+  dead: boolean;
+  respawnIn: number;
 }
 
 export interface VictoryInfo {

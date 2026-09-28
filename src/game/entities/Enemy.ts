@@ -50,6 +50,9 @@ export class Enemy implements DamageableEnemy {
   private shredAmount = 0;
   private shredUntil = 0;
   private supportTimer = 3; // شفادهنده/احضارکننده
+  private heroAtkCd = 0; // سرد حمله به قهرمان
+  /** آسیب ضربه به قهرمان — مشتق از HP با کف/سقف (EnemyData فیلد damage ندارد) */
+  private heroHitDmg: number;
   mesh: THREE.Group;
   private scene: THREE.Scene;
   private ctx: GameContext;
@@ -68,6 +71,7 @@ export class Enemy implements DamageableEnemy {
     this.speed = st.speed;
     this.reward = st.reward;
     this.scale = st.scale;
+    this.heroHitDmg = Math.min(45, Math.max(6, this.maxHp * 0.035));
     this.scene = scene;
     this.ctx = ctx;
     // Asset Pipeline — از Pool یا ساخت جدید؛ GLB به‌محض آماده شدن سوار می‌شود
@@ -356,6 +360,43 @@ export class Enemy implements DamageableEnemy {
     }
     this.dodgeCd = Math.max(0, this.dodgeCd - dt);
 
+    // ===== درگیری با قهرمان — دشمن در برد، می‌ایستد و حمله می‌کند =====
+    const hero = this.ctx.heroRef;
+    if (hero && hero.alive) {
+      const heroDist = hero.getPos().distanceTo(this.mesh.position);
+      const heroRange = this.data.boss ? 3.6 : 2.6;
+      if (heroDist <= heroRange) {
+        // ایستادن روی مسیر — روی قهرمان بچرخ و ضربه بزن
+        const targetRot = Math.atan2(
+          hero.getPos().x - this.mesh.position.x,
+          hero.getPos().z - this.mesh.position.z,
+        );
+        let diff = targetRot - this.mesh.rotation.y;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        this.mesh.rotation.y += diff * Math.min(1, 8 * dt);
+
+        this.heroAtkCd -= dt;
+        if (this.heroAtkCd <= 0) {
+          this.heroAtkCd = 1.25;
+          const dmg = this.heroHitDmg;
+          hero.takeDamage(dmg);
+          this.ctx.vfx.hitSpark(
+            hero.getPos().clone().add(new THREE.Vector3(0, 1.2, 0)),
+            0xf87171,
+          );
+          this.handle.animation?.playOneShot('attack', { fade: 0.08, returnToLocomotion: true });
+          this.ctx.audio.play('shoot');
+        }
+        // انیمیشن راه رفتن متوقف — فقط ایست +(mesh) موقعیت ثابت
+        this.updateMeshPos();
+        this.handle.animation?.update(dt);
+        return;
+      }
+    } else {
+      this.heroAtkCd = 0; // هیرو مرده/غایب — فوری پس از ریسپاون اولین ضربه نزند
+    }
+
     // حرکت روی مسیر
     const effSpeed = this.speed * this.slowFactor;
     this.dist += effSpeed * dt;
@@ -481,6 +522,15 @@ export class Enemy implements DamageableEnemy {
       if (!this.handle.animation?.isBusy()) {
         this.handle.animation?.playOneShot('attack', { fade: 0.15 });
       }
+    }
+    // ضربه زمین به قهرمان هم آسیب می‌زند اگر در شعاع باشد
+    const hero = this.ctx.heroRef;
+    if (hero && hero.alive && hero.getPos().distanceTo(pos) <= 9) {
+      hero.takeDamage(Math.min(80, this.heroHitDmg * 1.8));
+      this.ctx.vfx.burst(
+        hero.getPos().clone().add(new THREE.Vector3(0, 1.2, 0)),
+        0xf59e0b, 10, { speed: 5, life: 0.4, size: 0.5, gravity: 6 },
+      );
     }
     // تقویت سرعت موقت
     this.speed *= 1.35;

@@ -7,7 +7,7 @@ import type { GameContext as GC, DamageableEnemy as DE } from './context';
 // ============================================================
 // قهرمان — ۴ قهرمان قابل بازی با Role متمایز
 // ------------------------------------------------------------
-// آرمان  (فرمانده)  — تفنگ آذری، فرمان نبرد: تقویت برج‌ها
+// آرمان  (فرمانده)  — پتک آذری با رعدوبرق، فرمان نبرد: تقویت برج‌ها
 // آریا   (نگهبان)   — انفجار اثری، سپر اثری: مصونیت هسته
 // رادین  (برسرکر)   — کلنگ سنگین با Cleave، خشم جنگ
 // نیلا   (تیرانداز) — تیر انرژی دوربرد، باران تیر
@@ -34,6 +34,11 @@ export class Hero {
   private muzzleFlash = 0;
   deployed = false;
   private frenzyActive = false;
+  /** مرگ — دشمنان دیگر هدف نمی‌گیرند و تا ریسپاون پنهان است */
+  dead = false;
+  respawnTimer = 0;
+  /** آئورای رعدوبرق پتک — ساطع شدن مستمر (پتک آذری) */
+  private auraTimer = 0.4;
   /** Handle سیستم Asset — مدیریت مدل واقعی/Placeholder و انیمیشن */
   private handle: CharacterHandle;
   private tmpV = new THREE.Vector3();
@@ -70,6 +75,57 @@ export class Hero {
 
   get abilityReady(): boolean {
     return this.abilityCd <= 0;
+  }
+
+  /** زنده و قابل هدف — دشمنان فقط این حالت را حمله می‌کنند */
+  get alive(): boolean {
+    return this.deployed && !this.dead && this.hp > 0;
+  }
+
+  /** آسیب از دشمنان — مرگ ریسپاون زمان‌دار را فعال می‌کند */
+  takeDamage(amount: number) {
+    if (!this.alive) return;
+    this.hp -= amount;
+    this.ctx.vfx.burst(
+      this.position.clone().add(new THREE.Vector3(0, 1.2, 0)),
+      0xf87171, 5, { speed: 3.5, life: 0.3, size: 0.4, gravity: 5 }
+    );
+    if (this.hp <= 0) this.die();
+  }
+
+  /** مرگ — انفجار آذری + پنهانی و شمارش ریسپاون */
+  private die() {
+    this.dead = true;
+    this.hp = 0;
+    this.moveTarget = null;
+    this.frenzyActive = false;
+    this.abilityActiveTime = 0;
+    this.respawnTimer = this.data.respawn ?? 12;
+    this.ctx.vfx.explosion(this.position.clone().add(new THREE.Vector3(0, 1, 0)), 0x93c5fd, true);
+    this.ctx.vfx.ring(this.position, 0x93c5fd, 4, 0.8);
+    this.ctx.audio.play('death');
+    this.mesh.visible = false;
+  }
+
+  /** ریسپاون کنار هسته آذر — نقطه امن پشت خط مقدم */
+  private respawn() {
+    this.dead = false;
+    this.hp = this.maxHp;
+    this.position.copy(this.ctx.corePos);
+    this.position.x += 2.5;
+    this.position.z += 2.5;
+    this.position.y = 0;
+    this.mesh.visible = true;
+    this.deployed = true;
+    const pathPt = this.nearestPathPoint();
+    if (pathPt) this.mesh.rotation.y = Math.atan2(pathPt.x - this.position.x, pathPt.z - this.position.z);
+    this.ctx.vfx.ring(this.position, 0x93c5fd, 4, 0.9);
+    this.ctx.vfx.burst(this.position.clone().add(new THREE.Vector3(0, 1.2, 0)), 0x93c5fd, 30, { speed: 6, life: 0.8, size: 0.55, gravity: -3, up: 1 });
+    this.ctx.audio.play('reward');
+  }
+
+  getPos(): THREE.Vector3 {
+    return this.position;
   }
 
   /** سوییچ LOD مدل واقعی (بخش ۱۶) */
@@ -113,6 +169,7 @@ export class Hero {
   }
 
   moveTo(pos: THREE.Vector3) {
+    if (!this.alive) return;
     this.moveTarget = pos.clone();
     this.moveTarget.y = 0;
   }
@@ -135,7 +192,7 @@ export class Hero {
   }
 
   useAbility(): boolean {
-    if (this.abilityCd > 0 || !this.deployed) return false;
+    if (this.abilityCd > 0 || !this.alive) return false;
     this.abilityCd = this.data.abilityCooldown;
     const color = this.data.projectileColor;
 
@@ -203,6 +260,34 @@ export class Hero {
 
   update(dt: number, time: number) {
     if (!this.deployed) return;
+
+    // مرگ — شمارش معکوس ریسپاون (UI هر ۰٫۲ ثانیه state می‌گیرد)
+    if (this.dead) {
+      this.respawnTimer -= dt;
+      if (this.respawnTimer <= 0) this.respawn();
+      return;
+    }
+
+    // آئورای پتک آذری — رعدوبرق مستمر از نوک سلاح
+    if (this.data.weaponAura === 'lightning') {
+      this.auraTimer -= dt;
+      if (this.auraTimer <= 0) {
+        this.auraTimer = 0.4 + Math.random() * 0.3;
+        const tip = this.handle.vfxWorld('weapon', this.tmpV)
+          ?? this.position.clone().add(new THREE.Vector3(0, 1.5, 0));
+        this.ctx.vfx.burst(tip, Math.random() < 0.5 ? 0x93c5fd : 0xe0f2fe, 3, {
+          speed: 2.2, life: 0.22, size: 0.32, gravity: -1.5, spread: 0.5,
+        });
+        // هر از گاهی جرقه‌ی درشت‌تر — قوس الکتریکی کوتاه
+        if (Math.random() < 0.3) {
+          const end = tip.clone().add(new THREE.Vector3(
+            (Math.random() - 0.5) * 1.2, 0.3 + Math.random() * 0.5, (Math.random() - 0.5) * 1.2,
+          ));
+          this.ctx.vfx.bolt(tip, end, 0xbfdbfe);
+        }
+      }
+    }
+
     this.abilityCd = Math.max(0, this.abilityCd - dt);
     this.abilityActiveTime = Math.max(0, this.abilityActiveTime - dt);
     if (this.frenzyActive && this.abilityActiveTime <= 0) this.frenzyActive = false;
@@ -258,6 +343,14 @@ export class Hero {
     this.muzzleFlash = Math.max(0, this.muzzleFlash - dt);
   }
 
+  get isDead(): boolean {
+    return this.dead;
+  }
+
+  get respawnIn(): number {
+    return Math.max(0, Math.ceil(this.respawnTimer));
+  }
+
   /** حمله بر اساس Role */
   private attack(target: DE, inRange: DE[]) {
     const color = this.data.projectileColor;
@@ -298,14 +391,42 @@ export class Hero {
       return;
     }
 
-    // آرمان (تفنگ) و نیلا (تیر) — شلیک مستقیم از WeaponPoint
+    // آرمان (پتک آذری) و نیلا (تیر) — شلیک/صاعقه از WeaponPoint
     const fallbackTip = this.position
       .clone()
       .add(new THREE.Vector3(0, 1.15, 0))
       .addScaledVector(new THREE.Vector3(Math.sin(this.mesh.rotation.y), 0, Math.cos(this.mesh.rotation.y)), 1.2);
     const tip = this.handle.vfxWorld('weapon', this.tmpV) ?? this.handle.vfxWorld('muzzle', this.tmpV) ?? fallbackTip;
+    const targetPos = target.getPos().clone().add(new THREE.Vector3(0, 1, 0));
+
+    if (this.data.attackStyle === 'hammerLightning') {
+      // پتک آذری — صاعقه از نوک پتک به دشمن + جرقه رعد
+      this.ctx.vfx.bolt(tip, targetPos, 0xbfdbfe);
+      this.ctx.vfx.bolt(
+        tip.clone().add(new THREE.Vector3(0.2, 0.1, 0)),
+        targetPos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 0.8, 0, (Math.random() - 0.5) * 0.8)),
+        0x93c5fd,
+      );
+      this.ctx.vfx.burst(targetPos, 0xe0f2fe, 8, { speed: 5, life: 0.3, size: 0.45, gravity: 3 });
+      this.ctx.audio.play('lightning');
+      this.handle.animation?.playOneShot('attack', { fade: 0.08, returnToLocomotion: true });
+      target.takeDamage(this.currentDamage, this.data.attackType);
+      // هر سومین ضربه — قوس زنجیره‌ای به ۲ دشمن دیگر
+      if (Math.random() < 0.34) {
+        const others = inRange.filter((e) => e !== target).slice(0, 2);
+        let from = tip;
+        for (const e of others) {
+          const to = e.getPos().clone().add(new THREE.Vector3(0, 1, 0));
+          this.ctx.vfx.bolt(from, to, 0x93c5fd);
+          e.takeDamage(this.currentDamage * 0.55, 'energy');
+          from = to;
+        }
+      }
+      return;
+    }
+
     this.ctx.vfx.burst(tip, color, 2, { speed: 1.5, life: 0.12, size: 0.35, gravity: 0 });
-    this.ctx.vfx.bolt(tip, target.getPos().clone().add(new THREE.Vector3(0, 1, 0)), color);
+    this.ctx.vfx.bolt(tip, targetPos, color);
     this.ctx.audio.play('heroShot');
     this.handle.animation?.playOneShot('attack', { fade: 0.08, returnToLocomotion: true });
     target.takeDamage(this.currentDamage, this.data.attackType);

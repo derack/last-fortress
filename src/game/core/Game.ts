@@ -88,6 +88,7 @@ export class Game {
   /** گرید قابل‌ساخت — فقط در حالت ساخت دیده می‌شود */
   private buildGrid: THREE.Mesh | null = null;
   private ghostPulse = 0;
+  private heroMovePulse = 0; // تایمر حلقه پالس جابجایی قهرمان
   private time = 0;
   private raf = 0;
   private lastFrame = 0;
@@ -124,6 +125,7 @@ export class Game {
       corePos: this.scene3d.corePos,
       enemies: this.enemies as unknown as DamageableEnemy[],
       towers: this.towers,
+      heroRef: null,
       vfx: this.vfx,
       audio: this.audio,
       cameraShake: (a) => this.cameraCtrl.shake(a),
@@ -143,6 +145,8 @@ export class Game {
     };
 
     this.hero = new Hero(heroId, this.scene3d.scene, this.ctx);
+    // دشمنان از طریق ctx قهرمان را هدف می‌گیرند
+    this.ctx.heroRef = this.hero;
     this.input = new InputController(canvas, this.cameraCtrl, (hit) => this.handleTap(hit), this.scene3d.scene);
     // پیش‌نمایش محل ساخت — حرکت موس/درگ انگشت
     this.input.onGroundHover = (pt) => this.updateGhost(pt);
@@ -255,6 +259,14 @@ export class Game {
     // قهرمان
     this.hero.update(dt, this.time);
     this.hero.updateLod(this.cameraCtrl.camera.position);
+    // حلقه پالس حالت جابجایی — زیر قهرمان تا کاربر بداند کجا تپ کند
+    if (this.heroSelectMode && this.hero.alive) {
+      this.heroMovePulse -= dt;
+      if (this.heroMovePulse <= 0) {
+        this.heroMovePulse = 0.55;
+        this.vfx.ring(this.hero.getPos(), 0xffb020, 2.2, 0.5);
+      }
+    }
     const commandBuff = this.hero.data.abilityKind === 'battleCommand' && this.hero.abilityActiveTime > 0
       ? this.hero.data.abilityBuff / 100 : 0;
     const blessingBuff = this.time < this.blessingUntil
@@ -803,6 +815,8 @@ export class Game {
       deployed: this.hero.deployed,
       hp: Math.round(this.hero.hp),
       maxHp: this.hero.maxHp,
+      dead: this.hero.isDead,
+      respawnIn: this.hero.respawnIn,
       heroId: data.id,
       nameKey: data.nameKey,
       abilityNameKey: data.abilityNameKey,
@@ -879,9 +893,18 @@ export class Game {
         this.audio.play('tap');
         return;
       }
-      // قهرمان؟
+      // قهرمان؟ — تپ روی هیرو = ورود به حالت جابجایی
       if (root === this.hero.mesh || (root.parent && root.parent === this.hero.mesh)) {
-        this.bus.emit('heroSelected', {});
+        if (this.hero.alive) {
+          this.buildMode = null;
+          this.clearGhost();
+          this.setBuildGridVisible(false);
+          this.selectHeroMode(true);
+          this.bus.emit('heroSelected', {});
+          this.bus.emit('toast', { key: 'heroMoveHint', type: 'info' });
+        } else {
+          this.bus.emit('heroSelected', {});
+        }
         this.audio.play('tap');
         return;
       }

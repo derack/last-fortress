@@ -145,3 +145,25 @@ Stage Summary:
 - خط لوله Asset با اولین GLB واقعی کاربر تست و تأیید شد: Load→Normalize→Gallery→Battle همه سالم
 - مدل آرمان فعلی «استاتیک» است (بدون اسکلت/انیمیشن) — در بازی حرکت/حمله انیمیشنی ندارد؛ برای انیمیشن باید مدل Rigged با کلیپ Idle/Walk/Attack تهیه شود
 - ریسک کپی‌رایت (Thor Marvel) به کاربر گزارش شد
+
+---
+Task ID: 7
+Agent: main (Super Z)
+Task: پنج درخواست کاربر — رعدوبرق پتک آرمان، تفنگ→پتک آذری، جابجایی هیرو در نبرد، حمله دشمن به هیرو، ریسپاون هیرو + گزارش قدرت قهرمانان
+
+Work Log:
+- types.ts: HeroData + weaponAura ('lightning') + attackStyle ('hammerLightning') + respawn (ثانیه)
+- magic.ts HEROES.arman: attackType physical→energy، projectileColor 0xffd54a→0x93c5fd (آبی‌الکتریکی)، weaponAura/attackStyle/respawn:12
+- Hero.ts: آئورای مستمر پتک — هر ۰٫۴-۰٫۷ ثانیه جرقه از weaponPoint واقعی + ۳۰٪ مواقع قوس بولت کوتاه؛ حمله آرمان حالا صاعقه دوپاره از نوک پتک + هر ~۳ ضربه قوس زنجیره‌ای به ۲ دشمن دیگر (۵۵٪ آسیب) با صدای lightning؛ takeDamage (جرقه قرمز) → die (انفجار آذری + پنهانی) → respawnTimer → respawn با HP کامل کنار هسته آذر (corePos+2.5) با VFX بازگشت؛ alive getter (deployed && !dead)؛ قفل توانایی/جابجایی در مرگ؛ getPos برای HeroRef
+- context.ts: HeroRef interface (getPos/alive/takeDamage) + GameContext.heroRef
+- Enemy.ts: درگیری با قهرمان — برد ۲٫۶ (Boss ۳٫۶): توقف روی مسیر، چرخش به قهرمان، ضربه هر ۱٫۲۵s با heroHitDmg = clamp(maxHp×0.035, 6..45) (EnemyData فیلد damage ندارد) + hitSpark + انیمیشن attack؛ slam به هیرو هم آسیب می‌زند (شعاع ۹، ×۱٫۸ سقف ۸۰)؛ heroAtkCd ریست وقتی هیرو زنده نیست تا ریسپاون فوری ضربه نخورد
+- Game.ts: ctx.heroRef wiring؛ heroState + dead/respawnIn؛ تپ روی هیرو = ورود به حالت جابجایی + toast heroMoveHint (قبلاً فقط فلش UI بود)؛ حلقه پالس کهربایی زیر هیرو در حالت جابجایی (هر ۰٫۵۵s)
+- BattleUI.tsx: دکمه هیرو — حالت مرگ (قرمز + شمارش معکوس ریسپاون با faNum) + نوار جان گرادیانی سبز/قرمز زیر دکمه + قفل در مرگ؛ gameStore HeroInfo + dead/respawnIn
+- i18n fa/en: heroArmanDesc تفنگ→«پتک آذری رعدوبرق بر سر دشمنان فرو می‌ریزد»؛ کلیدهای جدید heroMoveHint و heroRespawnShort — parity کامل
+- تست مرورگر: استقرار هیرو ✓ رعدوبرق دور پتک در صحنه دیده شد ✓ جابجایی (selectHeroMode+تپ زمین → hero walk) ✓ دشمن به هیرو حمله کرد (HP 600→594→588→570) ✓ مرگ اجباری: respawnIn 12→11→5 شمارش و mesh پنهان ✓ ریسپاون خودکار: hp=600، position=(20.5,4.5)=corePos+2.5، visible ✓ UI پنل قهرمانان: «با پتک آذری...» ✓
+- tsc صفر خطای src / eslint تمیز / build موفق ۹ صفحه / کنسول صفر error
+
+Stage Summary:
+- آرمان از «تفنگ‌دار» به «پتک‌دار رعدوبرقی» تبدیل شد — هماهنگ با مدل Thor GLB که خود کاربر آپلود کرد
+- هیرو اکنون موجودیت کامل نبرد است: جان می‌دهد، می‌میرد، ریسپاون می‌شود، جابجا می‌شود و دشمنان او را تهدید واقعی می‌بینند
+- توازن: ضربه دشمن از HP مشتق می‌شود (کف ۶ سقف ۴۵) — با ۲۶ دشمن/Boss فعلی بدون نیاز به داده جدید

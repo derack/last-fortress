@@ -24,12 +24,23 @@ export interface DamageableEnemy {
   hasShield(): boolean;
 }
 
+/** رابط هیرو برای دشمنان — هدف‌گیری و آسیب‌زدن قهرمان */
+export interface HeroRef {
+  getPos(): THREE.Vector3;
+  /** فقط وقتی استقرار یافته و زنده است true */
+  alive: boolean;
+  /** آسیب از دشمن — مرگ ریسپاون را فعال می‌کند */
+  takeDamage(amount: number): void;
+}
+
 export interface GameContext {
   pathPoints: THREE.Vector3[];
   pathLength: number;
   corePos: THREE.Vector3;
   enemies: DamageableEnemy[];
   towers: TowerLike[];
+  /** قهرمان — دشمنان در برد، حمله‌اش می‌کنند (null تا استقرار) */
+  heroRef: HeroRef | null;
   vfx: {
     burst(pos: THREE.Vector3, color: number, count: number, opts?: { speed?: number; life?: number; size?: number; gravity?: number; up?: number; spread?: number }): void;
     hitSpark(pos: THREE.Vector3, color: number): void;

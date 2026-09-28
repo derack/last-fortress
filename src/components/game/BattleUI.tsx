@@ -260,17 +260,35 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
             game?.useHeroAbility();
           }
         }}
-          disabled={!!st.hero?.deployed && st.hero.abilityCd > 0}
+          disabled={!!st.hero?.deployed && (st.hero.dead || st.hero.abilityCd > 0)}
           className={`relative flex h-14 w-14 flex-col items-center justify-center rounded-2xl border backdrop-blur-sm active:scale-90
             ${!st.hero?.deployed ? 'border-amber-400/50 bg-amber-600/30' :
+            st.hero.dead ? 'border-red-500/70 bg-red-950/70' :
             st.hero.abilityCd <= 0 ? 'border-amber-300/70 bg-amber-500/25 shadow-[0_0_18px_rgba(245,158,11,0.35)]' : 'border-slate-700/60 bg-black/70 opacity-70'}`}>
-          <User className="h-6 w-6 text-amber-300" />
+          <User className={`h-6 w-6 ${st.hero?.dead ? 'text-red-400' : 'text-amber-300'}`} />
           <span className="text-[9px] font-black text-amber-200">
             {!st.hero?.deployed ? t('deployHero').split(' ')[0] : `${t('heroLevel', faNum(st.hero.level))}`}
           </span>
-          {st.hero?.deployed && st.hero.abilityCd > 0 && (
+          {/* مرگ — شمارش معکوس ریسپاون */}
+          {st.hero?.deployed && st.hero.dead && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-black/75">
+              <span className="text-sm font-black text-red-400">{faNum(st.hero.respawnIn)}</span>
+              <span className="text-[7px] font-bold text-slate-300">{t('heroRespawnShort')}</span>
+            </div>
+          )}
+          {/* سرد توانایی */}
+          {st.hero?.deployed && !st.hero.dead && st.hero.abilityCd > 0 && (
             <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 text-xs font-black text-white">
               {faNum(Math.ceil(st.hero.abilityCd))}
+            </div>
+          )}
+          {/* نوار جان هیرو */}
+          {st.hero?.deployed && !st.hero.dead && (
+            <div className="absolute -bottom-1.5 left-1/2 h-1.5 w-[4.5rem] -translate-x-1/2 overflow-hidden rounded-full border border-black/60 bg-black/80">
+              <div
+                className={`h-full transition-all duration-300 ${st.hero.hp / st.hero.maxHp > 0.35 ? 'bg-gradient-to-l from-emerald-400 to-lime-300' : 'bg-gradient-to-l from-red-500 to-orange-400'}`}
+                style={{ width: `${Math.max(0, Math.min(100, (st.hero.hp / st.hero.maxHp) * 100))}%` }}
+              />
             </div>
           )}
         </button>

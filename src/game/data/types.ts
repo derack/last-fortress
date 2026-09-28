@@ -140,6 +140,9 @@ export interface HeroData {
   projectileColor: number;
   splash?: number; // شعاع انفجار حمله (آریا)
   cleave?: number; // تعداد هدف اضافه حمله زمینی (رادین)
+  weaponAura?: 'lightning'; // آئورای مستمر سلاح — رعدوبرق پتک آرمان
+  attackStyle?: 'bolt' | 'hammerLightning'; // سبک بصری حمله — پتک آذری: صاعقه
+  respawn?: number; // ثانیه ریسپاون پس از مرگ — پیش‌فرض ۱۲
   abilityNameKey: string;
   abilityDescKey: string;
   abilityCooldown: number;
