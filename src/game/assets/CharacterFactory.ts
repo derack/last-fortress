@@ -4,6 +4,7 @@ import { findAssetEntry, type CharacterAssetEntry } from './AssetManifest';
 import { assetManager } from './AssetManager';
 import { normalizeModel } from './ModelNormalizer';
 import { CharacterAnimationController } from './CharacterAnimationController';
+import { ProceduralAnimationController } from './ProceduralAnimationController';
 import { createFallbackHero, createFallbackEnemy, createTowerFallback, disposeFallback } from './FallbackFactory';
 
 // ============================================================
@@ -23,6 +24,14 @@ import { createFallbackHero, createFallbackEnemy, createTowerFallback, disposeFa
 // ============================================================
 
 export type HandleSource = 'glb' | 'fallback';
+
+/**
+ * کنترلر انیمیشن — دو پیاده‌سازی با API یکسان:
+ *   • CharacterAnimationController — کلیپ‌های اسکلتی GLB (AnimationMixer)
+ *   • ProceduralAnimationController — حرکت بدنه‌صلب برای GLBهای بدون اسکلت
+ * Gameplay با هر دو یکسان کار می‌کند (playLocomotion/playOneShot/playDeath/update).
+ */
+export type AnyAnimationController = CharacterAnimationController | ProceduralAnimationController;
 
 /** کلیدهای userData سازنده برج که باید به ریشه Handle منتقل شوند */
 const TOWER_UDATA_KEYS = ['turret', 'spinCrystal', 'spinRing', 'ember'] as const;
@@ -57,7 +66,7 @@ export class CharacterHandle {
   source: HandleSource = 'fallback';
   /** آیا مدل واقعی GLB سوار شده؟ */
   ready = false;
-  animation: CharacterAnimationController | null = null;
+  animation: AnyAnimationController | null = null;
   /** انیمیشن پروسیجرال Placeholder (animParts قدیمی) — با GLB باطل می‌شود */
   proceduralAnimParts: { node: THREE.Object3D; kind: string }[] = [];
 
@@ -153,7 +162,10 @@ export class CharacterHandle {
     if (entry.category === 'towers') propagateTowerUdataFromGlb(model, this.root);
 
     // ۴) انیمیشن و VFX واقعی
-    this.animation = new CharacterAnimationController(this.root, clips);
+    //    GLB انیمیشن‌دار → میکسر اسکلتی | GLB استاتیک → حرکت پروسیجرال بدنه‌صلب
+    this.animation = clips.length > 0
+      ? new CharacterAnimationController(this.root, clips)
+      : new ProceduralAnimationController(norm.inner, norm.height);
     this.proceduralAnimParts = [];
     this.vfxPoints.clear();
     for (const [k, o] of Object.entries(norm.vfx)) this.vfxPoints.set(k, o);

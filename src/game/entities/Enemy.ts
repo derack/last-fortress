@@ -181,10 +181,10 @@ export class Enemy implements DamageableEnemy {
       return true;
     }
 
-    // انیمیشن اصابت (فقط GLB — با نرخ محدود تا اسپم نشود)
-    if (this.handle.hasAnimations && this.hitAnimCd <= 0) {
+    // انیمیشن اصابت (اسکلتی یا پروسیجرال — با نرخ محدود تا اسپم نشود)
+    if (this.handle.animation && this.hitAnimCd <= 0) {
       this.hitAnimCd = 0.5;
-      this.handle.animation?.playOneShot('hit', { fade: 0.08 });
+      this.handle.animation.playOneShot('hit', { fade: 0.08 });
     }
 
     // فاز دوم Boss — اختصاصی هر Boss از bossPhases.ts
@@ -338,8 +338,8 @@ export class Enemy implements DamageableEnemy {
     this.hitAnimCd = Math.max(0, this.hitAnimCd - dt);
 
     if (!this.alive) {
-      // انیمیشن مرگ — GLB: پخش کلیپ + فرورفتن کند | Placeholder: فرورفتن سریع
-      this.deathY -= dt * (this.handle.hasAnimations ? 1.4 : 3);
+      // انیمیشن مرگ — GLB (افتادن +) فرورفتن کند | Placeholder: فرورفتن سریع
+      this.deathY -= dt * (this.handle.animation ? 1.6 : 3);
       this.mesh.position.y = this.deathY;
       this.handle.animation?.update(dt);
       if (this.deathY < -2.5) this.remove();
@@ -468,9 +468,9 @@ export class Enemy implements DamageableEnemy {
   private animate(dt: number, speed: number) {
     this.walkPhase += dt * speed * 2.2;
 
-    if (this.handle.hasAnimations) {
-      // GLB — انیمیشن اسکلتی با هماهنگی سرعت واقعی حرکت
-      const anim = this.handle.animation!;
+    const anim = this.handle.animation;
+    if (anim) {
+      // GLB — انیمیشن اسکلتی یا پروسیجرال بدنه‌صلب، هم‌گام با سرعت واقعی حرکت
       anim.playLocomotion(speed > 3.6 ? 'run' : 'walk', speed / Math.max(0.01, this.data.speed));
       anim.update(dt);
     } else {

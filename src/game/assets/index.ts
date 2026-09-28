@@ -11,10 +11,12 @@ export { assetManager } from './AssetManager';
 export type { AssetStatus, AssetCacheRecord, PreloadProgress, PreloadReport } from './AssetManager';
 
 export { characterFactory, CharacterHandle } from './CharacterFactory';
-export type { HandleSource } from './CharacterFactory';
+export type { HandleSource, AnyAnimationController } from './CharacterFactory';
 
 export { CharacterAnimationController } from './CharacterAnimationController';
 export type { LocomotionState } from './CharacterAnimationController';
+
+export { ProceduralAnimationController } from './ProceduralAnimationController';
 
 export { normalizeModel } from './ModelNormalizer';
 export type { NormalizedModel } from './ModelNormalizer';

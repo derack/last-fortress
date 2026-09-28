@@ -16,6 +16,8 @@ import {
 import { characterFactory } from '@/game/assets/CharacterFactory';
 import { createFallbackHero, createFallbackEnemy, createTowerFallback } from '@/game/assets/FallbackFactory';
 import { CharacterAnimationController } from '@/game/assets/CharacterAnimationController';
+import { ProceduralAnimationController } from '@/game/assets/ProceduralAnimationController';
+import type { AnyAnimationController } from '@/game/assets/CharacterFactory';
 import { normalizeModel } from '@/game/assets/ModelNormalizer';
 import { ENEMIES } from '@/game/data/enemies';
 import { t, faNum } from '@/game/data/i18n';
@@ -50,7 +52,7 @@ export function CharacterGallery({ onClose }: { onClose: () => void }) {
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const modelRootRef = useRef<THREE.Group | null>(null);
-  const animRef = useRef<CharacterAnimationController | null>(null);
+  const animRef = useRef<AnyAnimationController | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const rafRef = useRef(0);
 
@@ -209,12 +211,22 @@ export function CharacterGallery({ onClose }: { onClose: () => void }) {
         const norm = normalizeModel(inst.scene, entry, 1);
         root.add(norm.inner);
         root.userData.isGlbClone = true;
-        const anim = new CharacterAnimationController(root, inst.animations);
-        animRef.current = anim;
-        anim.playLocomotion('idle');
-        const names = inst.animations.map((c) => c.name);
-        setAnimOptions(names);
-        if (names.length) setAnimName(names[0]);
+        if (inst.animations.length > 0) {
+          // GLB انیمیشن‌دار — میکسر اسکلتی
+          const anim = new CharacterAnimationController(root, inst.animations);
+          animRef.current = anim;
+          anim.playLocomotion('idle');
+          const names = inst.animations.map((c) => c.name);
+          setAnimOptions(names);
+          if (names.length) setAnimName(names[0]);
+        } else {
+          // GLB استاتیک — انیمیشن پروسیجرال بدنه‌صلب + پیش‌نمایش ژست‌ها
+          const anim = new ProceduralAnimationController(norm.inner, norm.height);
+          animRef.current = anim;
+          anim.playLocomotion('idle');
+          setAnimOptions(['idle', 'walk', 'run', 'attack', 'skill', 'hit']);
+          setAnimName('idle');
+        }
         return;
       }
       root.userData.isGlbClone = false;

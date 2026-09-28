@@ -37,6 +37,8 @@ export class Hero {
   /** مرگ — دشمنان دیگر هدف نمی‌گیرند و تا ریسپاون پنهان است */
   dead = false;
   respawnTimer = 0;
+  /** زمان باقی‌مانده تا پنهان شدن جسد بعد از انیمیشن مرگ */
+  private deathHideTimer = 0;
   /** آئورای رعدوبرق پتک — ساطع شدن مستمر (پتک آذری) */
   private auraTimer = 0.4;
   /** Handle سیستم Asset — مدیریت مدل واقعی/Placeholder و انیمیشن */
@@ -90,10 +92,14 @@ export class Hero {
       this.position.clone().add(new THREE.Vector3(0, 1.2, 0)),
       0xf87171, 5, { speed: 3.5, life: 0.3, size: 0.4, gravity: 5 }
     );
+    // فلینچ پروسیجرال/اسکلتی — حین اسمش حمله قطع نمی‌شود
+    if (this.handle.animation && !this.handle.animation.isBusy()) {
+      this.handle.animation.playOneShot('hit', { fade: 0.05 });
+    }
     if (this.hp <= 0) this.die();
   }
 
-  /** مرگ — انفجار آذری + پنهانی و شمارش ریسپاون */
+  /** مرگ — انیمیشن افتادن + انفجار آذری و پنهانی و شمارش ریسپاون */
   private die() {
     this.dead = true;
     this.hp = 0;
@@ -104,7 +110,9 @@ export class Hero {
     this.ctx.vfx.explosion(this.position.clone().add(new THREE.Vector3(0, 1, 0)), 0x93c5fd, true);
     this.ctx.vfx.ring(this.position, 0x93c5fd, 4, 0.8);
     this.ctx.audio.play('death');
-    this.mesh.visible = false;
+    // مرگ پروسیجرال/اسکلتی — اول افتادن (۰٫۹s) بعد پنهان شدن | بدون انیمیشن → پنهان فوری
+    this.deathHideTimer = this.handle.animation?.playDeath() ? 0.95 : 0;
+    if (this.deathHideTimer === 0) this.mesh.visible = false;
   }
 
   /** ریسپاون کنار هسته آذر — نقطه امن پشت خط مقدم */
@@ -117,6 +125,8 @@ export class Hero {
     this.position.y = 0;
     this.mesh.visible = true;
     this.deployed = true;
+    this.deathHideTimer = 0;
+    this.handle.animation?.reset(); // خروج از حالت مرگ + ژست خنثی
     const pathPt = this.nearestPathPoint();
     if (pathPt) this.mesh.rotation.y = Math.atan2(pathPt.x - this.position.x, pathPt.z - this.position.z);
     this.ctx.vfx.ring(this.position, 0x93c5fd, 4, 0.9);
@@ -263,6 +273,12 @@ export class Hero {
 
     // مرگ — شمارش معکوس ریسپاون (UI هر ۰٫۲ ثانیه state می‌گیرد)
     if (this.dead) {
+      // جسد — ادامه انیمیشن افتادن تا پنهان شدن
+      if (this.deathHideTimer > 0) {
+        this.deathHideTimer -= dt;
+        this.handle.animation?.update(dt);
+        if (this.deathHideTimer <= 0) this.mesh.visible = false;
+      }
       this.respawnTimer -= dt;
       if (this.respawnTimer <= 0) this.respawn();
       return;
@@ -333,11 +349,10 @@ export class Hero {
       }
     }
 
-    // انیمیشن حرکتی (فقط GLB) — Placeholder با پاهای پروسیجرال کار می‌کند
-    if (this.handle.hasAnimations) {
-      this.handle.animation?.playLocomotion(moving ? 'walk' : 'idle');
-      this.handle.animation?.update(dt);
-    }
+    // انیمیشن حرکتی — اسکلتی (GLB انیمیشن‌دار) یا پروسیجرال بدنه‌صلب (GLB استاتیک)
+    // Placeholderها animation=null دارند و با پاهای پروسیجرال قدیمی کار می‌کنند
+    this.handle.animation?.playLocomotion(moving ? 'walk' : 'idle');
+    this.handle.animation?.update(dt);
 
     this.mesh.position.copy(this.position);
     this.muzzleFlash = Math.max(0, this.muzzleFlash - dt);
