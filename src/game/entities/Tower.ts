@@ -23,6 +23,9 @@ export class Tower implements TowerLike {
   abilityCd = 0;
   private cooldown = 0;
   private rateBuffTime = 0;
+  /** از کار افتادگی موقت — فوران غول آتش/نفس اژدها/آئورای یخ Boss */
+  disableTimer = 0;
+  private disableFxTimer = 0;
   /** هاله تقویت محلی (از آذرگاه) */
   private localBuffPct = 0;
   private localBuffUntil = 0;
@@ -71,6 +74,21 @@ export class Tower implements TowerLike {
   applyLocalBuff(pct: number, duration: number) {
     this.localBuffPct = Math.max(this.localBuffPct, pct);
     this.localBuffUntil = Math.max(this.localBuffUntil, this.timeNow() + duration);
+  }
+
+  /** از کار انداختن موقت برج توسط Boss (فاز ۲) */
+  disable(duration: number, color = 0xf97316) {
+    this.disableTimer = Math.max(this.disableTimer, duration);
+    this.disableFxTimer = 0;
+    this.ctx.vfx.ring(this.position.clone().add(new THREE.Vector3(0, 0.3, 0)), color, 3.2, 0.5);
+    this.ctx.vfx.burst(this.position.clone().add(new THREE.Vector3(0, this.towerHeight(), 0)), color, 14, {
+      speed: 4, life: 0.6, size: 0.45, gravity: -2,
+    });
+    this.ctx.audio.play('explosion');
+  }
+
+  get isDisabled(): boolean {
+    return this.disableTimer > 0;
   }
 
   get upgradeCost(): number {
@@ -289,6 +307,20 @@ export class Tower implements TowerLike {
     this.rateBuffTime = Math.max(0, this.rateBuffTime - dt);
     this.cooldown -= dt;
 
+    // از کار افتادگی توسط Boss — شلیک/هاله متوقف، دود و جرقه نشانگر
+    if (this.disableTimer > 0) {
+      this.disableTimer -= dt;
+      this.disableFxTimer -= dt;
+      if (this.disableFxTimer <= 0) {
+        this.disableFxTimer = 0.4;
+        this.ctx.vfx.burst(this.position.clone().add(new THREE.Vector3(0, this.towerHeight() * 0.7, 0)), 0x64748b, 3, {
+          speed: 1.2, life: 0.7, size: 0.5, gravity: -3,
+        });
+      }
+      this.animateIdleSpin(dt);
+      return;
+    }
+
     // هاله تقویت آذرگاه — پالس هر ۰٫۵ ثانیه
     if (this.data.buffRatePct) {
       this.auraPulse -= dt;
@@ -305,17 +337,12 @@ export class Tower implements TowerLike {
     }
 
     // انیمیشن چرخش کریستال‌ها
-    this.spinPhase += dt;
-    const ud = this.mesh.userData;
-    if (ud.spinCrystal) {
-      ud.spinCrystal.rotation.y += dt * 1.5;
-      ud.spinCrystal.position.y += Math.sin(this.spinPhase * 2) * 0.003;
-    }
-    if (ud.spinRing) ud.spinRing.rotation.z += dt * 1.2;
+    this.animateIdleSpin(dt);
 
     // چرخش برجک به سمت هدف
     const inRange = enemies.filter((e) => e.alive && this.canHit(e) && e.getPos().distanceTo(this.position) <= this.range);
     const target = this.pickTarget(inRange);
+    const ud = this.mesh.userData;
     if (target && ud.turret) {
       const dir = target.getPos().clone().sub(this.position);
       const wantRot = Math.atan2(dir.x, dir.z);
@@ -328,6 +355,17 @@ export class Tower implements TowerLike {
     if (!target || this.cooldown > 0) return;
     this.cooldown = 1 / this.fireRate;
     this.fire(target);
+  }
+
+  /** چرخش آرام کریستال/حلقه — حتی هنگام از کار افتادگی */
+  private animateIdleSpin(dt: number) {
+    this.spinPhase += dt;
+    const ud = this.mesh.userData;
+    if (ud.spinCrystal) {
+      ud.spinCrystal.rotation.y += dt * 1.5;
+      ud.spinCrystal.position.y += Math.sin(this.spinPhase * 2) * 0.003;
+    }
+    if (ud.spinRing) ud.spinRing.rotation.z += dt * 1.2;
   }
 
   private canHit(e: DamageableEnemy): boolean {

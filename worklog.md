@@ -72,3 +72,35 @@ Stage Summary:
 - بازی از Vertical Slice به محتوای کامل مشخصات رسید: ۱۰ برج × ۵ سطح، ۲۶ دشمن/Boss با رفتارهای متمایز، ۴ قهرمان Role-محور، ۶ جادو، ۶ منطقه قابل بازی با تم‌های بصری متفاوت
 - خط لوله Asset دست‌نخورده و فعال — GLB واقعی به‌محض قرارگیری جایگزین Placeholder می‌شود؛ LOD scaffold آماده GLBهای multi-LOD
 - صادقانه: هیچ GLB جعلی اضافه نشد؛ تمام ۴۰ Placeholder برچسب «موقت» دارند
+
+---
+Task ID: 4
+Agent: main (Super Z)
+Task: سه درخواست کاربر — (۱) عمیق‌تر کردن سیستم Boss Phase 2 اختصاصی هر Boss (آتش/یخ/اژدها) (۲) باز شدن تدریجی برج‌ها (۳) صفحات iframe به‌جای منوی ردیفی
+
+Work Log:
+- Boss Phase 2 اختصاصی: فایل جدید src/game/data/bossPhases.ts — پیکربندی Data-Driven هر ۶ Boss: پادشاه غول سنگی (خشم سنگی: زره×۱٫۵ + پوست سنگی -۱۵٪ آسیب + احضار گolem×۲ + ضربه سنگی دوره‌ای)، غول آتش (خشم آتشین: سرعت×۱٫۳ + ایمنی به کندی/یخ + بازسازی ۸/s + احضار جنگجو×۳ + فوران آتشی دوره‌ای شعاع ۷)، غول یخ (انجماد ابدی: زره×۱٫۴۵ + ایمنی سرما + بازسازی ۱۲/s + آئورای انجماد همه برج‌های شعاع ۹ برای ۴ ثانیه)، اژدهای سیاه (خشم آسمانی: سرعت×۱٫۴ + احضار smallDragon×۲ + نفس سایه ۲ برج برای ۳٫۵ ثانیه)، محوکننده (پروتکل نابودی: بازسازی×۲ + لیزر هدفمند هر ۶ ثانیه)، ارباب تاریکی (تجلی تاریکی: سپر ۱۲۰۰ + احضار ۴ سایه‌سرباز لحظه ورود + احضار دوره‌ای)
+- Enemy.ts: enterPhase2 (جلوه‌ها با رنگ اختصاصی + بنر + آمار + سپر + احضار) + updatePhase2Abilities با ۴ نوع توانایی دوره‌ای (towerStun با vfx.bolt / frostAura / eruption / summon) + slowImmune در applySlow + damageReduction در takeDamage + regen فاز۲ — رفتار عمومی قدیمی برای Bossهای بدون پیکربندی حفظ شد
+- Tower.disable(duration,color): توقف شلیک/هاله + دود نشانگر + animateIdleSpin جدا شد تا کریستال‌ها هنگام ازکارافتادگی بچرخند
+- GameContext: disableTower + onBossPhase جدید — Game.ts پیاده‌سازی (disableTower واقعی + bus.emit bossPhase)
+- بنر «فاز دوم» در BattleUI با رنگ اختصاصی هر Boss + state bossPhase در store + resetBattleState + BUS_EVENTS
+- باز شدن تدریجی برج‌ها: TowerData.unlockStars + totalStars/isTowerUnlocked/starsUntilTower در towers.ts — نگهبان ۰، یخ ۱، آتش ۲، صاعقه ۳، توپخانه ۵، زهرخانه ۷، بالیستا ۹، رازآسا ۱۱، محراب ۱۳، تهی ۱۵ (کل ممکن ۱۸ ستاره)
+- گاردها در Game.setBuildMode و tryBuild + نوار برج BattleUI (آیکون قفل + ستاره لازم + badge ستاره باقی‌مانده + grayscale) + briefing نقشه (قفل + ستاره) + toast towerLocked
+- صفحات iframe: مسیر /page/[screen] (SSG پنج صفحه: map/heroes/achievements/settings/gallery) + StandaloneScreen (initSave مشترک localStorage) + MainMenu بازنویسی — منوی ردیفی حذف، نوار تب پایین + قاب iframe با هدر و بستن + iframes ماندگار بین تب‌ها
+- پل postMessage: startBattle (نقشه iframe → شروع نبرد والد) / saveChanged (رویداد savePersisted در SaveSystem → initSave والد) / closePage / openPage (دکمه گالری تنظیمات iframe → تب والد)
+- useStandaloneBack در سه پنل (قهرمانان/دستاوردها/تنظیمات) — بازگشت در iframe به پیام closePage تبدیل می‌شود؛ CampaignMap در حالت iframe دکمه بازگشت مخفی + onStart پیام می‌فرستد
+- i18n: ۱۲ کلید جدید fa/en (نام فاز ۶ Boss + bossPhaseTitle + towerLocked + menuPagesHint) — parity بررسی شد
+- رفع prerender: isStandalonePage از سرور قابل فراخوانی نبود → PAGE_IDS محلی در route
+
+تست مرورگر (390×844):
+- منو: نوار تب ۵ صفحه‌ای جایگزین منوی ردیفی ✓ / تب نقشه → iframe نقشه با ۶ منطقه ✓ / briefing: برج‌های قفل با ستاره ✓ / «آغاز نبرد» از iframe → postMessage → شروع نبرد واقعی ✓
+- شروع مستقیم با دکمه شروع نبرد ✓ / آموزش نمایش داده شد ✓
+- Boss فاز۲: golemKing در hp<50% → phase2، زره ۱۴→۲۱ (×۱٫۵)، سرعت ×۱٫۱، احضار ۲ گolem، بنر DOM «فاز دوم/خشم سنگی» ✓ / towerStun: sentinel با disableTimer=2.25 از کار افتاد (دمو) ✓ / fireGiant: applySlow نادیده (slowFactor=۱)، زره ۲۲، سرعت ۱٫۵۶، ۳ جنگجو ✓ / blackDragon: سرعت ۲٫۲۴ (×۱٫۴)، ۲ smallDragon احضار شد ✓ / iceGiant: slowImmune + تایمر frostAura ✓
+- قفل برج: void/ice با ۰ ستاره → buildMode null + toast ✓ / sentinel باز ✓ / بریفینگ ستاره باقی‌مانده ✓
+- پل ذخیره: بازکردن قهرمان → رویداد savePersisted ✓ (۴۰۰→۲۵۰ کریستال) / ذخیره ریست شد برای تجربه پیشرفت تازه
+- tsc: ۰ خطای src / eslint تمیز / build موفق (۵ صفحه SSG)
+
+Stage Summary:
+- هر Boss اکنون در نیمه دوم HP شخصیت واقعی خودش را دارد: مکانیک اختصاصی + توانایی دوره‌ای + جلوه و بنر مخصوص — از داده خوانده می‌شود (bossPhases.ts) و Boss جدید فقط با یک entry اضافه می‌شود
+- اقتصاد پیشرفت بازطراحی شد: ستاره‌ها فقط قفل منطقه نمی‌شکنند، برج‌ها را هم قدم‌به‌قدم آزاد می‌کنند (نگهبان+یخ تقریباً از اول، تهی و محراب انتهای کمپین)
+- ناوبری از React state به صفحات iframe مستقل (/page/...) منتقل شد — هر صفحه حالت و اسکرول خودش را دارد و با پل postMessage + localStorage با بازی اصلی همگام است

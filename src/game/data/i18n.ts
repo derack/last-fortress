@@ -85,6 +85,21 @@ const fa: Record<string, string> = {
   notEnoughCoins: 'سکه کافی نیست!',
   invalidSpot: 'اینجا نمی‌توان ساخت!',
 
+  // فاز ۲ اختصاصی Bossها
+  bossPhaseTitle: 'فاز دوم',
+  golemKingPhase2: 'خشم سنگی',
+  fireGiantPhase2: 'خشم آتشین',
+  iceGiantPhase2: 'انجماد ابدی',
+  blackDragonPhase2: 'خشم آسمانی',
+  annihilatorPhase2: 'پروتکل نابودی',
+  darkLordPhase2: 'تجلی تاریکی',
+
+  // باز شدن تدریجی برج‌ها
+  towerLocked: 'این برج هنوز قفل است — در کمپین ستاره جمع کن!',
+
+  // منوی صفحات iframe
+  menuPagesHint: 'صفحات از همین‌جا در قاب خودشان باز می‌شوند',
+
   towerSentinel: 'نگهبان',
   towerSentinelDesc: 'توپ مسلسل پیشرفته با شلیک سریع — تعادل کامل',
   towerSentinelAbility: 'باران گلوله',
@@ -419,6 +434,21 @@ const en: Record<string, string> = {
   fireRate: 'Fire Rate',
   notEnoughCoins: 'Not enough coins!',
   invalidSpot: 'Cannot build here!',
+
+  // Boss-specific phase two
+  bossPhaseTitle: 'PHASE TWO',
+  golemKingPhase2: 'Stone Wrath',
+  fireGiantPhase2: 'Burning Wrath',
+  iceGiantPhase2: 'Eternal Frost',
+  blackDragonPhase2: 'Sky Wrath',
+  annihilatorPhase2: 'Annihilation Protocol',
+  darkLordPhase2: 'Dark Manifestation',
+
+  // Progressive tower unlock
+  towerLocked: 'This tower is still locked — earn campaign stars!',
+
+  // iframe page menu
+  menuPagesHint: 'Pages open right here inside their own frames',
 
   towerSentinel: 'Sentinel',
   towerSentinelDesc: 'Advanced gatling turret with rapid fire — perfectly balanced',

@@ -57,6 +57,8 @@ export function persistSave(data: SaveData) {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(KEY, JSON.stringify(data));
+    // پل iframe — صفحات مستقل به پنجره والد خبر می‌دهند که ذخیره عوض شد
+    window.dispatchEvent(new CustomEvent('savePersisted'));
   } catch {
     // حافظه پر است — نادیده بگیر
   }

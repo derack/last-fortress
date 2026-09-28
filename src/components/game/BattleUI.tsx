@@ -4,10 +4,10 @@ import { useState } from 'react';
 import {
   Heart, Coins, Gem, Play, Pause, FastForward, Zap, Flame, Shield, Snowflake,
   Crosshair, X, Star, Home, RotateCcw, Settings, User, Sparkles, ArrowUpCircle,
-  Trash2, Target, Clock, FlaskConical, MoveDiagonal, Sun, Moon,
+  Trash2, Target, Clock, FlaskConical, MoveDiagonal, Sun, Moon, Lock,
 } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
-import { TOWERS, TOWER_BUILD_ORDER } from '@/game/data/towers';
+import { TOWERS, TOWER_BUILD_ORDER, isTowerUnlocked, starsUntilTower } from '@/game/data/towers';
 import { MAGIC } from '@/game/data/magic';
 import { HEROES } from '@/game/data/magic';
 import { t, faNum } from '@/game/data/i18n';
@@ -136,6 +136,25 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
       </div>
 
       {/* ================= بنر موج / Boss ================= */}
+      {/* ================= بنر فاز ۲ Boss ================= */}
+      {st.bossPhase && (
+        <div className="absolute left-1/2 top-[22%] -translate-x-1/2 text-center banner-anim pointer-events-none">
+          <div
+            className="rounded-2xl border bg-black/85 px-8 py-4 shadow-[0_0_50px_rgba(168,85,247,0.5)]"
+            style={{ borderColor: '#' + st.bossPhase.color.toString(16).padStart(6, '0') }}
+          >
+            <div className="text-xs font-black tracking-[0.35em] text-rose-400">{t('bossPhaseTitle')}</div>
+            <div
+              className="mt-1 text-2xl font-black animate-pulse"
+              style={{ color: '#' + st.bossPhase.color.toString(16).padStart(6, '0') }}
+            >
+              {t(st.bossPhase.nameKey)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= بنر موج ================= */}
       {st.banner && (
         <div className="absolute left-1/2 top-[30%] -translate-x-1/2 text-center banner-anim pointer-events-none">
           {st.banner.boss ? (
@@ -262,18 +281,46 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
             const Icon = TOWER_ICONS[id];
             const afford = st.coins >= tw.cost;
             const active = st.buildMode === id;
+            // باز شدن تدریجی — قفل با مجموع ستاره‌های کمپین
+            const unlocked = isTowerUnlocked(st.save, id);
+            const starsNeeded = starsUntilTower(st.save, id);
+            const handleTap = () => {
+              if (!unlocked) {
+                useGameStore.getState().pushToast('towerLocked', 'error');
+                return;
+              }
+              game?.setBuildMode(active ? null : id);
+            };
             return (
               <button key={id}
-                onClick={() => game?.setBuildMode(active ? null : id)}
+                onClick={handleTap}
                 className={`relative flex w-[4.1rem] shrink-0 flex-col items-center gap-0.5 rounded-xl border px-1 py-2 backdrop-blur-sm transition-all active:scale-95
-                  ${active ? 'border-white bg-white/15 scale-105' :
+                  ${!unlocked ? 'border-slate-800/80 bg-black/70 opacity-45 grayscale' :
+                  active ? 'border-white bg-white/15 scale-105' :
                   afford ? 'border-slate-600/60 bg-black/60' : 'border-slate-800/60 bg-black/60 opacity-50'}`}>
-                <Icon className="h-6 w-6" style={{ color: '#' + tw.color.toString(16).padStart(6, '0') }} />
+                {unlocked ? (
+                  <Icon className="h-6 w-6" style={{ color: '#' + tw.color.toString(16).padStart(6, '0') }} />
+                ) : (
+                  <Lock className="h-5 w-5 text-slate-400" />
+                )}
                 <span className="whitespace-nowrap text-[11px] font-black text-slate-200">{t(tw.nameKey)}</span>
-                <span className="flex items-center gap-0.5 text-[10px] font-black text-amber-400">
-                  <Coins className="h-3 w-3" />
-                  {faNum(tw.cost)}
-                </span>
+                {!unlocked ? (
+                  <span className="flex items-center gap-0.5 text-[10px] font-black text-yellow-300">
+                    <Star className="h-3 w-3 fill-yellow-300" />
+                    {faNum(tw.unlockStars ?? 0)}
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-0.5 text-[10px] font-black text-amber-400">
+                    <Coins className="h-3 w-3" />
+                    {faNum(tw.cost)}
+                  </span>
+                )}
+                {!unlocked && starsNeeded > 0 && (
+                  <span className="absolute -top-1.5 -left-1.5 flex h-4 min-w-4 items-center justify-center rounded-full
+                    bg-slate-700 px-1 text-[9px] font-black text-yellow-300">
+                    {faNum(starsNeeded)}
+                  </span>
+                )}
               </button>
             );
           })}

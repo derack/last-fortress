@@ -3,6 +3,7 @@
 import { ArrowRight, Trash2, Vibrate, Boxes } from 'lucide-react';
 import { useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
+import { useStandaloneBack } from './standalone';
 import { t, faNum } from '@/game/data/i18n';
 import type { Quality } from '@/game/data/types';
 
@@ -11,8 +12,16 @@ import type { Quality } from '@/game/data/types';
 // ============================================================
 
 export function SettingsPanel() {
-  const setScreen = useGameStore((s) => s.setScreen);
+  const goBack = useStandaloneBack();
   const setGalleryOpen = useGameStore((s) => s.setGalleryOpen);
+  const openGallery = () => {
+    // در iframe — تب گالری در پنجره والد باز می‌شود
+    if (typeof window !== 'undefined' && window.self !== window.top) {
+      window.parent.postMessage({ type: 'openPage', page: 'gallery' }, '*');
+    } else {
+      setGalleryOpen(true);
+    }
+  };
   const save = useGameStore((s) => s.save);
   const setLanguage = useGameStore((s) => s.setLanguage);
   const setQuality = useGameStore((s) => s.setQuality);
@@ -25,7 +34,7 @@ export function SettingsPanel() {
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-gradient-to-b from-[#0b0f1c] to-[#101828]">
       <div className="flex items-center gap-3 border-b border-amber-400/20 bg-black/40 px-4 py-3">
-        <button onClick={() => setScreen('menu')}
+        <button onClick={goBack}
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-600/50 bg-black/40 text-slate-300 active:scale-95">
           <ArrowRight className="h-5 w-5" />
         </button>
@@ -84,7 +93,7 @@ export function SettingsPanel() {
 
           {/* گالری کاراکترها (توسعه‌دهنده) */}
           <Section title={t('gallery')}>
-            <button onClick={() => setGalleryOpen(true)}
+            <button onClick={openGallery}
               className="flex w-full items-center justify-between rounded-xl border border-sky-500/30 bg-sky-500/10 px-4 py-3 active:scale-[0.98]">
               <span className="flex items-center gap-2 font-bold text-sky-200">
                 <Boxes className="h-5 w-5 text-sky-400" />

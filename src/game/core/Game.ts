@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { LevelData, MagicId, SaveData } from '../data/types';
-import { TOWERS } from '../data/towers';
+import { TOWERS, isTowerUnlocked } from '../data/towers';
 import { ENEMIES } from '../data/enemies';
 import { MAGIC } from '../data/magic';
 import { BattleScene } from '../scene/BattleScene';
@@ -132,6 +132,8 @@ export class Game {
       onEnemyLeak: (e) => this.handleLeak(e as Enemy),
       heroDamageBuff: 0,
       towerRateBuff: 0,
+      disableTower: (towerId, duration, color) => this.disableTower(towerId, duration, color),
+      onBossPhase: (nameKey, color) => this.bus.emit('bossPhase', { nameKey, color }),
     };
 
     this.hero = new Hero(heroId, this.scene3d.scene, this.ctx);
@@ -418,7 +420,20 @@ export class Game {
 
   // ===================== ساخت / ارتقا / فروش برج =====================
 
+  /** از کار انداختن موقت برج توسط توانایی فاز ۲ Boss */
+  disableTower(towerId: number, duration: number, color = 0xf97316) {
+    const t = this.towers.find((x) => x.id === towerId);
+    if (!t || !t.alive) return;
+    t.disable(duration, color);
+  }
+
   setBuildMode(towerId: string | null) {
+    // قفل برج — باز شدن تدریجی با ستاره
+    if (towerId && !isTowerUnlocked(this.save, towerId)) {
+      this.audio.play('error');
+      this.bus.emit('toast', { key: 'towerLocked', type: 'error' });
+      return;
+    }
     this.buildMode = towerId;
     this.magicPending = null;
     this.heroSelectMode = false;
@@ -445,6 +460,12 @@ export class Game {
   tryBuild(towerId: string, point: THREE.Vector3): boolean {
     const data = TOWERS[towerId];
     if (!data) return false;
+    // قفل برج — حتی با تپ مستقیم روی زمین
+    if (!isTowerUnlocked(this.save, towerId)) {
+      this.audio.play('error');
+      this.bus.emit('toast', { key: 'towerLocked', type: 'error' });
+      return false;
+    }
     const x = Math.round(point.x / 2) * 2;
     const z = Math.round(point.z / 2) * 2;
     if (!this.scene3d.canBuild(x, z, this.towers.map((t) => t.position))) {

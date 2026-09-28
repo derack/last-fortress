@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { EnemyData } from '../data/types';
 import { tiered } from '../data/enemies';
+import { getBossPhase2, type BossPhase2Config } from '../data/bossPhases';
 import { characterFactory, type CharacterHandle } from '../assets';
 import type { GameContext, DamageableEnemy } from './context';
 
@@ -10,6 +11,10 @@ import type { GameContext, DamageableEnemy } from './context';
 // Rendering Layer: مدل از Asset Pipeline + Object Pool.
 // Load Once → Cache → Clone → AnimationMixer مستقل (بخش ۱۳).
 // Gameplay (HP/Armor/مسیر/وضعیت‌ها/Boss فاز۲/احضار) دست‌نخورده.
+// ------------------------------------------------------------
+// فاز ۲ اختصاصی هر Boss — از bossPhases.ts (Data-Driven):
+// ورود به فاز با جلوه/سپر/احضار مخصوص + توانایی دوره‌ای مخصوص
+// (فوران آتش/آئورای یخ/نفس سایه/پروتکل لیزر/احضار ارباب تاریکی)
 // ============================================================
 
 let nextId = 1;
@@ -35,6 +40,12 @@ export class Enemy implements DamageableEnemy {
   private dodgeCd = 0;
   private slamTimer = 10;
   private phase2 = false;
+  /** پیکربندی فاز ۲ اختصاصی این Boss (null برای دشمن عادی) */
+  private phase2Cfg: BossPhase2Config | null = null;
+  private phase2RegenBonus = 0;
+  private phaseAbilityTimer = 0;
+  private phaseDamageReduction = 0;
+  private slowImmune = false;
   private walkPhase = Math.random() * 10;
   private shredAmount = 0;
   private shredUntil = 0;
@@ -92,6 +103,7 @@ export class Enemy implements DamageableEnemy {
   }
 
   applySlow(factor: number, duration: number) {
+    if (this.slowImmune) return; // بدن مذاب غول آتش / تجسم سرمای غول یخ
     if (factor < this.slowFactor || this.slowUntil < this.now() + duration * 0.5) {
       this.slowFactor = Math.min(this.slowFactor === 1 ? 99 : this.slowFactor, factor);
     }
@@ -143,6 +155,8 @@ export class Enemy implements DamageableEnemy {
     const resist = this.data.resist?.[type as keyof typeof this.data.resist] ?? 1;
     let dmg = Math.max(1, amount * resist - this.effArmor * (type === 'physical' ? 1 : 0.4));
     if (pierceArmor) dmg = Math.max(1, amount * resist); // بالیستا — زره نادیده
+    // پوست سنگی پادشاه غول — کاهش درصدی آسیب در فاز ۲
+    if (this.phaseDamageReduction > 0) dmg *= 1 - this.phaseDamageReduction;
 
     // سپر (از جادوگر)
     if (this.shieldHp > 0) {
@@ -169,24 +183,146 @@ export class Enemy implements DamageableEnemy {
       this.handle.animation?.playOneShot('hit', { fade: 0.08 });
     }
 
-    // فاز دوم Boss
+    // فاز دوم Boss — اختصاصی هر Boss از bossPhases.ts
     if (this.data.boss && !this.phase2 && this.hpRatio < 0.5) {
-      this.phase2 = true;
-      this.armor = Math.round(this.armor * 1.25);
-      this.ctx.vfx.ring(this.mesh.position, 0xf59e0b, 8, 0.7);
-      this.ctx.vfx.explosion(this.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), 0xf59e0b, true);
-      this.ctx.audio.play('bossRoar');
-      this.ctx.cameraShake(0.8);
-      this.handle.animation?.playOneShot('phasechange', { fade: 0.2 });
-      if (!this.handle.animation?.isBusy()) {
-        this.handle.animation?.playOneShot('roar', { fade: 0.2 });
-      }
-      // احضار سایه‌ها
-      for (let i = 0; i < 4; i++) {
-        this.summonMinion();
-      }
+      this.enterPhase2();
     }
     return false;
+  }
+
+  /** ورود به فاز دوم — جلوه‌ها و توانایی‌های اختصاصی هر Boss */
+  private enterPhase2() {
+    this.phase2 = true;
+    const cfg = this.data.boss ? getBossPhase2(this.data.id) : null;
+    this.phase2Cfg = cfg;
+
+    // جلوه ورود — رنگ اختصاصی Boss
+    const fx = cfg?.color ?? 0xf59e0b;
+    this.ctx.vfx.ring(this.mesh.position, fx, 8, 0.7);
+    this.ctx.vfx.ring(this.mesh.position, fx, 5, 0.9);
+    this.ctx.vfx.explosion(this.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), fx, true);
+    this.ctx.audio.play('bossRoar');
+    this.ctx.cameraShake(1.0);
+    this.handle.animation?.playOneShot('phasechange', { fade: 0.2 });
+    if (!this.handle.animation?.isBusy()) {
+      this.handle.animation?.playOneShot('roar', { fade: 0.2 });
+    }
+
+    if (!cfg) {
+      // Boss بدون پیکربندی — رفتار عمومی قدیمی
+      this.armor = Math.round(this.armor * 1.25);
+      for (let i = 0; i < 4; i++) this.summonMinion();
+      return;
+    }
+
+    // آمار فاز ۲
+    this.armor = Math.round(this.armor * cfg.armorMult);
+    this.speed *= cfg.speedMult;
+    if (cfg.slowImmune) {
+      this.slowImmune = true;
+      this.slowFactor = 1;
+      this.slowUntil = 0;
+    }
+    if (cfg.regenBonus) this.phase2RegenBonus = cfg.regenBonus;
+    if (cfg.damageReductionPct) this.phaseDamageReduction = cfg.damageReductionPct;
+    if (cfg.shieldHp) {
+      this.shieldHp += cfg.shieldHp;
+      const aura = this.mesh.getObjectByName('shieldAura');
+      if (aura) (aura as THREE.Mesh).visible = true;
+    }
+
+    // احضار لحظه ورود — نیروی مخصوص Boss
+    if (cfg.onEnterSummon) {
+      for (let i = 0; i < cfg.onEnterSummon.count; i++) {
+        this.ctx.summonAt(this.mesh.position.clone(), cfg.onEnterSummon.enemy);
+      }
+    }
+
+    // بنر «فاز دوم» با نام اختصاصی
+    this.ctx.onBossPhase(cfg.nameKey, cfg.color);
+    this.phaseAbilityTimer = cfg.periodic ? cfg.periodic.interval * 0.55 : 0;
+  }
+
+  /** توانایی دوره‌ای فاز ۲ — مخصوص هر Boss */
+  private updatePhase2Abilities(dt: number) {
+    const cfg = this.phase2Cfg;
+    if (!cfg?.periodic) return;
+    this.phaseAbilityTimer -= dt;
+    if (this.phaseAbilityTimer > 0) return;
+    this.phaseAbilityTimer = cfg.periodic.interval;
+
+    const pos = this.mesh.position.clone();
+    const fx = cfg.color;
+
+    switch (cfg.periodic.kind) {
+      case 'towerStun': {
+        // نفس سایه اژدها / لیزر محوکننده / ضربه سنگی — از کار انداختن نزدیک‌ترین برج‌ها
+        const targets = [...this.ctx.towers]
+          .filter((t) => t.alive)
+          .sort((a, b) => a.position.distanceTo(this.mesh.position) - b.position.distanceTo(this.mesh.position))
+          .slice(0, cfg.periodic.towerCount ?? 1);
+        for (const t of targets) {
+          this.ctx.vfx.bolt(pos, t.position.clone().add(new THREE.Vector3(0, 2, 0)), fx, true);
+          this.ctx.disableTower(t.id, cfg.periodic.duration ?? 3, fx);
+        }
+        if (targets.length) {
+          this.ctx.cameraShake(0.45);
+          const anim = this.handle.animation;
+          if (anim) {
+            if (!anim.playOneShot('attack2', { fade: 0.15 })) {
+              if (!anim.playOneShot('attack1', { fade: 0.15 })) {
+                anim.playOneShot('attack', { fade: 0.15 });
+              }
+            }
+          }
+        }
+        break;
+      }
+      case 'frostAura': {
+        // انجماد ابدی غول یخ — همه برج‌های اطراف منجمد می‌شوند
+        const radius = cfg.periodic.radius ?? 9;
+        this.ctx.vfx.ring(pos, fx, radius, 0.9);
+        this.ctx.vfx.burst(pos, fx, 24, { speed: 6, life: 0.8, size: 0.5, gravity: -1 });
+        let any = false;
+        for (const t of this.ctx.towers) {
+          if (!t.alive) continue;
+          if (t.position.distanceTo(this.mesh.position) <= radius) {
+            this.ctx.disableTower(t.id, cfg.periodic.duration ?? 4, fx);
+            any = true;
+          }
+        }
+        if (any) this.ctx.audio.play('deepFreeze');
+        this.ctx.cameraShake(0.5);
+        break;
+      }
+      case 'eruption': {
+        // فوران آتشی غول آتش — حلقه آتش + از کار انداختن برج‌های نزدیک
+        const radius = cfg.periodic.radius ?? 7;
+        this.ctx.vfx.ring(pos, fx, radius, 0.7);
+        this.ctx.vfx.burst(pos, fx, 30, { speed: 7, life: 0.7, size: 0.7, gravity: 2 });
+        let any = false;
+        for (const t of this.ctx.towers) {
+          if (!t.alive) continue;
+          if (t.position.distanceTo(this.mesh.position) <= radius) {
+            this.ctx.disableTower(t.id, cfg.periodic.duration ?? 3, fx);
+            any = true;
+          }
+        }
+        if (any) this.ctx.audio.play('explosion');
+        this.ctx.cameraShake(0.55);
+        this.handle.animation?.playOneShot('specialattack', { fade: 0.15 });
+        break;
+      }
+      case 'summon': {
+        // احضار بی‌وقفه ارباب تاریکی
+        for (let i = 0; i < (cfg.periodic.count ?? 2); i++) {
+          this.ctx.summonAt(pos, cfg.periodic.enemy ?? 'shadowSoldier');
+        }
+        this.ctx.vfx.ring(pos, fx, 5, 0.6);
+        this.handle.animation?.playOneShot('attack', { fade: 0.15, returnToLocomotion: true });
+        break;
+      }
+    }
   }
 
   private summonMinion() {
@@ -254,10 +390,13 @@ export class Enemy implements DamageableEnemy {
       }
     }
 
-    // بازسازی HP (تانک اثری/Boss مکانیکی)
-    if (this.data.regen && this.hp < this.maxHp) {
-      this.hp = Math.min(this.maxHp, this.hp + this.data.regen * dt);
+    // بازسازی HP (تانک اثری/Boss مکانیکی) + بازسازی فاز ۲ Boss
+    if ((this.data.regen || this.phase2RegenBonus) && this.hp < this.maxHp) {
+      this.hp = Math.min(this.maxHp, this.hp + (this.data.regen ?? 0) * dt + this.phase2RegenBonus * dt);
     }
+
+    // توانایی‌های دوره‌ای فاز ۲ Boss
+    if (this.phase2) this.updatePhase2Abilities(dt);
 
     this.updateMeshPos();
     this.animate(dt, effSpeed);

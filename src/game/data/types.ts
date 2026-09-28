@@ -52,6 +52,8 @@ export interface TowerData {
   buffRatePct?: number; // درصد افزایش سرعت شلیک برج‌های اطراف
   towerHeight?: number; // ارتفاع دهانه شلیک (پیش‌فرض ۲.۸)
   color: number; // رنگ نئون UI
+  /** حداقل مجموع ستاره‌های کمپین برای آزادسازی برج — ۰ یعنی از ابتدا باز */
+  unlockStars?: number;
   levels: TowerLevelStats[];
 }
 

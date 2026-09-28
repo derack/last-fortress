@@ -2,6 +2,7 @@
 
 import { ArrowRight, User, Lock, Star, Zap, Heart, Gauge, Check, Swords } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
+import { useStandaloneBack } from './standalone';
 import { HEROES } from '@/game/data/magic';
 import { t, faNum } from '@/game/data/i18n';
 
@@ -17,7 +18,7 @@ const ROLE_KEYS: Record<string, string> = {
 };
 
 export function HeroesPanel() {
-  const setScreen = useGameStore((s) => s.setScreen);
+  const goBack = useStandaloneBack();
   const save = useGameStore((s) => s.save);
   const setSelectedHero = useGameStore((s) => s.setSelectedHero);
   const unlockHero = useGameStore((s) => s.unlockHero);
@@ -37,7 +38,7 @@ export function HeroesPanel() {
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-gradient-to-b from-[#0b0f1c] to-[#101828]">
       <div className="flex items-center gap-3 border-b border-amber-400/20 bg-black/40 px-4 py-3">
-        <button onClick={() => setScreen('menu')}
+        <button onClick={goBack}
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-600/50 bg-black/40 text-slate-300 active:scale-95">
           <ArrowRight className="h-5 w-5" />
         </button>

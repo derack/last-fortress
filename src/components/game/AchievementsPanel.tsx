@@ -2,6 +2,7 @@
 
 import { ArrowRight, Trophy, Star, Swords, Flame, Shield, Zap } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
+import { useStandaloneBack } from './standalone';
 import { ACHIEVEMENTS } from '@/game/data/level1';
 import { t, faNum } from '@/game/data/i18n';
 
@@ -10,7 +11,7 @@ import { t, faNum } from '@/game/data/i18n';
 // ============================================================
 
 export function AchievementsPanel() {
-  const setScreen = useGameStore((s) => s.setScreen);
+  const goBack = useStandaloneBack();
   const save = useGameStore((s) => s.save);
   if (!save) return null;
 
@@ -19,7 +20,7 @@ export function AchievementsPanel() {
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-gradient-to-b from-[#0b0f1c] to-[#101828]">
       <div className="flex items-center gap-3 border-b border-amber-400/20 bg-black/40 px-4 py-3">
-        <button onClick={() => setScreen('menu')}
+        <button onClick={goBack}
           className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-600/50 bg-black/40 text-slate-300 active:scale-95">
           <ArrowRight className="h-5 w-5" />
         </button>

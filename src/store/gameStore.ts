@@ -65,6 +65,8 @@ interface GameState {
   autoIn: number;
   earlyBonus: number;
   banner: { wave: number; boss: boolean; visible: boolean } | null;
+  /** بنر «فاز ۲» Boss — نام اختصاصی هر Boss */
+  bossPhase: { nameKey: string; color: number } | null;
   waveClearedToast: { wave: number; bonus: number } | null;
   selectedTower: TowerInfo | null;
   buildMode: string | null;
@@ -120,6 +122,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   autoIn: 0,
   earlyBonus: 0,
   banner: null,
+  bossPhase: null,
   waveClearedToast: null,
   selectedTower: null,
   buildMode: null,
@@ -191,6 +194,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     autoIn: 0,
     earlyBonus: 0,
     banner: null,
+    bossPhase: null,
     waveClearedToast: null,
     selectedTower: null,
     buildMode: null,
@@ -236,6 +240,10 @@ export const useGameStore = create<GameState>((set, get) => ({
       case 'banner':
         set({ banner: { wave: p.wave as number, boss: p.boss as boolean, visible: true } });
         setTimeout(() => set({ banner: null }), 2400);
+        break;
+      case 'bossPhase':
+        set({ bossPhase: { nameKey: p.nameKey as string, color: p.color as number } });
+        setTimeout(() => set({ bossPhase: null }), 2800);
         break;
       case 'waveCleared':
         set({ waveClearedToast: { wave: p.wave as number, bonus: p.bonus as number } });

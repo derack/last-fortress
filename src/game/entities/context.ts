@@ -49,6 +49,10 @@ export interface GameContext {
   onEnemyLeak(enemy: DamageableEnemy): void;
   heroDamageBuff: number; // ضریب افزایش آسیب از قهرمان
   towerRateBuff: number; // ضریب افزایش سرعت شلیک (فرمان نبرد)
+  /** از کار انداختن موقت برج — فوران غول آتش/نفس اژدها/آئورای یخ */
+  disableTower(towerId: number, duration: number, color?: number): void;
+  /** نمایش بنر «فاز دوم» Boss در UI */
+  onBossPhase(nameKey: string, color: number): void;
 }
 
 export interface TowerLike {

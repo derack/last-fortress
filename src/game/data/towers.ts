@@ -1,8 +1,11 @@
-import type { TowerData } from './types';
+import type { SaveData, TowerData } from './types';
 
 // ============================================================
 // تعریف برج‌ها — کاملاً Data-Driven
 // هر برج ۵ سطح دارد؛ در سطح ۵ Transformation رخ می‌دهد
+// ------------------------------------------------------------
+// باز شدن تدریجی: هر برج با مجموع ستاره‌های کمپین آزاد می‌شود
+// (کل ستاره‌های ممکن: ۶ منطقه × ۳ ستاره = ۱۸)
 // ============================================================
 
 export const TOWERS: Record<string, TowerData> = {
@@ -18,6 +21,7 @@ export const TOWERS: Record<string, TowerData> = {
     canHitAir: true,
     projectile: 'bullet',
     color: 0xffb020,
+    unlockStars: 0, // نگهبان — از ابتدا باز
     levels: [
       { damage: 14, range: 9, fireRate: 2.2, upgradeCost: 100 },
       { damage: 20, range: 10, fireRate: 2.5, upgradeCost: 85 },
@@ -39,6 +43,7 @@ export const TOWERS: Record<string, TowerData> = {
     projectile: 'none', // زنجیره لحظه‌ای
     chainCount: 2,
     color: 0x8b5cf6,
+    unlockStars: 3,
     levels: [
       { damage: 26, range: 10, fireRate: 0.9, upgradeCost: 150 },
       { damage: 36, range: 10.5, fireRate: 1.0, upgradeCost: 120 },
@@ -61,6 +66,7 @@ export const TOWERS: Record<string, TowerData> = {
     splashRadius: 2.8,
     burnDps: 6,
     color: 0xf97316,
+    unlockStars: 2,
     levels: [
       { damage: 30, range: 8.5, fireRate: 0.8, upgradeCost: 130 },
       { damage: 42, range: 9, fireRate: 0.85, upgradeCost: 105 },
@@ -83,6 +89,7 @@ export const TOWERS: Record<string, TowerData> = {
     slowFactor: 0.55,
     slowDuration: 2.0,
     color: 0x22d3ee,
+    unlockStars: 1,
     levels: [
       { damage: 8, range: 8, fireRate: 1.4, upgradeCost: 90 },
       { damage: 12, range: 8.5, fireRate: 1.5, upgradeCost: 75 },
@@ -105,6 +112,7 @@ export const TOWERS: Record<string, TowerData> = {
     splashRadius: 3.4,
     towerHeight: 2.6,
     color: 0xf59e0b,
+    unlockStars: 5,
     levels: [
       { damage: 46, range: 7.5, fireRate: 0.5, upgradeCost: 160 },
       { damage: 64, range: 8, fireRate: 0.55, upgradeCost: 130 },
@@ -129,6 +137,7 @@ export const TOWERS: Record<string, TowerData> = {
     armorShred: 2,
     towerHeight: 2.5,
     color: 0x84cc16,
+    unlockStars: 7,
     levels: [
       { damage: 10, range: 8.5, fireRate: 1.1, upgradeCost: 120 },
       { damage: 14, range: 9, fireRate: 1.2, upgradeCost: 95 },
@@ -151,6 +160,7 @@ export const TOWERS: Record<string, TowerData> = {
     pierceArmor: true,
     towerHeight: 3.0,
     color: 0xd97706,
+    unlockStars: 9,
     levels: [
       { damage: 70, range: 14, fireRate: 0.45, upgradeCost: 180 },
       { damage: 98, range: 15, fireRate: 0.5, upgradeCost: 145 },
@@ -172,6 +182,7 @@ export const TOWERS: Record<string, TowerData> = {
     projectile: 'prism',
     towerHeight: 3.2,
     color: 0x38bdf8,
+    unlockStars: 11,
     levels: [
       { damage: 34, range: 9.5, fireRate: 1.0, upgradeCost: 140 },
       { damage: 48, range: 10, fireRate: 1.1, upgradeCost: 110 },
@@ -195,6 +206,7 @@ export const TOWERS: Record<string, TowerData> = {
     buffRatePct: 0.25,
     towerHeight: 3.0,
     color: 0xfbbf24,
+    unlockStars: 13,
     levels: [
       { damage: 18, range: 9, fireRate: 1.2, upgradeCost: 170 },
       { damage: 26, range: 9.5, fireRate: 1.3, upgradeCost: 135 },
@@ -218,6 +230,7 @@ export const TOWERS: Record<string, TowerData> = {
     executeMultiplier: 2.2,
     towerHeight: 3.4,
     color: 0x8b5cf6,
+    unlockStars: 15,
     levels: [
       { damage: 40, range: 9, fireRate: 0.9, upgradeCost: 200 },
       { damage: 56, range: 9.5, fireRate: 0.95, upgradeCost: 160 },
@@ -235,3 +248,29 @@ export const TOWER_BUILD_ORDER = [
 /** ضریب فاصله زنجیره صاعقه و افت آسیب هر پرش */
 export const CHAIN_JUMP_RADIUS = 8;
 export const CHAIN_FALLOFF = 0.72;
+
+// ============================================================
+// باز شدن تدریجی برج‌ها — بر اساس مجموع ستاره‌های کمپین
+// ============================================================
+
+/** مجموع ستاره‌های به‌دست‌آمده در کل کمپین */
+export function totalStars(save: SaveData): number {
+  return Object.values(save.levels).reduce((sum, r) => sum + (r.stars ?? 0), 0);
+}
+
+/** آیا برج برای این ذخیره باز است؟ */
+export function isTowerUnlocked(save: SaveData | null, towerId: string): boolean {
+  const tw = TOWERS[towerId];
+  if (!tw) return false;
+  if (!save) return (tw.unlockStars ?? 0) === 0;
+  return totalStars(save) >= (tw.unlockStars ?? 0);
+}
+
+/** ستاره‌های باقی‌مانده تا آزادسازی برج (۰ = باز) */
+export function starsUntilTower(save: SaveData | null, towerId: string): number {
+  const tw = TOWERS[towerId];
+  if (!tw) return 0;
+  const need = tw.unlockStars ?? 0;
+  if (!save) return need;
+  return Math.max(0, need - totalStars(save));
+}

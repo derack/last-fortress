@@ -5,7 +5,7 @@ import { ArrowRight, Lock, Star, Play, Heart, Swords, Shield, Gem, Check, Ghost,
 import { useGameStore } from '@/store/gameStore';
 import { REGIONS, LEVELS, isRegionUnlocked } from '@/game/data/levels';
 import { ENEMIES } from '@/game/data/enemies';
-import { TOWERS, TOWER_BUILD_ORDER } from '@/game/data/towers';
+import { TOWERS, TOWER_BUILD_ORDER, isTowerUnlocked, starsUntilTower } from '@/game/data/towers';
 import { t, faNum } from '@/game/data/i18n';
 
 // ============================================================
@@ -29,6 +29,16 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
   const save = useGameStore((s) => s.save);
   const setPendingLevel = useGameStore((s) => s.setPendingLevel);
   const [briefingId, setBriefingId] = useState<string | null>(null);
+  // حالت مستقل (iframe) — دکمه بازگشت/شروع به پنجره والد پیام می‌دهند
+  const standalone = typeof window !== 'undefined' && window.self !== window.top;
+
+  const goBack = () => {
+    if (standalone && typeof window !== 'undefined') {
+      window.parent.postMessage({ type: 'closePage' }, '*');
+    } else {
+      setScreen('menu');
+    }
+  };
 
   if (!save) return null;
 
@@ -42,12 +52,14 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
 
   return (
     <div className="absolute inset-0 z-20 flex flex-col bg-gradient-to-b from-[#0b0f1c] to-[#101828]">
-      {/* هدر */}
+      {/* هدر — در حالت iframe دکمه بستن روی قاب والد است */}
       <div className="flex items-center gap-3 border-b border-amber-400/20 bg-black/40 px-4 py-3">
-        <button onClick={() => setScreen('menu')}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-600/50 bg-black/40 text-slate-300 active:scale-95">
-          <ArrowRight className="h-5 w-5" />
-        </button>
+        {!standalone && (
+          <button onClick={goBack}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-600/50 bg-black/40 text-slate-300 active:scale-95">
+            <ArrowRight className="h-5 w-5" />
+          </button>
+        )}
         <h2 className="text-xl font-black text-amber-200">{t('campaign')}</h2>
       </div>
 
@@ -131,10 +143,24 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
                   const tw = TOWERS[id];
                   if (!tw) return null;
                   const Icon = TOWER_ICONS[tw.id] ?? Shield;
+                  // وضعیت باز شدن تدریجی — قفل با ستاره
+                  const unlocked = isTowerUnlocked(save, id);
+                  const remaining = starsUntilTower(save, id);
                   return (
-                    <div key={id} className="flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-black/40 px-2.5 py-1.5 text-xs font-bold text-slate-300">
-                      <Icon className="h-4 w-4" style={{ color: '#' + tw.color.toString(16).padStart(6, '0') }} />
+                    <div key={id} className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-bold
+                      ${unlocked ? 'border-slate-700/60 bg-black/40 text-slate-300' : 'border-slate-800/70 bg-black/60 text-slate-500'}`}>
+                      {unlocked ? (
+                        <Icon className="h-4 w-4" style={{ color: '#' + tw.color.toString(16).padStart(6, '0') }} />
+                      ) : (
+                        <Lock className="h-3.5 w-3.5 text-slate-500" />
+                      )}
                       {t(tw.nameKey)}
+                      {!unlocked && remaining > 0 && (
+                        <span className="flex items-center gap-0.5 text-yellow-300/70">
+                          <Star className="h-3 w-3 fill-yellow-300/70" />
+                          {faNum(remaining)}
+                        </span>
+                      )}
                     </div>
                   );
                 })}
