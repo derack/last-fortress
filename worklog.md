@@ -232,3 +232,20 @@ Stage Summary:
 - تحویل: download/azar-art-bible-asset-spec.pdf (۲۶ صفحه، ۶۶۰KB، وکتور) + سورس download/azar-art-bible-asset-spec.html (قابل ویرایش) + assets/fonts
 - سند = مرجع واحد ۲۹ دارایی؛ قرارداد ۱۰۰٪ هم‌تراز با کد فعلی (AssetManifest/ModelNormalizer/انیمیشن‌ها) → هر GLB منطبق بدون تغییر کد لود می‌شود؛ کاربر می‌تواند پرامپت هر کاراکتر را مستقیم در Meshy/Tripo/Rodin کپی کند
 - گام بعدی پروژه: اجرای گام ۱ جدول ۱۰.۴ — تولید آرمان جدید (کارت ۶.۱) با گردش کار فصل ۵ و پذیرش با فصل ۱۰؛ Gameplay دست‌نخورده ماند (صفر تغییر کد در این تسک)
+
+---
+Task ID: 12-prep
+Agent: main (Super Z)
+Task: آماده‌سازی کنسول تست کاربر + دریافت و تحلیل ZIP آپلودی کاربر (FINAL GAME COMPLETION & POLISH PASS)
+
+Work Log:
+- سرور dev روی پورت 3000 در حال اجرا بود (HTTP 200) — بدون ری‌استارت
+- تست مرورگر: صفحه اصلی → نبرد، صفر error (فقط warningهای انتظار GLB)
+- کشف save تست قدیمی (نمایش «موج ۱۸ از ۱۰») → ریست کامل localStorage/sessionStorage → نبرد تمیز «موج ۱ از ۱۰» تأیید شد
+- ZIP کاربر دانلود شد: uploads/extracted/New Text Document.txt — MASTER PROMPT «FINAL GAME COMPLETION & POLISH PASS» با ۶۶ بخش
+- نکته کلیدی: PROMPT فرض می‌کند Campaign 100 مرحله‌ای (10 Chapter×10 Stage) و Aether Forge ۲۰ سطحی موجودند؛ در کد فعلی کمپین ۶ منطقه‌ای است و Forge وجود ندارد → فاز اول = ساخت این دو سیستم (ادغام با Task 12 تأییدشده: 100 مرحله + ارتقای هماهنگ + سقف 20 سطح)
+- قوانین سخت PROMPT: ممنوعیت تولید Character سه‌بعدی جدید، حفظ کامل Asset Pipeline، arman.glb = TEMPORARY/DO-NOT-SHIP، ممنوع IP (Thor...)، همه متن‌ها از i18n، ترتیب اجرا ۱۲ فاز (Audit → ... → Final Report)
+
+Stage Summary:
+- کنسول تست کاربر آماده است؛ بازی سالم با صفر error
+- ZIP تحلیل شد و به‌عنوان سند اجرایی Task 12 نهایی (Release Candidate) ثبت شد — هنوز هیچ تغییری در کد داده نشده تا تست کاربر مختل نشود
