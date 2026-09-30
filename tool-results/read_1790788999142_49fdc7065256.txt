@@ -1,0 +1,718 @@
+     1→'use client';
+     2→
+     3→import { useState } from 'react';
+     4→import {
+     5→  Heart, Coins, Gem, Play, Pause, FastForward, Zap, Flame, Shield, Snowflake,
+     6→  Crosshair, X, Star, Home, RotateCcw, Settings, User, Sparkles, ArrowUpCircle,
+     7→  Trash2, Target, Clock, FlaskConical, MoveDiagonal, Sun, Moon, Lock, Swords,
+     8→} from 'lucide-react';
+     9→import { useGameStore } from '@/store/gameStore';
+    10→import { TOWERS, TOWER_BUILD_ORDER, isTowerUnlocked, starsUntilTower } from '@/game/data/towers';
+    11→import { nextStageId } from '@/game/data/campaign';
+    12→import { MAGIC } from '@/game/data/magic';
+    13→import { HEROES } from '@/game/data/magic';
+    14→import { t, faNum } from '@/game/data/i18n';
+    15→import type { TargetingMode } from '@/game/data/types';
+    16→
+    17→// ============================================================
+    18→// HUD نبرد — تمام رابط داخل بازی
+    19→// ============================================================
+    20→
+    21→const TOWER_ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+    22→  sentinel: Crosshair, lightning: Zap, fire: Flame, ice: Snowflake,
+    23→  cannon: Target, poison: FlaskConical, ballista: MoveDiagonal,
+    24→  arcane: Sparkles, temple: Sun, void: Moon,
+    25→};
+    26→
+    27→const MAGIC_ICONS: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+    28→  skyLightning: Zap, fireRain: Flame, arianaShield: Shield,
+    29→  deepFreeze: Snowflake, azarBlessing: Sun, coreMend: Heart,
+    30→};
+    31→
+    32→const TARGET_LABEL: Record<TargetingMode, string> = {
+    33→  first: 'targetFirst', strongest: 'targetStrongest', weakest: 'targetWeakest',
+    34→  fastest: 'targetFastest', boss: 'targetBoss',
+    35→};
+    36→
+    37→interface BattleActions {
+    38→  get: () => BattleGameApi | null;
+    39→  endBattle: () => void;
+    40→  startBattle: () => void;
+    41→}
+    42→
+    43→export interface BattleGameApi {
+    44→  setPaused(p: boolean): void;
+    45→  setSpeed(s: number): void;
+    46→  setBuildMode(id: string | null): void;
+    47→  setMagicPending(id: string | null): void;
+    48→  upgradeTower(id: number): boolean;
+    49→  sellTower(id: number): boolean;
+    50→  useTowerAbility(id: number): boolean;
+    51→  cycleTargeting(id: number): void;
+    52→  useHeroAbility(): boolean;
+    53→  deployHero(p: { x: number; y: number; z: number }): void;
+    54→  selectHeroMode(on: boolean): void;
+    55→  startWave(): void;
+    56→}
+    57→
+    58→export function BattleUI({ actions }: { actions: BattleActions }) {
+    59→  const st = useGameStore();
+    60→  const [pauseMenu, setPauseMenu] = useState(false);
+    61→  const [showSettings, setShowSettings] = useState(false);
+    62→  const game = actions.get();
+    63→
+    64→  const corePct = Math.round((st.coreHp / st.coreMaxHp) * 100);
+    65→  const heroData = HEROES[st.selectedHero] ?? HEROES.arman;
+    66→
+    67→  const togglePause = (p: boolean) => {
+    68→    game?.setPaused(p);
+    69→    setPauseMenu(p);
+    70→  };
+    71→
+    72→  const backToMap = () => {
+    73→    actions.endBattle();
+    74→    useGameStore.getState().setScreen('map');
+    75→  };
+    76→
+    77→  const restart = () => {
+    78→    actions.endBattle();
+    79→    setTimeout(() => actions.startBattle(), 60);
+    80→  };
+    81→
+    82→  return (
+    83→    <div className="absolute inset-0 z-10 pointer-events-none">
+    84→      {/* وینیت سینمایی — عمق بیشتر تصویر */}
+    85→      <div className="battle-vignette absolute inset-0" />
+    86→
+    87→      {/* بخش ۱۴ — فیدبک ضربه به هسته: پالس قرمز لبه صفحه (با هر ضربه از نو اجرا می‌شود) */}
+    88→      {st.coreHitAt > 0 && <div key={st.coreHitAt} className="core-hit-flash absolute inset-0" />}
+    89→      {/* بخش ۱۴ — هشدار ماندگار هسته بحرانی (≤ ۳۰٪) */}
+    90→      {corePct <= 30 && <div className="core-low-warning absolute inset-0" />}
+    91→
+    92→      {/* ================= نوار بالا ================= */}
+    93→      {/* فاز ۸ — hud-top: Safe Area در globals.css */}
+    94→      <div className="hud-top absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-auto">
+    95→        {/* سلامت هسته */}
+    96→        <div className="flex flex-col gap-1">
+    97→          <div className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-black/60 px-2.5 py-1.5 backdrop-blur-sm">
+    98→            <Heart className={`h-4 w-4 ${corePct < 30 ? 'animate-pulse text-rose-500' : 'text-rose-400'}`} />
+    99→            <span className="text-sm font-black text-rose-200">{faNum(corePct)}٪</span>
+   100→          </div>
+   101→          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-black/60">
+   102→            <div className={`h-full rounded-full transition-all ${corePct < 30 ? 'bg-rose-500' : 'bg-gradient-to-r from-rose-400 to-amber-400'}`}
+   103→              style={{ width: `${corePct}%` }} />
+   104→          </div>
+   105→        </div>
+   106→
+   107→        {/* موج */}
+   108→        <div className="flex flex-col items-center gap-1">
+   109→          <div className="rounded-lg border border-amber-400/30 bg-black/60 px-3 py-1.5 backdrop-blur-sm">
+   110→            <span className="text-sm font-black text-amber-200">
+   111→              {t('waveOf', faNum(st.wave), faNum(st.waveTotal))}
+   112→            </span>
+   113→          </div>
+   114→          {st.shieldActive && (
+   115→            <div className="flex items-center gap-1 rounded-lg border border-amber-400/40 bg-amber-500/20 px-2 py-0.5 text-xs font-bold text-amber-200 animate-pulse">
+   116→              <Shield className="h-3.5 w-3.5" />
+   117→              {t('shieldActive')}
+   118→            </div>
+   119→          )}
+   120→        </div>
+   121→
+   122→        {/* منابع + کنترل */}
+   123→        <div className="flex flex-col items-end gap-1.5">
+   124→          <div className="flex items-center gap-1.5">
+   125→            <div className="flex items-center gap-1 rounded-lg border border-amber-500/30 bg-black/60 px-2.5 py-1.5 backdrop-blur-sm">
+   126→              <Coins className="h-4 w-4 text-amber-400" />
+   127→              <span className="text-sm font-black text-amber-200">{faNum(st.coins)}</span>
+   128→            </div>
+   129→            <div className="flex items-center gap-1 rounded-lg border border-cyan-400/30 bg-black/60 px-2.5 py-1.5 backdrop-blur-sm">
+   130→              <Gem className="h-4 w-4 text-cyan-400" />
+   131→              <span className="text-sm font-black text-cyan-200">{faNum(st.crystals)}</span>
+   132→            </div>
+   133→          </div>
+   134→          <div className="flex gap-1.5">
+   135→            <button onClick={() => game?.setSpeed(st.speed === 1 ? 2 : 1)}
+   136→              className={`flex h-9 w-9 items-center justify-center rounded-lg border backdrop-blur-sm active:scale-95
+   137→                ${st.speed === 2 ? 'border-cyan-400/50 bg-cyan-500/20 text-cyan-300' : 'border-slate-600/50 bg-black/60 text-slate-300'}`}>
+   138→              <FastForward className="h-4 w-4" />
+   139→            </button>
+   140→            <button onClick={() => togglePause(true)}
+   141→              className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-600/50 bg-black/60 text-slate-300 backdrop-blur-sm active:scale-95">
+   142→              <Pause className="h-4 w-4" />
+   143→            </button>
+   144→          </div>
+   145→        </div>
+   146→      </div>
+   147→
+   148→      {/* ================= بنر موج / Boss ================= */}
+   149→      {/* ================= بنر فاز ۲ Boss ================= */}
+   150→      {st.bossPhase && (
+   151→        <div className="absolute left-1/2 top-[22%] -translate-x-1/2 text-center banner-anim pointer-events-none">
+   152→          <div
+   153→            className="rounded-2xl border bg-black/85 px-8 py-4 shadow-[0_0_50px_rgba(168,85,247,0.5)]"
+   154→            style={{ borderColor: '#' + st.bossPhase.color.toString(16).padStart(6, '0') }}
+   155→          >
+   156→            <div className="text-xs font-black tracking-[0.35em] text-rose-400">{t('bossPhaseTitle')}</div>
+   157→            <div
+   158→              className="mt-1 text-2xl font-black animate-pulse"
+   159→              style={{ color: '#' + st.bossPhase.color.toString(16).padStart(6, '0') }}
+   160→            >
+   161→              {t(st.bossPhase.nameKey)}
+   162→            </div>
+   163→          </div>
+   164→        </div>
+   165→      )}
+   166→
+   167→      {/* ================= بنر موج ================= */}
+   168→      {st.banner && (
+   169→        <div className="absolute left-1/2 top-[30%] -translate-x-1/2 text-center banner-anim pointer-events-none">
+   170→          {st.banner.boss ? (
+   171→            <div className="rounded-2xl border border-rose-500/50 bg-black/80 px-8 py-4 shadow-[0_0_40px_rgba(239,68,68,0.4)]">
+   172→              <div className="text-xl font-black text-rose-400 animate-pulse">{t('bossIncoming')}</div>
+   173→            </div>
+   174→          ) : (
+   175→            <div className="rounded-2xl border border-amber-400/40 bg-black/75 px-8 py-3">
+   176→              <div className="text-3xl font-black text-amber-300 drop-shadow-[0_0_12px_rgba(245,158,11,0.6)]">
+   177→                {t('wave')} {faNum(st.banner.wave)}
+   178→              </div>
+   179→            </div>
+   180→          )}
+   181→        </div>
+   182→      )}
+   183→
+   184→      {/* پیام پاک‌سازی موج */}
+   185→      {st.waveClearedToast && (
+   186→        <div className="absolute left-1/2 top-[38%] -translate-x-1/2 rounded-xl border border-emerald-400/40 bg-black/75 px-6 py-2.5 text-center banner-anim pointer-events-none">
+   187→          <div className="text-lg font-black text-emerald-300">
+   188→            {t('waveCleared', faNum(st.waveClearedToast.bonus))}
+   189→          </div>
+   190→        </div>
+   191→      )}
+   192→
+   193→      {/* ================= راهنمای آموزش ================= */}
+   194→      {st.tutorialStep && (
+   195→        <div className="absolute left-1/2 top-24 -translate-x-1/2 max-w-[85%] rounded-xl border border-cyan-400/40 bg-black/80 px-5 py-2.5 text-center tutorial-anim pointer-events-none">
+   196→          <div className="text-sm font-bold text-cyan-200">
+   197→            {t(st.tutorialStep === 'welcome' ? 'tutorialWelcome' :
+   198→              st.tutorialStep === 'build' ? 'tutorialBuild' :
+   199→              st.tutorialStep === 'wave' ? 'tutorialWave' :
+   200→              st.tutorialStep === 'upgrade' ? 'tutorialUpgrade' :
+   201→              st.tutorialStep === 'magic' ? 'tutorialMagic' : 'tutorialDone')}
+   202→          </div>
+   203→        </div>
+   204→      )}
+   205→
+   206→      {/* ================= راهنمای انتخاب محل جادو ================= */}
+   207→      {st.magicPending && (
+   208→        <div className="absolute left-1/2 top-40 -translate-x-1/2 rounded-xl border border-violet-400/50 bg-violet-950/80 px-5 py-2 text-sm font-black text-violet-200 tutorial-anim pointer-events-none">
+   209→          {t('selectTarget')}
+   210→        </div>
+   211→      )}
+   212→
+   213→      {/* ================= دکمه شروع موج ================= */}
+   214→      {!st.waveActive && !st.victory && !st.defeat && st.wave <= st.waveTotal && (
+   215→      <div className="hud-wave absolute left-1/2 -translate-x-1/2 pointer-events-auto">
+   216→          <button onClick={() => game?.startWave()}
+   217→            className="flex flex-col items-center gap-0.5 rounded-2xl border border-emerald-400/50
+   218→            bg-gradient-to-b from-emerald-500/90 to-emerald-700/90 px-8 py-3 shadow-[0_0_25px_rgba(16,185,129,0.35)] active:scale-95">
+   219→            <span className="text-lg font-black text-white">{t('startWave')}</span>
+   220→            {st.autoIn > 0 && !st.buildMode && (
+   221→              <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-100/90">
+   222→                <Clock className="h-3 w-3" />
+   223→                {faNum(Math.ceil(st.autoIn))} — {t('nextWaveBonus', faNum(15 + Math.ceil(st.autoIn) * 4))}
+   224→              </span>
+   225→            )}
+   226→          </button>
+   227→        </div>
+   228→      )}
+   229→
+   230→      {/* ================= جادو (سمت چپ — شبکه ۲ ستونه) — فاز ۸: hud-magic بالای نوار برج ================= */}
+   231→      <div className="hud-magic absolute grid w-[7.5rem] grid-cols-2 gap-2 pointer-events-auto">
+   232→        {st.magicState.map((m) => {
+   233→          const M = MAGIC[m.id];
+   234→          const Icon = MAGIC_ICONS[m.id] ?? Sparkles;
+   235→          const cdPct = m.cd > 0 ? (m.cd / m.cdMax) * 100 : 0;
+   236→          return (
+   237→            <button key={m.id}
+   238→              onClick={() => game?.setMagicPending(M.targeted ? m.id : m.id)}
+   239→              disabled={!m.affordable || !!st.magicPending}
+   240→              className={`relative flex h-14 w-14 items-center justify-center rounded-2xl border backdrop-blur-sm transition-all active:scale-90
+   241→                ${st.magicPending === m.id ? 'border-white bg-white/20 scale-110' :
+   242→                  m.affordable ? 'border-amber-400/50 bg-black/70 shadow-[0_0_15px_rgba(245,158,11,0.25)]' :
+   243→                  'border-slate-700/60 bg-black/70 opacity-60'}`}>
+   244→              <Icon className="h-6 w-6" style={{ color: M.color }} />
+   245→              {/* هزینه کریستال */}
+   246→              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-black/80 px-1.5 text-[9px] font-black text-cyan-300">
+   247→                {faNum(m.cost)}
+   248→              </span>
+   249→              {/*Cooldown */}
+   250→              {cdPct > 0 && (
+   251→                <>
+   252→                  <div className="absolute inset-0 rounded-2xl bg-black/70" style={{ clipPath: `inset(${100 - cdPct}% 0 0 0)` }} />
+   253→                  <span className="absolute text-xs font-black text-white">{faNum(Math.ceil(m.cd))}</span>
+   254→                </>
+   255→              )}
+   256→            </button>
+   257→          );
+   258→        })}
+   259→      </div>
+   260→
+   261→      {/* ================= قهرمان (بالای شبکه جادو) — فاز ۸: hud-hero ================= */}
+   262→      <div className="hud-hero absolute pointer-events-auto">
+   263→        <button onClick={() => {
+   264→          if (!st.hero?.deployed) {
+   265→            useGameStore.getState().pushToast('deployHint', 'info');
+   266→            game?.selectHeroMode(true);
+   267→          } else {
+   268→            game?.useHeroAbility();
+   269→          }
+   270→        }}
+   271→          disabled={!!st.hero?.deployed && (st.hero.dead || st.hero.abilityCd > 0)}
+   272→          className={`relative flex h-14 w-14 flex-col items-center justify-center rounded-2xl border backdrop-blur-sm active:scale-90
+   273→            ${!st.hero?.deployed ? 'border-amber-400/50 bg-amber-600/30' :
+   274→            st.hero.dead ? 'border-red-500/70 bg-red-950/70' :
+   275→            st.hero.abilityCd <= 0 ? 'border-amber-300/70 bg-amber-500/25 shadow-[0_0_18px_rgba(245,158,11,0.35)]' : 'border-slate-700/60 bg-black/70 opacity-70'}`}>
+   276→          <User className={`h-6 w-6 ${st.hero?.dead ? 'text-red-400' : 'text-amber-300'}`} />
+   277→          <span className="text-[9px] font-black text-amber-200">
+   278→            {!st.hero?.deployed ? t('deployHero').split(' ')[0] : `${t('heroLevel', faNum(st.hero.level))}`}
+   279→          </span>
+   280→          {/* مرگ — شمارش معکوس ریسپاون */}
+   281→          {st.hero?.deployed && st.hero.dead && (
+   282→            <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-black/75">
+   283→              <span className="text-sm font-black text-red-400">{faNum(st.hero.respawnIn)}</span>
+   284→              <span className="text-[7px] font-bold text-slate-300">{t('heroRespawnShort')}</span>
+   285→            </div>
+   286→          )}
+   287→          {/* سرد توانایی */}
+   288→          {st.hero?.deployed && !st.hero.dead && st.hero.abilityCd > 0 && (
+   289→            <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 text-xs font-black text-white">
+   290→              {faNum(Math.ceil(st.hero.abilityCd))}
+   291→            </div>
+   292→          )}
+   293→          {/* نوار جان هیرو */}
+   294→          {st.hero?.deployed && !st.hero.dead && (
+   295→            <div className="absolute -bottom-1.5 left-1/2 h-1.5 w-[4.5rem] -translate-x-1/2 overflow-hidden rounded-full border border-black/60 bg-black/80">
+   296→              <div
+   297→                className={`h-full transition-all duration-300 ${st.hero.hp / st.hero.maxHp > 0.35 ? 'bg-gradient-to-l from-emerald-400 to-lime-300' : 'bg-gradient-to-l from-red-500 to-orange-400'}`}
+   298→                style={{ width: `${Math.max(0, Math.min(100, (st.hero.hp / st.hero.maxHp) * 100))}%` }}
+   299→              />
+   300→            </div>
+   301→          )}
+   302→        </button>
+   303→      </div>
+   304→
+   305→      {/* ================= نوار برج‌ها (پایین — اسکرول افقی) — فاز ۸: hud-bottom Safe Area ================= */}
+   306→      <div className="hud-bottom absolute inset-x-0 bottom-0 border-t border-amber-400/20 bg-gradient-to-t from-black/90 to-black/50 pointer-events-auto">
+   307→        <div className="flex items-end gap-2 overflow-x-auto pb-1 sm:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+   308→          {TOWER_BUILD_ORDER.map((id) => {
+   309→            const tw = TOWERS[id];
+   310→            const Icon = TOWER_ICONS[id];
+   311→            const afford = st.coins >= tw.cost;
+   312→            const active = st.buildMode === id;
+   313→            // باز شدن تدریجی — قفل با مجموع ستاره‌های کمپین
+   314→            const unlocked = isTowerUnlocked(st.save, id);
+   315→            const starsNeeded = starsUntilTower(st.save, id);
+   316→            const handleTap = () => {
+   317→              if (!unlocked) {
+   318→                useGameStore.getState().pushToast('towerLocked', 'error');
+   319→                return;
+   320→              }
+   321→              game?.setBuildMode(active ? null : id);
+   322→            };
+   323→            return (
+   324→              <button key={id}
+   325→                onClick={handleTap}
+   326→                className={`relative flex w-[4.1rem] shrink-0 flex-col items-center gap-0.5 rounded-xl border px-1 py-2 backdrop-blur-sm transition-all active:scale-95
+   327→                  ${!unlocked ? 'border-slate-800/80 bg-black/70 opacity-45 grayscale' :
+   328→                  active ? 'border-white bg-white/15 scale-105' :
+   329→                  afford ? 'border-slate-600/60 bg-black/60' : 'border-slate-800/60 bg-black/60 opacity-50'}`}>
+   330→                {unlocked ? (
+   331→                  <Icon className="h-6 w-6" style={{ color: '#' + tw.color.toString(16).padStart(6, '0') }} />
+   332→                ) : (
+   333→                  <Lock className="h-5 w-5 text-slate-400" />
+   334→                )}
+   335→                <span className="whitespace-nowrap text-[11px] font-black text-slate-200">{t(tw.nameKey)}</span>
+   336→                {!unlocked ? (
+   337→                  <span className="flex items-center gap-0.5 text-[10px] font-black text-yellow-300">
+   338→                    <Star className="h-3 w-3 fill-yellow-300" />
+   339→                    {faNum(tw.unlockStars ?? 0)}
+   340→                  </span>
+   341→                ) : (
+   342→                  <span className="flex items-center gap-0.5 text-[10px] font-black text-amber-400">
+   343→                    <Coins className="h-3 w-3" />
+   344→                    {faNum(tw.cost)}
+   345→                  </span>
+   346→                )}
+   347→                {!unlocked && starsNeeded > 0 && (
+   348→                  <span className="absolute -top-1.5 -left-1.5 flex h-4 min-w-4 items-center justify-center rounded-full
+   349→                    bg-slate-700 px-1 text-[9px] font-black text-yellow-300">
+   350→                    {faNum(starsNeeded)}
+   351→                  </span>
+   352→                )}
+   353→              </button>
+   354→            );
+   355→          })}
+   356→        </div>
+   357→      </div>
+   358→
+   359→      {/* ================= پنل برج انتخاب‌شده ================= */}
+   360→      {st.selectedTower && <TowerPanel actions={actions} />}
+   361→
+   362→      {/* ================= منوی توقف ================= */}
+   363→      {pauseMenu && !st.victory && !st.defeat && (
+   364→        <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm pointer-events-auto">
+   365→          <div className="w-72 rounded-3xl border border-amber-400/30 bg-[#0d1420] p-6 text-center">
+   366→            <h3 className="text-2xl font-black text-amber-200">{t('pause')}</h3>
+   367→            <div className="mt-5 flex flex-col gap-2.5">
+   368→              <MenuActionBtn icon={Play} label={t('resume')} onClick={() => togglePause(false)} primary />
+   369→              <MenuActionBtn icon={RotateCcw} label={t('restart')} onClick={restart} />
+   370→              <MenuActionBtn icon={Settings} label={t('settings')} onClick={() => setShowSettings(true)} />
+   371→              <MenuActionBtn icon={Home} label={t('quitToMap')} onClick={backToMap} />
+   372→            </div>
+   373→          </div>
+   374→        </div>
+   375→      )}
+   376→
+   377→      {/* ================= تنظیمات داخل نبرد ================= */}
+   378→      {showSettings && (
+   379→        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/80 p-4 pointer-events-auto">
+   380→          <CompactSettings onClose={() => setShowSettings(false)} />
+   381→        </div>
+   382→      )}
+   383→
+   384→      {/* ================= پیروزی ================= */}
+   385→      {st.victory && (
+   386→        <EndOverlay
+   387→          title={t('victory')}
+   388→          titleClass="from-amber-200 to-amber-500"
+   389→          subtitle={t('victorySub')}
+   390→          stars={st.victory.stars}
+   391→          rewards={[
+   392→            { icon: Coins, value: faNum(st.victory.rewards.coins), label: t('coins'), color: 'text-amber-400' },
+   393→            { icon: Gem, value: faNum(st.victory.rewards.crystals), label: t('crystal'), color: 'text-cyan-400' },
+   394→            { icon: Sparkles, value: faNum(st.victory.rewards.knowledge), label: t('knowledge'), color: 'text-violet-400' },
+   395→          ]}
+   396→          actions={actions}
+   397→        />
+   398→      )}
+   399→
+   400→      {/* ================= شکست ================= */}
+   401→      {st.defeat && (
+   402→        <EndOverlay
+   403→          title={t('defeat')}
+   404→          titleClass="from-rose-300 to-rose-600"
+   405→          subtitle={t('defeatSub')}
+   406→          stars={0}
+   407→          actions={actions}
+   408→        />
+   409→      )}
+   410→
+   411→      {/* ================= Toasts ================= */}
+   412→      <div className="absolute left-1/2 top-16 flex -translate-x-1/2 flex-col gap-1.5 pointer-events-none">
+   413→        {st.toasts.map((toast) => (
+   414→          <div key={toast.id}
+   415→            className={`rounded-lg border px-4 py-1.5 text-sm font-black backdrop-blur-sm toast-anim
+   416→            ${toast.type === 'error' ? 'border-rose-500/50 bg-rose-950/80 text-rose-200' : 'border-emerald-500/50 bg-emerald-950/80 text-emerald-200'}`}>
+   417→            {t(toast.key)}
+   418→          </div>
+   419→        ))}
+   420→      </div>
+   421→    </div>
+   422→  );
+   423→}
+   424→
+   425→// ---------------------------- پنل برج ----------------------------
+   426→
+   427→function TowerPanel({ actions }: { actions: BattleActions }) {
+   428→  const st = useGameStore();
+   429→  const tw = TOWERS[st.selectedTower!.towerId];
+   430→  const game = actions.get();
+   431→  const info = st.selectedTower!;
+   432→  const Icon = TOWER_ICONS[info.towerId] ?? Crosshair;
+   433→  const maxed = info.upgradeCost < 0;
+   434→
+   435→  return (
+   436→    <div className="absolute inset-x-3 bottom-20 z-20 rounded-2xl border border-slate-600/50 bg-black/85 p-3 backdrop-blur-md pointer-events-auto panel-anim">
+   437→      <div className="flex items-center gap-2">
+   438→        <div className="flex h-11 w-11 items-center justify-center rounded-xl border"
+   439→          style={{ borderColor: '#' + tw.color.toString(16).padStart(6, '0'), background: 'rgba(0,0,0,0.5)' }}>
+   440→          <Icon className="h-6 w-6" style={{ color: '#' + tw.color.toString(16).padStart(6, '0') }} />
+   441→        </div>
+   442→        <div className="flex-1">
+   443→          <div className="flex items-center gap-2">
+   444→            <span className="text-base font-black text-slate-100">{t(tw.nameKey)}</span>
+   445→            <span className="rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-black text-amber-300">
+   446→              {t('level')} {faNum(info.level)}
+   447→            </span>
+   448→          </div>
+   449→          <div className="mt-0.5 flex gap-3 text-[11px] font-bold text-slate-400">
+   450→            <span>{t('damage')}: <b className="text-slate-200">{faNum(info.damage)}</b></span>
+   451→            <span>{t('range')}: <b className="text-slate-200">{faNum(info.range)}</b></span>
+   452→            <span>{t('fireRate')}: <b className="text-slate-200">{faNum(info.fireRate)}</b></span>
+   453→          </div>
+   454→        </div>
+   455→        <button onClick={() => useGameStore.getState().handleEvent('selectTower', null)}
+   456→          className="flex h-8 w-8 items-center justify-center rounded-lg bg-black/50 text-slate-400 active:scale-95">
+   457→          <X className="h-4 w-4" />
+   458→        </button>
+   459→      </div>
+   460→
+   461→      <div className="mt-2.5 flex gap-2">
+   462→        <button onClick={() => game?.upgradeTower(info.id)} disabled={maxed || st.coins < info.upgradeCost}
+   463→          className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-sm font-black active:scale-95
+   464→            ${maxed ? 'border border-slate-700 bg-black/40 text-slate-500' :
+   465→            st.coins >= info.upgradeCost ? 'bg-gradient-to-b from-emerald-500 to-emerald-700 text-white' : 'bg-slate-800 text-slate-500'}`}>
+   466→          <ArrowUpCircle className="h-4 w-4" />
+   467→          {maxed ? t('maxLevel') : `${t('upgrade')} — ${faNum(info.upgradeCost)}`}
+   468→        </button>
+   469→        <button onClick={() => game?.useTowerAbility(info.id)} disabled={info.abilityCd > 0}
+   470→          className={`relative flex w-24 items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-xs font-black active:scale-95
+   471→            ${info.abilityCd <= 0 ? 'border border-violet-400/50 bg-violet-600/30 text-violet-200 shadow-[0_0_12px_rgba(139,92,246,0.3)]' : 'bg-slate-800 text-slate-500'}`}>
+   472→          <Sparkles className="h-4 w-4" />
+   473→          {t(info.abilityNameKey)}
+   474→          {info.abilityCd > 0 && (
+   475→            <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/70 text-sm font-black text-white">
+   476→              {faNum(Math.ceil(info.abilityCd))}
+   477→            </span>
+   478→          )}
+   479→        </button>
+   480→        <button onClick={() => game?.sellTower(info.id)}
+   481→          className="flex items-center justify-center gap-1 rounded-xl border border-rose-500/40 bg-rose-950/40 px-3 py-2.5 text-xs font-black text-rose-300 active:scale-95">
+   482→          <Trash2 className="h-4 w-4" />
+   483→          {faNum(info.sellValue)}
+   484→        </button>
+   485→      </div>
+   486→
+   487→      <button onClick={() => {
+   488→        const g = actions.get();
+   489→        // چرخش هدف‌گیری — از طریق انتخاب مجدد
+   490→        if (g) {
+   491→          const gi = g as unknown as { cycleTargeting?: (id: number) => void };
+   492→          gi.cycleTargeting?.(info.id);
+   493→        }
+   494→      }}
+   495→        className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-700/60 bg-black/40 py-1.5 text-[11px] font-bold text-slate-400 active:scale-[0.98]">
+   496→        <Target className="h-3.5 w-3.5" />
+   497→        {t('targeting')}: {t(TARGET_LABEL[info.targeting as TargetingMode])}
+   498→      </button>
+   499→    </div>
+   500→  );
+   501→}
+   502→
+   503→// ---------------------------- پایان بازی ----------------------------
+   504→
+   505→function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
+   506→  title: string;
+   507→  titleClass: string;
+   508→  subtitle: string;
+   509→  stars: number;
+   510→  rewards?: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; value: string; label: string; color: string }[];
+   511→  actions: BattleActions;
+   512→}) {
+   513→  const save = useGameStore((s) => s.save);
+   514→  const defeatInfo = useGameStore((s) => s.defeat);
+   515→  const backToMap = () => {
+   516→    actions.endBattle();
+   517→    useGameStore.getState().setScreen('map');
+   518→  };
+   519→  const goForge = () => {
+   520→    actions.endBattle();
+   521→    useGameStore.getState().setScreen('forge');
+   522→  };
+   523→  const restart = () => {
+   524→    actions.endBattle();
+   525→    setTimeout(() => actions.startBattle(), 60);
+   526→  };
+   527→  const isVictory = title === t('victory');
+   528→  // مرحله بعد در زنجیره کمپین ۱۰۰ مرحله‌ای — فقط در پیروزی
+   529→  const nextId = isVictory && save
+   530→    ? (() => {
+   531→        // مرحله فعلی از pendingLevelId
+   532→        const cur = useGameStore.getState().pendingLevelId;
+   533→        const m = /^c(\d+)s(\d+)$/.exec(cur);
+   534→        return m ? nextStageId(Number(m[1]), Number(m[2])) : null;
+   535→      })()
+   536→    : null;
+   537→  const goNext = () => {
+   538→    if (!nextId) return;
+   539→    useGameStore.getState().setPendingLevel(nextId);
+   540→    actions.endBattle();
+   541→    setTimeout(() => actions.startBattle(), 60);
+   542→  };
+   543→  // بهترین رکورد سلامت هسته — شامل رکورد همین اجرا (بخش ۵۲)
+   544→  const bestPct = isVictory && save
+   545→    ? save.levels[useGameStore.getState().pendingLevelId]?.bestHealthPct ?? 0
+   546→    : 0;
+   547→
+   548→  return (
+   549→    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 backdrop-blur-sm pointer-events-auto">
+   550→      <div className="w-full max-w-sm rounded-3xl border border-amber-400/30 bg-[#0d1420] p-6 text-center end-anim">
+   551→        <h2 className={`bg-gradient-to-b bg-clip-text text-4xl font-black text-transparent ${titleClass}`}>
+   552→          {title}
+   553→        </h2>
+   554→        <p className="mt-2 text-sm font-bold text-slate-400">{subtitle}</p>
+   555→
+   556→        {stars > 0 && (
+   557→          <div className="mt-4 flex justify-center gap-2">
+   558→            {[0, 1, 2].map((i) => (
+   559→              <Star key={i}
+   560→                className={`h-12 w-12 star-pop ${i < stars ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_12px_rgba(245,158,11,0.7)]' : 'text-slate-700'}`}
+   561→                style={{ animationDelay: `${i * 0.35}s` }} />
+   562→            ))}
+   563→          </div>
+   564→        )}
+   565→
+   566→        {rewards && (
+   567→          <div className="mt-5">
+   568→            <div className="text-xs font-black text-slate-500">{t('rewards')}</div>
+   569→            <div className="mt-2 flex justify-center gap-4">
+   570→              {rewards.map((r, i) => (
+   571→                <div key={i} className="flex flex-col items-center gap-0.5 rounded-xl border border-slate-700/60 bg-black/40 px-4 py-2">
+   572→                  <r.icon className={`h-5 w-5 ${r.color}`} />
+   573→                  <span className={`text-lg font-black ${r.color}`}>{r.value}</span>
+   574→                  <span className="text-[10px] font-bold text-slate-500">{r.label}</span>
+   575→                </div>
+   576→              ))}
+   577→            </div>
+   578→            {bestPct > 0 && (
+   579→              <div className="mt-2.5 text-[11px] font-black text-slate-400">
+   580→                {t('bestRecord')}: <span className="text-amber-300">{faNum(bestPct)}٪</span>
+   581→              </div>
+   582→            )}
+   583→          </div>
+   584→        )}
+   585→
+   586→        {/* آمار شکست — موج رسیده و سلامت هسته (بخش ۵۳) */}
+   587→        {!rewards && defeatInfo && (
+   588→          <div className="mt-5 flex justify-center gap-3">
+   589→            <div className="flex flex-col items-center gap-0.5 rounded-xl border border-slate-700/60 bg-black/40 px-5 py-2">
+   590→              <Swords className="h-5 w-5 text-rose-400" />
+   591→              <span className="text-lg font-black text-rose-300">
+   592→                {faNum(defeatInfo.wave)} / {faNum(defeatInfo.waveTotal)}
+   593→              </span>
+   594→              <span className="text-[10px] font-bold text-slate-500">{t('waveReached')}</span>
+   595→            </div>
+   596→            <div className="flex flex-col items-center gap-0.5 rounded-xl border border-slate-700/60 bg-black/40 px-5 py-2">
+   597→              <Heart className="h-5 w-5 text-emerald-400" />
+   598→              <span className="text-lg font-black text-emerald-300">{faNum(0)}٪</span>
+   599→              <span className="text-[10px] font-bold text-slate-500">{t('coreHpFinal')}</span>
+   600→            </div>
+   601→          </div>
+   602→        )}
+   603→
+   604→        <div className="mt-6 flex flex-col gap-2.5">
+   605→          {nextId && (
+   606→            <button onClick={goNext}
+   607→              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-700 px-6 py-3.5 text-lg font-black text-white active:scale-95">
+   608→              <Play className="h-5 w-5" />
+   609→              {t('nextStage')}
+   610→            </button>
+   611→          )}
+   612→          <button onClick={restart}
+   613→            className={`flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-black text-white active:scale-95
+   614→              ${nextId ? 'border border-slate-600/60 bg-black/50' : 'bg-gradient-to-b from-amber-500 to-orange-600 py-3.5 text-lg'}`}>
+   615→            <RotateCcw className="h-5 w-5" />
+   616→            {t('retry')}
+   617→          </button>
+   618→          {/* ارتقا در کوره اثیر — فقط در شکست (بخش ۵۳) */}
+   619→          {!isVictory && (
+   620→            <button onClick={goForge}
+   621→              className="flex items-center justify-center gap-2 rounded-xl border border-violet-400/50 bg-violet-950/40 px-6 py-3 text-base font-black text-violet-200 active:scale-95">
+   622→              <Flame className="h-5 w-5" />
+   623→              {t('goForge')}
+   624→            </button>
+   625→          )}
+   626→          <button onClick={backToMap}
+   627→            className="flex items-center justify-center gap-2 rounded-xl border border-slate-600/60 bg-black/50 px-6 py-3 text-base font-bold text-slate-300 active:scale-95">
+   628→            <Home className="h-5 w-5" />
+   629→            {t('quitToMap')}
+   630→          </button>
+   631→        </div>
+   632→      </div>
+   633→    </div>
+   634→  );
+   635→}
+   636→
+   637→// ---------------------------- تنظیمات فشرده ----------------------------
+   638→
+   639→function CompactSettings({ onClose }: { onClose: () => void }) {
+   640→  const save = useGameStore((s) => s.save);
+   641→  const setQuality = useGameStore((s) => s.setQuality);
+   642→  const setLanguage = useGameStore((s) => s.setLanguage);
+   643→  const updateSave = useGameStore((s) => s.updateSave);
+   644→  if (!save) return null;
+   645→
+   646→  return (
+   647→    <div className="w-full max-w-sm rounded-3xl border border-amber-400/30 bg-[#0d1420] p-5">
+   648→      <div className="flex items-center justify-between">
+   649→        <h3 className="text-xl font-black text-amber-200">{t('settings')}</h3>
+   650→        <button onClick={onClose} className="flex h-9 w-9 items-center justify-center rounded-lg bg-black/50 text-slate-400 active:scale-95">
+   651→          <X className="h-4 w-4" />
+   652→        </button>
+   653→      </div>
+   654→
+   655→      <div className="mt-4 space-y-4">
+   656→        <div>
+   657→          <div className="mb-1.5 text-sm font-bold text-slate-400">{t('qualitySetting')}</div>
+   658→          <div className="grid grid-cols-4 gap-1.5">
+   659→            {(['low', 'medium', 'high', 'ultra'] as const).map((q) => (
+   660→              <button key={q} onClick={() => setQuality(q)}
+   661→                className={`rounded-lg py-2 text-xs font-black active:scale-95 ${save.settings.quality === q ? 'bg-amber-500 text-black' : 'bg-black/50 text-slate-400'}`}>
+   662→                {t('quality' + q.charAt(0).toUpperCase() + q.slice(1))}
+   663→              </button>
+   664→            ))}
+   665→          </div>
+   666→        </div>
+   667→
+   668→        <VolumeSlider label={t('musicSetting')} value={save.settings.music}
+   669→          onChange={(v) => updateSave((s) => { s.settings.music = v; })} />
+   670→        <VolumeSlider label={t('sfxSetting')} value={save.settings.sfx}
+   671→          onChange={(v) => updateSave((s) => { s.settings.sfx = v; })} />
+   672→
+   673→        <div className="flex items-center justify-between">
+   674→          <span className="text-sm font-bold text-slate-400">{t('languageSetting')}</span>
+   675→          <div className="flex gap-1.5">
+   676→            <button onClick={() => setLanguage('fa')}
+   677→              className={`rounded-lg px-4 py-1.5 text-sm font-black ${save.settings.language === 'fa' ? 'bg-amber-500 text-black' : 'bg-black/50 text-slate-400'}`}>
+   678→              فارسی
+   679→            </button>
+   680→            <button onClick={() => setLanguage('en')}
+   681→              className={`rounded-lg px-4 py-1.5 text-sm font-black ${save.settings.language === 'en' ? 'bg-amber-500 text-black' : 'bg-black/50 text-slate-400'}`}>
+   682→              English
+   683→            </button>
+   684→          </div>
+   685→        </div>
+   686→      </div>
+   687→    </div>
+   688→  );
+   689→}
+   690→
+   691→function VolumeSlider({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+   692→  return (
+   693→    <div>
+   694→      <div className="mb-1 flex justify-between text-sm font-bold text-slate-400">
+   695→        <span>{label}</span>
+   696→        <span className="text-slate-300">{faNum(Math.round(value * 100))}٪</span>
+   697→      </div>
+   698→      <input type="range" min={0} max={100} value={Math.round(value * 100)}
+   699→        onChange={(e) => onChange(Number(e.target.value) / 100)}
+   700→        className="w-full accent-amber-500" />
+   701→    </div>
+   702→  );
+   703→}
+   704→
+   705→function MenuActionBtn({ icon: Icon, label, onClick, primary }: {
+   706→  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+   707→  label: string; onClick: () => void; primary?: boolean;
+   708→}) {
+   709→  return (
+   710→    <button onClick={onClick}
+   711→      className={`flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-black active:scale-95
+   712→        ${primary ? 'bg-gradient-to-b from-amber-500 to-orange-600 text-white' : 'border border-slate-600/60 bg-black/50 text-slate-300'}`}>
+   713→      <Icon className="h-5 w-5" />
+   714→      {label}
+   715→    </button>
+   716→  );
+   717→}
+   718→

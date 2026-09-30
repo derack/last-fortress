@@ -10,6 +10,7 @@ import { InputController, TapHit } from './InputController';
 import { VFXSystem } from '../systems/VFXSystem';
 import { DamageNumbers } from '../systems/DamageNumbers';
 import { AudioSystem, audioSystem } from '../systems/AudioSystem';
+import { ACHIEVEMENTS } from '../data/campaign';
 import { EventBus } from './EventBus';
 import { Enemy } from '../entities/Enemy';
 import { Tower } from '../entities/Tower';
@@ -60,6 +61,20 @@ export class Game {
   upgradesCount = 0;
   magicCastThisLevel = 0;
   towersBuiltBeforeBoss: number | null = null;
+  private blitzStreak = 0; // دستاورد blitz — موج‌های پیاپی بدون مکث
+
+  /** اعطای دستاورد رویدادی + پاداش کریستال — یک‌بار برای همیشه */
+  private grantAchievement(id: string) {
+    if (this.save.achievements.includes(id)) return;
+    const def = ACHIEVEMENTS.find((a) => a.id === id);
+    if (!def) return;
+    this.save.achievements.push(id);
+    // پاداش — به استخر نبرد هم اضافه می‌شود تا در پیروزی/باخت/خروج همگام بماند
+    this.crystals += def.crystalReward;
+    this.save.crystals += def.crystalReward;
+    this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+    this.bus.emit('toast', { key: def.nameKey, type: 'success' });
+  }
 
   // موج
   waveIndex = 0; // موج بعدی
@@ -208,6 +223,14 @@ export class Game {
 
   private update(dt: number) {
     this.time += dt;
+
+    // دستاوردهای وضعی نبرد — بررسی سبک هر فریم (grantAchievement خودش idempotent است)
+    if (!this.gameOver) {
+      if (this.coins >= 2000) this.grantAchievement('rich');
+      if (this.crystals >= 100) this.grantAchievement('crystal_hoarder');
+      if (this.coinsEarned >= 3000) this.grantAchievement('economy');
+      if (this.hero.level >= 5) this.grantAchievement('hero_max');
+    }
 
     // موج — شمارش معکوس شروع خودکار
     if (!this.waveActive && !this.gameOver) {
@@ -358,6 +381,9 @@ export class Game {
     this.autoStartTimer = 0;
 
     this.audio.play('waveStart');
+    // دستاورد blitz — شروع پیاپی موج‌ها بدون مکث
+    this.blitzStreak++;
+    if (this.blitzStreak >= 5) this.grantAchievement('blitz');
     this.bus.emit('banner', { wave: this.waveIndex + 1, boss: !!wave.boss });
     this.bus.emit('wave', { wave: this.waveIndex + 1, total: this.level.waves.length, active: true, autoIn: 0 });
 
@@ -386,6 +412,11 @@ export class Game {
     this.coinsEarned += wave.coinBonus;
     this.autoStartTimer = wave.boss ? 0 : 14;
     this.earlyBonus = 0;
+    // دستاورد dragon_fear — موج Boss بدون ساخت برج جدید پشت سر گذاشته شد
+    if (wave.boss && this.towersBuiltBeforeBoss !== null && this.towersBuilt === this.towersBuiltBeforeBoss) {
+      this.grantAchievement('dragon_fear');
+    }
+    this.towersBuiltBeforeBoss = null;
     this.audio.play('reward');
     this.bus.emit('waveCleared', { wave: this.waveIndex, bonus: wave.coinBonus });
     this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
@@ -632,6 +663,7 @@ export class Game {
     this.towers.push(tower);
     this.towersBuilt++;
     this.save.stats.towersBuilt++;
+    if (this.towers.length >= 8) this.grantAchievement('tower_master');
     this.audio.play('place');
     this.vfx.ring(tower.position, data.color, 4, 0.5);
     this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
@@ -661,7 +693,7 @@ export class Game {
     this.audio.play('upgrade');
     this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
     this.emitTowerInfo();
-    if (t.level === 5) this.bus.emit('toast', { key: 'achMaxed', type: 'success' });
+    if (t.level === 5) this.grantAchievement('maxed');
     if (!this.save.tutorialDone) this.bus.emit('tutorial', 'magic');
     return true;
   }
@@ -749,6 +781,7 @@ export class Game {
     this.magicCd[id] = m.cooldown;
     this.magicCastThisLevel++;
     this.save.stats.magicCasts++;
+    if (this.magicCastThisLevel >= 5) this.grantAchievement('magic_rain');
     this.audio.play('magic');
     this.vfx.magicCircle(point, 0xf59e0b, m.radius * 1.2, 1.6);
 
@@ -760,6 +793,7 @@ export class Game {
         this.vfx.explosion(point, 0xa78bfa, true);
         this.cameraCtrl.shake(0.55);
         this.audio.play('lightning');
+        this.save.stats.skyLightningCasts++; // دستاورد storm_caller
         // آسیب ناحیه‌ای
         for (const e of [...this.enemies]) {
           if (!e.alive) continue;
@@ -782,9 +816,11 @@ export class Game {
           });
         }
         this.audio.play('cannon');
+        this.save.stats.fireRainCasts++; // دستاورد inferno
         break;
       }
       case 'arianaShield': {
+        this.save.stats.shieldCasts++; // دستاورد guardian_angel
         this.shieldUntil = this.time + (m.duration ?? 10);
         this.vfx.ring(this.scene3d.corePos, 0xfbbf24, 6, 0.9);
         this.vfx.burst(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 3, 0)), 0xfbbf24, 40, { speed: 8, life: 1, size: 0.7, gravity: 1, up: 1 });
@@ -1008,9 +1044,10 @@ export class Game {
     this.save.crystals = this.crystals;
     this.save.knowledge += rewardShards;
     this.save.stats.victories++;
-    if (this.leaks === 0 && !this.save.achievements.includes('untouchable')) this.save.achievements.push('untouchable');
-    if (this.coreHp === this.coreMaxHp && !this.save.achievements.includes('perfect_defense')) this.save.achievements.push('perfect_defense');
-    if (healthPct < 10 && !this.save.achievements.includes('last_stand')) this.save.achievements.push('last_stand');
+    // دستاوردهای رویدادی پیروزی — با پاداش کریستال (قبلاً بدون پاداش بودند)
+    if (this.leaks === 0) this.grantAchievement('untouchable');
+    if (this.coreHp === this.coreMaxHp) this.grantAchievement('perfect_defense');
+    if (healthPct < 10) this.grantAchievement('last_stand');
 
     const prev = this.save.levels[this.level.id];
     const bestStars = Math.max(prev?.stars ?? 0, stars);
@@ -1048,6 +1085,7 @@ export class Game {
 
   setPaused(p: boolean) {
     this.paused = p;
+    if (p) this.blitzStreak = 0; // مکث — زنجیره blitz قطع می‌شود
     this.bus.emit('paused', { paused: p });
   }
 

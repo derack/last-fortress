@@ -423,3 +423,32 @@ Work Log:
 Stage Summary:
 - شلیک همه برج‌های بالستیک اکنون از دهانه رو به دشمن است؛ باگ رندر برجک sentinel هم رفع شد
 - PHASEهای باقی‌مانده: ۸ (Mobile)، ۹ (Pipeline)، ۱۰-۱۲
+
+---
+Task ID: 18
+Agent: Super Z (main)
+Task: درخواست کاربر — «همه منطق‌ها را بررسی کن ببین برای یک پروژه رعایت شده؟ اگر انجام شده بیلد بگیر تستش کنم، Google keystore هم حتماً ایجاد کن، پروژه را APK تحویل بده»
+
+Work Log:
+- بستن Task 17: اسکرین‌شات t17-sentinel-turret-visible.png بررسی شد — برجک sentinel اکنون رندر می‌شود ✓
+- **Audit کامل منطق** (ایجنت Explore + اجرای برنامه‌ای داده‌ها با tsx):
+  * زنجیره ۱۰۰ مرحله: isStageUnlocked=تکمیل مرحله قبل، قفل فصل‌ها، ستاره‌ها (1/2@۷۰٪ سلامت/3=بدون نشت) — سالم، بدون بن‌بست
+  * قفل ۱۰ برج با totalStars (۰ تا ۱۵ از ۳۰۰) + اعمال سه‌لایه UI/setBuildMode/tryBuild — سالم
+  * آپگرید ۵ سطحی ۱۰ برج: همه فیلدها finite، damage/rate اکیداً صعودی — بدون NaN
+  * Forge: ۶ مسیر×۲۰ سطح، هزینه ۳٬۳۲۳ shard تا مکس، اعمال در Game/Tower/Hero، sanitize + مهاجرت v2→v3 — سالم
+  * اقتصاد/قهرمان/دستاورد/i18n (۳۹۵=۳۹۵ parity)/ذخیره/تنظیمات/ناوبری — سالم
+- **۲ باگر واقعی کشف و رفع شد**:
+  1. ۱۲ دستاورد از ۳۰ هیچ‌وقت قابل دریافت نبودند (check:()=>false بدون کد اعطا) — اعطای رویدادی در Game.ts با helper جدید grantAchievement(id) (+پاداش کریستال +toast): blitz (۵ موج بدون مکث با ریست در pause)، tower_master (۸ برج)، maxed (سطح ۵)، dragon_fear (موج Boss بدون برج جدید)، economy (۳۰۰۰ سکه)، magic_rain (۵ جادو)، rich (۲۰۰۰ سکه)، crystal_hoarder (۱۰۰ کریستال)، hero_max (سطح ۵ قهرمان). storm_caller/inferno/guardian_angel → شمارنده تجمعی جدید در PlayerStats (skyLightningCasts/fireRainCasts/shieldCasts + default در SaveSystem). ۳ دستاورد untouchable/perfect_defense/last_stand که بدون پاداش بودند حالا پاداش می‌گیرند
+  2. پایان کمپین وجود نداشت — بنر Trophy با campaignComplete در EndOverlay برای c10s10
+- رفع‌های جزئی: ۳۰۰ هاردکد → faNum(300)، لیست برج‌های پیشنهادی ۶→۱۰، برچسب HP → i18n hp، کلیدهای achHeroMax/achHeroMaxDesc جدید (fa/en)
+- **پایپ‌لاین APK از صفر**: next.config شرطی (CAP_BUILD=1 → output:export + trailingSlash)، api route force-static، iframe src با اسلش انتهایی، اسکریپت build:cap، نصب @capacitor/* v8.5.2، cap add android، نصب Android SDK (cmdline-tools+platform-36+build-tools-36)، Temurin JDK 21 در userspace (javac موجود نبود)
+- **Google keystore ساخته شد**: android/keystore/last-fortress-release.keystore — alias last-fortress — RSA 2048 — اعتبار ۱۰۰۰۰ روز — SHA-256: 5E:E1:84:E5:76:09:09:B4:27:26:3A:CF:49:C7:F0:43:A5:A0:C3:97:CB:00:29:B8:09:06:B3:81:33:39:FF:49 — امضا با keystore.properties در gradle
+- اندروید: VIBRATE permission (haptics) + FLAG_KEEP_SCREEN_ON در MainActivity + appId com.lastfortress.ariana + نام فارسی «آخرین سنگر»
+- **تست زنده دستاوردها در مرورگر** (end-to-end): crystal_hoarder، rich، tower_master (۸ برج)، maxed (L5)، blitz (۵ موج خودکار بی‌مکث)، magic_rain (۵ جادو) — همگی grant + پاداش + toast ✓؛ شمارنده skyLightningCasts ✓؛ صفر خطای کنسول (فقط هشدار fallback GLB طبق طراحی)
+- tsc صفر خطا در src | i18n parity ۳۹۵=۳۹۵ | bun run build ✓ | CAP_BUILD=1 export ✓ | gradlew assembleRelease ✓ | apksigner verify ✓
+- تحویل: download/Last-Fortress-v1.0-release.apk (4.1MB) + download/keystore/{keystore,KEYSTORE-INFO.txt} | سیو کاربر ریست شد
+
+Stage Summary:
+- منطق بازی برای انتشار آماده است: دو باگر محتوایی (دستاوردهای مرده و پایان کمپین) رفع شد
+- APK امضاشده v1.0 با keystore اختصاصی گوگل‌پلی تحویل شد — کلید + رمزها در download/keystore (باید نزد کاربر نگهداری شود)
+- PHASEهای باقی‌مانده PROMPT: ۹ (Pipeline)، ۱۰-۱۲ (تست/Final Build/Report) + جایگزینی دارایی‌های 3D

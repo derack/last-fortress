@@ -202,6 +202,10 @@ export interface PlayerStats {
   towersBuilt: number;
   upgrades: number;
   totalStars: number;
+  // دستاوردهای تجمعی جادو (storm_caller / inferno / guardian_angel)
+  skyLightningCasts: number;
+  fireRainCasts: number;
+  shieldCasts: number;
 }
 
 export interface AchievementDef {

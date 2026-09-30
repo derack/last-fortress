@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   Heart, Coins, Gem, Play, Pause, FastForward, Zap, Flame, Shield, Snowflake,
   Crosshair, X, Star, Home, RotateCcw, Settings, User, Sparkles, ArrowUpCircle,
-  Trash2, Target, Clock, FlaskConical, MoveDiagonal, Sun, Moon, Lock, Swords,
+  Trash2, Target, Clock, FlaskConical, MoveDiagonal, Sun, Moon, Lock, Swords, Trophy,
 } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { TOWERS, TOWER_BUILD_ORDER, isTowerUnlocked, starsUntilTower } from '@/game/data/towers';
@@ -544,6 +544,8 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
   const bestPct = isVictory && save
     ? save.levels[useGameStore.getState().pendingLevelId]?.bestHealthPct ?? 0
     : 0;
+  // پایان کمپین — پیروزی در c10s10 (آخرین مرحله ۱۰۰تایی)
+  const campaignFinale = isVictory && useGameStore.getState().pendingLevelId === 'c10s10';
 
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 backdrop-blur-sm pointer-events-auto">
@@ -598,6 +600,14 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
               <span className="text-lg font-black text-emerald-300">{faNum(0)}٪</span>
               <span className="text-[10px] font-bold text-slate-500">{t('coreHpFinal')}</span>
             </div>
+          </div>
+        )}
+
+        {/* پایان کمپین — جشن پیروزی نهایی */}
+        {campaignFinale && (
+          <div className="mt-5 rounded-2xl border border-amber-400/50 bg-gradient-to-b from-amber-950/60 to-black/40 p-4">
+            <Trophy className="mx-auto h-9 w-9 text-amber-300 drop-shadow-[0_0_12px_rgba(245,158,11,0.7)]" />
+            <p className="mt-2 text-sm font-black leading-6 text-amber-200">{t('campaignComplete')}</p>
           </div>
         )}
 

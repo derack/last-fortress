@@ -516,10 +516,10 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'magic_rain', nameKey: 'achMagicRain', descKey: 'achMagicRainDesc', crystalReward: 15, check: () => false }, // رویدادی
   { id: 'rich', nameKey: 'achRich', descKey: 'achRichDesc', crystalReward: 15, check: (_s: PlayerStats) => false }, // رویدادی (در نبرد بررسی می‌شود)
   { id: 'crystal_hoarder', nameKey: 'achCrystalHoarder', descKey: 'achCrystalHoarderDesc', crystalReward: 15, check: () => false }, // رویدادی
-  { id: 'storm_caller', nameKey: 'achStormCaller', descKey: 'achStormCallerDesc', crystalReward: 30, check: () => false }, // رویدادی
-  { id: 'inferno', nameKey: 'achInferno', descKey: 'achInfernoDesc', crystalReward: 30, check: () => false }, // رویدادی
-  { id: 'guardian_angel', nameKey: 'achGuardianAngel', descKey: 'achGuardianAngelDesc', crystalReward: 30, check: () => false }, // رویدادی
-  { id: 'hero_max', nameKey: 'achNewAchievement', descKey: 'achUntouchableDesc', crystalReward: 50, check: () => false }, // جایگاه نگهدارنده
+  { id: 'storm_caller', nameKey: 'achStormCaller', descKey: 'achStormCallerDesc', crystalReward: 30, check: (s) => s.skyLightningCasts >= 50 },
+  { id: 'inferno', nameKey: 'achInferno', descKey: 'achInfernoDesc', crystalReward: 30, check: (s) => s.fireRainCasts >= 50 },
+  { id: 'guardian_angel', nameKey: 'achGuardianAngel', descKey: 'achGuardianAngelDesc', crystalReward: 30, check: (s) => s.shieldCasts >= 20 },
+  { id: 'hero_max', nameKey: 'achHeroMax', descKey: 'achHeroMaxDesc', crystalReward: 50, check: () => false }, // رویدادی — سطح ۵ قهرمان در یک نبرد
 ];
 
 // سازگاری — بقیه پروژه از STAGES استفاده می‌کنند

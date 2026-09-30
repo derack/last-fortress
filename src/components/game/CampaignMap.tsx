@@ -61,7 +61,7 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
   const briefingEnemies = briefing
     ? [...new Set(briefing.waves.flatMap((w) => w.groups.map((g) => g.enemy)))]
     : [];
-  const briefingTowers = TOWER_BUILD_ORDER.slice(0, 6);
+  const briefingTowers = TOWER_BUILD_ORDER;
 
   const openStage = (chId: number, st: number) => {
     setPendingLevel(stageId(chId, st));
@@ -82,7 +82,7 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
         <div className="mr-auto flex items-center gap-3 text-xs font-black">
           <span className="flex items-center gap-1 rounded-lg bg-black/40 px-2.5 py-1.5 text-amber-300">
             <Star className="h-3.5 w-3.5 fill-amber-300" />
-            {faNum(chapterStarsSum(save))}/۳۰۰
+            {faNum(chapterStarsSum(save))}/{faNum(300)}
           </span>
           <span className="flex items-center gap-1 rounded-lg bg-black/40 px-2.5 py-1.5 text-emerald-300">
             <Check className="h-3.5 w-3.5" />

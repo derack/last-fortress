@@ -100,7 +100,7 @@ export function HeroesPanel() {
                   <HeroStat icon={Heart} label={t('damage')} value={faNum(hero.damage)} color="text-rose-400" />
                   <HeroStat icon={Swords} label={t('fireRate')} value={faNum(hero.fireRate)} color="text-amber-400" />
                   <HeroStat icon={Gauge} label={t('range')} value={faNum(hero.range)} color="text-cyan-400" />
-                  <HeroStat icon={Zap} label="HP" value={faNum(hero.hp)} color="text-emerald-400" />
+                  <HeroStat icon={Zap} label={t('hp')} value={faNum(hero.hp)} color="text-emerald-400" />
                 </div>
 
                 <div className="mt-3 rounded-xl border border-violet-400/30 bg-violet-950/30 p-3">

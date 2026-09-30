@@ -162,9 +162,9 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            {/* قاب صفحه */}
+            {/* قاب صفحه — اسلش انتهایی برای سازگاری خروجی استاتیک (Capacitor) */}
             <iframe
-              src={`/page/${id}`}
+              src={`/page/${id}/`}
               title={label}
               className="h-full w-full flex-1 bg-[#0b0f1c]"
             />

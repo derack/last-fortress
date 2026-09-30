@@ -1,0 +1,527 @@
+     1→import type { LevelData, ChapterDef, WaveData, SpawnGroup, Vec2, AchievementDef, PlayerStats, SaveData } from './types';
+     2→import { ENEMIES, tiered } from './enemies';
+     3→
+     4→// ============================================================
+     5→// کمپین ۱۰۰ مرحله‌ای — ۱۰ فصل × ۱۰ مرحله
+     6→// ------------------------------------------------------------
+     7→// هر فصل هویت خودش را دارد (محیط/زمان روز/Boss/ترکیب دشمنان)
+     8→// هر مرحله ترکیب ورود و خروج دشمنان متفاوت (ژنراتور قطعی با seed)
+     9→// فصل ۲ به بعد — مراحل سخت (۷ به بعد) با ۲ تا ۳ مسیر حمله
+    10→// همه مسیرها دقیقاً به هسته آذر ختم می‌شوند
+    11→// ============================================================
+    12→
+    13→// ---------------------------- فصل‌ها ----------------------------
+    14→
+    15→export const CHAPTERS: ChapterDef[] = [
+    16→  { id: 1, nameKey: 'chapter1', descKey: 'chapter1Desc', env: 'plains', timeOfDay: 'day', tagKey: 'chapter1Tag', bossId: 'golemKing' },
+    17→  { id: 2, nameKey: 'chapter2', descKey: 'chapter2Desc', env: 'forest', timeOfDay: 'night', tagKey: 'chapter2Tag', bossId: 'fireGiant' },
+    18→  { id: 3, nameKey: 'chapter3', descKey: 'chapter3Desc', env: 'tundra', timeOfDay: 'day', tagKey: 'chapter3Tag', bossId: 'iceGiant' },
+    19→  { id: 4, nameKey: 'chapter4', descKey: 'chapter4Desc', env: 'volcano', timeOfDay: 'night', tagKey: 'chapter4Tag', bossId: 'blackDragon' },
+    20→  { id: 5, nameKey: 'chapter5', descKey: 'chapter5Desc', env: 'wastes', timeOfDay: 'day', tagKey: 'chapter5Tag', bossId: 'annihilator' },
+    21→  { id: 6, nameKey: 'chapter6', descKey: 'chapter6Desc', env: 'forest', timeOfDay: 'day', tagKey: 'chapter6Tag', bossId: 'golemKing' },
+    22→  { id: 7, nameKey: 'chapter7', descKey: 'chapter7Desc', env: 'tundra', timeOfDay: 'night', tagKey: 'chapter7Tag', bossId: 'fireGiant' },
+    23→  { id: 8, nameKey: 'chapter8', descKey: 'chapter8Desc', env: 'volcano', timeOfDay: 'day', tagKey: 'chapter8Tag', bossId: 'annihilator' },
+    24→  { id: 9, nameKey: 'chapter9', descKey: 'chapter9Desc', env: 'wastes', timeOfDay: 'night', tagKey: 'chapter9Tag', bossId: 'blackDragon' },
+    25→  { id: 10, nameKey: 'chapter10', descKey: 'chapter10Desc', env: 'citadel', timeOfDay: 'night', tagKey: 'chapter10Tag', bossId: 'darkLord' },
+    26→];
+    27→
+    28→/** ترکیب دشمنان هر فصل — ورود و خروج متفاوت در هر مرحله با seed
+    29→ * بخش ۲۱ — میانگین HP مؤثر استخرها به‌هم نزدیک شده تا منحنی سختی فصل‌ها صعودی بماند:
+    30→ * فصل ۱: golem→hunter (تانک ۵۵۰HP برای شروع بازی سنگین بود — شکارچی سریع تنوع می‌دهد)
+    31→ * فصل ۵: aetherTank→golem (فصل ۵ بدون جبران بسیار سخت‌تر از فصل ۴ بود)
+    32→ * فصل ۶: spider→warrior (فصل ۶ بسیار نرم‌تر از فصل ۵ بود — واریر میانه می‌افزاید) */
+    33→const CHAPTER_POOLS: Record<number, string[]> = {
+    34→  1: ['shadow', 'warrior', 'spider', 'hunter', 'flyer', 'warlock'],
+    35→  2: ['shadowSoldier', 'spider', 'hunter', 'spirit', 'warrior', 'summoner', 'shadow'],
+    36→  3: ['crystalMonster', 'warrior', 'hunter', 'aetherTank', 'flyer', 'warlock', 'golem'],
+    37→  4: ['smallDragon', 'destroyer', 'hunter', 'golem', 'warMachine', 'warlock'],
+    38→  5: ['warMachine', 'destroyer', 'golem', 'summoner', 'hunter', 'flyer'],
+    39→  6: ['shadowSoldier', 'spirit', 'summoner', 'warrior', 'warlock', 'golem'],
+    40→  7: ['crystalMonster', 'aetherTank', 'golem', 'warrior', 'hunter', 'spirit', 'warlock'],
+    41→  8: ['smallDragon', 'destroyer', 'golem', 'warMachine', 'flyer', 'hunter'],
+    42→  9: ['warMachine', 'destroyer', 'summoner', 'aetherTank', 'shadowSoldier', 'flyer'],
+    43→  10: ['shadowSoldier', 'destroyer', 'summoner', 'aetherTank', 'smallDragon', 'spirit', 'hunter', 'warMachine'],
+    44→};
+    45→
+    46→/** ضریب جبران استخر هر فصل — فصل‌های سنگین دشمن کمتر، نرم‌ها بیشتر
+    47→ * لنگر = میانگین استخر فصل ۱ (مرحله ۱ باید آسان بماند) */
+    48→const POOL_COMP: Record<number, number> = (() => {
+    49→  const poolAvg = (pool: string[]) =>
+    50→    pool.reduce((a, e) => a + ENEMIES[e].hp * (1 + ENEMIES[e].armor * 0.7 * 0.03), 0) / pool.length;
+    51→  const REF = poolAvg(CHAPTER_POOLS[1]); // لنگر — فصل ۱
+    52→  const out: Record<number, number> = {};
+    53→  for (const [id, pool] of Object.entries(CHAPTER_POOLS)) {
+    54→    out[Number(id)] = Math.pow(REF / poolAvg(pool), 0.65);
+    55→  }
+    56→  return out;
+    57→})();
+    58→
+    59→// بخش ۲۱ — منحنی هدف فشار موج: رشد نمایی کمپین (برج‌های بازیکن هم قوی می‌شوند)
+    60→// + tier پیوسته + intensity + جبران استخر — نتیجه: منحنی صعودی بدون پرتگاه
+    61→const WAVE_BASE = 2900;
+    62→const CAMPAIGN_GROWTH = 1.021; // ×۸ در طول ۱۰۰ مرحله
+    63→const growAt = (D: number) => Math.pow(CAMPAIGN_GROWTH, D);
+    64→
+    65→// ---------------------------- قالب‌های مسیر ----------------------------
+    66→// تک‌مسیر — ۱۰ قالب (همه در محدوده ±۳۲)
+    67→
+    68→const SINGLES: Vec2[][] = [
+    69→  [{ x: -32, z: 28 }, { x: -32, z: 4 }, { x: -8, z: 4 }, { x: -8, z: -20 }, { x: 18, z: -20 }, { x: 18, z: 2 }],
+    70→  [{ x: -30, z: -24 }, { x: -10, z: -24 }, { x: -10, z: -6 }, { x: 8, z: -6 }, { x: 8, z: 12 }, { x: 24, z: 12 }, { x: 24, z: -2 }],
+    71→  [{ x: -28, z: 28 }, { x: -28, z: 10 }, { x: -12, z: 10 }, { x: -12, z: -8 }, { x: 4, z: -8 }, { x: 4, z: 10 }, { x: 20, z: 10 }, { x: 20, z: -8 }, { x: 28, z: -8 }],
+    72→  [{ x: -28, z: 26 }, { x: 26, z: 26 }, { x: 26, z: 8 }, { x: -28, z: 8 }, { x: -28, z: -10 }, { x: 0, z: -10 }, { x: 0, z: -24 }, { x: 24, z: -24 }],
+    73→  [{ x: -26, z: -28 }, { x: -26, z: -10 }, { x: -8, z: -10 }, { x: -8, z: 8 }, { x: 10, z: 8 }, { x: 10, z: -10 }, { x: 26, z: -10 }, { x: 26, z: 8 }],
+    74→  [{ x: -30, z: 0 }, { x: -18, z: 0 }, { x: -18, z: 16 }, { x: -4, z: 16 }, { x: -4, z: -16 }, { x: 10, z: -16 }, { x: 10, z: 8 }, { x: 22, z: 8 }, { x: 22, z: -12 }],
+    75→  [{ x: 30, z: 28 }, { x: 30, z: 8 }, { x: 12, z: 8 }, { x: 12, z: -12 }, { x: -8, z: -12 }, { x: -8, z: 6 }, { x: -24, z: 6 }, { x: -24, z: -14 }],
+    76→  [{ x: -32, z: -16 }, { x: -16, z: -16 }, { x: -16, z: 14 }, { x: 0, z: 14 }, { x: 0, z: -8 }, { x: 16, z: -8 }, { x: 16, z: 20 }, { x: 28, z: 20 }, { x: 28, z: 0 }],
+    77→  [{ x: 0, z: 30 }, { x: 0, z: 16 }, { x: -20, z: 16 }, { x: -20, z: -4 }, { x: 0, z: -4 }, { x: 0, z: -12 }, { x: 20, z: -12 }, { x: 20, z: 4 }, { x: 30, z: 4 }],
+    78→  [{ x: -30, z: 22 }, { x: -6, z: 22 }, { x: -6, z: 6 }, { x: 14, z: 6 }, { x: 14, z: -10 }, { x: 28, z: -10 }, { x: 28, z: -22 }, { x: 8, z: -22 }, { x: 8, z: -26 }],
+    79→];
+    80→
+    81→// دومسیره — ۶ قالب (دو دروازه جدا، پایان مشترک روی هسته)
+    82→
+    83→const DOUBLES: Vec2[][][] = [
+    84→  [ // هسته (20,2)
+    85→    [{ x: -30, z: 26 }, { x: -30, z: 6 }, { x: -12, z: 6 }, { x: -12, z: -14 }, { x: 6, z: -14 }, { x: 6, z: 2 }, { x: 20, z: 2 }],
+    86→    [{ x: 28, z: 28 }, { x: 28, z: 12 }, { x: 12, z: 12 }, { x: 12, z: -2 }, { x: 20, z: -2 }, { x: 20, z: 2 }],
+    87→  ],
+    88→  [ // هسته (22,-6)
+    89→    [{ x: -28, z: -26 }, { x: -28, z: -8 }, { x: -10, z: -8 }, { x: -10, z: 10 }, { x: 8, z: 10 }, { x: 8, z: -6 }, { x: 22, z: -6 }],
+    90→    [{ x: -2, z: 28 }, { x: -2, z: 14 }, { x: 14, z: 14 }, { x: 14, z: -6 }, { x: 22, z: -6 }],
+    91→  ],
+    92→  [ // هسته (-18,-4)
+    93→    [{ x: 30, z: -24 }, { x: 30, z: -6 }, { x: 14, z: -6 }, { x: 14, z: 12 }, { x: -2, z: 12 }, { x: -2, z: -4 }, { x: -18, z: -4 }],
+    94→    [{ x: -28, z: 26 }, { x: -28, z: 10 }, { x: -14, z: 10 }, { x: -14, z: -4 }, { x: -18, z: -4 }],
+    95→  ],
+    96→  [ // هسته (24,10)
+    97→    [{ x: -30, z: -2 }, { x: -18, z: -2 }, { x: -18, z: 14 }, { x: -2, z: 14 }, { x: -2, z: -8 }, { x: 12, z: -8 }, { x: 12, z: 10 }, { x: 24, z: 10 }],
+    98→    [{ x: 26, z: -28 }, { x: 26, z: -2 }, { x: 24, z: -2 }, { x: 24, z: 10 }],
+    99→  ],
+   100→  [ // هسته (26,-18)
+   101→    [{ x: -26, z: 28 }, { x: -26, z: 12 }, { x: -8, z: 12 }, { x: -8, z: -4 }, { x: 10, z: -4 }, { x: 10, z: -18 }, { x: 26, z: -18 }],
+   102→    [{ x: 28, z: 26 }, { x: 28, z: 8 }, { x: 16, z: 8 }, { x: 16, z: -18 }, { x: 26, z: -18 }],
+   103→  ],
+   104→  [ // هسته (14,26)
+   105→    [{ x: 0, z: -30 }, { x: 0, z: -16 }, { x: -16, z: -16 }, { x: -16, z: 2 }, { x: -2, z: 2 }, { x: -2, z: 16 }, { x: 14, z: 16 }, { x: 14, z: 26 }],
+   106→    [{ x: 30, z: -12 }, { x: 30, z: 8 }, { x: 22, z: 8 }, { x: 22, z: 26 }, { x: 14, z: 26 }],
+   107→  ],
+   108→];
+   109→
+   110→// سه‌مسیره — ۴ قالب (سه دروازه، محاصره کامل هسته)
+   111→
+   112→const TRIPLES: Vec2[][][] = [
+   113→  [ // هسته (0,0)
+   114→    [{ x: -30, z: 30 }, { x: -30, z: 10 }, { x: -14, z: 10 }, { x: -14, z: -6 }, { x: 0, z: -6 }, { x: 0, z: 0 }],
+   115→    [{ x: 30, z: 30 }, { x: 30, z: 10 }, { x: 14, z: 10 }, { x: 14, z: -6 }, { x: 0, z: -6 }, { x: 0, z: 0 }],
+   116→    [{ x: 0, z: -32 }, { x: 0, z: -18 }, { x: 0, z: -6 }, { x: 0, z: 0 }],
+   117→  ],
+   118→  [ // هسته (22,0)
+   119→    [{ x: -30, z: -26 }, { x: -30, z: -8 }, { x: -12, z: -8 }, { x: -12, z: 8 }, { x: 4, z: 8 }, { x: 4, z: -8 }, { x: 22, z: -8 }, { x: 22, z: 0 }],
+   120→    [{ x: -2, z: -30 }, { x: -2, z: -18 }, { x: 12, z: -18 }, { x: 12, z: -8 }, { x: 22, z: -8 }, { x: 22, z: 0 }],
+   121→    [{ x: -30, z: 28 }, { x: -30, z: 12 }, { x: -16, z: 12 }, { x: -16, z: 2 }, { x: 4, z: 2 }, { x: 4, z: -8 }, { x: 22, z: -8 }, { x: 22, z: 0 }],
+   122→  ],
+   123→  [ // هسته (-20,-20)
+   124→    [{ x: 28, z: 28 }, { x: 28, z: 12 }, { x: 12, z: 12 }, { x: 12, z: -4 }, { x: -4, z: -4 }, { x: -4, z: -20 }, { x: -20, z: -20 }],
+   125→    [{ x: 30, z: -28 }, { x: 30, z: -16 }, { x: 16, z: -16 }, { x: 16, z: -20 }, { x: -4, z: -20 }, { x: -20, z: -20 }],
+   126→    [{ x: -30, z: 30 }, { x: -30, z: 6 }, { x: -16, z: 6 }, { x: -16, z: -20 }, { x: -20, z: -20 }],
+   127→  ],
+   128→  [ // هسته (0,-24)
+   129→    [{ x: -30, z: 28 }, { x: -30, z: 10 }, { x: -14, z: 10 }, { x: -14, z: -8 }, { x: 0, z: -8 }, { x: 0, z: -24 }],
+   130→    [{ x: 30, z: 28 }, { x: 30, z: 10 }, { x: 14, z: 10 }, { x: 14, z: -8 }, { x: 0, z: -8 }, { x: 0, z: -24 }],
+   131→    [{ x: 28, z: -30 }, { x: 12, z: -30 }, { x: 12, z: -24 }, { x: 0, z: -24 }],
+   132→  ],
+   133→];
+   134→
+   135→// ---------------------------- ابزار قطعی ----------------------------
+   136→
+   137→/** PRNG قطعی — هر مرحله ترکیب ثابت و تکرارپذیر خودش را دارد */
+   138→function mulberry32(seed: number): () => number {
+   139→  let s = seed >>> 0;
+   140→  return () => {
+   141→    s = (s + 0x6d2b79f5) >>> 0;
+   142→    let t = s;
+   143→    t = Math.imul(t ^ (t >>> 15), t | 1);
+   144→    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+   145→    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+   146→  };
+   147→}
+   148→
+   149→/** تعداد مسیر حمله — فصل ۱ تک‌مسیر؛ فصل ۲ به بعد مراحل سخت چندمسیره */
+   150→export function pathCountFor(chapter: number, stage: number): number {
+   151→  if (chapter <= 1) return 1;
+   152→  if (stage <= 6) return 1;
+   153→  if (stage <= 8) return 2; // مراحل ۷-۸
+   154→  if (stage === 9) return chapter >= 4 ? 3 : 2;
+   155→  return chapter >= 5 ? 3 : 2; // مرحله ۱۰ — Boss
+   156→}
+   157→
+   158→/** انتخاب قالب مسیر — قطعی و متفاوت بین مراحل مجاور */
+   159→function pickPaths(chapter: number, stage: number, count: number): Vec2[][] {
+   160→  if (count === 1) {
+   161→    const idx = (chapter * 7 + stage * 3) % SINGLES.length;
+   162→    return [SINGLES[idx]];
+   163→  }
+   164→  if (count === 2) {
+   165→    const idx = (chapter * 5 + stage * 2) % DOUBLES.length;
+   166→    return DOUBLES[idx];
+   167→  }
+   168→  const idx = (chapter + stage) % TRIPLES.length;
+   169→  return TRIPLES[idx];
+   170→}
+   171→
+   172→// ---------------------------- طبقه‌بندی دشمنان برای ترکیب موج ----------------------------
+   173→
+   174→const SWARM = ['shadow', 'spider', 'shadowSoldier'];
+   175→const TANK = ['golem', 'crystalMonster', 'aetherTank', 'warMachine'];
+   176→const AIR = ['flyer', 'smallDragon'];
+   177→const CASTER = ['warlock'];
+   178→const UTILITY = ['spirit', 'summoner'];
+   179→const HEAVY = ['destroyer', 'hunter'];
+   180→
+   181→function roleOf(enemyId: string): 'swarm' | 'tank' | 'air' | 'caster' | 'utility' | 'heavy' | 'melee' {
+   182→  if (SWARM.includes(enemyId)) return 'swarm';
+   183→  if (TANK.includes(enemyId)) return 'tank';
+   184→  if (AIR.includes(enemyId)) return 'air';
+   185→  if (CASTER.includes(enemyId)) return 'caster';
+   186→  if (UTILITY.includes(enemyId)) return 'utility';
+   187→  if (HEAVY.includes(enemyId)) return 'heavy';
+   188→  return 'melee';
+   189→}
+   190→
+   191→/** پایه تعداد هر نقش — قبل از مقیاس سختی */
+   192→const ROLE_BASE: Record<string, { count: number; interval: number }> = {
+   193→  swarm: { count: 9, interval: 1.0 },
+   194→  melee: { count: 6, interval: 1.5 },
+   195→  tank: { count: 3, interval: 4.5 },
+   196→  air: { count: 7, interval: 1.4 },
+   197→  caster: { count: 2, interval: 6.5 },
+   198→  utility: { count: 2, interval: 6.0 },
+   199→  heavy: { count: 3, interval: 5.0 },
+   200→};
+   201→
+   202→// ---------------------------- ژنراتور موج‌های هر مرحله ----------------------------
+   203→
+   204→/** بخش ۲۱ — HP مؤثر با زره flat (ضربه نماینده ۴۵) — برای نرمال‌سازی موج */
+   205→function unitEff(enemyId: string, tier: number): number {
+   206→  const d = ENEMIES[enemyId];
+   207→  if (!d) return 0;
+   208→  const hp = tiered(d, tier).hp;
+   209→  return hp * (45 / Math.max(8, 45 - d.armor * 0.7));
+   210→}
+   211→
+   212→function waveEffHp(groups: SpawnGroup[]): number {
+   213→  let sum = 0;
+   214→  for (const g of groups) sum += g.count * unitEff(g.enemy, g.tier);
+   215→  return sum;
+   216→}
+   217→
+   218→/** بخش ۲۱ — نرمال‌سازی صحیح موج به منحنی هدف
+   219→ * هر گام: تک‌حرکتی که eff را بیشترین نزدیکی به هدف می‌برد (همگرایی یکنوا، بدون نوسان)
+   220→ * escortMin: کف تعداد محافظ‌ها در موج Boss (بخش ۲۱ — Boss Combination) */
+   221→function normalizeWave(groups: SpawnGroup[], target: number, skipBoss = false, escortMin = 0) {
+   222→  const LO = target * 0.9, HI = target * 1.1;
+   223→  for (let guard = 0; guard < 240; guard++) {
+   224→    const eff = waveEffHp(groups);
+   225→    if (eff > HI) {
+   226→      let best = -1, bestErr = Math.abs(eff - target);
+   227→      groups.forEach((g, i) => {
+   228→        if (g.count <= 1) return;
+   229→        if (skipBoss && ENEMIES[g.enemy]?.boss) return;
+   230→        if (escortMin > 0 && g.count <= escortMin) return;
+   231→        const err = Math.abs(eff - unitEff(g.enemy, g.tier) - target);
+   232→        if (err < bestErr) { bestErr = err; best = i; }
+   233→      });
+   234→      if (best < 0) break;
+   235→      groups[best].count--;
+   236→    } else if (eff < LO) {
+   237→      let best = -1, bestErr = Math.abs(eff - target);
+   238→      groups.forEach((g, i) => {
+   239→        if (skipBoss && ENEMIES[g.enemy]?.boss) return;
+   240→        if (g.count >= 40) return; // بخش ۲۱ — ضد یکنواختی، گروه‌های بزرگ‌تر پر نمی‌شوند
+   241→        const err = Math.abs(eff + unitEff(g.enemy, g.tier) - target);
+   242→        if (err < bestErr) { bestErr = err; best = i; }
+   243→      });
+   244→      if (best < 0) break;
+   245→      groups[best].count++;
+   246→    } else break;
+   247→  }
+   248→}
+   249→
+   250→function buildWaves(chapter: ChapterDef, stage: number, pathCount: number): WaveData[] {
+   251→  const D = (chapter.id - 1) * 10 + stage; // شاخص سختی ۱..۱۰۰
+   252→  const rng = mulberry32(chapter.id * 7919 + stage * 104729);
+   253→  const pool = CHAPTER_POOLS[chapter.id];
+   254→  const comp = POOL_COMP[chapter.id];
+   255→  // بخش ۲۱ — tier پیوسته: HP نرم رشد می‌کند (بدون پرتگاه ×۱٫۶۵ در مرز فصل)
+   256→  const tFrac = Math.round((1 + D * 0.0265) * 100) / 100;
+   257→  const tierMult = 1 + 0.65 * (tFrac - 1);
+   258→  const intensity = 0.8 + D * 0.006; // ۰٫۸ تا ۱٫۴
+   259→  const waves: WaveData[] = [];
+   260→
+   261→  for (let w = 0; w < 10; w++) {
+   262→    // ----- موج Boss -----
+   263→    if (w === 9) {
+   264→      const bossTier = Math.round((1 + (D - 1) * 0.024) * 100) / 100;
+   265→      const groups: SpawnGroup[] = [
+   266→        { enemy: chapter.bossId, count: 1, interval: 1, delay: 2, tier: bossTier, path: 0 },
+   267→      ];
+   268→      // محافظ‌های Boss — پخش روی همه مسیرها در مراحل چندمسیره
+   269→      const escorts = pool.filter((e) => roleOf(e) !== 'utility');
+   270→      const e1 = escorts[Math.floor(rng() * escorts.length)];
+   271→      const e2 = escorts[Math.floor(rng() * escorts.length)];
+   272→      const eCount = Math.round(6 + D * 0.06);
+   273→      groups.push({ enemy: e1, count: eCount, interval: Math.max(1.4, 3.2 - D * 0.012), delay: 12, tier: tFrac });
+   274→      if (D > 35) {
+   275→        groups.push({ enemy: e2, count: Math.max(3, Math.round(eCount * 0.6)), interval: Math.max(1.8, 3.6 - D * 0.012), delay: 20, tier: tFrac });
+   276→      }
+   277→      // بخش ۲۱ — نرمال‌سازی موج Boss (Boss ثابت؛ محافظ‌ها با کف ۴۰٪ حفظ می‌شوند)
+   278→      const bossTarget = WAVE_BASE * growAt(D) * intensity * 1.23 * tierMult * comp * 1.55;
+   279→      normalizeWave(groups, bossTarget, true, Math.max(2, Math.floor(eCount * 0.4)));
+   280→      waves.push({
+   281→        coinBonus: Math.round(230 + D * 2.3),
+   282→        crystalBonus: 12 + chapter.id,
+   283→        groups: distributeGroups(groups, pathCount, rng),
+   284→        boss: true,
+   285→      });
+   286→      continue;
+   287→    }
+   288→
+   289→    // ----- موج‌های عادی -----
+   290→    const wavePower = intensity * (0.75 + w * 0.06);
+   291→    const nGroups = w < 2 ? 1 : w < 5 ? 2 : D > 40 ? 3 : 2;
+   292→    const picked: string[] = [];
+   293→    const poolShuffled = [...pool].sort(() => rng() - 0.5);
+   294→    // تنوع: هوایی از موج ۴ به بعد، شفادهنده/احضارکننده از موج ۵ به بعد، جادوگر از موج ۲
+   295→    for (const e of poolShuffled) {
+   296→      if (picked.length >= nGroups) break;
+   297→      const role = roleOf(e);
+   298→      if (role === 'air' && w < 3) continue;
+   299→      if (role === 'utility' && w < 4) continue;
+   300→      if (role === 'caster' && w < 1) continue; // موج اول بدون سپر جادوگر — شروع نرم
+   301→      if (picked.includes(e)) continue;
+   302→      picked.push(e);
+   303→    }
+   304→    // اگر نقش هوایی موج اول بود جایگزین زمینی
+   305→    while (picked.length < nGroups) {
+   306→      const fallback = poolShuffled.find((e) => !picked.includes(e) && roleOf(e) !== 'air');
+   307→      if (!fallback) break;
+   308→      picked.push(fallback);
+   309→    }
+   310→
+   311→    const groups: SpawnGroup[] = [];
+   312→    picked.forEach((enemyId, gi) => {
+   313→      const role = roleOf(enemyId);
+   314→      const base = ROLE_BASE[role];
+   315→      // بخش ۲۱ — jitter مهارشده (قبلاً ۰٫۸۵–۱٫۱۵ نوسان ±۵۰٪ بین مراحل مجاور می‌ساخت)
+   316→      const count = Math.max(1, Math.round(base.count * wavePower * (0.9 + rng() * 0.2)));
+   317→      const interval = Math.max(0.5, base.interval - D * 0.004 + (rng() - 0.5) * 0.3);
+   318→      const gTier = Math.round((tFrac + (w >= 6 && rng() < 0.3 ? 0.3 : 0)) * 100) / 100;
+   319→      groups.push({
+   320→        enemy: enemyId,
+   321→        count,
+   322→        interval: Math.round(interval * 10) / 10,
+   323→        delay: gi * (3 + rng() * 3),
+   324→        tier: gTier,
+   325→      });
+   326→    });
+   327→
+   328→    // بخش ۲۱ — نرمال‌سازی HP مؤثر موج به منحنی هدف
+   329→    // (ترکیب نقش‌ها و هویت دشمنان حفظ می‌شود؛ فقط فشار کل یکنواخت می‌گردد)
+   330→    const target = WAVE_BASE * growAt(D) * wavePower * tierMult * comp;
+   331→    normalizeWave(groups, target);
+   332→
+   333→    waves.push({
+   334→      coinBonus: Math.round(52 + D * 0.9 + w * 6),
+   335→      groups: distributeGroups(groups, pathCount, rng),
+   336→    });
+   337→  }
+   338→  return waves;
+   339→}
+   340→
+   341→/** پخش گروه‌ها روی مسیرها — در مراحل چندمسیره فشار متوازن می‌آید */
+   342→function distributeGroups(groups: SpawnGroup[], pathCount: number, rng: () => number): SpawnGroup[] {
+   343→  if (pathCount <= 1) return groups;
+   344→  const out: SpawnGroup[] = [];
+   345→  for (const g of groups) {
+   346→    // هر گروه به‌جز شفادهنده/احضارکننده — بین همه مسیرها تقسیم می‌شود تا هر مسیر فعال بماند
+   347→    if (g.count >= pathCount * 2 && roleOf(g.enemy) !== 'utility') {
+   348→      const per = Math.floor(g.count / pathCount);
+   349→      let rem = g.count % pathCount;
+   350→      for (let p = 0; p < pathCount; p++) {
+   351→        const c = per + (rem-- > 0 ? 1 : 0);
+   352→        if (c <= 0) continue;
+   353→        out.push({ ...g, count: c, path: p, delay: g.delay + p * (0.8 + rng() * 0.6) });
+   354→      }
+   355→    } else {
+   356→      // گروه خیلی کوچک — یک مسیر چرخشی
+   357→      out.push({ ...g, path: Math.floor(rng() * pathCount) });
+   358→    }
+   359→  }
+   360→  return out;
+   361→}
+   362→
+   363→// ---------------------------- ساخت مرحله ----------------------------
+   364→
+   365→export function stageId(chapter: number, stage: number): string {
+   366→  return `c${chapter}s${stage}`;
+   367→}
+   368→
+   369→/** درآمد کل مرحله بدون جبران (سکه شروع + کشتار + پاداش پایه) — پایه جبران اقتصاد (بخش ۲۰/۲۱) */
+   370→function stageTotalIncome(chapter: ChapterDef, stage: number): number {
+   371→  const lv = buildStage(chapter, stage, 1);
+   372→  let kill = 0, bonus = 0;
+   373→  for (const w of lv.waves) {
+   374→    bonus += w.coinBonus ?? 0;
+   375→    for (const g of w.groups) kill += g.count * (tiered(ENEMIES[g.enemy], g.tier)?.reward ?? 0);
+   376→  }
+   377→  return lv.startCoins + kill + bonus;
+   378→}
+   379→
+   380→export function buildStage(chapter: ChapterDef, stage: number, incomeComp = 1): LevelData {
+   381→  const D = (chapter.id - 1) * 10 + stage;
+   382→  const pathCount = pathCountFor(chapter.id, stage);
+   383→  const waves = buildWaves(chapter, stage, pathCount);
+   384→  if (incomeComp !== 1) {
+   385→    // بخش ۲۰ — موج‌های کم‌درآمد (تانک‌سنگین) پاداش بیشتر می‌گیرند تا اقتصاد صاف بماند
+   386→    for (const w of waves) w.coinBonus = Math.round((w.coinBonus ?? 0) * incomeComp);
+   387→  }
+   388→  return {
+   389→    id: stageId(chapter.id, stage),
+   390→    chapter: chapter.id,
+   391→    stage,
+   392→    nameKey: chapter.nameKey,
+   393→    descKey: chapter.descKey,
+   394→    coreHp: Math.round(100 + (chapter.id - 1) * 6 + (stage - 1) * 2),
+   395→    startCoins: Math.round(220 + chapter.id * 14 + stage * 6),
+   396→    startCrystals: Math.round(28 + chapter.id * 2 + (stage - 1) * 0.5),
+   397→    timeOfDay: chapter.timeOfDay,
+   398→    env: chapter.env,
+   399→    star2HealthPct: 70,
+   400→    star3ChallengeKey: 'starChallenge',
+   401→    paths: pickPaths(chapter.id, stage, pathCount),
+   402→    waves,
+   403→  };
+   404→}
+   405→
+   406→/** هر ۱۰۰ مرحله — یک بار در load ساخته می‌شود (داده خالص، هزینه نزدیک صفر)
+   407→ * دومرحله‌ای: اول درآمد کل هر مرحله، بعد هموارسازی به منحنی درآمد کمپین
+   408→ * (لنگر = میانگین فصل ۱؛ موج‌های کم‌درآمدِ تانک‌سنگین پاداش بیشتر می‌گیرند) */
+   409→function buildAllStages(): Record<string, LevelData> {
+   410→  const incomes: number[] = [];
+   411→  for (const ch of CHAPTERS) {
+   412→    for (let s = 1; s <= 10; s++) incomes.push(stageTotalIncome(ch, s));
+   413→  }
+   414→  const ref = incomes.slice(0, 10).reduce((a, r) => a + r, 0) / 10; // لنگر فصل ۱
+   415→  const levels: Record<string, LevelData> = {};
+   416→  let i = 0;
+   417→  for (const ch of CHAPTERS) {
+   418→    for (let s = 1; s <= 10; s++) {
+   419→      const D = (ch.id - 1) * 10 + s;
+   420→      const target = ref * Math.pow(1.0117, D - 1); // منحنی درآمد کمپین
+   421→      const incomeComp = Math.min(2.0, Math.max(0.6, target / incomes[i++]));
+   422→      levels[stageId(ch.id, s)] = buildStage(ch, s, incomeComp);
+   423→    }
+   424→  }
+   425→  return levels;
+   426→}
+   427→
+   428→export const STAGES: Record<string, LevelData> = buildAllStages();
+   429→
+   430→// ---------------------------- قفل و پیشرفت ----------------------------
+   431→
+   432→/** مرحله آزاد است؟ — زنجیره‌ای: مرحله قبلی یا Boss فصل قبل */
+   433→export function isStageUnlocked(chapter: number, stage: number, completed: Set<string>): boolean {
+   434→  if (chapter === 1 && stage === 1) return true;
+   435→  if (stage > 1) return completed.has(stageId(chapter, stage - 1));
+   436→  return completed.has(stageId(chapter - 1, 10));
+   437→}
+   438→
+   439→export function completedStageIds(save: SaveData): Set<string> {
+   440→  return new Set(Object.entries(save.levels).filter(([, r]) => r.completed).map(([id]) => id));
+   441→}
+   442→
+   443→export function isChapterUnlocked(chapterId: number, completed: Set<string>): boolean {
+   444→  return isStageUnlocked(chapterId, 1, completed);
+   445→}
+   446→
+   447→/** نخستین مرحله آزاد و بازی‌نشده — «ادامه» از منو و دکمه مرحله بعد */
+   448→export function firstPlayableStageId(save: SaveData): string {
+   449→  const completed = completedStageIds(save);
+   450→  for (const ch of CHAPTERS) {
+   451→    for (let s = 1; s <= 10; s++) {
+   452→      if (!completed.has(stageId(ch.id, s)) && isStageUnlocked(ch.id, s, completed)) {
+   453→        return stageId(ch.id, s);
+   454→      }
+   455→    }
+   456→  }
+   457→  return stageId(10, 10);
+   458→}
+   459→
+   460→/** مرحله بعدی در زنجیره — null یعنی پایان کمپین */
+   461→export function nextStageId(chapter: number, stage: number): string | null {
+   462→  if (stage < 10) return stageId(chapter, stage + 1);
+   463→  if (chapter < 10) return stageId(chapter + 1, 1);
+   464→  return null;
+   465→}
+   466→
+   467→/** مجموع ستاره‌های یک فصل */
+   468→export function chapterStars(chapterId: number, save: SaveData): number {
+   469→  let sum = 0;
+   470→  for (let s = 1; s <= 10; s++) {
+   471→    sum += save.levels[stageId(chapterId, s)]?.stars ?? 0;
+   472→  }
+   473→  return sum;
+   474→}
+   475→
+   476→/** مجموع ستاره‌های کل کمپین (۳۰ = عالی، ۳۰۰ = کامل) */
+   477→export function totalCampaignStars(save: SaveData): number {
+   478→  let sum = 0;
+   479→  for (const ch of CHAPTERS) sum += chapterStars(ch.id, save);
+   480→  return sum;
+   481→}
+   482→
+   483→/** تعداد مراحل تکمیل‌شده از ۱۰۰ */
+   484→export function completedStageCount(save: SaveData): number {
+   485→  return completedStageIds(save).size;
+   486→}
+   487→
+   488→// ============================================================
+   489→// دستاوردها — Data-Driven (۳۰ دستاورد)
+   490→// ============================================================
+   491→
+   492→export const ACHIEVEMENTS: AchievementDef[] = [
+   493→  { id: 'first_fortress', nameKey: 'achFirstFortress', descKey: 'achFirstFortressDesc', crystalReward: 10, check: (s) => s.victories >= 1 },
+   494→  { id: 'commander', nameKey: 'achCommander', descKey: 'achCommanderDesc', crystalReward: 20, check: (s) => s.victories >= 3 },
+   495→  { id: 'legend', nameKey: 'achLegend', descKey: 'achLegendDesc', crystalReward: 100, check: (s) => s.victories >= 10 },
+   496→  { id: 'mage', nameKey: 'achMage', descKey: 'achMageDesc', crystalReward: 10, check: (s) => s.magicCasts >= 10 },
+   497→  { id: 'archmage', nameKey: 'achArchmage', descKey: 'achArchmageDesc', crystalReward: 30, check: (s) => s.magicCasts >= 50 },
+   498→  { id: 'slayer', nameKey: 'achSlayer', descKey: 'achSlayerDesc', crystalReward: 10, check: (s) => s.kills >= 50 },
+   499→  { id: 'exterminator', nameKey: 'achExterminator', descKey: 'achExterminatorDesc', crystalReward: 40, check: (s) => s.kills >= 500 },
+   500→  { id: 'wave_breaker', nameKey: 'achWaveBreaker', descKey: 'achWaveBreakerDesc', crystalReward: 15, check: (s) => s.wavesSurvived >= 25 },
+   501→  { id: 'veteran', nameKey: 'achVeteran', descKey: 'achVeteranDesc', crystalReward: 60, check: (s) => s.wavesSurvived >= 100 },
+   502→  { id: 'giant_slayer', nameKey: 'achGiantSlayer', descKey: 'achGiantSlayerDesc', crystalReward: 25, check: (s) => s.bossKills >= 1 },
+   503→  { id: 'titan_bane', nameKey: 'achTitanBane', descKey: 'achTitanBaneDesc', crystalReward: 50, check: (s) => s.bossKills >= 3 },
+   504→  { id: 'architect', nameKey: 'achArchitect', descKey: 'achArchitectDesc', crystalReward: 10, check: (s) => s.towersBuilt >= 20 },
+   505→  { id: 'master_builder', nameKey: 'achMasterBuilder', descKey: 'achMasterBuilderDesc', crystalReward: 20, check: (s) => s.upgrades >= 50 },
+   506→  { id: 'star_seeker', nameKey: 'achStarSeeker', descKey: 'achStarSeekerDesc', crystalReward: 15, check: (s) => s.totalStars >= 5 },
+   507→  { id: 'star_lord', nameKey: 'achStarLord', descKey: 'achStarLordDesc', crystalReward: 50, check: (s) => s.totalStars >= 15 },
+   508→  { id: 'untouchable', nameKey: 'achUntouchable', descKey: 'achUntouchableDesc', crystalReward: 30, check: () => false }, // رویدادی
+   509→  { id: 'perfect_defense', nameKey: 'achPerfectDefense', descKey: 'achPerfectDefenseDesc', crystalReward: 25, check: () => false }, // رویدادی
+   510→  { id: 'last_stand', nameKey: 'achLastStand', descKey: 'achLastStandDesc', crystalReward: 40, check: () => false }, // رویدادی
+   511→  { id: 'blitz', nameKey: 'achBlitz', descKey: 'achBlitzDesc', crystalReward: 15, check: () => false }, // رویدادی
+   512→  { id: 'tower_master', nameKey: 'achTowerMaster', descKey: 'achTowerMasterDesc', crystalReward: 20, check: () => false }, // رویدادی
+   513→  { id: 'maxed', nameKey: 'achMaxed', descKey: 'achMaxedDesc', crystalReward: 20, check: () => false }, // رویدادی
+   514→  { id: 'dragon_fear', nameKey: 'achDragonFear', descKey: 'achDragonFearDesc', crystalReward: 30, check: () => false }, // رویدادی
+   515→  { id: 'economy', nameKey: 'achEconomy', descKey: 'achEconomyDesc', crystalReward: 20, check: () => false }, // رویدادی
+   516→  { id: 'magic_rain', nameKey: 'achMagicRain', descKey: 'achMagicRainDesc', crystalReward: 15, check: () => false }, // رویدادی
+   517→  { id: 'rich', nameKey: 'achRich', descKey: 'achRichDesc', crystalReward: 15, check: (_s: PlayerStats) => false }, // رویدادی (در نبرد بررسی می‌شود)
+   518→  { id: 'crystal_hoarder', nameKey: 'achCrystalHoarder', descKey: 'achCrystalHoarderDesc', crystalReward: 15, check: () => false }, // رویدادی
+   519→  { id: 'storm_caller', nameKey: 'achStormCaller', descKey: 'achStormCallerDesc', crystalReward: 30, check: () => false }, // رویدادی
+   520→  { id: 'inferno', nameKey: 'achInferno', descKey: 'achInfernoDesc', crystalReward: 30, check: () => false }, // رویدادی
+   521→  { id: 'guardian_angel', nameKey: 'achGuardianAngel', descKey: 'achGuardianAngelDesc', crystalReward: 30, check: () => false }, // رویدادی
+   522→  { id: 'hero_max', nameKey: 'achNewAchievement', descKey: 'achUntouchableDesc', crystalReward: 50, check: () => false }, // جایگاه نگهدارنده
+   523→];
+   524→
+   525→// سازگاری — بقیه پروژه از STAGES استفاده می‌کنند
+   526→export const LEVELS = STAGES;
+   527→
