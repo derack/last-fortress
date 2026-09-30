@@ -404,3 +404,22 @@ Work Log:
 Stage Summary:
 - فاز ۶ کامل شد: بخش ۱۳ (VFX) و ۱۴ (Combat Feedback) Audit+تایید، بخش ۱۵ (Audio) ارتقای عمیق: deepFreeze fix، singleton موسیقی پیوسته با mood منو/نبرد، drop-in فایل واقعی، ولوم زنده، haptics واقعی
 - PHASEهای باقی‌مانده: ۷ (Balance ۱۰۰ مرحله)، ۸ (Mobile)، ۹ (Pipeline)، ۱۰-۱۲ (تست/Final Build/Report)
+
+---
+Task ID: 17
+Agent: Super Z (main)
+Task: باگ گزارش کاربر — شلیک تاورها از پشت؛ گلوله باید از دهانه رو به دشمن خارج شود
+
+Work Log:
+- ریشه‌یابی: برج آتش لوله خمپاره با tube.rotation.x=-0.6 به -Z (پشت) خم بود + ember در z=-0.42؛ چرخش برجک atan2(dx,dz) محور +Z را به دشمن می‌چرخاند → دهانه رو به عقب
+- مدل‌ها (models.ts): لوله آتش 0.6+ و ember به z=+0.42 فلیپ شد؛ نشانگر muzzle (Object3D) برای ۴ برج بالستیک: sentinel نوک توپ z=1.75، fire دهانه خمپاره، cannon سر توپ سنگین، ballista نوک ریل
+- CharacterFactory: کلید 'muzzle' به TOWER_UDATA_KEYS (هر دو مسیر procedural و GLB)
+- Tower.ts: muzzleWorld() با updateWorldMatrix + getWorldPosition → نقطه شلیک همه پروژکتایل‌ها = دهانه واقعی؛ fallback مرکز برج برای برج‌های جادویی؛ جرقه دهانه bullet بر اساس جهت هدف؛ ability توپ/بالیستا هم از دهانه
+- **باگ پنهان کشف‌شده**: گروه turret برج sentinel هیچ‌وقت g.add(head) نشده بود → برجک هرگز رندر نمی‌شد (برج بدون سر دیده می‌شد) و muzzle یتیم matrixWorld غلط می‌داد (افست 11.12 به‌جای 1.75) → g.add(head) اضافه شد
+- اثبات عددی در مرورگر: capture روی ctx.spawnProjectile → گلوله آتش horizOffset=0.42/height=2.62/side=FRONT(dot=+0.42) دقیقاً دهانه لوله؛ sentinel muzzle 1.75/2.4/FRONT؛ turretRotY==wantRot==-2.78 حین هدف‌گیری
+- اسکرین‌شات: t17-fire-tower-front-shoot.png، t17-fire-tower-closeup.png، t17-sentinel-turret-visible.png (برجک جدیداً رندر می‌شود)
+- tsc صفر خطا در src/ | Build موفق | سیو ریست شد
+
+Stage Summary:
+- شلیک همه برج‌های بالستیک اکنون از دهانه رو به دشمن است؛ باگ رندر برجک sentinel هم رفع شد
+- PHASEهای باقی‌مانده: ۸ (Mobile)، ۹ (Pipeline)، ۱۰-۱۲
