@@ -241,4 +241,6 @@ export interface SaveData {
   unlockedHeroes: string[];
   /** قهرمان انتخابی برای نبرد */
   selectedHero: string;
+  /** کوره اثیر — سطح هر مسیر ارتقای دائمی (۰ تا ۲۰) */
+  forge: Record<string, number>;
 }

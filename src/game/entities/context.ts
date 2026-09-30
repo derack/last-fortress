@@ -71,6 +71,14 @@ export interface GameContext {
   onEnemyLeak(enemy: DamageableEnemy): void;
   heroDamageBuff: number; // ضریب افزایش آسیب از قهرمان
   towerRateBuff: number; // ضریب افزایش سرعت شلیک (فرمان نبرد)
+  /** کوره اثیر — آسیب دائمی برج‌ها (مثال ۰٫۲ = +۲۰٪) */
+  towerDamageBuff: number;
+  /** کوره اثیر — برد دائمی برج‌ها */
+  towerRangeBuff: number;
+  /** کوره اثیر — آسیب دائمی قهرمان */
+  forgeHeroDamage: number;
+  /** کوره اثیر — تندرستی دائمی قهرمان */
+  forgeHeroHp: number;
   /** از کار انداختن موقت برج — فوران غول آتش/نفس اژدها/آئورای یخ */
   disableTower(towerId: number, duration: number, color?: number): void;
   /** نمایش بنر «فاز دوم» Boss در UI */

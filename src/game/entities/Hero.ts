@@ -48,9 +48,10 @@ export class Hero {
   constructor(heroId: string, scene: THREE.Scene, ctx: GC) {
     this.ctx = ctx;
     this.data = HEROES[heroId] ?? HEROES.arman;
-    this.maxHp = this.data.hp;
-    this.hp = this.data.hp;
-    this.damage = this.data.damage;
+    // کوره اثیر — ضریب‌های دائمی روی مشخصات پایه
+    this.maxHp = Math.round(this.data.hp * (1 + ctx.forgeHeroHp));
+    this.hp = this.maxHp;
+    this.damage = Math.round(this.data.damage * (1 + ctx.forgeHeroDamage));
     // Asset Pipeline — مدل واقعی GLB به‌محض آماده شدن درجا سوار می‌شود
     this.handle = characterFactory.createHeroHandle(this.data.id);
     this.mesh = this.handle.root;

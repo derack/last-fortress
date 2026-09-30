@@ -11,6 +11,22 @@ const LEGACY_LEVEL_TO_CHAPTER: Record<string, number> = {
   l1: 1, l2: 2, l3: 3, l4: 4, l5: 5, l6: 10,
 };
 
+/** مهاجرت ذخیره نسخه ۲ → نسخه ۳ — افزودن کوره اثیر (ارتقاهای دائمی) */
+function migrateV2toV3(data: SaveData): SaveData {
+  if (!data.forge || typeof data.forge !== 'object') data.forge = {};
+  // پاکسازی مقادیر نامعتبر — سطح بین ۰ و ۲۰
+  for (const k of Object.keys(data.forge)) {
+    const v = data.forge[k];
+    if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) {
+      delete data.forge[k];
+    } else {
+      data.forge[k] = Math.min(20, Math.floor(v));
+    }
+  }
+  data.version = 3;
+  return data;
+}
+
 /** مهاجرت ذخیره نسخه ۱ → نسخه ۲ — مراحل قدیمی به فصل‌ها اعتبار داده می‌شوند */
 function migrateV1toV2(data: SaveData): SaveData {
   for (const [legacyId, chapterId] of Object.entries(LEGACY_LEVEL_TO_CHAPTER)) {
@@ -32,7 +48,7 @@ function migrateV1toV2(data: SaveData): SaveData {
 
 export function defaultSave(): SaveData {
   return {
-    version: 2,
+    version: 3,
     settings: { language: 'fa', quality: 'medium', music: 0.6, sfx: 0.8, haptics: true },
     levels: {},
     crystals: 0,
@@ -51,6 +67,7 @@ export function defaultSave(): SaveData {
     tutorialDone: false,
     unlockedHeroes: ['arman'],
     selectedHero: 'arman',
+    forge: {},
   };
 }
 
@@ -71,10 +88,16 @@ export function loadSave(): SaveData {
       // مهاجرت ذخیره‌های قدیمی — قهرمانان
       unlockedHeroes: data.unlockedHeroes?.length ? data.unlockedHeroes : ['arman'],
       selectedHero: data.selectedHero ?? 'arman',
+      // کوره اثیر — مقادیر نامعتبر پاک می‌شوند
+      forge: { ...(data.forge ?? {}) },
     };
     // مهاجرت نسخه ۱ → ۲ — کمپین ۱۰۰ مرحله‌ای
     if (!data.version || data.version < 2) {
-      return migrateV1toV2(merged);
+      migrateV1toV2(merged);
+    }
+    // مهاجرت نسخه ۲ → ۳ — کوره اثیر
+    if (!data.version || data.version < 3) {
+      return migrateV2toV3(merged);
     }
     return merged;
   } catch {

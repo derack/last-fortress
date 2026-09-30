@@ -5,6 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import { t } from '@/game/data/i18n';
 import { CampaignMap } from './CampaignMap';
 import { HeroesPanel } from './HeroesPanel';
+import { ForgePanel } from './ForgePanel';
 import { AchievementsPanel } from './AchievementsPanel';
 import { SettingsPanel } from './SettingsPanel';
 import { CharacterGallery } from './CharacterGallery';
@@ -20,10 +21,10 @@ import { CharacterGallery } from './CharacterGallery';
 // ذخیره‌سازی مشترک از طریق localStorage همگام می‌ماند.
 // ============================================================
 
-export type StandalonePageId = 'map' | 'heroes' | 'achievements' | 'settings' | 'gallery';
+export type StandalonePageId = 'map' | 'heroes' | 'forge' | 'achievements' | 'settings' | 'gallery';
 
 export function isStandalonePage(v: string): v is StandalonePageId {
-  return ['map', 'heroes', 'achievements', 'settings', 'gallery'].includes(v);
+  return ['map', 'heroes', 'forge', 'achievements', 'settings', 'gallery'].includes(v);
 }
 
 // ------------------------------------------------------------
@@ -117,6 +118,7 @@ export function StandaloneScreen({ id }: { id: StandalonePageId }) {
       <div className="fixed inset-0 bg-[#0b0f1c]">
         {id === 'map' && <CampaignMap onStart={startBattle} />}
         {id === 'heroes' && <HeroesPanel />}
+        {id === 'forge' && <ForgePanel />}
         {id === 'achievements' && <AchievementsPanel />}
         {id === 'settings' && <SettingsPanel />}
         {id === 'gallery' && <CharacterGallery onClose={closePage} />}

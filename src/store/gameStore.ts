@@ -4,12 +4,13 @@ import { create } from 'zustand';
 import type { Language, Quality, SaveData, MagicId } from '@/game/data/types';
 import { loadSave, persistSave, resetSave } from '@/game/systems/SaveSystem';
 import { setLanguage } from '@/game/data/i18n';
+import { FORGE_MAX, forgeNextCost, type ForgeTrackId } from '@/game/data/forge';
 
 // ============================================================
 // Store مرکزی UI — هماهنگی بین React و موتور بازی
 // ============================================================
 
-export type Screen = 'menu' | 'map' | 'battle' | 'settings' | 'achievements' | 'heroes';
+export type Screen = 'menu' | 'map' | 'battle' | 'settings' | 'achievements' | 'heroes' | 'forge';
 
 export interface TowerInfo {
   id: number;
@@ -106,6 +107,8 @@ interface GameState {
   setPendingLevel: (id: string) => void;
   setSelectedHero: (id: string) => void;
   unlockHero: (id: string, cost: number) => boolean;
+  /** خرید یک سطح ارتقای کوره اثیر — false یعنی ذرات ناکافی یا حداکثر */
+  buyForgeLevel: (trackId: ForgeTrackId) => boolean;
 }
 
 let toastId = 1;
@@ -321,6 +324,21 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (save.crystals < cost) return false;
     save.crystals -= cost;
     save.unlockedHeroes.push(id);
+    persistSave(save);
+    set({ save: { ...save } });
+    return true;
+  },
+
+  /** خرید ارتقای دائمی کوره اثیر با ذرات اثیر */
+  buyForgeLevel: (trackId) => {
+    const { save } = get();
+    if (!save) return false;
+    const lvl = Math.min(FORGE_MAX, Math.max(0, save.forge?.[trackId] ?? 0));
+    if (lvl >= FORGE_MAX) return false;
+    const cost = forgeNextCost(trackId, lvl);
+    if (save.knowledge < cost) return false;
+    save.knowledge -= cost;
+    save.forge = { ...(save.forge ?? {}), [trackId]: lvl + 1 };
     persistSave(save);
     set({ save: { ...save } });
     return true;

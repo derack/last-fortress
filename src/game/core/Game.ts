@@ -3,6 +3,7 @@ import type { LevelData, MagicId, SaveData } from '../data/types';
 import { TOWERS, isTowerUnlocked } from '../data/towers';
 import { ENEMIES } from '../data/enemies';
 import { MAGIC } from '../data/magic';
+import { forgePct } from '../data/forge';
 import { BattleScene } from '../scene/BattleScene';
 import { CameraController } from './CameraController';
 import { InputController, TapHit } from './InputController';
@@ -101,10 +102,11 @@ export class Game {
     this.canvas = canvas;
     this.level = level;
     this.save = save;
-    this.coins = level.startCoins;
+    // کوره اثیر — ضرایب دائمی اقتصاد و هسته
+    this.coins = Math.round(level.startCoins * (1 + forgePct(save, 'economy')));
     this.crystals = level.startCrystals + save.crystals;
-    this.coreHp = level.coreHp;
-    this.coreMaxHp = level.coreHp;
+    this.coreHp = Math.round(level.coreHp * (1 + forgePct(save, 'coreFort')));
+    this.coreMaxHp = this.coreHp;
     this.totalWavesSurvivedAtStart = save.stats.wavesSurvived;
     for (const m of Object.values(MAGIC)) this.magicCd[m.id] = 0;
 
@@ -141,6 +143,11 @@ export class Game {
       onEnemyLeak: (e) => this.handleLeak(e as Enemy),
       heroDamageBuff: 0,
       towerRateBuff: 0,
+      // کوره اثیر — ضرایب دائمی برج و قهرمان
+      towerDamageBuff: forgePct(save, 'towerDamage'),
+      towerRangeBuff: forgePct(save, 'towerRange'),
+      forgeHeroDamage: forgePct(save, 'heroAttack'),
+      forgeHeroHp: forgePct(save, 'heroVitality'),
       disableTower: (towerId, duration, color) => this.disableTower(towerId, duration, color),
       onBossPhase: (nameKey, color) => this.bus.emit('bossPhase', { nameKey, color }),
     };
@@ -978,12 +985,13 @@ export class Game {
     const star3 = this.leaks === 0;
     const stars = (star1 ? 1 : 0) + (star2 ? 1 : 0) + (star3 ? 1 : 0);
 
-    // پاداش‌ها
+    // پاداش‌ها — کریستال + ذرات اثیر (بر اساس فصل و ستاره؛ Boss دوبرابر)
     const rewardCrystals = 10 + stars * 5;
-    const rewardKnowledge = 2 + stars;
+    let rewardShards = 5 + stars * 2 + this.level.chapter;
+    if (this.level.stage === 10) rewardShards *= 2;
     this.crystals += rewardCrystals;
     this.save.crystals = this.crystals;
-    this.save.knowledge += rewardKnowledge;
+    this.save.knowledge += rewardShards;
     this.save.stats.victories++;
     if (this.leaks === 0 && !this.save.achievements.includes('untouchable')) this.save.achievements.push('untouchable');
     if (this.coreHp === this.coreMaxHp && !this.save.achievements.includes('perfect_defense')) this.save.achievements.push('perfect_defense');
@@ -1005,7 +1013,7 @@ export class Game {
     this.bus.emit('victory', {
       stars,
       healthPct: Math.round(healthPct),
-      rewards: { crystals: rewardCrystals, knowledge: rewardKnowledge, coins: this.coinsEarned },
+      rewards: { crystals: rewardCrystals, knowledge: rewardShards, coins: this.coinsEarned },
     });
   }
 

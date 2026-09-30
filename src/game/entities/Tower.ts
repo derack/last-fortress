@@ -51,11 +51,14 @@ export class Tower implements TowerLike {
   }
 
   get damage(): number {
-    return this.data.levels[this.level - 1].damage * (1 + this.ctx.heroDamageBuff);
+    // کوره اثیر + بافرها — ضریب دائمی × ضریب نبرد
+    return this.data.levels[this.level - 1].damage
+      * (1 + this.ctx.heroDamageBuff)
+      * (1 + this.ctx.towerDamageBuff);
   }
 
   get range(): number {
-    return this.data.levels[this.level - 1].range;
+    return this.data.levels[this.level - 1].range * (1 + this.ctx.towerRangeBuff);
   }
 
   get fireRate(): number {

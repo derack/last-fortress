@@ -12,6 +12,7 @@ import { BattleUI, BattleGameApi } from './BattleUI';
 import { SettingsPanel } from './SettingsPanel';
 import { AchievementsPanel } from './AchievementsPanel';
 import { HeroesPanel } from './HeroesPanel';
+import { ForgePanel } from './ForgePanel';
 import { CharacterGallery } from './CharacterGallery';
 import type { SaveData } from '@/game/data/types';
 
@@ -160,6 +161,7 @@ export function GameShell() {
       {screen === 'settings' && <SettingsPanel />}
       {screen === 'achievements' && <AchievementsPanel />}
       {screen === 'heroes' && <HeroesPanel />}
+      {screen === 'forge' && <ForgePanel />}
 
       {galleryOpen && <CharacterGallery onClose={() => setGalleryOpen(false)} />}
 
