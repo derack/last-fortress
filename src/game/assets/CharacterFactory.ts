@@ -34,7 +34,7 @@ export type HandleSource = 'glb' | 'fallback';
 export type AnyAnimationController = CharacterAnimationController | ProceduralAnimationController;
 
 /** کلیدهای userData سازنده برج که باید به ریشه Handle منتقل شوند */
-const TOWER_UDATA_KEYS = ['turret', 'spinCrystal', 'spinRing', 'ember'] as const;
+const TOWER_UDATA_KEYS = ['turret', 'muzzle', 'spinCrystal', 'spinRing', 'ember'] as const;
 
 /** انتقال userData سازنده برج از گروه داخلی به ریشه (Gameplay به این کلیدها تکیه دارد) */
 function propagateTowerUdata(from: THREE.Object3D, to: THREE.Object3D) {

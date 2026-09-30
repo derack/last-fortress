@@ -60,6 +60,10 @@ export function buildTowerMesh(towerId: string, level: number): THREE.Group {
       b3.position.x = -0.3;
       head.add(b2, b3);
     }
+    // نشانگر دهانه لوله — نقطه واقعی شلیک (سر جلویی توپ)
+    const muzzle = new THREE.Object3D();
+    muzzle.position.set(0, 0, 1.75);
+    head.add(muzzle);
     // نوار نور نظامی
     head.add(mesh(new THREE.SphereGeometry(0.16, 8, 8), glow(accent), 0.55, 0.4, 0));
     if (level >= 3) {
@@ -73,7 +77,9 @@ export function buildTowerMesh(towerId: string, level: number): THREE.Group {
       head.userData.spinCrystal = cr;
       g.add(mesh(new THREE.TorusGeometry(0.95, 0.06, 8, 24), glow(accent), 0, baseH + towerH - 0.1, 0));
     }
+    g.add(head); // برجک باید به گروه برج اضافه شود — قبلاً یتیم بود و رندر نمی‌شد!
     g.userData.turret = head;
+    g.userData.muzzle = muzzle;
   } else if (towerId === 'lightning') {
     // صاعقه — ستون کریستالی بنفش
     const h = 2.2 + lv * 0.35;
@@ -106,13 +112,19 @@ export function buildTowerMesh(towerId: string, level: number): THREE.Group {
     const mortar = new THREE.Group();
     mortar.position.y = stoneH + 0.55;
     const tube = mesh(new THREE.CylinderGeometry(0.5 - lv * 0.03, 0.62, 1.5, 10), mat(0x33302e, { metalness: 0.6 }), 0, 0.35, 0);
-    tube.rotation.x = -0.6;
+    // دهانه لوله رو به دشمن — برجک با atan2(dx,dz) محور +Z را به سمت هدف می‌چرخاند
+    tube.rotation.x = 0.6;
     mortar.add(tube);
-    const ember = mesh(new THREE.SphereGeometry(0.3 - lv * 0.02, 8, 8), glow(0xf97316), 0, 0.95, -0.42);
+    const ember = mesh(new THREE.SphereGeometry(0.3 - lv * 0.02, 8, 8), glow(0xf97316), 0, 0.95, 0.42);
     mortar.add(ember);
+    // نشانگر دهانه — سر جلویی لوله خمپاره (نقطه واقعی شلیک)
+    const muzzle = new THREE.Object3D();
+    muzzle.position.set(0, 0.35 + 0.75 * Math.cos(0.6), 0.75 * Math.sin(0.6));
+    mortar.add(muzzle);
     g.add(mortar);
     g.userData.turret = mortar;
     g.userData.ember = ember;
+    g.userData.muzzle = muzzle;
     // مشعل‌های اطراف
     for (const [dx, dz] of [[1.1, 0.6], [-1.1, -0.6]] as const) {
       g.add(mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.7, 6), mat(0x2a2521), dx, stoneH + 0.3, dz));
@@ -135,6 +147,11 @@ export function buildTowerMesh(towerId: string, level: number): THREE.Group {
     turret.add(mesh(new THREE.SphereGeometry(0.12, 8, 8), glow(accent), 0, 0.5, -0.5));
     g.add(turret);
     g.userData.turret = turret;
+    // نشانگر دهانه — سر جلویی توپ سنگین
+    const muzzle = new THREE.Object3D();
+    muzzle.position.set(0, 0.18 + 0.85 * Math.sin(0.18), 0.55 + 0.85 * Math.cos(0.18));
+    turret.add(muzzle);
+    g.userData.muzzle = muzzle;
     if (level >= 3) {
       for (const sx of [0.85, -0.85]) g.add(mesh(new THREE.BoxGeometry(0.35, h + 0.5, 0.5), mat(0x2c3036, { metalness: 0.7 }), sx, (h + 0.5) / 2, 0));
     }
@@ -183,6 +200,11 @@ export function buildTowerMesh(towerId: string, level: number): THREE.Group {
     mount.add(mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 5), mat(0x2a2622), 0, 0.28, 0.8));
     g.add(mount);
     g.userData.turret = mount;
+    // نشانگر دهانه — نوک پیکان روی ریل (سمت +Z رو به دشمن)
+    const muzzle = new THREE.Object3D();
+    muzzle.position.set(0, 0.28, 1.15);
+    mount.add(muzzle);
+    g.userData.muzzle = muzzle;
     if (level >= 3) {
       mount.add(mesh(new THREE.BoxGeometry(1.9, 0.16, 0.16), mat(0x6b7280, { metalness: 0.8 }), 0, 0.45, 0.9));
     }

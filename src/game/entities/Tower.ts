@@ -193,7 +193,7 @@ export class Tower implements TowerLike {
           this.abilityCd = 1;
           return false;
         }
-        const from = pos.clone().add(new THREE.Vector3(0, this.towerHeight(), 0));
+        const from = this.muzzleWorld() ?? pos.clone().add(new THREE.Vector3(0, this.towerHeight(), 0));
         this.ctx.spawnProjectile('cannonball', from, target, {
           damage: this.damage * 3, splash: 5, dmgType: 'physical', color: 0xfbbf24,
         });
@@ -221,7 +221,7 @@ export class Tower implements TowerLike {
           this.abilityCd = 1;
           return false;
         }
-        const from = pos.clone().add(new THREE.Vector3(0, this.towerHeight(), 0));
+        const from = this.muzzleWorld() ?? pos.clone().add(new THREE.Vector3(0, this.towerHeight(), 0));
         this.ctx.vfx.bolt(from, target.getPos().clone().add(new THREE.Vector3(0, 1, 0)), 0xd97706, true);
         const pierceList = inRange
           .filter((e) => e !== target)
@@ -382,7 +382,8 @@ export class Tower implements TowerLike {
   }
 
   private fire(target: DamageableEnemy) {
-    const from = this.position.clone().add(new THREE.Vector3(0, this.towerHeight(), 0));
+    // نقطه شلیک = دهانه واقعی لوله (رو به دشمن) — در نبود نشانگر، مرکز بالا برج
+    const from = this.muzzleWorld() ?? this.position.clone().add(new THREE.Vector3(0, this.towerHeight(), 0));
     const ud = this.mesh.userData;
     const dt = this.data.damageType;
 
@@ -391,7 +392,10 @@ export class Tower implements TowerLike {
         this.ctx.spawnProjectile('bullet', from, target, { damage: this.damage, color: 0xffd54a, dmgType: dt });
         this.ctx.audio.play('shoot');
         if (ud.turret) {
-          const tip = from.clone().add(new THREE.Vector3(Math.sin(ud.turret.rotation.y), 0, Math.cos(ud.turret.rotation.y)).multiplyScalar(1.6));
+          // جرقه دهانه — کمی جلوتر از دهانه لوله در جهت هدف
+          const d = target.getPos().clone().sub(from);
+          d.y = 0;
+          const tip = d.lengthSq() > 1e-4 ? from.clone().add(d.normalize().multiplyScalar(0.5)) : from.clone();
           this.ctx.vfx.burst(tip, 0xffe08a, 2, { speed: 2, life: 0.1, size: 0.3, gravity: 0 });
         }
         break;
@@ -478,6 +482,14 @@ export class Tower implements TowerLike {
       return this.damage * (this.data.executeMultiplier ?? 2);
     }
     return this.damage;
+  }
+
+  /** نقطه دهانه لوله — اگر مدل نشانگر muzzle داشته باشد (همیشه هم‌جهت برجک به‌روز می‌شود) */
+  private muzzleWorld(): THREE.Vector3 | null {
+    const m = this.mesh.userData.muzzle as THREE.Object3D | undefined;
+    if (!m) return null;
+    this.mesh.updateWorldMatrix(true, true);
+    return m.getWorldPosition(new THREE.Vector3());
   }
 
   private towerHeight(): number {
