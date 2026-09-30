@@ -16,6 +16,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover", // فاز ۸ — بخش ۲۳ — نمایش تمام‌صفحه روی دستگاه‌های Notch‌دار
   themeColor: "#07090d",
 };
 

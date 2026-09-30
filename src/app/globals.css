@@ -372,3 +372,60 @@ html[data-standalone='1'] .panel-header {
   70% { opacity: 1; }
   100% { opacity: 0; translate: 0 -32px; }
 }
+
+/* ============================================================
+   فاز ۸ — موبایل (بخش ۲۳ Mobile UX / بخش ۲۴ Landscape)
+   جایگذاری HUD با پشتیبانی Notch / Safe Area
+   ============================================================ */
+
+/* نوار بالا — فاصله از Notch بالا و کناره‌ها */
+.hud-top {
+  padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+  padding-right: calc(0.75rem + env(safe-area-inset-right, 0px));
+  padding-left: calc(0.75rem + env(safe-area-inset-left, 0px));
+}
+
+/* نوار برج‌ها — فاصله از Gesture Bar پایین و کناره‌ها */
+.hud-bottom {
+  padding: 0.625rem;
+  padding-bottom: calc(0.625rem + env(safe-area-inset-bottom, 0px));
+  padding-right: calc(0.625rem + env(safe-area-inset-right, 0px));
+  padding-left: calc(0.625rem + env(safe-area-inset-left, 0px));
+}
+
+/* ریل چپ: شبکه جادو بالای نوار برج (رفع همپوشانی) + قهرمان بالای جادو */
+.hud-magic {
+  left: calc(0.75rem + env(safe-area-inset-left, 0px));
+  bottom: calc(5.9rem + env(safe-area-inset-bottom, 0px));
+}
+.hud-hero {
+  left: calc(0.75rem + env(safe-area-inset-left, 0px));
+  bottom: calc(18.6rem + env(safe-area-inset-bottom, 0px));
+}
+.hud-wave {
+  bottom: calc(11rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Landscape کوتاه — چیدمان فشرده: ریل چپ زیر نوار بالا می‌رود تا از ارتفاع کم
+   نبرد را نپوشاند (بخش ۲۴ — بدون overlap بین Top HUD / کنترل‌ها / نوار برج) */
+@media (orientation: landscape) and (max-height: 520px) {
+  .hud-hero {
+    bottom: auto;
+    top: calc(4.9rem + env(safe-area-inset-top, 0px));
+  }
+  .hud-hero > button {
+    height: 3rem;
+    width: 3rem;
+  }
+  .hud-magic {
+    bottom: auto;
+    top: calc(8.5rem + env(safe-area-inset-top, 0px));
+  }
+  .hud-magic > button {
+    height: 2.6rem;
+    width: 2.6rem;
+  }
+  .hud-wave {
+    bottom: 5.4rem;
+  }
+}

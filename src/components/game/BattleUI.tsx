@@ -90,7 +90,8 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
       {corePct <= 30 && <div className="core-low-warning absolute inset-0" />}
 
       {/* ================= نوار بالا ================= */}
-      <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-black/70 to-transparent p-3 pointer-events-auto">
+      {/* فاز ۸ — hud-top: Safe Area در globals.css */}
+      <div className="hud-top absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-black/70 to-transparent pointer-events-auto">
         {/* سلامت هسته */}
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-1.5 rounded-lg border border-rose-500/30 bg-black/60 px-2.5 py-1.5 backdrop-blur-sm">
@@ -211,7 +212,7 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
 
       {/* ================= دکمه شروع موج ================= */}
       {!st.waveActive && !st.victory && !st.defeat && st.wave <= st.waveTotal && (
-        <div className="absolute bottom-44 left-1/2 -translate-x-1/2 pointer-events-auto">
+      <div className="hud-wave absolute left-1/2 -translate-x-1/2 pointer-events-auto">
           <button onClick={() => game?.startWave()}
             className="flex flex-col items-center gap-0.5 rounded-2xl border border-emerald-400/50
             bg-gradient-to-b from-emerald-500/90 to-emerald-700/90 px-8 py-3 shadow-[0_0_25px_rgba(16,185,129,0.35)] active:scale-95">
@@ -226,8 +227,8 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
         </div>
       )}
 
-      {/* ================= جادو (سمت چپ — شبکه ۲ ستونه) ================= */}
-      <div className="absolute bottom-4 left-3 grid w-[7.5rem] grid-cols-2 gap-2 pointer-events-auto">
+      {/* ================= جادو (سمت چپ — شبکه ۲ ستونه) — فاز ۸: hud-magic بالای نوار برج ================= */}
+      <div className="hud-magic absolute grid w-[7.5rem] grid-cols-2 gap-2 pointer-events-auto">
         {st.magicState.map((m) => {
           const M = MAGIC[m.id];
           const Icon = MAGIC_ICONS[m.id] ?? Sparkles;
@@ -257,8 +258,8 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
         })}
       </div>
 
-      {/* ================= قهرمان (بالای شبکه جادو) ================= */}
-      <div className="absolute bottom-[13.5rem] left-3 pointer-events-auto">
+      {/* ================= قهرمان (بالای شبکه جادو) — فاز ۸: hud-hero ================= */}
+      <div className="hud-hero absolute pointer-events-auto">
         <button onClick={() => {
           if (!st.hero?.deployed) {
             useGameStore.getState().pushToast('deployHint', 'info');
@@ -301,8 +302,8 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
         </button>
       </div>
 
-      {/* ================= نوار برج‌ها (پایین — اسکرول افقی) ================= */}
-      <div className="absolute inset-x-0 bottom-0 border-t border-amber-400/20 bg-gradient-to-t from-black/90 to-black/50 p-2.5 pointer-events-auto">
+      {/* ================= نوار برج‌ها (پایین — اسکرول افقی) — فاز ۸: hud-bottom Safe Area ================= */}
+      <div className="hud-bottom absolute inset-x-0 bottom-0 border-t border-amber-400/20 bg-gradient-to-t from-black/90 to-black/50 pointer-events-auto">
         <div className="flex items-end gap-2 overflow-x-auto pb-1 sm:justify-center [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {TOWER_BUILD_ORDER.map((id) => {
             const tw = TOWERS[id];
