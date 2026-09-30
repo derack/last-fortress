@@ -124,7 +124,13 @@ export function GameShell() {
     game.audio.startMusic();
     game.start();
     if (!save.tutorialDone) {
-      game.bus.emit('tutorial', { step: 'build' });
+      // بخش ۵۴ — خوش‌آمد کوتاه، سپس گام ساخت برج
+      game.bus.emit('tutorial', { step: 'welcome' });
+      setTimeout(() => {
+        if (useGameStore.getState().tutorialStep === 'welcome') {
+          useGameStore.getState().handleEvent('tutorial', { step: 'build' });
+        }
+      }, 3400);
     }
     store.setBattleActive(true);
     store.setScreen('battle');

@@ -1024,7 +1024,7 @@ export class Game {
     this.audio.setBossMode(false);
     this.cameraCtrl.shake(1);
     this.vfx.explosion(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 2.5, 0)), 0xef4444, true);
-    this.bus.emit('defeat', {});
+    this.bus.emit('defeat', { wave: this.waveIndex + 1, waveTotal: this.level.waves.length });
   }
 
   // ===================== کنترل‌های UI =====================

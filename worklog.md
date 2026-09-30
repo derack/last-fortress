@@ -294,3 +294,25 @@ Work Log:
 Stage Summary:
 - کوره اثیر کامل و تست‌شده: ۶ مسیر × ۲۰ سطح ارتقای دائمی (قهرمان+برج+اقتصاد+هسته)، ارز اختصاصی با حلقه کامل کسب‌وخرج، مهاجرت خودکار ذخیره
 - سیستم‌های Task 12 (۱۰۰ مرحله + Forge ۲۰ سطحی) هر دو تمام شدند — بقیه PHASEهای PROMPT (۴ ارز کامل، Save پیشرفته، پولیش UI/VFX/Audio/موبایل) آماده اجراست
+---
+Task ID: 13
+Agent: main (Super Z)
+Task: فاز ۵ PROMPT نهایی — پولیش UI/UX طبق بخش‌های ۵۲ (Victory)، ۵۳ (Defeat)، ۵۴ (First-Time Experience) + Audit اقتصاد/ذخیره (بخش‌های ۲۰/۳۰/۳۱/۳۲ — تایید شد، نیازی به تغییر نداشت)
+
+Work Log:
+- Game.ts doDefeat: payload {wave, waveTotal} emit شد (شماره موج رسیده برای پنل شکست)
+- gameStore: defeat از boolean به {wave, waveTotal} | null تغییر کرد (سه نقطه: type/initial/resetBattleState + case 'defeat')
+- BattleUI EndOverlay — پنل شکست کامل شد: دو کارت آماری «موج رسیده» (Swords icon) و «سلامت هسته ۰٪» (Heart icon) + دکمه جدید «ارتقا در کوره اثیر» (بنفش، فقط در شکست) → endBattle + setScreen('forge')
+- BattleUI EndOverlay — پنل پیروزی: خط «بهترین رکورد: X٪» (رکورد bestHealthPct از save شامل همین اجرا — بخش ۵۲)
+- بخش ۵۴: GameShell حالا اول «خوش‌آمد» (tutorialWelcome — کلید بی‌استفاده بود) emit می‌کند و بعد ۳.۴ ثانیه به «ساخت برج» پیش می‌رود؛ BattleUI گام welcome را map کرد
+- i18n: ۴ کلید جدید fa/en (waveReached/coreHpFinal/goForge/bestRecord) — parity ۳۹۲/۳۹۲ تایید شد
+- SettingsPanel/SaveSystem audit شدند: Reset دومرحله‌ای موجود، Safe Recovery (catch → defaultSave) موجود، مهاجرت v1→v2→v3 موجود — طبق بخش ۶۵ (LESS CODE CHURN) دست نخوردند
+- تست مرورگر (ذخیره ریست‌شده): بنر خوش‌آمد «فرمانده، شکاف تاریکی باز شده است!» ظاهر شد → شکست اجباری (leak ۴۰ دشمن): پنل با موج رسیده ۱/۱۰، هسته ۰٪ و دکمه کوره اثیر → کلیک Forge → پنل کوره اثیر باز شد → پیروزی اجباری (پاک‌سازی ۱۰ موج): ۳ ستاره + پاداش (۱۲ ذره/۲۵ کریستال/۲۷۹۳ سکه) + «بهترین رکورد: ۱۰۰٪» + مرحله بعد/تلاش دوباره/بازگشت
+- tsc: صفر خطا در src/ | Build موفق | کنسول: صفر error (فقط warningهای موردانتظار GLB)
+- ذخیره برای تست تمیز کاربر ریست شد
+
+Stage Summary:
+- پنل‌های پایان نبرد (پیروزی/شکست) اکنون کامل طبق بخش‌های ۵۲/۵۳ هستند: آمار شکست + مسیر ارتقای فوری در شکست + رکورد در پیروزی
+- آموزش شروع بازی زنجیره کامل شد: خوش‌آمد → ساخت → موج → ارتقا → جادو → پایان
+- سیستم‌های موجود (Settings/Save/Reset) audit و سالم تایید شدند
+- PHASEهای باقی‌مانده PROMPT: ۶ (VFX/Audio عمیق‌تر)، ۷ (Balance ۱۰۰ مرحله)، ۸ (Mobile)، ۹ (Pipeline)، ۱۰-۱۲ (تست/Final Build/Report)

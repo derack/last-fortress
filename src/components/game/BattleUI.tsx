@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   Heart, Coins, Gem, Play, Pause, FastForward, Zap, Flame, Shield, Snowflake,
   Crosshair, X, Star, Home, RotateCcw, Settings, User, Sparkles, ArrowUpCircle,
-  Trash2, Target, Clock, FlaskConical, MoveDiagonal, Sun, Moon, Lock,
+  Trash2, Target, Clock, FlaskConical, MoveDiagonal, Sun, Moon, Lock, Swords,
 } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { TOWERS, TOWER_BUILD_ORDER, isTowerUnlocked, starsUntilTower } from '@/game/data/towers';
@@ -188,7 +188,8 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
       {st.tutorialStep && (
         <div className="absolute left-1/2 top-24 -translate-x-1/2 max-w-[85%] rounded-xl border border-cyan-400/40 bg-black/80 px-5 py-2.5 text-center tutorial-anim pointer-events-none">
           <div className="text-sm font-bold text-cyan-200">
-            {t(st.tutorialStep === 'build' ? 'tutorialBuild' :
+            {t(st.tutorialStep === 'welcome' ? 'tutorialWelcome' :
+              st.tutorialStep === 'build' ? 'tutorialBuild' :
               st.tutorialStep === 'wave' ? 'tutorialWave' :
               st.tutorialStep === 'upgrade' ? 'tutorialUpgrade' :
               st.tutorialStep === 'magic' ? 'tutorialMagic' : 'tutorialDone')}
@@ -504,16 +505,22 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
   actions: BattleActions;
 }) {
   const save = useGameStore((s) => s.save);
+  const defeatInfo = useGameStore((s) => s.defeat);
   const backToMap = () => {
     actions.endBattle();
     useGameStore.getState().setScreen('map');
+  };
+  const goForge = () => {
+    actions.endBattle();
+    useGameStore.getState().setScreen('forge');
   };
   const restart = () => {
     actions.endBattle();
     setTimeout(() => actions.startBattle(), 60);
   };
+  const isVictory = title === t('victory');
   // مرحله بعد در زنجیره کمپین ۱۰۰ مرحله‌ای — فقط در پیروزی
-  const nextId = title === t('victory') && save
+  const nextId = isVictory && save
     ? (() => {
         // مرحله فعلی از pendingLevelId
         const cur = useGameStore.getState().pendingLevelId;
@@ -527,6 +534,10 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
     actions.endBattle();
     setTimeout(() => actions.startBattle(), 60);
   };
+  // بهترین رکورد سلامت هسته — شامل رکورد همین اجرا (بخش ۵۲)
+  const bestPct = isVictory && save
+    ? save.levels[useGameStore.getState().pendingLevelId]?.bestHealthPct ?? 0
+    : 0;
 
   return (
     <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/85 backdrop-blur-sm pointer-events-auto">
@@ -558,6 +569,29 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
                 </div>
               ))}
             </div>
+            {bestPct > 0 && (
+              <div className="mt-2.5 text-[11px] font-black text-slate-400">
+                {t('bestRecord')}: <span className="text-amber-300">{faNum(bestPct)}٪</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* آمار شکست — موج رسیده و سلامت هسته (بخش ۵۳) */}
+        {!rewards && defeatInfo && (
+          <div className="mt-5 flex justify-center gap-3">
+            <div className="flex flex-col items-center gap-0.5 rounded-xl border border-slate-700/60 bg-black/40 px-5 py-2">
+              <Swords className="h-5 w-5 text-rose-400" />
+              <span className="text-lg font-black text-rose-300">
+                {faNum(defeatInfo.wave)} / {faNum(defeatInfo.waveTotal)}
+              </span>
+              <span className="text-[10px] font-bold text-slate-500">{t('waveReached')}</span>
+            </div>
+            <div className="flex flex-col items-center gap-0.5 rounded-xl border border-slate-700/60 bg-black/40 px-5 py-2">
+              <Heart className="h-5 w-5 text-emerald-400" />
+              <span className="text-lg font-black text-emerald-300">{faNum(0)}٪</span>
+              <span className="text-[10px] font-bold text-slate-500">{t('coreHpFinal')}</span>
+            </div>
           </div>
         )}
 
@@ -575,6 +609,14 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
             <RotateCcw className="h-5 w-5" />
             {t('retry')}
           </button>
+          {/* ارتقا در کوره اثیر — فقط در شکست (بخش ۵۳) */}
+          {!isVictory && (
+            <button onClick={goForge}
+              className="flex items-center justify-center gap-2 rounded-xl border border-violet-400/50 bg-violet-950/40 px-6 py-3 text-base font-black text-violet-200 active:scale-95">
+              <Flame className="h-5 w-5" />
+              {t('goForge')}
+            </button>
+          )}
           <button onClick={backToMap}
             className="flex items-center justify-center gap-2 rounded-xl border border-slate-600/60 bg-black/50 px-6 py-3 text-base font-bold text-slate-300 active:scale-95">
             <Home className="h-5 w-5" />

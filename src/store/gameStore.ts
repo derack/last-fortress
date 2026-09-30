@@ -81,7 +81,7 @@ interface GameState {
   paused: boolean;
   speed: number;
   victory: VictoryInfo | null;
-  defeat: boolean;
+  defeat: { wave: number; waveTotal: number } | null;
   tutorialStep: string | null;
   toasts: { id: number; key: string; type: string }[];
   battleActive: boolean;
@@ -139,7 +139,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   paused: false,
   speed: 1,
   victory: null,
-  defeat: false,
+  defeat: null,
   tutorialStep: null,
   toasts: [],
   battleActive: false,
@@ -211,7 +211,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     paused: false,
     speed: 1,
     victory: null,
-    defeat: false,
+    defeat: null,
     tutorialStep: null,
     toasts: [],
   }),
@@ -286,7 +286,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         set({ victory: payload as VictoryInfo });
         break;
       case 'defeat':
-        set({ defeat: true });
+        set({ defeat: payload as { wave: number; waveTotal: number } });
         break;
       case 'tutorial':
         set({ tutorialStep: p.step as string });
