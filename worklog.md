@@ -378,3 +378,29 @@ Stage Summary:
 - منحنی سختی ۱۰۰ مرحله اکنون تدریجی و بدون پرتگاه است: تنوع از طریق ترکیب نقش‌ها/مسیرها، رشد HP پیوسته، اقتصاد هموار — دقیقاً طبق بخش ۲۱ (نه فقط HP×بزرگ‌تر)
 - ابزار پایش ماندگار: scripts/balance-audit.ts برای هر تغییر آینده داده‌ها قابل اجراست
 - PHASEهای باقی‌مانده: ۸ (Mobile)، ۹ (Pipeline)، ۱۰-۱۲ (تست/Final Build/Report)
+
+---
+Task ID: 14
+Agent: Super Z (main)
+Task: PHASE 6 — Battle Feedback / VFX / Audio (بخش‌های ۱۳، ۱۴، ۱۵)
+
+Work Log:
+- Audit کامل VFX/Audio: AudioSystem.ts (۲۰ SFX سنتز + موسیقی پروسیجرال)، VFXSystem.ts (ذرات Pool + صاعقه + حلقه + دایره جادو)، DamageNumbers.ts (تجمیع ۰٫۲۵s + انتقاد + Pool DOM) — همه طبق بخش ۱۳/۱۴ سالم بودند، بازنویسی نشدند (§65)
+- §13 Audit: Launch/Travel/Impact همه حملات موجود (muzzle burst / trail / impact explosion)؛ هویت رنگی عناصر آتش/یخ/صاعقه/سایه/کریستال متمایز — تایید شد
+- §14 Audit: Hit Flash (emissive flashMats)، انتقاد (dmg-crit)، cameraShake محدود ۰٫۲–۱٫۰، Death/Boss/Core feedback موجود — تایید شد
+- باگ‌یابی: 'deepFreeze' در SfxName نبود → صدای انجماد ابدی غول یخ خاموش (no-op خاموش به‌دلیل تایپ string در GameContext) → SFX جدید «فرود عمیق + درخشش بلوری» اضافه شد
+- §15 Drop-in Audio: manifest.json probe — فایل‌های واقعی در public/assets/audio/ جای سنتز را می‌گیرند بدون تغییر کد؛ بدون manifest = صفر درخواست ۴۰۴، fallback بی‌صدا
+- AudioSystem → Singleton (audioSystem): AudioContext دیگر per-battle ساخته/بسته نمی‌شود؛ موسیقی پیوسته منو ↔ نبرد ↔ نقشه (صرفه‌جویی منابع موبایل بخش ۳۳)
+- sceneMode: منو ۶۴bpm بدون درام/بیس (پد آرام + ملودی نرم)، نبرد ۸۴bpm کامل، Boss ۱۳۲bpm (قبلی) — سوییچ نرم با reset گام
+- drift clamp: بعد از resume طولانی AudioContext، موج نُت‌های همزمان جلوگیری شد
+- Game.ts: haptic(pattern) با gate save.settings.haptics + navigator.vibrate → ضربه هسته (۴۵/۹۰ms)، ورود Boss [60,40,60]، فاز۲ Boss ۹۰ms (از Enemy.ts از طریق ctx.haptic)، پیروزی [40,60,120]، باخت [80,50,80,50,160]
+- context.ts: haptic به GameContext اضافه شد
+- GameShell: موسیقی از منو شروع می‌شود (kick pointerdown/keydown برای سیاست autoplay)؛ sceneMode effect روی تغییر screen؛ اعمال زنده ولوم (useEffect music/sfx → setVolumes) — اسلایدرها دیگر restart نمی‌خواهند
+- Game.dispose: audio.dispose() حذف → setBossMode(false)+setSceneMode('menu') (موسیقی ادامه می‌یابد)
+- mkdir public/assets/audio (دایرکتوری drop-in)
+- تست مرورگر: boot→منو→نبرد c1s1→سرعت۵ زیر فشار→تنظیمات داخل نبرد→fill اسلایدرها (persist: music 0.5/sfx 0.5 در localStorage تایید شد)→بازگشت به نقشه→منو→نبرد دوم با singleton→ریست سیو تمیز برای کاربر؛ ۰ خطای کنسول در کل مسیر
+- اسکرین‌شات: t14-menu.png، t14-battle-vfx.png، t14-check.png، t14-battle2-singleton.png
+
+Stage Summary:
+- فاز ۶ کامل شد: بخش ۱۳ (VFX) و ۱۴ (Combat Feedback) Audit+تایید، بخش ۱۵ (Audio) ارتقای عمیق: deepFreeze fix، singleton موسیقی پیوسته با mood منو/نبرد، drop-in فایل واقعی، ولوم زنده، haptics واقعی
+- PHASEهای باقی‌مانده: ۷ (Balance ۱۰۰ مرحله)، ۸ (Mobile)، ۹ (Pipeline)، ۱۰-۱۲ (تست/Final Build/Report)

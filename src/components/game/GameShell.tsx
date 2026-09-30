@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { Game } from '@/game/core/Game';
+import { audioSystem } from '@/game/systems/AudioSystem';
 import { ACHIEVEMENTS, LEVELS, STAGES, firstPlayableStageId } from '@/game/data/campaign';
 import { assetManager, sliceAssetEntries } from '@/game/assets';
 import { t, faNum } from '@/game/data/i18n';
@@ -77,6 +78,32 @@ export function GameShell() {
   useEffect(() => {
     useGameStore.getState().initSave();
   }, []);
+
+  // ---------- فاز ۶ — موسیقی پیوسته + سیاست autoplay مرورگر ----------
+  // موسیقی از منو شروع می‌شود (بعد از اولین لمس)، بدون وقفه تا نقشه و نبرد می‌ماند
+  useEffect(() => {
+    audioSystem.setSceneMode('menu');
+    audioSystem.startMusic();
+    const kick = () => audioSystem.ensure(); // resume AudioContext بعد از اولین تعامل
+    window.addEventListener('pointerdown', kick);
+    window.addEventListener('keydown', kick);
+    return () => {
+      window.removeEventListener('pointerdown', kick);
+      window.removeEventListener('keydown', kick);
+    };
+  }, []);
+
+  // فاز ۶ — حالت موسیقی: نبرد پرانرژی، بقیه صحنه‌ها آرام
+  useEffect(() => {
+    if (!booting) audioSystem.setSceneMode(screen === 'battle' ? 'battle' : 'menu');
+  }, [screen, booting]);
+
+  // فاز ۶ — اعمال زنده ولوم از تنظیمات (بدون نیاز به restart)
+  const musicVol = useGameStore((s) => s.save?.settings.music ?? 0.6);
+  const sfxVol = useGameStore((s) => s.save?.settings.sfx ?? 0.8);
+  useEffect(() => {
+    audioSystem.setVolumes(musicVol, sfxVol);
+  }, [musicVol, sfxVol]);
 
   const checkAchievements = useCallback(() => {
     const store = useGameStore.getState();

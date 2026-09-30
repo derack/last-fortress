@@ -62,6 +62,8 @@ export interface GameContext {
   };
   audio: { play(name: string): void };
   cameraShake(amount: number): void;
+  /** فاز ۶ — بخش ۱۴ — لرزش هپتیک (فقط اندروید، gated توسط تنظیمات) */
+  haptic(pattern: number | number[]): void;
   spawnProjectile(kind: string, from: THREE.Vector3, target: DamageableEnemy | null, opts: { damage: number; splash?: number; burn?: number; slow?: number; slowDur?: number; color: number; dmgType?: DamageType; poisonDps?: number; poisonDur?: number; pierceArmor?: boolean }): void;
   chainLightning(from: THREE.Vector3, firstTarget: DamageableEnemy, chains: number, damage: number, color: number): void;
   scheduleFireBarrage(center: THREE.Vector3, radius: number, count: number, damage: number, visual?: 'fire' | 'arrow'): void;

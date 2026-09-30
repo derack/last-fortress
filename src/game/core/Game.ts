@@ -9,7 +9,7 @@ import { CameraController } from './CameraController';
 import { InputController, TapHit } from './InputController';
 import { VFXSystem } from '../systems/VFXSystem';
 import { DamageNumbers } from '../systems/DamageNumbers';
-import { AudioSystem } from '../systems/AudioSystem';
+import { AudioSystem, audioSystem } from '../systems/AudioSystem';
 import { EventBus } from './EventBus';
 import { Enemy } from '../entities/Enemy';
 import { Tower } from '../entities/Tower';
@@ -38,7 +38,8 @@ export class Game {
   private input: InputController;
   private vfx: VFXSystem;
   private damageNums: DamageNumbers;
-  audio = new AudioSystem();
+  // فاز ۶ — صدا مشترک بین نبردهاست (موسیقی پیوسته) — دیگر per-battle ساخته/بسته نمی‌شود
+  readonly audio: AudioSystem = audioSystem;
   private hero: Hero;
   private ctx: GameContext;
 
@@ -135,6 +136,8 @@ export class Game {
       vfx: this.vfx,
       audio: this.audio,
       cameraShake: (a) => this.cameraCtrl.shake(a),
+      // فاز ۶ — بخش ۱۴ — لرزش هپتیک برای موجودیت‌ها (Boss)
+      haptic: (p) => this.haptic(p),
       spawnProjectile: (kind, from, target, opts) => {
         this.projectiles.push(new Projectile(kind, from, target, opts, this.ctx, this.scene3d.scene));
       },
@@ -362,6 +365,7 @@ export class Game {
       this.audio.setBossMode(true);
       this.audio.play('bossRoar');
       this.cameraCtrl.shake(0.6);
+      this.haptic([60, 40, 60]); // فاز ۶ — لرزش ورود Boss
       this.towersBuiltBeforeBoss = this.towersBuilt;
     }
 
@@ -466,6 +470,7 @@ export class Game {
     this.leaks++;
     this.coreHp = Math.max(0, this.coreHp - e.data.coreDamage);
     this.cameraCtrl.shake(e.data.boss ? 1 : 0.45);
+    this.haptic(e.data.boss ? 90 : 45); // فاز ۶ — لرزش ضربه به هسته
     this.vfx.explosion(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 2, 0)), 0xef4444, e.data.boss);
     this.audio.play('explosion');
     this.bus.emit('core', { hp: this.coreHp, max: this.coreMaxHp });
@@ -1019,6 +1024,7 @@ export class Game {
     this.save.tutorialDone = true;
 
     this.audio.play('victory');
+    this.haptic([40, 60, 120]); // فاز ۶ — لرزش پیروزی
     this.vfx.burst(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 3, 0)), 0xfbbf24, 80, { speed: 10, life: 1.4, size: 0.8, gravity: 4, up: 1 });
     this.bus.emit('victory', {
       stars,
@@ -1033,6 +1039,7 @@ export class Game {
     this.audio.play('defeat');
     this.audio.setBossMode(false);
     this.cameraCtrl.shake(1);
+    this.haptic([80, 50, 80, 50, 160]); // فاز ۶ — لرزش باخت
     this.vfx.explosion(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 2.5, 0)), 0xef4444, true);
     this.bus.emit('defeat', { wave: this.waveIndex + 1, waveTotal: this.level.waves.length });
   }
@@ -1057,11 +1064,25 @@ export class Game {
     return this.speed;
   }
 
+  /** فاز ۶ — بخش ۱۴ — لرزش هپتیک گوشی (فقط اگر در تنظیمات فعال باشد) */
+  haptic(pattern: number | number[]) {
+    if (!this.save.settings.haptics) return;
+    try {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate(pattern);
+      }
+    } catch {
+      /* هپتیک حیاتی نیست */
+    }
+  }
+
   dispose() {
     this.disposed = true;
     cancelAnimationFrame(this.raf);
     this.input.dispose();
-    this.audio.dispose();
+    // فاز ۶ — صدا مشترک است؛ dispose نمی‌شود، فقط حالت نبرد پاک می‌شود
+    this.audio.setBossMode(false);
+    this.audio.setSceneMode('menu');
     this.damageNums.dispose();
     this.hero.dispose();
     for (const e of this.enemies) e.remove();

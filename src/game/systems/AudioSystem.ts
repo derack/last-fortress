@@ -7,7 +7,14 @@ type SfxName =
   | 'tap' | 'place' | 'upgrade' | 'sell' | 'shoot' | 'cannon' | 'lightning'
   | 'freeze' | 'explosion' | 'magic' | 'death' | 'bossRoar' | 'victory'
   | 'defeat' | 'reward' | 'error' | 'waveStart' | 'heroShot'
-  | 'hit' | 'bossPhase';
+  | 'hit' | 'bossPhase' | 'deepFreeze';
+
+export type SceneMode = 'menu' | 'battle';
+
+interface AudioManifest {
+  sfx?: Partial<Record<SfxName, string>>;
+  music?: string;
+}
 
 export class AudioSystem {
   private ctx: AudioContext | null = null;
@@ -20,9 +27,17 @@ export class AudioSystem {
   private nextNoteTime = 0;
   private step = 0;
   private bossMode = false;
+  private scene: SceneMode = 'battle';
   private musicVol = 0.6;
   private sfxVol = 0.8;
   private lastHitSfx = 0; // بخش ۱۵ — محدودسازی نرخ صدای اصابت
+
+  // بخش ۱۵ — Drop-in فایل‌های صوتی واقعی (اختیاری)
+  // اگر public/assets/audio/manifest.json موجود باشد، فایل‌ها جای سنتز پخش می‌شوند
+  private buffers = new Map<SfxName, AudioBuffer>();
+  private musicBuffer: AudioBuffer | null = null;
+  private musicSource: AudioBufferSourceNode | null = null;
+  private probed = false;
 
   /** باید بعد از اولین تعامل کاربر صدا زده شود (سیاست مرورگرها) */
   ensure() {
@@ -51,7 +66,60 @@ export class AudioSystem {
       this.noiseBuffer = buf;
     } catch {
       this.ctx = null;
+      return;
     }
+    void this.probeAssets();
+  }
+
+  // ------------------- Drop-in فایل صوتی (بخش ۱۵) -------------------
+  // ساختار: public/assets/audio/manifest.json
+  // { "music": "/assets/audio/music.mp3", "sfx": { "tap": "/assets/audio/tap.mp3", ... } }
+  // بدون manifest یا در صورت خطا → سنتز پروسیجرال (بدون هیچ درخواست ۴۰۴ اضافه)
+
+  private async probeAssets() {
+    if (this.probed || !this.ctx) return;
+    this.probed = true;
+    try {
+      const res = await fetch('/assets/audio/manifest.json', { cache: 'no-cache' });
+      if (!res.ok) return;
+      const mf = (await res.json()) as AudioManifest;
+      if (mf.music) this.musicBuffer = await this.loadFile(mf.music);
+      for (const [k, url] of Object.entries(mf.sfx ?? {})) {
+        const buf = await this.loadFile(url as string);
+        if (buf) this.buffers.set(k as SfxName, buf);
+      }
+      // اگر موسیقی فایل‌محور آمد و موسیقی سینتی در حال پخش است → سوییچ نرم
+      if (this.musicBuffer && this.started) {
+        this.stopMusic();
+        this.startMusic();
+      }
+    } catch {
+      /* بدون manifest — سنتز می‌ماند */
+    }
+  }
+
+  private async loadFile(url: string): Promise<AudioBuffer | null> {
+    if (!this.ctx) return null;
+    try {
+      const r = await fetch(url, { cache: 'force-cache' });
+      if (!r.ok) return null;
+      return await this.ctx.decodeAudioData(await r.arrayBuffer());
+    } catch {
+      return null;
+    }
+  }
+
+  /** پخش یک بافر آماده روی گین مقصد */
+  private playBuffer(buf: AudioBuffer, dest: AudioNode, vol = 1, loop = false) {
+    if (!this.ctx) return;
+    const src = this.ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = loop;
+    const g = this.ctx.createGain();
+    g.gain.value = vol;
+    src.connect(g);
+    g.connect(dest);
+    src.start();
   }
 
   setVolumes(music: number, sfx: number) {
@@ -67,12 +135,30 @@ export class AudioSystem {
     this.bossMode = on;
   }
 
+  /** فاز ۶ — حالت صحنه: منو (آرام) / نبرد (پرانرژی) — BossMode همیشه غالب است */
+  setSceneMode(mode: SceneMode) {
+    if (this.scene === mode) return;
+    this.scene = mode;
+    // با تغییر صحنه، ریتم از گام بعد می‌شود
+    this.step = 0;
+  }
+
   // ------------------------- موسیقی -------------------------
 
   startMusic() {
     this.ensure();
     if (!this.ctx || this.started) return;
     this.started = true;
+    // فایل موسیقی واقعی (Drop-in) — لوپ بی‌درنگ
+    if (this.musicBuffer) {
+      const src = this.ctx.createBufferSource();
+      src.buffer = this.musicBuffer;
+      src.loop = true;
+      src.connect(this.musicGain);
+      src.start();
+      this.musicSource = src;
+      return;
+    }
     this.nextNoteTime = this.ctx.currentTime + 0.1;
     this.musicTimer = setInterval(() => this.scheduler(), 120);
   }
@@ -80,13 +166,22 @@ export class AudioSystem {
   stopMusic() {
     if (this.musicTimer) clearInterval(this.musicTimer);
     this.musicTimer = null;
+    if (this.musicSource) {
+      try { this.musicSource.stop(); } catch { /* قبلاً متوقف شده */ }
+      this.musicSource.disconnect();
+      this.musicSource = null;
+    }
     this.started = false;
   }
 
   private scheduler() {
     if (!this.ctx) return;
-    const bpm = this.bossMode ? 132 : 84;
+    const bpm = this.bossMode ? 132 : this.scene === 'menu' ? 64 : 84;
     const stepDur = 60 / bpm / 4; // ۱۶ام
+    // فاز ۶ — بعد از resume طولانی، پرش زمانی باعث موج نُه‌های همزمان نشود
+    if (this.nextNoteTime < this.ctx.currentTime) {
+      this.nextNoteTime = this.ctx.currentTime + 0.05;
+    }
     while (this.nextNoteTime < this.ctx.currentTime + 0.4) {
       this.playStep(this.step, this.nextNoteTime, stepDur);
       this.step = (this.step + 1) % 64;
@@ -102,15 +197,18 @@ export class AudioSystem {
     const roots = [110, 87.31, 130.81, 98]; // A2 F2 C3 G2
     const root = roots[bar % 4];
 
+    // فاز ۶ — حالت منو: بدون درام و بیس، فقط پد آرام + ملودی گاه‌به‌گاه
+    const menu = this.scene === 'menu' && !this.bossMode;
+
     // درام (بم)
-    if (s === 0 || s === 8 || (this.bossMode && s === 12)) {
+    if (!menu && (s === 0 || s === 8 || (this.bossMode && s === 12))) {
       this.tone(s === 0 ? 55 : 45, when, 0.28, 'sine', this.bossMode ? 0.5 : 0.32, 90, 0.06);
     }
     // هی‌هت نرم
     if (this.bossMode && (s % 4 === 2)) this.noise(when, 0.04, 6000, 0.06, 'highpass');
 
     // بیس
-    if (s === 0 || s === 6 || s === 10) {
+    if (!menu && (s === 0 || s === 6 || s === 10)) {
       this.tone(root / 2, when, 0.7, 'triangle', 0.16);
     }
 
@@ -123,11 +221,11 @@ export class AudioSystem {
       this.tone(fifth, when, 2.2, 'sawtooth', 0.04, undefined, undefined, 600);
     }
 
-    // ملودی پنتاتونیک محو (فقط گاهی)
+    // ملودی پنتاتونیک محو (فقط گاهی) — در منو کمی پرتکرارتر و نرم‌تر
     const melody = [0, 3, 5, 7, 10, 12];
-    if (!this.bossMode && s === 4 && Math.random() < 0.6) {
+    if (!this.bossMode && s === 4 && Math.random() < (menu ? 0.8 : 0.6)) {
       const n = root * Math.pow(2, melody[Math.floor(Math.random() * melody.length)] / 12);
-      this.tone(n, when, 0.5, 'sine', 0.06);
+      this.tone(n, when, menu ? 0.9 : 0.5, 'sine', menu ? 0.045 : 0.06);
     }
     if (this.bossMode && s % 2 === 0 && Math.random() < 0.5) {
       const n = root * Math.pow(2, melody[Math.floor(Math.random() * melody.length)] / 12) * 2;
@@ -199,6 +297,12 @@ export class AudioSystem {
 
   play(name: SfxName) {
     if (!this.ctx) return;
+    // فایل صوتی واقعی (Drop-in) اگر موجود باشد — وگرنه سنتز
+    const buf = this.buffers.get(name);
+    if (buf) {
+      this.playBuffer(buf, this.sfxGain);
+      return;
+    }
     const now = this.ctx.currentTime;
     switch (name) {
       case 'tap':
@@ -237,6 +341,14 @@ export class AudioSystem {
         this.blip(1800, 2600, 0.35, 'sine', 0.14);
         this.blip(2400, 3200, 0.3, 'sine', 0.1);
         break;
+      case 'deepFreeze': {
+        // فاز ۶ — انجماد ابدی غول یخ: فرود عمیق + درخشش بلوری
+        this.blip(320, 70, 0.7, 'sine', 0.4);
+        this.blip(1200, 2400, 0.5, 'sine', 0.12);
+        this.noise(now, 0.6, 5200, 0.12, 'highpass');
+        setTimeout(() => this.blip(2000, 3400, 0.35, 'sine', 0.08), 180);
+        break;
+      }
       case 'explosion':
         this.noise(now, 0.5, 500, 0.7, 'lowpass');
         this.blip(90, 35, 0.5, 'sine', 0.7);
@@ -296,3 +408,7 @@ export class AudioSystem {
     this.ctx = null;
   }
 }
+
+// فاز ۶ — نمونه مشترک صدا بین همه نبردها (موسیقی پیوسته منو ↔ نبرد ↔ نقشه)
+// AudioContext دیگر per-battle ساخته/بسته نمی‌شود (صرفه‌جویی منابع موبایل — بخش ۳۳)
+export const audioSystem = new AudioSystem();
