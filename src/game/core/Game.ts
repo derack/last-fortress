@@ -8,6 +8,7 @@ import { BattleScene } from '../scene/BattleScene';
 import { CameraController } from './CameraController';
 import { InputController, TapHit } from './InputController';
 import { VFXSystem } from '../systems/VFXSystem';
+import { DamageNumbers } from '../systems/DamageNumbers';
 import { AudioSystem } from '../systems/AudioSystem';
 import { EventBus } from './EventBus';
 import { Enemy } from '../entities/Enemy';
@@ -36,6 +37,7 @@ export class Game {
   private cameraCtrl: CameraController;
   private input: InputController;
   private vfx: VFXSystem;
+  private damageNums: DamageNumbers;
   audio = new AudioSystem();
   private hero: Hero;
   private ctx: GameContext;
@@ -120,6 +122,7 @@ export class Game {
     this.cameraCtrl.desiredTarget.set(-4, 0, 3);
     this.vfx = new VFXSystem(this.scene3d.scene);
     this.vfx.particleScale = quality === 'low' ? 0.4 : quality === 'medium' ? 0.8 : 1.2;
+    this.damageNums = new DamageNumbers(this.cameraCtrl.camera, canvas.parentElement ?? document.body);
 
     this.ctx = {
       paths: this.scene3d.paths.map((p) => ({ points: p.points, length: p.length })),
@@ -150,6 +153,10 @@ export class Game {
       forgeHeroHp: forgePct(save, 'heroVitality'),
       disableTower: (towerId, duration, color) => this.disableTower(towerId, duration, color),
       onBossPhase: (nameKey, color) => this.bus.emit('bossPhase', { nameKey, color }),
+      // بخش ۱۴ — انتقاد و عدد آسیب
+      critChance: 0.1,
+      critMult: 2,
+      showDamage: (enemyId, pos, amount, crit) => this.damageNums.add(enemyId, pos, amount, crit),
     };
 
     this.hero = new Hero(heroId, this.scene3d.scene, this.ctx);
@@ -185,6 +192,7 @@ export class Game {
       this.cameraCtrl.update(rawDt);
       this.scene3d.update(rawDt);
       this.vfx.update(this.paused ? rawDt * 0.2 : rawDt * this.speed);
+      this.damageNums.update(rawDt * (this.paused ? 0.2 : this.speed));
       this.scene3d.render(this.cameraCtrl.camera);
     };
     this.raf = requestAnimationFrame(loop);
@@ -1052,6 +1060,7 @@ export class Game {
     cancelAnimationFrame(this.raf);
     this.input.dispose();
     this.audio.dispose();
+    this.damageNums.dispose();
     this.hero.dispose();
     for (const e of this.enemies) e.remove();
     this.clearGhost();

@@ -83,6 +83,12 @@ export interface GameContext {
   disableTower(towerId: number, duration: number, color?: number): void;
   /** نمایش بنر «فاز دوم» Boss در UI */
   onBossPhase(nameKey: string, color: number): void;
+  /** بخش ۱۴ — شانس آسیب انتقاد (۰٫۱ = ۱۰٪) */
+  critChance: number;
+  /** بخش ۱۴ — ضریب آسیب انتقاد */
+  critMult: number;
+  /** بخش ۱۴ — عدد آسیب شناور — تجمیع per-enemy در موتور */
+  showDamage(enemyId: number, pos: THREE.Vector3, amount: number, crit: boolean): void;
 }
 
 export interface TowerLike {

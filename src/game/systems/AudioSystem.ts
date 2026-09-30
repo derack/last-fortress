@@ -6,7 +6,8 @@
 type SfxName =
   | 'tap' | 'place' | 'upgrade' | 'sell' | 'shoot' | 'cannon' | 'lightning'
   | 'freeze' | 'explosion' | 'magic' | 'death' | 'bossRoar' | 'victory'
-  | 'defeat' | 'reward' | 'error' | 'waveStart' | 'heroShot';
+  | 'defeat' | 'reward' | 'error' | 'waveStart' | 'heroShot'
+  | 'hit' | 'bossPhase';
 
 export class AudioSystem {
   private ctx: AudioContext | null = null;
@@ -21,6 +22,7 @@ export class AudioSystem {
   private bossMode = false;
   private musicVol = 0.6;
   private sfxVol = 0.8;
+  private lastHitSfx = 0; // بخش ۱۵ — محدودسازی نرخ صدای اصابت
 
   /** باید بعد از اولین تعامل کاربر صدا زده شود (سیاست مرورگرها) */
   ensure() {
@@ -271,6 +273,20 @@ export class AudioSystem {
         this.blip(330, 440, 0.2, 'square', 0.15);
         setTimeout(() => this.blip(440, 660, 0.25, 'square', 0.15), 140);
         break;
+      case 'hit': {
+        // بخش ۱۵ — تیک اصابت بسیار کوتاه و آرام + محدودسازی نرخ (بدون آزار)
+        if (now - this.lastHitSfx < 0.11) break;
+        this.lastHitSfx = now;
+        this.noise(now, 0.03, 3200, 0.07, 'highpass');
+        break;
+      }
+      case 'bossPhase': {
+        // بخش ۱۵ — شیپور ورود فاز دوم Boss (دو نت پایین‌رونده)
+        this.blip(160, 110, 0.35, 'sawtooth', 0.4);
+        setTimeout(() => this.blip(110, 70, 0.5, 'sawtooth', 0.45), 320);
+        this.noise(now, 0.7, 300, 0.25, 'lowpass');
+        break;
+      }
     }
   }
 

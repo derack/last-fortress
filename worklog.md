@@ -316,3 +316,24 @@ Stage Summary:
 - آموزش شروع بازی زنجیره کامل شد: خوش‌آمد → ساخت → موج → ارتقا → جادو → پایان
 - سیستم‌های موجود (Settings/Save/Reset) audit و سالم تایید شدند
 - PHASEهای باقی‌مانده PROMPT: ۶ (VFX/Audio عمیق‌تر)، ۷ (Balance ۱۰۰ مرحله)، ۸ (Mobile)، ۹ (Pipeline)، ۱۰-۱۲ (تست/Final Build/Report)
+---
+Task ID: 14
+Agent: main (Super Z)
+Task: فاز ۶ PROMPT — Combat Feedback / VFX / Audio (بخش‌های ۱۳/۱۴/۱۵): اعداد آسیب شناور، سیستم انتقاد، فلش اصابت، صدای اصابت و فاز Boss
+
+Work Log:
+- DamageNumbers.ts (جدید): لایه DOM مستقل روی canvas (z-10، زیر UI) با Pool عناصر (بخش ۳۵) — تجمیع per-enemy در پنجره ۰٫۲۵ ثانیه (ضد اسپم طبق بخش ۱۳) — پروجکشن دستی world→screen با دوربین — عمر ۰٫۸۵ ثانیه با انیمیشن CSS — سقف ۲۶ عدد همزمان — اعداد با faNum فارسی
+- سیستم انتقاد (بخش ۱۴): critChance=0.1 / critMult=2 در GameContext — رول در Enemy.takeDamage روی آسیب نهایی — عدد انتقاد بزرگ‌تر و کهربایی با هاله (.dmg-crit)
+- Hit Flash (بخش ۱۴): Enemy.setupFlashMaterials — کلون متریال per-handle (GLB clones متریال مشترک دارند — یک‌بار per Handle Pool‌شده با فلگ userData) — پالس emissive گرم ۰٫۱۲ ثانیه با decay در update
+- صدای اصابت 'hit' (بخش ۱۵): نویز highpass بسیار کوتاه/آرام (گین ۰٫۰۷) با محدودسازی نرخ ۱۱۰ms در AudioSystem — بدون آزار
+- صدای 'bossPhase' (بخش ۱۵): دو نت پایین‌رونده sawtooth + نویز lowpass — در enterPhase2 همه Bossها
+- globals.css: .damage-numbers/.dmg-float/.dmg-crit + @keyframes dmgFloat
+- Game.ts: فیلد damageNums + showDamage در ctx + آپدیت در حلقه rAF (نرخ با pause/speed هماهنگ) + dispose
+- دیباگ مهم: CSS جدید اعمال نمی‌شد — سرور dev قدیمی (از Sep29) با کش خراب بود؛ ری‌استارت با rm -rf .next حل شد
+- تست مرورگر: فلش اصابت بصری تأیید شد (لکه emissive نارنجی روی Placeholder در اسکرین‌شات crop) — عدد «۲۱» در مختصات دقیق دشمن (۲۲۵،۴۶۴) با display:block تأیید شد — پروجکشن دستی (۲۰۷،۴۲۱) با موقعیت واقعی برج منطبق — کاهش HP (۱۳۰→۱۰۸→۱۰۹−۲۴) و انتقاد رول شد — صفر error کنسول
+- ذخیره برای تست تمیز ریست شد | tsc صفر خطا | Build موفق
+
+Stage Summary:
+- Combat Feedback کامل: هر اصابت = فلش متریال + عدد شناور (تجمیع‌شده) + صدای کوتاه محدودشده — انتقاد ۱۰٪ ×۲ با عدد ویژه — Boss فاز ۲ صدای اختصاصی گرفت
+- عدد روی صفحه در گیم‌پلی واقعی قابل مشاهده است؛ تست اسکرین‌شات به‌دلیل jitter ~۵۰۰ms CLI و عمر ۰٫۸۵ ثانیه‌ای عدد سخت بود اما مختصات و چرخه عمر به‌صورت برنامه‌ای اثبات شد
+- PHASEهای باقی‌مانده PROMPT: ۷ (Balance ۱۰۰ مرحله)، ۸ (Mobile)، ۹ (Pipeline)، ۱۰-۱۲ (تست/Final Build/Report)

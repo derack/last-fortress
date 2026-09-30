@@ -58,6 +58,10 @@ export class Enemy implements DamageableEnemy {
   private ctx: GameContext;
   private deathY = 0;
   private hitAnimCd = 0;
+  /** بخش ۱۴ — فلش اصابت: متریال‌های مستقل این instance + تایمر محو */
+  private flashMats: { mat: THREE.MeshStandardMaterial; hex: number; intensity: number }[] = [];
+  private flashT = 0;
+  private hitSfxCd = 0;
   /** Handle سیستم Asset — مدل واقعی/Placeholder + Pool + انیمیشن */
   private handle: CharacterHandle;
   /** مسیر حمله این دشمن — مراحل چندمسیره (۰ تا ۲) */
@@ -81,6 +85,7 @@ export class Enemy implements DamageableEnemy {
     this.handle = characterFactory.acquireEnemyHandle(data, tier);
     this.mesh = this.handle.root;
     scene.add(this.mesh);
+    this.setupFlashMaterials();
     this.updateMeshPos();
     const myPts = this.myPath.points;
     this.mesh.rotation.y = Math.atan2(
@@ -92,6 +97,53 @@ export class Enemy implements DamageableEnemy {
   /** مسیر فعلی این دشمن */
   private get myPath() {
     return this.ctx.paths[this.pathIndex] ?? this.ctx.paths[0];
+  }
+
+  /** بخش ۱۴ — فلش اصابت: clone متریال per-handle (GLB clones متریال مشترک دارند)
+   *  یک‌بار per Handle Pool‌شده — فلش فقط همین instance را روشن می‌کند */
+  private setupFlashMaterials() {
+    const root = this.handle.root as unknown as { userData: Record<string, unknown> };
+    if (!root.userData.flashCloned) {
+      this.handle.root.traverse((o) => {
+        const mesh = o as THREE.Mesh;
+        if (!mesh.isMesh || !mesh.material) return;
+        if (Array.isArray(mesh.material)) mesh.material = mesh.material.map((m) => m.clone());
+        else mesh.material = (mesh.material as THREE.Material).clone();
+      });
+      root.userData.flashCloned = true;
+    }
+    this.flashMats = [];
+    this.handle.root.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.material) return;
+      const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const m of mats) {
+        const sm = m as THREE.MeshStandardMaterial;
+        if (sm.emissive) {
+          this.flashMats.push({ mat: sm, hex: sm.emissive.getHex(), intensity: sm.emissiveIntensity });
+        }
+      }
+    });
+  }
+
+  /** بخش ۱۴ — پالس روشن متریال هنگام اصابت */
+  private flashHit() {
+    this.flashT = 0.12;
+  }
+
+  private applyFlash(dt: number) {
+    if (this.flashT <= 0) return;
+    this.flashT = Math.max(0, this.flashT - dt);
+    const k = this.flashT / 0.12;
+    for (const f of this.flashMats) {
+      if (k <= 0) {
+        f.mat.emissive.setHex(f.hex);
+        f.mat.emissiveIntensity = f.intensity;
+      } else {
+        f.mat.emissive.setRGB(k * 1.0, k * 0.82, k * 0.55);
+        f.mat.emissiveIntensity = f.intensity + k * 1.4;
+      }
+    }
   }
 
   getPos(): THREE.Vector3 {
@@ -184,7 +236,18 @@ export class Enemy implements DamageableEnemy {
       }
     }
 
+    // بخش ۱۴ — انتقاد: ضریب روی آسیب نهایی
+    const crit = Math.random() < this.ctx.critChance;
+    if (crit) dmg *= this.ctx.critMult;
+
     this.hp -= dmg;
+    // بخش ۱۴ — فیدبک اصابت: فلش + عدد شناور + صدای کوتاه محدودشده
+    this.flashHit();
+    this.ctx.showDamage(this.id, this.mesh.position.clone().add(new THREE.Vector3(0, this.data.boss ? 2.8 : 1.9)), dmg, crit);
+    if (this.hitSfxCd <= 0) {
+      this.hitSfxCd = 0.09;
+      this.ctx.audio.play('hit');
+    }
     if (this.hp <= 0) {
       this.die();
       return true;
@@ -215,6 +278,7 @@ export class Enemy implements DamageableEnemy {
     this.ctx.vfx.ring(this.mesh.position, fx, 5, 0.9);
     this.ctx.vfx.explosion(this.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), fx, true);
     this.ctx.audio.play('bossRoar');
+    this.ctx.audio.play('bossPhase'); // بخش ۱۵ — شیپور فاز دوم
     this.ctx.cameraShake(1.0);
     this.handle.animation?.playOneShot('phasechange', { fade: 0.2 });
     if (!this.handle.animation?.isBusy()) {
@@ -345,6 +409,8 @@ export class Enemy implements DamageableEnemy {
 
   update(dt: number, time: number) {
     this.hitAnimCd = Math.max(0, this.hitAnimCd - dt);
+    this.hitSfxCd = Math.max(0, this.hitSfxCd - dt);
+    this.applyFlash(dt);
 
     if (!this.alive) {
       // انیمیشن مرگ — GLB (افتادن +) فرورفتن کند | Placeholder: فرورفتن سریع
