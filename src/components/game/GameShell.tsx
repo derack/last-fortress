@@ -3,8 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { Game } from '@/game/core/Game';
-import { ACHIEVEMENTS } from '@/game/data/level1';
-import { LEVELS } from '@/game/data/levels';
+import { ACHIEVEMENTS, LEVELS, STAGES, firstPlayableStageId } from '@/game/data/campaign';
 import { assetManager, sliceAssetEntries } from '@/game/assets';
 import { t, faNum } from '@/game/data/i18n';
 import { MainMenu } from './MainMenu';
@@ -109,7 +108,7 @@ export function GameShell() {
     // ریست state نبرد قبلی
     store.resetBattleState();
 
-    const level = LEVELS[store.pendingLevelId] ?? LEVELS.l1;
+    const level = LEVELS[store.pendingLevelId] ?? STAGES[firstPlayableStageId(save)];
     const heroId = save.selectedHero ?? 'arman';
     const game = new Game(canvas, level, save.settings.quality, save, save.settings.language, heroId);
     for (const ev of BUS_EVENTS) {

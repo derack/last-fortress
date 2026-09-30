@@ -6,9 +6,33 @@ import type { SaveData, Language, Quality } from '../data/types';
 
 const KEY = 'last_fortress_save_v1';
 
+/** نگاشت مراحل قدیمی (l1..l6) به فصل‌های کمپین ۱۰۰ مرحله‌ای */
+const LEGACY_LEVEL_TO_CHAPTER: Record<string, number> = {
+  l1: 1, l2: 2, l3: 3, l4: 4, l5: 5, l6: 10,
+};
+
+/** مهاجرت ذخیره نسخه ۱ → نسخه ۲ — مراحل قدیمی به فصل‌ها اعتبار داده می‌شوند */
+function migrateV1toV2(data: SaveData): SaveData {
+  for (const [legacyId, chapterId] of Object.entries(LEGACY_LEVEL_TO_CHAPTER)) {
+    const rec = data.levels[legacyId];
+    if (!rec?.completed) continue;
+    for (let s = 1; s <= 10; s++) {
+      const sid = `c${chapterId}s${s}`;
+      if (!data.levels[sid]) {
+        data.levels[sid] = { stars: rec.stars, bestHealthPct: rec.bestHealthPct, completed: true };
+      }
+    }
+    delete data.levels[legacyId];
+  }
+  // بازمحاسبه مجموع ستاره‌ها
+  data.stats.totalStars = Object.values(data.levels).reduce((sum, l) => sum + l.stars, 0);
+  data.version = 2;
+  return data;
+}
+
 export function defaultSave(): SaveData {
   return {
-    version: 1,
+    version: 2,
     settings: { language: 'fa', quality: 'medium', music: 0.6, sfx: 0.8, haptics: true },
     levels: {},
     crystals: 0,
@@ -37,7 +61,7 @@ export function loadSave(): SaveData {
     if (!raw) return defaultSave();
     const data = JSON.parse(raw) as SaveData;
     const base = defaultSave();
-    return {
+    const merged: SaveData = {
       ...base,
       ...data,
       settings: { ...base.settings, ...data.settings },
@@ -48,6 +72,11 @@ export function loadSave(): SaveData {
       unlockedHeroes: data.unlockedHeroes?.length ? data.unlockedHeroes : ['arman'],
       selectedHero: data.selectedHero ?? 'arman',
     };
+    // مهاجرت نسخه ۱ → ۲ — کمپین ۱۰۰ مرحله‌ای
+    if (!data.version || data.version < 2) {
+      return migrateV1toV2(merged);
+    }
+    return merged;
   } catch {
     return defaultSave();
   }

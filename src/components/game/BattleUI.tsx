@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { TOWERS, TOWER_BUILD_ORDER, isTowerUnlocked, starsUntilTower } from '@/game/data/towers';
+import { nextStageId } from '@/game/data/campaign';
 import { MAGIC } from '@/game/data/magic';
 import { HEROES } from '@/game/data/magic';
 import { t, faNum } from '@/game/data/i18n';
@@ -502,11 +503,27 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
   rewards?: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; value: string; label: string; color: string }[];
   actions: BattleActions;
 }) {
+  const save = useGameStore((s) => s.save);
   const backToMap = () => {
     actions.endBattle();
     useGameStore.getState().setScreen('map');
   };
   const restart = () => {
+    actions.endBattle();
+    setTimeout(() => actions.startBattle(), 60);
+  };
+  // مرحله بعد در زنجیره کمپین ۱۰۰ مرحله‌ای — فقط در پیروزی
+  const nextId = title === t('victory') && save
+    ? (() => {
+        // مرحله فعلی از pendingLevelId
+        const cur = useGameStore.getState().pendingLevelId;
+        const m = /^c(\d+)s(\d+)$/.exec(cur);
+        return m ? nextStageId(Number(m[1]), Number(m[2])) : null;
+      })()
+    : null;
+  const goNext = () => {
+    if (!nextId) return;
+    useGameStore.getState().setPendingLevel(nextId);
     actions.endBattle();
     setTimeout(() => actions.startBattle(), 60);
   };
@@ -545,8 +562,16 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
         )}
 
         <div className="mt-6 flex flex-col gap-2.5">
+          {nextId && (
+            <button onClick={goNext}
+              className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-700 px-6 py-3.5 text-lg font-black text-white active:scale-95">
+              <Play className="h-5 w-5" />
+              {t('nextStage')}
+            </button>
+          )}
           <button onClick={restart}
-            className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-amber-500 to-orange-600 px-6 py-3.5 text-lg font-black text-white active:scale-95">
+            className={`flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-black text-white active:scale-95
+              ${nextId ? 'border border-slate-600/60 bg-black/50' : 'bg-gradient-to-b from-amber-500 to-orange-600 py-3.5 text-lg'}`}>
             <RotateCcw className="h-5 w-5" />
             {t('retry')}
           </button>

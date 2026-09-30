@@ -89,6 +89,8 @@ export interface SpawnGroup {
   interval: number; // فاصله زمانی بین اسپاون (ثانیه)
   delay: number; // تاخیر شروع گروه
   tier: number;
+  /** مسیر اسپاون (۰ تا ۲) — فقط مراحل چندمسیره؛ بدون این فیلد پخش متوازن می‌شود */
+  path?: number;
 }
 
 export interface WaveData {
@@ -158,8 +160,9 @@ export interface HeroData {
 export type RegionEnv = 'plains' | 'forest' | 'tundra' | 'volcano' | 'wastes' | 'citadel';
 
 export interface LevelData {
-  id: string;
-  region: number;
+  id: string; // قالب c{فصل}s{مرحله} — مثال c3s7
+  chapter: number; // فصل ۱..۱۰
+  stage: number; // مرحله ۱..۱۰ در فصل
   nameKey: string;
   descKey: string;
   coreHp: number;
@@ -168,20 +171,24 @@ export interface LevelData {
   waves: WaveData[];
   timeOfDay: 'day' | 'night';
   env: RegionEnv;
-  path: Vec2[];
+  /** یک تا سه مسیر حمله — همه دقیقاً به هسته آذر ختم می‌شوند */
+  paths: Vec2[][];
   star2HealthPct: number; // حداقل درصد سلامت برای ستاره دوم
   star3ChallengeKey: string;
 }
 
 // ---------------------------- منطقه ----------------------------
 
-export interface RegionDef {
-  id: number;
-  levelId: string;
+export interface ChapterDef {
+  id: number; // ۱..۱۰
   nameKey: string;
+  descKey: string;
   env: RegionEnv;
+  timeOfDay: 'day' | 'night';
   /** توضیح کوتاه برای نقشه */
   tagKey: string;
+  /** Boss مرحله ۱۰ فصل */
+  bossId: string;
 }
 
 // ---------------------------- دستاورد ----------------------------

@@ -5,6 +5,12 @@ import type { TargetingMode, DamageType } from '../data/types';
 // Context بین موجودیت‌ها و موتور بازی — جلوگیری از import دایره‌ای
 // ============================================================
 
+/** یک مسیر حمله — نقاط نمونه‌برداری‌شده و طول واقعی */
+export interface PathInfo {
+  points: THREE.Vector3[];
+  length: number;
+}
+
 export interface DamageableEnemy {
   id: number;
   getPos(): THREE.Vector3;
@@ -17,6 +23,8 @@ export interface DamageableEnemy {
   dist: number;
   speed: number;
   tier: number;
+  /** مسیر فعلی دشمن — مراحل چندمسیره */
+  pathIndex: number;
   applySlow(factor: number, duration: number): void;
   applyBurn(dps: number, duration: number): void;
   applyShred(amount: number, duration: number): void; // شکستن زره
@@ -34,6 +42,9 @@ export interface HeroRef {
 }
 
 export interface GameContext {
+  /** همه مسیرهای حمله (۱ تا ۳) — همه به هسته ختم می‌شوند */
+  paths: PathInfo[];
+  /** مسیر اصلی (۰) — سازگاری با کد موجود */
   pathPoints: THREE.Vector3[];
   pathLength: number;
   corePos: THREE.Vector3;

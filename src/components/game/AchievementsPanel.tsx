@@ -3,7 +3,7 @@
 import { ArrowRight, Trophy, Star, Swords, Flame, Shield, Zap } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { useStandaloneBack } from './standalone';
-import { ACHIEVEMENTS } from '@/game/data/level1';
+import { ACHIEVEMENTS } from '@/game/data/campaign';
 import { t, faNum } from '@/game/data/i18n';
 
 // ============================================================

@@ -66,9 +66,13 @@ export class BattleScene {
   scene: THREE.Scene;
   renderer: THREE.WebGLRenderer;
   curve: THREE.CatmullRomCurve3;
-  pathPoints: THREE.Vector3[] = []; // نقاط نمونه‌برداری برای اعتبارسنجی ساخت
+  /** همه مسیرهای حمله — مراحل چندمسیره ۲-۳ مسیر دارند */
+  paths: { points: THREE.Vector3[]; length: number; curve: THREE.CatmullRomCurve3 }[] = [];
+  pathPoints: THREE.Vector3[] = []; // نقاط مسیر اصلی (۰) — سازگاری
   pathLength = 0;
   coreMesh: THREE.Group;
+  riftMeshes: THREE.Group[] = [];
+  /** دروازه اصلی — سازگاری */
   riftMesh: THREE.Group;
   corePos: THREE.Vector3;
   riftPos: THREE.Vector3;
@@ -145,29 +149,43 @@ export class BattleScene {
     // زمین
     this.buildGround(night);
 
-    // مسیر
-    const pts = level.path.map((p) => new THREE.Vector3(p.x, 0, p.z));
-    this.curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.12);
-    this.pathLength = this.curve.getLength();
-    this.pathPoints = this.curve.getSpacedPoints(Math.max(40, Math.floor(this.pathLength / 1.5)));
-    this.buildPathMesh(night);
+    // مسیرها — ۱ تا ۳ مسیر حمله، همه به هسته ختم می‌شوند
+    const pathDefs = level.paths?.length ? level.paths : [level.paths ?? []];
+    for (const def of pathDefs) {
+      const pts = def.map((p) => new THREE.Vector3(p.x, 0, p.z));
+      const curve = new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.12);
+      const length = curve.getLength();
+      const points = curve.getSpacedPoints(Math.max(40, Math.floor(length / 1.5)));
+      this.paths.push({ points, length, curve });
+      this.buildPathMesh(points, night);
+    }
+    this.curve = this.paths[0].curve;
+    this.pathPoints = this.paths[0].points;
+    this.pathLength = this.paths[0].length;
 
-    // هسته آذر (انتهای مسیر)
-    this.corePos = pts[pts.length - 1].clone();
+    // هسته آذر (انتهای مشترک همه مسیرها)
+    const endPts = this.paths[0].points;
+    this.corePos = endPts[endPts.length - 1].clone();
     this.coreMesh = buildCoreMesh();
     this.coreMesh.position.set(this.corePos.x, 0, this.corePos.z);
     this.scene.add(this.coreMesh);
 
-    // دروازه تاریکی (شروع مسیر)
-    this.riftPos = pts[0].clone();
-    this.riftMesh = buildRiftMesh();
-    const dir = pts[1].clone().sub(pts[0]).normalize();
-    this.riftMesh.position.set(this.riftPos.x, 0, this.riftPos.z);
-    this.riftMesh.rotation.y = Math.atan2(dir.x, dir.z);
-    this.scene.add(this.riftMesh);
+    // دروازه تاریکی — یکی در ابتدای هر مسیر
+    for (const path of this.paths) {
+      const rift = buildRiftMesh();
+      const start = path.points[0];
+      const next = path.points[1] ?? path.points[0];
+      const dir = next.clone().sub(start).normalize();
+      rift.position.set(start.x, 0, start.z);
+      rift.rotation.y = Math.atan2(dir.x, dir.z);
+      this.scene.add(rift);
+      this.riftMeshes.push(rift);
+    }
+    this.riftMesh = this.riftMeshes[0];
+    this.riftPos = this.riftMeshes[0].position.clone();
 
     // محیط
-    this.buildEnvironment(level, pts, night);
+    this.buildEnvironment(level, this.paths[0].points, night);
   }
 
   // ------------------- آسمان -------------------
@@ -293,9 +311,8 @@ export class BattleScene {
 
   // ------------------- مسیر -------------------
 
-  private buildPathMesh(night: boolean) {
+  private buildPathMesh(pts: THREE.Vector3[], night: boolean) {
     const width = 3.2;
-    const pts = this.pathPoints;
     const segs = pts.length - 1;
 
     // هر سگمنت یک کوارت مستقل — بدون تاخوردگی در پیچ‌ها
@@ -410,8 +427,10 @@ export class BattleScene {
 
   private buildEnvironment(level: LevelData, pathPts: THREE.Vector3[], night: boolean) {
     const nearPath = (x: number, z: number, min: number) => {
-      for (const p of this.pathPoints) {
-        if ((p.x - x) ** 2 + (p.z - z) ** 2 < min * min) return true;
+      for (const path of this.paths) {
+        for (const p of path.points) {
+          if ((p.x - x) ** 2 + (p.z - z) ** 2 < min * min) return true;
+        }
       }
       return false;
     };
@@ -532,13 +551,17 @@ export class BattleScene {
 
   canBuild(x: number, z: number, towerPositions: THREE.Vector3[]): boolean {
     if (Math.abs(x) > 32 || Math.abs(z) > 32) return false;
-    // فاصله از مسیر
-    for (const p of this.pathPoints) {
-      if ((p.x - x) ** 2 + (p.z - z) ** 2 < 3.9 ** 2) return false;
+    // فاصله از همه مسیرها
+    for (const path of this.paths) {
+      for (const p of path.points) {
+        if ((p.x - x) ** 2 + (p.z - z) ** 2 < 3.9 ** 2) return false;
+      }
     }
-    // فاصله از هسته و دروازه
+    // فاصله از هسته و همه دروازه‌ها
     if (Math.hypot(x - this.corePos.x, z - this.corePos.z) < 5.5) return false;
-    if (Math.hypot(x - this.riftPos.x, z - this.riftPos.z) < 5.5) return false;
+    for (const rift of this.riftMeshes) {
+      if (Math.hypot(x - rift.position.x, z - rift.position.z) < 5.5) return false;
+    }
     // همپوشانی با برج‌های دیگر
     for (const t of towerPositions) {
       if (Math.hypot(x - t.x, z - t.z) < 3.8) return false;
@@ -559,13 +582,15 @@ export class BattleScene {
     if (core.ring1) core.ring1.rotation.z += dt * 0.5;
     if (core.ring2) core.ring2.rotation.z -= dt * 0.35;
 
-    // دروازه تاریکی — تپش
+    // دروازه‌های تاریکی — تپش (همه مسیرها)
     this.portalPulse += dt;
-    const portal = this.riftMesh.userData.portal as THREE.Mesh | undefined;
-    if (portal) {
-      const m = portal.material as THREE.MeshBasicMaterial;
-      m.opacity = 0.45 + Math.sin(this.portalPulse * 3) * 0.15;
-      portal.rotation.z += dt * 1.2;
+    for (const rift of this.riftMeshes) {
+      const portal = rift.userData.portal as THREE.Mesh | undefined;
+      if (portal) {
+        const m = portal.material as THREE.MeshBasicMaterial;
+        m.opacity = 0.45 + Math.sin(this.portalPulse * 3) * 0.15;
+        portal.rotation.z += dt * 1.2;
+      }
     }
 
     // کریستال‌های محیط

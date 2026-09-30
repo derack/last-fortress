@@ -61,7 +61,7 @@ export class Game {
   waveIndex = 0; // موج بعدی
   waveActive = false;
   private waveTime = 0;
-  private spawnQueue: { enemyId: string; tier: number; time: number }[] = [];
+  private spawnQueue: { enemyId: string; tier: number; time: number; pathIndex: number }[] = [];
   private autoStartTimer = 18; // زمان آماده‌سازی دژ قبل از موج اول
   private earlyBonus = 0;
 
@@ -120,6 +120,7 @@ export class Game {
     this.vfx.particleScale = quality === 'low' ? 0.4 : quality === 'medium' ? 0.8 : 1.2;
 
     this.ctx = {
+      paths: this.scene3d.paths.map((p) => ({ points: p.points, length: p.length })),
       pathPoints: this.scene3d.pathPoints,
       pathLength: this.scene3d.pathLength,
       corePos: this.scene3d.corePos,
@@ -213,7 +214,7 @@ export class Game {
       this.waveTime += dt;
       while (this.spawnQueue.length && this.spawnQueue[0].time <= this.waveTime) {
         const item = this.spawnQueue.shift()!;
-        this.spawnEnemy(item.enemyId, item.tier);
+        this.spawnEnemy(item.enemyId, item.tier, item.pathIndex);
       }
     }
 
@@ -319,9 +320,14 @@ export class Game {
     this.waveActive = true;
     this.waveTime = 0;
     this.spawnQueue = [];
+    const pathCount = this.level.paths.length;
     for (const g of wave.groups) {
       for (let i = 0; i < g.count; i++) {
-        this.spawnQueue.push({ enemyId: g.enemy, tier: g.tier, time: g.delay + i * g.interval });
+        // مسیر اسپاون — گروه مسیر مشخص دارد یا پخش متوازن روی همه مسیرها
+        const pathIndex = pathCount > 1
+          ? (g.path !== undefined ? g.path : i % pathCount) % pathCount
+          : 0;
+        this.spawnQueue.push({ enemyId: g.enemy, tier: g.tier, time: g.delay + i * g.interval, pathIndex });
       }
     }
     this.spawnQueue.sort((a, b) => a.time - b.time);
@@ -375,10 +381,10 @@ export class Game {
 
   // ===================== دشمنان =====================
 
-  private spawnEnemy(enemyId: string, tier: number) {
+  private spawnEnemy(enemyId: string, tier: number, pathIndex = 0) {
     const data = ENEMIES[enemyId];
     if (!data) return;
-    const enemy = new Enemy(data, tier, this.scene3d.scene, this.ctx);
+    const enemy = new Enemy(data, tier, this.scene3d.scene, this.ctx, pathIndex);
     this.enemies.push(enemy);
     this.vfx.burst(enemy.getPos().clone().add(new THREE.Vector3(0, 1.5, 0)), data.accent, 10, { speed: 4, life: 0.5, size: 0.5, gravity: 3 });
     if (data.boss) {
@@ -390,17 +396,22 @@ export class Game {
   private summonShadow(pos: THREE.Vector3, enemyId = 'shadow') {
     const data = ENEMIES[enemyId] ?? ENEMIES.shadow;
     const e = new Enemy(data, 1, this.scene3d.scene, this.ctx);
-    // قرار دادن روی نزدیک‌ترین نقطه مسیر
+    // نزدیک‌ترین مسیر + نزدیک‌ترین نقطه همان مسیر
+    let bestPath = 0;
     let best = 0;
     let bestD = Infinity;
-    this.scene3d.pathPoints.forEach((p, i) => {
-      const d = (p.x - pos.x) ** 2 + (p.z - pos.z) ** 2;
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
+    this.scene3d.paths.forEach((path, pi) => {
+      path.points.forEach((p, i) => {
+        const d = (p.x - pos.x) ** 2 + (p.z - pos.z) ** 2;
+        if (d < bestD) {
+          bestD = d;
+          best = i;
+          bestPath = pi;
+        }
+      });
     });
-    e.dist = (best / (this.scene3d.pathPoints.length - 1)) * this.scene3d.pathLength;
+    e.pathIndex = bestPath;
+    e.dist = (best / (this.scene3d.paths[bestPath].points.length - 1)) * this.scene3d.paths[bestPath].length;
     this.enemies.push(e);
     this.vfx.burst(pos.clone().add(new THREE.Vector3(0, 1, 0)), data.accent, 14, { speed: 5, life: 0.6, size: 0.6, gravity: 3 });
   }

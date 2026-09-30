@@ -249,3 +249,27 @@ Work Log:
 Stage Summary:
 - کنسول تست کاربر آماده است؛ بازی سالم با صفر error
 - ZIP تحلیل شد و به‌عنوان سند اجرایی Task 12 نهایی (Release Candidate) ثبت شد — هنوز هیچ تغییری در کد داده نشده تا تست کاربر مختل نشود
+
+---
+Task ID: 12-a
+Agent: main (Super Z)
+Task: فصل‌بندی کمپین — ۱۰ فصل × ۱۰ مرحله = ۱۰۰ مرحله با هویت مستقل فصل‌ها، تنوع ترکیب دشمنان در هر مرحله، و مسیرهای حمله ۲-۳گانه در مراحل سخت فصل ۲ به بعد (طبق درخواست کاربر + PROMPT نهایی بخش ۱۷/۲۱/۲۲)
+
+Work Log:
+- types.ts: LevelData → chapter/stage + paths (Vec2[][]) جایگزین path تکی؛ SpawnGroup.path اختیاری؛ ChapterDef جایگزین RegionDef
+- campaign.ts (جدید): ۱۰ فصل با هویت کامل (دشت‌های سبز/جنگل سایه‌آلود/یخچال‌های اثری/ژرفای آتشفشان/ویرانه‌های ماشین/تالاب ارواح/شب قطبی/دشت گدازه/شب آهنین/دژ ارباب تاریکی) + مخزن دشمنان اختصاصی هر فصل + ۲۰ قالب مسیر (۱۰ تک‌مسیره، ۶ دومسیره، ۴ سه‌مسیره — همه با پایان مشترک روی هسته) + ژنراتور قطعی mulberry32: هر مرحله ترکیب موج/شمارش/فاصله/tier متفاوت با seed ثابت + distributeGroups (تقسیم گروه‌ها بین مسیرها، شفادهنده/احضارکننده تک‌مسیر) + Boss هر فصل مرحله ۱۰ (تی‌یر Boss با سختی بالا می‌رود) + helpers: isStageUnlocked/isChapterUnlocked/firstPlayableStageId/nextStageId/chapterStars/completedStageCount
+- pathCountFor: فصل ۱ همه تک‌مسیر | فصل ۲-۳: مراحل ۷-۱۰ دومسیره | فصل ۴+: مرحله ۹ و ۱۰ سه‌مسیره
+- Engine چندمسیره: context.ts (PathInfo + paths[])، Enemy.ts (pathIndex + myPath + leak/progress/rotate بر اساس مسیر خودش)، Game.ts (spawnQueue با pathIndex، پخش round-robin گروه‌های بدون مسیر، summonShadow نزدیک‌ترین مسیر)، BattleScene.ts (حلقه ساخت چند مسیر + چند دروازه تاریک + canBuild/nearPath روی همه مسیرها + تپش همه دروازه‌ها)
+- CampaignMap.tsx بازنویسی کامل: آکاردئون ۱۰ فصل با نام/برچسب/ستاره فصل/نام Boss + گرید ۵ ستونه ۱۰ مرحله (ستاره، قفل، نشان ×۲/×۳ مسیر، تاج برای مرحله Boss) + بریفینگ با «مسیرهای حمله» + هشدار چندمسیره + بخش پیشرفت کل (X/100، Y/300)
+- BattleUI: دکمه «مرحله بعد» سبز در پنل پیروزی (زنجیره c{N}s{10} → c{N+1}s1) — تست شد: c5s10 → c6s1
+- GameShell: fallback firstPlayableStageId برای pendingLevelId نامعتبر؛ gameStore: pendingLevelId پیش‌فرض c1s1
+- SaveSystem: نسخه ۲ + migrateV1toV2 (l1..l6 → اعتبار کل فصل متناظر ۱/۲/۳/۴/۵/۱۰ + بازمحاسبه totalStars)
+- i18n: ۳۴ کلید جدید fa/en (۱۰ فصل × نام/برچسب/توضیح + chapterShort/stageShort/bossStage/attackPaths/multiPathWarning/nextStage/campaignComplete) — parity ۳۶۲/۳۶۲ تأیید شد
+- حذف levels.ts و level1.ts قدیمی (ACHIEVEMENTS به campaign.ts منتقل شد)
+- تست مرورگر: نقشه (۱۰ فصل، قفل زنجیره‌ای، نشان مسیر) → c1s1 تک‌مسیره اسپاون سالم → c2s9 دومسیره (۲ دروازه، تقسیم ۳+۲، هر دو مسیر فعال) → c5s10 سه‌مسیره Boss (۳ دروازه، Boss annihilator از مسیر تصادفی، محافظان هر ۳ مسیر) → کشتن Boss → پیروزی → «مرحله بعد» → c6s1 شروع شد → ذخیره v2 سالم (c5s10: ۱ ستاره، totalStars 99)
+- tsc: ۰ خطا | Build: موفق | کنسول: صفر error
+
+Stage Summary:
+- کمپین ۱۰۰ مرحله‌ای کامل و تست‌شده: هر مرحله ترکیب دشمنان متفاوت (ژنراتور قطعی)، فصل ۲ به بعد مراحل سخت دومسیره، فصل ۴ به بعد سه‌مسیره، ۱۰ Boss با هویت فصل‌ها هماهنگ است
+- معماری Data-Driven حفظ شد؛ اضافه‌کردن فصل/مسیر/دشمن جدید فقط داده است
+- برای گام بعد (Aether Forge ۲۰ سطحی + پولیش PROMPT) آماده است

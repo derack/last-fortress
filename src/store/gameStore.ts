@@ -141,7 +141,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   toasts: [],
   battleActive: false,
   galleryOpen: false,
-  pendingLevelId: 'l1',
+  pendingLevelId: 'c1s1',
   selectedHero: 'arman',
 
   setScreen: (s) => set({ screen: s }),

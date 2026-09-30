@@ -60,10 +60,13 @@ export class Enemy implements DamageableEnemy {
   private hitAnimCd = 0;
   /** Handle سیستم Asset — مدل واقعی/Placeholder + Pool + انیمیشن */
   private handle: CharacterHandle;
+  /** مسیر حمله این دشمن — مراحل چندمسیره (۰ تا ۲) */
+  pathIndex = 0;
 
-  constructor(data: EnemyData, tier: number, scene: THREE.Scene, ctx: GameContext) {
+  constructor(data: EnemyData, tier: number, scene: THREE.Scene, ctx: GameContext, pathIndex = 0) {
     this.data = data;
     this.tier = tier;
+    this.pathIndex = pathIndex;
     const st = tiered(data, tier);
     this.maxHp = st.hp;
     this.hp = st.hp;
@@ -79,10 +82,16 @@ export class Enemy implements DamageableEnemy {
     this.mesh = this.handle.root;
     scene.add(this.mesh);
     this.updateMeshPos();
+    const myPts = this.myPath.points;
     this.mesh.rotation.y = Math.atan2(
-      ctx.pathPoints[1].x - ctx.pathPoints[0].x,
-      ctx.pathPoints[1].z - ctx.pathPoints[0].z
+      myPts[1].x - myPts[0].x,
+      myPts[1].z - myPts[0].z
     );
+  }
+
+  /** مسیر فعلی این دشمن */
+  private get myPath() {
+    return this.ctx.paths[this.pathIndex] ?? this.ctx.paths[0];
   }
 
   getPos(): THREE.Vector3 {
@@ -99,7 +108,7 @@ export class Enemy implements DamageableEnemy {
   }
 
   get progress(): number {
-    return this.dist / this.ctx.pathLength;
+    return this.dist / this.myPath.length;
   }
 
   hasShield(): boolean {
@@ -400,7 +409,7 @@ export class Enemy implements DamageableEnemy {
     // حرکت روی مسیر
     const effSpeed = this.speed * this.slowFactor;
     this.dist += effSpeed * dt;
-    if (this.dist >= this.ctx.pathLength) {
+    if (this.dist >= this.myPath.length) {
       this.ctx.onEnemyLeak(this);
       return;
     }
@@ -444,8 +453,9 @@ export class Enemy implements DamageableEnemy {
   }
 
   private updateMeshPos() {
-    const pts = this.ctx.pathPoints;
-    const u = (this.dist / this.ctx.pathLength) * (pts.length - 1);
+    const path = this.myPath;
+    const pts = path.points;
+    const u = (this.dist / path.length) * (pts.length - 1);
     const i = Math.min(Math.floor(u), pts.length - 2);
     const f = u - i;
     const a = pts[i];
