@@ -469,6 +469,8 @@ export class Game {
     this.vfx.explosion(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 2, 0)), 0xef4444, e.data.boss);
     this.audio.play('explosion');
     this.bus.emit('core', { hp: this.coreHp, max: this.coreMaxHp });
+    // بخش ۱۴ — فیدبک بصری ضربه به هسته (پالس قرمز لبه صفحه در BattleUI)
+    this.bus.emit('coreHit', { hp: this.coreHp, max: this.coreMaxHp });
     if (this.coreHp <= 0 && !this.gameOver) {
       this.doDefeat();
     }

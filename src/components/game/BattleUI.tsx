@@ -84,6 +84,11 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
       {/* وینیت سینمایی — عمق بیشتر تصویر */}
       <div className="battle-vignette absolute inset-0" />
 
+      {/* بخش ۱۴ — فیدبک ضربه به هسته: پالس قرمز لبه صفحه (با هر ضربه از نو اجرا می‌شود) */}
+      {st.coreHitAt > 0 && <div key={st.coreHitAt} className="core-hit-flash absolute inset-0" />}
+      {/* بخش ۱۴ — هشدار ماندگار هسته بحرانی (≤ ۳۰٪) */}
+      {corePct <= 30 && <div className="core-low-warning absolute inset-0" />}
+
       {/* ================= نوار بالا ================= */}
       <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 bg-gradient-to-b from-black/70 to-transparent p-3 pointer-events-auto">
         {/* سلامت هسته */}

@@ -264,7 +264,10 @@ export class CharacterFactory {
   /** گرفتن Handle دشمن — ابتدا از Pool (فقط GLB) */
   acquireEnemyHandle(data: EnemyData, tier: number): CharacterHandle {
     const entry = findAssetEntry(data.id) ?? findAssetEntry('shadow')!;
-    const key = `${entry.id}|${tier}`;
+    // بخش ۲۱ — tier پیوسته فقط برای HP است؛ Pool بصری روی پله صحیح می‌ماند
+    // (tier اعشاری صدها bucket می‌ساخت و Pool را می‌شکست)
+    const bt = Math.max(1, Math.round(tier));
+    const key = `${entry.id}|${bt}`;
 
     // ۱) Pool — فقط Handleهای GLB آماده
     const bucket = this.pool.get(key);
@@ -278,9 +281,9 @@ export class CharacterFactory {
     }
 
     // ۲) ساخت جدید — Placeholder شفاف بلافاصله
-    const fb = createFallbackEnemy(data, tier);
+    const fb = createFallbackEnemy(data, bt);
     const root = new THREE.Group();
-    root.name = `enemy_${entry.id}_t${tier}`;
+    root.name = `enemy_${entry.id}_t${bt}`;
     root.add(fb.group);
     root.userData.characterSource = 'procedural-placeholder';
     root.userData.selectable = true;
@@ -296,8 +299,8 @@ export class CharacterFactory {
     );
     ensureShieldAura(root);
 
-    // ضریب ارتفاع = scale داده × ضریب Tier (همان فرمول tiered)
-    const heightScale = data.scale * (1 + 0.08 * (tier - 1));
+    // ضریب ارتفاع = scale داده × ضریب Tier (همان فرمول tiered — پله صحیح)
+    const heightScale = data.scale * (1 + 0.08 * (bt - 1));
     handle._poolKey = key;
     void this.requestSwap(handle, entry, heightScale);
     return handle;

@@ -23,7 +23,7 @@ import type { SaveData } from '@/game/data/types';
 // ============================================================
 
 const BUS_EVENTS = [
-  'resources', 'core', 'wave', 'banner', 'bossPhase', 'waveCleared', 'selectTower', 'buildMode',
+  'resources', 'core', 'coreHit', 'wave', 'banner', 'bossPhase', 'waveCleared', 'selectTower', 'buildMode',
   'magic', 'magicPending', 'shield', 'hero', 'heroSelected', 'paused', 'speed',
   'victory', 'defeat', 'tutorial', 'toast',
 ];

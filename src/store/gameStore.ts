@@ -71,6 +71,8 @@ interface GameState {
   /** بنر «فاز ۲» Boss — نام اختصاصی هر Boss */
   bossPhase: { nameKey: string; color: number } | null;
   waveClearedToast: { wave: number; bonus: number } | null;
+  /** بخش ۱۴ — شمارنده ضربه به هسته (هر ضربه +۱؛ تغییر key پالس قرمز را دوباره اجرا می‌کند) */
+  coreHitAt: number;
   selectedTower: TowerInfo | null;
   buildMode: string | null;
   magicState: MagicInfo[];
@@ -129,6 +131,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   banner: null,
   bossPhase: null,
   waveClearedToast: null,
+  coreHitAt: 0,
   selectedTower: null,
   buildMode: null,
   magicState: [],
@@ -201,6 +204,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     banner: null,
     bossPhase: null,
     waveClearedToast: null,
+    coreHitAt: 0,
     selectedTower: null,
     buildMode: null,
     magicState: [],
@@ -232,6 +236,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         break;
       case 'core':
         set({ coreHp: p.hp as number, coreMaxHp: p.max as number });
+        break;
+      case 'coreHit':
+        set((st) => ({ coreHitAt: st.coreHitAt + 1 }));
         break;
       case 'wave':
         set({

@@ -337,3 +337,44 @@ Stage Summary:
 - Combat Feedback کامل: هر اصابت = فلش متریال + عدد شناور (تجمیع‌شده) + صدای کوتاه محدودشده — انتقاد ۱۰٪ ×۲ با عدد ویژه — Boss فاز ۲ صدای اختصاصی گرفت
 - عدد روی صفحه در گیم‌پلی واقعی قابل مشاهده است؛ تست اسکرین‌شات به‌دلیل jitter ~۵۰۰ms CLI و عمر ۰٫۸۵ ثانیه‌ای عدد سخت بود اما مختصات و چرخه عمر به‌صورت برنامه‌ای اثبات شد
 - PHASEهای باقی‌مانده PROMPT: ۷ (Balance ۱۰۰ مرحله)، ۸ (Mobile)، ۹ (Pipeline)، ۱۰-۱۲ (تست/Final Build/Report)
+---
+Task ID: 15
+Agent: main (Super Z)
+Task: تکمیل فاز ۶ PROMPT — Core Damage Feedback (بخش ۱۴): پالس قرمز ضربه به هسته + هشدار ماندگار هسته بحرانی
+
+Work Log:
+- Game.ts: رویداد جدید 'coreHit' در بلوک leak (کنار 'core') emit شد — رویداد جداگانه تا emitهای اولیه/heal پالس کاذن نسازند
+- gameStore: state جدید coreHitAt (type + initial + resetBattleState) + case 'coreHit' (هر ضربه +۱)
+- BattleUI: دو overlay جدید روی وینیت: .core-hit-flash با key={coreHitAt} (هر ضربه انیمیشن از نو) + .core-low-warning وقتی corePct ≤ ۳۰٪
+- globals.css: keyframes coreHitPulse (۰٫۵۵s یک‌باره) + coreLowBreath (۱٫۷s تنفس‌دار بی‌نهایت)
+- باگ کشف‌شده در تست: BUS_EVENTS در GameShell لیست بسته بود و 'coreHit' در آن نبود — event به store نمی‌رسید؛ اضافه شد
+- تست مرورگر (MutationObserver + leak تک‌دشمن): flashSeen=true، flashNow=true، core ۱۰۰→۹۴ (coreDamage warlock) — هشدار بحرانی در ۲۲٪ فعال و در اسکرین‌شات دیده شد
+- ذخیره برای تست تمیز ریست شد
+
+Stage Summary:
+- چک‌لیست بخش ۱۴ اکنون کامل است: Hit Flash/دamage Number/انتقاد/Impact Shake/Hit VFX/Death VFX/Boss Impact/Core Damage Feedback همگی موجود
+- فاز ۶ (VFX/Audio) رسماً بسته شد — صفر error کنسول
+
+---
+Task ID: 16
+Agent: main (Super Z)
+Task: فاز ۷ PROMPT — 100 Stage Balance (بخش‌های ۲۰/۲۱): Audit داده‌محور + بازتنظیم ژنراتور منحنی سختی
+
+Work Log:
+- scripts/balance-audit.ts (جدید): شبیه‌ساز ۱۰۰ مرحله — HP مؤثر هر موج با زره flat (ضربه نماینده ۴۵، زره مؤثر ۷۰٪)، درآمد قبل از موج اوج، R = اوج/درآمد؛ تشخیص جهش >۱٫۳۵، افت درون‌فصل، Boss ضعیف، میانگین R فصل‌ها
+- Audit اولیه مشکلات را اثبات کرد: وارونگی فصل‌ها (فصل۲ R=۸۹ < فصل۱ R=۱۸۴، فصل۶=۲۵۳ < فصل۵=۴۹۰)، پرتگاه ×۳٫۰۲ در مرز فصل۲→۳، نوسان ±۵۰٪ بین مراحل مجاور، Boss ضعیف‌تر از موج ۹ در c7s3
+- اصلاح ۱ — tier پیوسته: tiered() اکنون tier اعشاری می‌پذیرد (HP با ۱+۰٫۶۵×(t−۱) پیوسته؛ زره/سرعت/پاداش/مقیاس روی پله صحیح) — tFrac = ۱+D×۰٫۰۲۶۵، Boss = ۱+(D−۱)×۰٫۰۲۴ — پرتگاه‌های ×۱٫۶۵ حذف شدند
+- اصلاح ۲ — CharacterFactory.acquireEnemyHandle: tier بصری روی Math.round جمع می‌شود (tier اعشاری صدها bucket Pool می‌ساخت)؛ heightScale و نام root هم پله صحیح
+- اصلاح ۳ — POOL_COMP: جبران استخر هر فصل با لنگر فصل ۱ (فصل نرم دشمن بیشتر، سنگین کمتر) — هویت ترکیب حفظ می‌شود
+- اصلاح ۴ — normalizeWave حریصانه همگرا: هر گام تک‌حرکت بهینه به سمت هدف (بدون نوسان) با باند ±۱۰٪؛ کف ۴۰٪ محافظ‌های Boss (Boss Combination)؛ سقف ۴۰ واحد در هر گروه (ضد یکنواختی)؛ موج Boss هدف ×۱٫۵۵
+- اصلاح ۵ — منحنی هدف فشار: WAVE_BASE(۲۹۰۰) × grow(۱٫۰۲۱^D) × intensity × wavePower(w) × tierMult × comp
+- اصلاح ۶ — هموارسازی اقتصاد (بخش ۲۰): دومرحله‌ای در buildAllStages — درآمد کل هر مرحله به منحنی ref×۱٫۰۱۱۷^(D−۱) جیر adjustment پاداش موج‌ها (clamp ۰٫۶–۲٫۰) — موج‌های تانک‌سنگین کم‌درآمد جبران می‌شوند
+- اصلاح ۷ — استخرها: فصل۱ golem→hunter (تانک ۵۵۰HP در شروع سنگین بود)، فصل۵ aetherTank→golem، فصل۶ spider→warrior + گیت جادوگر از موج ۲ (موج اول بازی بدون سپر)
+- نتیجه نهایی: میانگین R فصل‌ها کاملاً صعودی ۸۹→۱۰۲→۱۱۵→۱۳۴→۱۶۸→۱۷۶→۲۳۸→۲۶۲→۲۸۸→۳۱۹ | مرحله ۱ R=۸۳ آسان | مرحله ۱۰۰ R=۳۵۷ حداکثر | جهش باقی‌مانده فقط ×۱٫۳۸ ورود به مرحله Boss | همه Bossها ≥۱٫۱۵×موج۹ | c10s10 = darkLord T3.38 + warMachine×4 + shadowSoldier×4
+- تست مرورگر: c1s1 (hunter×13 موج اول) → شکست اجباری با leak → c3s5 زنده: موج ۱ warrior×10 T1.66 (tier اعشاری در موتور)، پاداش کشتار جاری، پیشروی موج، coreHp ۱۲۰ مطابق فرمول جدید — صفر error
+- tsc صفر خطا در src/ | Build موفق | ذخیره کاربر ریست شد
+
+Stage Summary:
+- منحنی سختی ۱۰۰ مرحله اکنون تدریجی و بدون پرتگاه است: تنوع از طریق ترکیب نقش‌ها/مسیرها، رشد HP پیوسته، اقتصاد هموار — دقیقاً طبق بخش ۲۱ (نه فقط HP×بزرگ‌تر)
+- ابزار پایش ماندگار: scripts/balance-audit.ts برای هر تغییر آینده داده‌ها قابل اجراست
+- PHASEهای باقی‌مانده: ۸ (Mobile)، ۹ (Pipeline)، ۱۰-۱۲ (تست/Final Build/Report)

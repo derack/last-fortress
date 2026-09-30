@@ -1,4 +1,5 @@
 import type { LevelData, ChapterDef, WaveData, SpawnGroup, Vec2, AchievementDef, PlayerStats, SaveData } from './types';
+import { ENEMIES, tiered } from './enemies';
 
 // ============================================================
 // کمپین ۱۰۰ مرحله‌ای — ۱۰ فصل × ۱۰ مرحله
@@ -24,19 +25,42 @@ export const CHAPTERS: ChapterDef[] = [
   { id: 10, nameKey: 'chapter10', descKey: 'chapter10Desc', env: 'citadel', timeOfDay: 'night', tagKey: 'chapter10Tag', bossId: 'darkLord' },
 ];
 
-/** ترکیب دشمنان هر فصل — ورود و خروج متفاوت در هر مرحله با seed */
+/** ترکیب دشمنان هر فصل — ورود و خروج متفاوت در هر مرحله با seed
+ * بخش ۲۱ — میانگین HP مؤثر استخرها به‌هم نزدیک شده تا منحنی سختی فصل‌ها صعودی بماند:
+ * فصل ۱: golem→hunter (تانک ۵۵۰HP برای شروع بازی سنگین بود — شکارچی سریع تنوع می‌دهد)
+ * فصل ۵: aetherTank→golem (فصل ۵ بدون جبران بسیار سخت‌تر از فصل ۴ بود)
+ * فصل ۶: spider→warrior (فصل ۶ بسیار نرم‌تر از فصل ۵ بود — واریر میانه می‌افزاید) */
 const CHAPTER_POOLS: Record<number, string[]> = {
-  1: ['shadow', 'warrior', 'spider', 'golem', 'flyer', 'warlock'],
+  1: ['shadow', 'warrior', 'spider', 'hunter', 'flyer', 'warlock'],
   2: ['shadowSoldier', 'spider', 'hunter', 'spirit', 'warrior', 'summoner', 'shadow'],
   3: ['crystalMonster', 'warrior', 'hunter', 'aetherTank', 'flyer', 'warlock', 'golem'],
   4: ['smallDragon', 'destroyer', 'hunter', 'golem', 'warMachine', 'warlock'],
-  5: ['warMachine', 'destroyer', 'aetherTank', 'summoner', 'hunter', 'flyer'],
-  6: ['shadowSoldier', 'spirit', 'summoner', 'spider', 'warlock', 'golem'],
+  5: ['warMachine', 'destroyer', 'golem', 'summoner', 'hunter', 'flyer'],
+  6: ['shadowSoldier', 'spirit', 'summoner', 'warrior', 'warlock', 'golem'],
   7: ['crystalMonster', 'aetherTank', 'golem', 'warrior', 'hunter', 'spirit', 'warlock'],
   8: ['smallDragon', 'destroyer', 'golem', 'warMachine', 'flyer', 'hunter'],
   9: ['warMachine', 'destroyer', 'summoner', 'aetherTank', 'shadowSoldier', 'flyer'],
   10: ['shadowSoldier', 'destroyer', 'summoner', 'aetherTank', 'smallDragon', 'spirit', 'hunter', 'warMachine'],
 };
+
+/** ضریب جبران استخر هر فصل — فصل‌های سنگین دشمن کمتر، نرم‌ها بیشتر
+ * لنگر = میانگین استخر فصل ۱ (مرحله ۱ باید آسان بماند) */
+const POOL_COMP: Record<number, number> = (() => {
+  const poolAvg = (pool: string[]) =>
+    pool.reduce((a, e) => a + ENEMIES[e].hp * (1 + ENEMIES[e].armor * 0.7 * 0.03), 0) / pool.length;
+  const REF = poolAvg(CHAPTER_POOLS[1]); // لنگر — فصل ۱
+  const out: Record<number, number> = {};
+  for (const [id, pool] of Object.entries(CHAPTER_POOLS)) {
+    out[Number(id)] = Math.pow(REF / poolAvg(pool), 0.65);
+  }
+  return out;
+})();
+
+// بخش ۲۱ — منحنی هدف فشار موج: رشد نمایی کمپین (برج‌های بازیکن هم قوی می‌شوند)
+// + tier پیوسته + intensity + جبران استخر — نتیجه: منحنی صعودی بدون پرتگاه
+const WAVE_BASE = 2900;
+const CAMPAIGN_GROWTH = 1.021; // ×۸ در طول ۱۰۰ مرحله
+const growAt = (D: number) => Math.pow(CAMPAIGN_GROWTH, D);
 
 // ---------------------------- قالب‌های مسیر ----------------------------
 // تک‌مسیر — ۱۰ قالب (همه در محدوده ±۳۲)
@@ -177,18 +201,67 @@ const ROLE_BASE: Record<string, { count: number; interval: number }> = {
 
 // ---------------------------- ژنراتور موج‌های هر مرحله ----------------------------
 
+/** بخش ۲۱ — HP مؤثر با زره flat (ضربه نماینده ۴۵) — برای نرمال‌سازی موج */
+function unitEff(enemyId: string, tier: number): number {
+  const d = ENEMIES[enemyId];
+  if (!d) return 0;
+  const hp = tiered(d, tier).hp;
+  return hp * (45 / Math.max(8, 45 - d.armor * 0.7));
+}
+
+function waveEffHp(groups: SpawnGroup[]): number {
+  let sum = 0;
+  for (const g of groups) sum += g.count * unitEff(g.enemy, g.tier);
+  return sum;
+}
+
+/** بخش ۲۱ — نرمال‌سازی صحیح موج به منحنی هدف
+ * هر گام: تک‌حرکتی که eff را بیشترین نزدیکی به هدف می‌برد (همگرایی یکنوا، بدون نوسان)
+ * escortMin: کف تعداد محافظ‌ها در موج Boss (بخش ۲۱ — Boss Combination) */
+function normalizeWave(groups: SpawnGroup[], target: number, skipBoss = false, escortMin = 0) {
+  const LO = target * 0.9, HI = target * 1.1;
+  for (let guard = 0; guard < 240; guard++) {
+    const eff = waveEffHp(groups);
+    if (eff > HI) {
+      let best = -1, bestErr = Math.abs(eff - target);
+      groups.forEach((g, i) => {
+        if (g.count <= 1) return;
+        if (skipBoss && ENEMIES[g.enemy]?.boss) return;
+        if (escortMin > 0 && g.count <= escortMin) return;
+        const err = Math.abs(eff - unitEff(g.enemy, g.tier) - target);
+        if (err < bestErr) { bestErr = err; best = i; }
+      });
+      if (best < 0) break;
+      groups[best].count--;
+    } else if (eff < LO) {
+      let best = -1, bestErr = Math.abs(eff - target);
+      groups.forEach((g, i) => {
+        if (skipBoss && ENEMIES[g.enemy]?.boss) return;
+        if (g.count >= 40) return; // بخش ۲۱ — ضد یکنواختی، گروه‌های بزرگ‌تر پر نمی‌شوند
+        const err = Math.abs(eff + unitEff(g.enemy, g.tier) - target);
+        if (err < bestErr) { bestErr = err; best = i; }
+      });
+      if (best < 0) break;
+      groups[best].count++;
+    } else break;
+  }
+}
+
 function buildWaves(chapter: ChapterDef, stage: number, pathCount: number): WaveData[] {
   const D = (chapter.id - 1) * 10 + stage; // شاخص سختی ۱..۱۰۰
   const rng = mulberry32(chapter.id * 7919 + stage * 104729);
   const pool = CHAPTER_POOLS[chapter.id];
-  const tier = Math.min(3, 1 + Math.floor(D / 22));
+  const comp = POOL_COMP[chapter.id];
+  // بخش ۲۱ — tier پیوسته: HP نرم رشد می‌کند (بدون پرتگاه ×۱٫۶۵ در مرز فصل)
+  const tFrac = Math.round((1 + D * 0.0265) * 100) / 100;
+  const tierMult = 1 + 0.65 * (tFrac - 1);
   const intensity = 0.8 + D * 0.006; // ۰٫۸ تا ۱٫۴
   const waves: WaveData[] = [];
 
   for (let w = 0; w < 10; w++) {
     // ----- موج Boss -----
     if (w === 9) {
-      const bossTier = Math.min(3, 1 + Math.floor(D / 40));
+      const bossTier = Math.round((1 + (D - 1) * 0.024) * 100) / 100;
       const groups: SpawnGroup[] = [
         { enemy: chapter.bossId, count: 1, interval: 1, delay: 2, tier: bossTier, path: 0 },
       ];
@@ -197,10 +270,13 @@ function buildWaves(chapter: ChapterDef, stage: number, pathCount: number): Wave
       const e1 = escorts[Math.floor(rng() * escorts.length)];
       const e2 = escorts[Math.floor(rng() * escorts.length)];
       const eCount = Math.round(6 + D * 0.06);
-      groups.push({ enemy: e1, count: eCount, interval: Math.max(1.4, 3.2 - D * 0.012), delay: 12, tier });
+      groups.push({ enemy: e1, count: eCount, interval: Math.max(1.4, 3.2 - D * 0.012), delay: 12, tier: tFrac });
       if (D > 35) {
-        groups.push({ enemy: e2, count: Math.max(3, Math.round(eCount * 0.6)), interval: Math.max(1.8, 3.6 - D * 0.012), delay: 20, tier });
+        groups.push({ enemy: e2, count: Math.max(3, Math.round(eCount * 0.6)), interval: Math.max(1.8, 3.6 - D * 0.012), delay: 20, tier: tFrac });
       }
+      // بخش ۲۱ — نرمال‌سازی موج Boss (Boss ثابت؛ محافظ‌ها با کف ۴۰٪ حفظ می‌شوند)
+      const bossTarget = WAVE_BASE * growAt(D) * intensity * 1.23 * tierMult * comp * 1.55;
+      normalizeWave(groups, bossTarget, true, Math.max(2, Math.floor(eCount * 0.4)));
       waves.push({
         coinBonus: Math.round(230 + D * 2.3),
         crystalBonus: 12 + chapter.id,
@@ -215,12 +291,13 @@ function buildWaves(chapter: ChapterDef, stage: number, pathCount: number): Wave
     const nGroups = w < 2 ? 1 : w < 5 ? 2 : D > 40 ? 3 : 2;
     const picked: string[] = [];
     const poolShuffled = [...pool].sort(() => rng() - 0.5);
-    // تنوع: هوایی از موج ۴ به بعد، شفادهنده/احضارکننده از موج ۵ به بعد
+    // تنوع: هوایی از موج ۴ به بعد، شفادهنده/احضارکننده از موج ۵ به بعد، جادوگر از موج ۲
     for (const e of poolShuffled) {
       if (picked.length >= nGroups) break;
       const role = roleOf(e);
       if (role === 'air' && w < 3) continue;
       if (role === 'utility' && w < 4) continue;
+      if (role === 'caster' && w < 1) continue; // موج اول بدون سپر جادوگر — شروع نرم
       if (picked.includes(e)) continue;
       picked.push(e);
     }
@@ -235,9 +312,10 @@ function buildWaves(chapter: ChapterDef, stage: number, pathCount: number): Wave
     picked.forEach((enemyId, gi) => {
       const role = roleOf(enemyId);
       const base = ROLE_BASE[role];
-      const count = Math.max(1, Math.round(base.count * wavePower * (0.85 + rng() * 0.3)));
+      // بخش ۲۱ — jitter مهارشده (قبلاً ۰٫۸۵–۱٫۱۵ نوسان ±۵۰٪ بین مراحل مجاور می‌ساخت)
+      const count = Math.max(1, Math.round(base.count * wavePower * (0.9 + rng() * 0.2)));
       const interval = Math.max(0.5, base.interval - D * 0.004 + (rng() - 0.5) * 0.3);
-      const gTier = Math.min(3, tier + (w >= 6 && rng() < 0.3 ? 1 : 0));
+      const gTier = Math.round((tFrac + (w >= 6 && rng() < 0.3 ? 0.3 : 0)) * 100) / 100;
       groups.push({
         enemy: enemyId,
         count,
@@ -246,6 +324,11 @@ function buildWaves(chapter: ChapterDef, stage: number, pathCount: number): Wave
         tier: gTier,
       });
     });
+
+    // بخش ۲۱ — نرمال‌سازی HP مؤثر موج به منحنی هدف
+    // (ترکیب نقش‌ها و هویت دشمنان حفظ می‌شود؛ فقط فشار کل یکنواخت می‌گردد)
+    const target = WAVE_BASE * growAt(D) * wavePower * tierMult * comp;
+    normalizeWave(groups, target);
 
     waves.push({
       coinBonus: Math.round(52 + D * 0.9 + w * 6),
@@ -283,9 +366,25 @@ export function stageId(chapter: number, stage: number): string {
   return `c${chapter}s${stage}`;
 }
 
-export function buildStage(chapter: ChapterDef, stage: number): LevelData {
+/** درآمد کل مرحله بدون جبران (سکه شروع + کشتار + پاداش پایه) — پایه جبران اقتصاد (بخش ۲۰/۲۱) */
+function stageTotalIncome(chapter: ChapterDef, stage: number): number {
+  const lv = buildStage(chapter, stage, 1);
+  let kill = 0, bonus = 0;
+  for (const w of lv.waves) {
+    bonus += w.coinBonus ?? 0;
+    for (const g of w.groups) kill += g.count * (tiered(ENEMIES[g.enemy], g.tier)?.reward ?? 0);
+  }
+  return lv.startCoins + kill + bonus;
+}
+
+export function buildStage(chapter: ChapterDef, stage: number, incomeComp = 1): LevelData {
   const D = (chapter.id - 1) * 10 + stage;
   const pathCount = pathCountFor(chapter.id, stage);
+  const waves = buildWaves(chapter, stage, pathCount);
+  if (incomeComp !== 1) {
+    // بخش ۲۰ — موج‌های کم‌درآمد (تانک‌سنگین) پاداش بیشتر می‌گیرند تا اقتصاد صاف بماند
+    for (const w of waves) w.coinBonus = Math.round((w.coinBonus ?? 0) * incomeComp);
+  }
   return {
     id: stageId(chapter.id, stage),
     chapter: chapter.id,
@@ -300,16 +399,27 @@ export function buildStage(chapter: ChapterDef, stage: number): LevelData {
     star2HealthPct: 70,
     star3ChallengeKey: 'starChallenge',
     paths: pickPaths(chapter.id, stage, pathCount),
-    waves: buildWaves(chapter, stage, pathCount),
+    waves,
   };
 }
 
-/** هر ۱۰۰ مرحله — یک بار در load ساخته می‌شود (داده خالص، هزینه نزدیک صفر) */
+/** هر ۱۰۰ مرحله — یک بار در load ساخته می‌شود (داده خالص، هزینه نزدیک صفر)
+ * دومرحله‌ای: اول درآمد کل هر مرحله، بعد هموارسازی به منحنی درآمد کمپین
+ * (لنگر = میانگین فصل ۱؛ موج‌های کم‌درآمدِ تانک‌سنگین پاداش بیشتر می‌گیرند) */
 function buildAllStages(): Record<string, LevelData> {
+  const incomes: number[] = [];
+  for (const ch of CHAPTERS) {
+    for (let s = 1; s <= 10; s++) incomes.push(stageTotalIncome(ch, s));
+  }
+  const ref = incomes.slice(0, 10).reduce((a, r) => a + r, 0) / 10; // لنگر فصل ۱
   const levels: Record<string, LevelData> = {};
+  let i = 0;
   for (const ch of CHAPTERS) {
     for (let s = 1; s <= 10; s++) {
-      levels[stageId(ch.id, s)] = buildStage(ch, s);
+      const D = (ch.id - 1) * 10 + s;
+      const target = ref * Math.pow(1.0117, D - 1); // منحنی درآمد کمپین
+      const incomeComp = Math.min(2.0, Math.max(0.6, target / incomes[i++]));
+      levels[stageId(ch.id, s)] = buildStage(ch, s, incomeComp);
     }
   }
   return levels;

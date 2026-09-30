@@ -312,6 +312,31 @@ html[data-standalone='1'] .panel-header {
   background: radial-gradient(ellipse at center, transparent 52%, rgba(0, 0, 0, 0.42) 100%);
 }
 
+/* بخش ۱۴ — پالس قرمز لبه صفحه هنگام ضربه به هسته (یک‌بار در هر ضربه) */
+.core-hit-flash {
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(239, 68, 68, 0.4) 100%);
+  animation: coreHitPulse 0.55s ease-out forwards;
+}
+
+@keyframes coreHitPulse {
+  0% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* بخش ۱۴ — هشدار ماندگار هسته بحرانی (HP ≤ ۳۰٪) — لبه قرمز تنفس‌دار */
+.core-low-warning {
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 62%, rgba(190, 18, 60, 0.32) 100%);
+  animation: coreLowBreath 1.7s ease-in-out infinite;
+}
+
+@keyframes coreLowBreath {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
 /* css-cache-bust-v2 */
 
 /* ============================================================

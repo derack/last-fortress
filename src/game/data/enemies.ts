@@ -307,14 +307,17 @@ export const ENEMIES: Record<string, EnemyData> = {
   },
 };
 
-/** محاسبه آمار دشمن بر اساس Tier (T1..T5) */
+/** محاسبه آمار دشمن بر اساس Tier (۱ تا ~۳٫۷ — اعشاری)
+ * بخش ۲۱ — منحنی سختی نرم: HP پیوسته با tier رشد می‌کند (بدون پرتگاه)،
+ * زره/سرعت/پاداش/مقیاس روی پله صحیح می‌مانند (پایداری بصری و اقتصاد) */
 export function tiered(data: EnemyData, tier: number) {
-  const ti = tier - 1;
+  const tiF = Math.max(0, tier - 1); // پیوسته — فقط HP
+  const tiI = Math.floor(tiF); // پله صحیح — بقیه
   return {
-    hp: Math.round(data.hp * (1 + 0.65 * ti)),
-    speed: data.speed * (1 + 0.06 * ti),
-    armor: Math.round(data.armor * (1 + 0.35 * ti)),
-    reward: Math.round(data.reward * (1 + 0.3 * ti)),
-    scale: data.scale * (1 + 0.08 * ti),
+    hp: Math.round(data.hp * (1 + 0.65 * tiF)),
+    speed: data.speed * (1 + 0.06 * tiI),
+    armor: Math.round(data.armor * (1 + 0.35 * tiI)),
+    reward: Math.round(data.reward * (1 + 0.3 * tiI)),
+    scale: data.scale * (1 + 0.08 * tiI),
   };
 }
