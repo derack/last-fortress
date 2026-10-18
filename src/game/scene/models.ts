@@ -1464,24 +1464,63 @@ export function buildDebris(): THREE.Group {
 /** سنگ سیاه آتشفشانی */
 export function buildObsidianRock(scale = 1): THREE.Group {
   const g = new THREE.Group();
-  const r = mesh(new THREE.DodecahedronGeometry(0.7, 0), mat(0x16121a, { roughness: 0.35, metalness: 0.25 }), 0, 0.35, 0);
-  r.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-  r.scale.setScalar(scale);
+  const obsidian = mat(0x15121b, { roughness: 0.3, metalness: 0.28 });
+  const r = mesh(new THREE.IcosahedronGeometry(0.7, 1), obsidian, 0, 0.35, 0);
+  r.rotation.set(Math.random() * 0.6, Math.random() * 3, Math.random() * 0.6);
+  r.scale.set(1.05 * scale, 0.78 * scale, 0.92 * scale);
   g.add(r);
-  g.add(mesh(new THREE.SphereGeometry(0.06 * scale, 5, 5), glow(0xf97316), 0.2 * scale, 0.3 * scale, 0.3 * scale));
+
+  // Replace the isolated bright dot with restrained, embedded magma fissures.
+  const fissure = new THREE.MeshStandardMaterial({
+    color: 0x7a301c, emissive: 0xf97316, emissiveIntensity: 0.38,
+    roughness: 0.72, metalness: 0.08,
+  });
+  const cracks: [number, number, number, number, number, number][] = [
+    [0.16, 0.48, 0.43, 0.34, 0.035, 0.025],
+    [-0.12, 0.32, 0.48, 0.22, 0.028, 0.022],
+    [0.29, 0.25, 0.34, 0.19, 0.026, 0.02],
+  ];
+  cracks.forEach(([x, y, z, w, h, d], i) => {
+    const crack = mesh(new THREE.BoxGeometry(w * scale, h * scale, d * scale), fissure,
+      x * scale, y * scale, z * scale);
+    crack.rotation.z = (i - 1) * 0.34;
+    crack.rotation.y = (i - 1) * 0.18;
+    g.add(crack);
+  });
   return g;
 }
 
 export function buildCrystal(color = 0x22d3ee): THREE.Group {
   const g = new THREE.Group();
-  const cmat = new THREE.MeshStandardMaterial({
-    color, emissive: color, emissiveIntensity: 1.2, roughness: 0.2, transparent: true, opacity: 0.9,
+  const crystal = new THREE.MeshPhysicalMaterial({
+    color, emissive: color, emissiveIntensity: 0.42,
+    roughness: 0.24, metalness: 0.08, clearcoat: 0.72, clearcoatRoughness: 0.18,
   });
-  const c1 = mesh(new THREE.ConeGeometry(0.3, 1.6, 5), cmat, 0, 0.8, 0);
-  c1.rotation.z = 0.1;
-  g.add(c1);
-  g.add(mesh(new THREE.ConeGeometry(0.2, 1.0, 5), cmat, 0.35, 0.5, 0.1));
-  g.add(mesh(new THREE.ConeGeometry(0.16, 0.8, 5), cmat, -0.28, 0.4, -0.15));
+  const deepFacet = mat(0x193545, { roughness: 0.32, metalness: 0.18 });
+  const base = mesh(new THREE.DodecahedronGeometry(0.42, 0), deepFacet, 0, 0.18, 0);
+  base.scale.set(1.3, 0.55, 1.15);
+  g.add(base);
+  const main = mesh(new THREE.OctahedronGeometry(0.42, 1), crystal, 0, 0.95, 0);
+  main.scale.set(0.82, 1.9, 0.72);
+  main.rotation.set(0.04, 0.2, 0.08);
+  g.add(main);
+  const sideA = mesh(new THREE.OctahedronGeometry(0.28, 0), crystal, 0.34, 0.48, 0.08);
+  sideA.scale.set(0.72, 1.45, 0.72);
+  sideA.rotation.z = -0.22;
+  g.add(sideA);
+  const sideB = mesh(new THREE.OctahedronGeometry(0.24, 0), deepFacet, -0.3, 0.42, -0.12);
+  sideB.scale.set(0.7, 1.25, 0.68);
+  sideB.rotation.z = 0.24;
+  g.add(sideB);
+  const vein = new THREE.MeshStandardMaterial({
+    color, emissive: color, emissiveIntensity: 0.6, roughness: 0.35, metalness: 0.12,
+  });
+  const crackA = mesh(new THREE.BoxGeometry(0.045, 0.62, 0.035), vein, 0.08, 0.72, 0.33);
+  crackA.rotation.z = -0.16;
+  g.add(crackA);
+  const crackB = mesh(new THREE.BoxGeometry(0.035, 0.42, 0.03), vein, -0.12, 0.48, 0.28);
+  crackB.rotation.z = 0.2;
+  g.add(crackB);
   return g;
 }
 
