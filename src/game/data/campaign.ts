@@ -21,7 +21,7 @@ export const CHAPTERS: ChapterDef[] = [
   { id: 6, nameKey: 'chapter6', descKey: 'chapter6Desc', env: 'forest', timeOfDay: 'day', tagKey: 'chapter6Tag', bossId: 'golemKing' },
   { id: 7, nameKey: 'chapter7', descKey: 'chapter7Desc', env: 'tundra', timeOfDay: 'night', tagKey: 'chapter7Tag', bossId: 'fireGiant' },
   { id: 8, nameKey: 'chapter8', descKey: 'chapter8Desc', env: 'volcano', timeOfDay: 'day', tagKey: 'chapter8Tag', bossId: 'annihilator' },
-  { id: 9, nameKey: 'chapter9', descKey: 'chapter9Desc', env: 'wastes', timeOfDay: 'night', tagKey: 'chapter9Tag', bossId: 'blackDragon' },
+  { id: 9, nameKey: 'chapter9', descKey: 'chapter9Desc', env: 'wastes', timeOfDay: 'night', tagKey: 'chapter9Tag', bossId: 'abyssBehemoth' },
   { id: 10, nameKey: 'chapter10', descKey: 'chapter10Desc', env: 'citadel', timeOfDay: 'night', tagKey: 'chapter10Tag', bossId: 'darkLord' },
 ];
 
@@ -31,16 +31,16 @@ export const CHAPTERS: ChapterDef[] = [
  * فصل ۵: aetherTank→golem (فصل ۵ بدون جبران بسیار سخت‌تر از فصل ۴ بود)
  * فصل ۶: spider→warrior (فصل ۶ بسیار نرم‌تر از فصل ۵ بود — واریر میانه می‌افزاید) */
 const CHAPTER_POOLS: Record<number, string[]> = {
-  1: ['shadow', 'warrior', 'spider', 'hunter', 'flyer', 'warlock'],
-  2: ['shadowSoldier', 'spider', 'hunter', 'spirit', 'warrior', 'summoner', 'shadow'],
-  3: ['crystalMonster', 'warrior', 'hunter', 'aetherTank', 'flyer', 'warlock', 'golem'],
-  4: ['smallDragon', 'destroyer', 'hunter', 'golem', 'warMachine', 'warlock'],
-  5: ['warMachine', 'destroyer', 'golem', 'summoner', 'hunter', 'flyer'],
-  6: ['shadowSoldier', 'spirit', 'summoner', 'warrior', 'warlock', 'golem'],
-  7: ['crystalMonster', 'aetherTank', 'golem', 'warrior', 'hunter', 'spirit', 'warlock'],
-  8: ['smallDragon', 'destroyer', 'golem', 'warMachine', 'flyer', 'hunter'],
-  9: ['warMachine', 'destroyer', 'summoner', 'aetherTank', 'shadowSoldier', 'flyer'],
-  10: ['shadowSoldier', 'destroyer', 'summoner', 'aetherTank', 'smallDragon', 'spirit', 'hunter', 'warMachine'],
+  1: ['shadow', 'warrior', 'spider', 'hunter', 'flyer', 'warlock', 'plagueHound'],
+  2: ['shadowSoldier', 'spider', 'hunter', 'spirit', 'warrior', 'summoner', 'shadow', 'boneReaver'],
+  3: ['crystalMonster', 'warrior', 'hunter', 'aetherTank', 'flyer', 'warlock', 'golem', 'frostWraith'],
+  4: ['smallDragon', 'destroyer', 'hunter', 'golem', 'warMachine', 'warlock', 'emberDrake'],
+  5: ['warMachine', 'destroyer', 'golem', 'summoner', 'hunter', 'flyer', 'siegeCrawler'],
+  6: ['shadowSoldier', 'spirit', 'summoner', 'warrior', 'warlock', 'golem', 'hexPriest'],
+  7: ['crystalMonster', 'aetherTank', 'golem', 'warrior', 'hunter', 'spirit', 'warlock', 'frostWraith'],
+  8: ['smallDragon', 'destroyer', 'golem', 'warMachine', 'flyer', 'hunter', 'emberDrake'],
+  9: ['warMachine', 'destroyer', 'summoner', 'aetherTank', 'shadowSoldier', 'flyer', 'voidArcher', 'ironBrute'],
+  10: ['shadowSoldier', 'destroyer', 'summoner', 'aetherTank', 'smallDragon', 'spirit', 'hunter', 'warMachine', 'voidArcher'],
 };
 
 /** ضریب جبران استخر هر فصل — فصل‌های سنگین دشمن کمتر، نرم‌ها بیشتر

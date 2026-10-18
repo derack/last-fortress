@@ -177,6 +177,15 @@ export const HEROES: Record<string, HeroData> = {
     abilityKind: 'rainOfArrows',
     unlockCost: 150,
   },
+
+  kaelan: { id: 'kaelan', nameKey: 'heroKaelan', titleKey: 'heroKaelanTitle', descKey: 'heroKaelanDesc', role: 'commander', hp: 760, damage: 32, range: 8, fireRate: 1.8, moveSpeed: 5.5, xpPerLevel: 135, attackType: 'physical', projectileColor: 0xfbbf24, cleave: 1, abilityNameKey: 'heroKaelanSkill', abilityDescKey: 'heroKaelanSkillDesc', abilityCooldown: 38, abilityDuration: 7, abilityBuff: 32, abilityKind: 'battleCommand', unlockCost: 250 },
+  yara: { id: 'yara', nameKey: 'heroYara', titleKey: 'heroYaraTitle', descKey: 'heroYaraDesc', role: 'mage', hp: 390, damage: 42, range: 11, fireRate: 1.5, moveSpeed: 5.8, xpPerLevel: 140, attackType: 'magic', projectileColor: 0x22d3ee, splash: 2.8, abilityNameKey: 'heroYaraSkill', abilityDescKey: 'heroYaraSkillDesc', abilityCooldown: 48, abilityDuration: 5, abilityBuff: 80, abilityKind: 'aegisShield', unlockCost: 300 },
+  veyra: { id: 'veyra', nameKey: 'heroVeyra', titleKey: 'heroVeyraTitle', descKey: 'heroVeyraDesc', role: 'assassin', hp: 470, damage: 48, range: 3.2, fireRate: 2.1, moveSpeed: 7.4, xpPerLevel: 125, attackType: 'shadow', projectileColor: 0xf472b6, cleave: 2, abilityNameKey: 'heroVeyraSkill', abilityDescKey: 'heroVeyraSkillDesc', abilityCooldown: 34, abilityDuration: 6, abilityBuff: 65, abilityKind: 'warFrenzy', unlockCost: 350 },
+  borin: { id: 'borin', nameKey: 'heroBorin', titleKey: 'heroBorinTitle', descKey: 'heroBorinDesc', role: 'engineer', hp: 680, damage: 38, range: 9, fireRate: 1.65, moveSpeed: 4.9, xpPerLevel: 145, attackType: 'energy', projectileColor: 0x94a3b8, abilityNameKey: 'heroBorinSkill', abilityDescKey: 'heroBorinSkillDesc', abilityCooldown: 44, abilityDuration: 8, abilityBuff: 28, abilityKind: 'battleCommand', unlockCost: 400 },
+  soren: { id: 'soren', nameKey: 'heroSoren', titleKey: 'heroSorenTitle', descKey: 'heroSorenDesc', role: 'summoner', hp: 520, damage: 35, range: 10, fireRate: 1.8, moveSpeed: 5.6, xpPerLevel: 140, attackType: 'shadow', projectileColor: 0xa78bfa, abilityNameKey: 'heroSorenSkill', abilityDescKey: 'heroSorenSkillDesc', abilityCooldown: 40, abilityDuration: 0, abilityBuff: 105, abilityKind: 'rainOfArrows', unlockCost: 450 },
+  darya: { id: 'darya', nameKey: 'heroDarya', titleKey: 'heroDaryaTitle', descKey: 'heroDaryaDesc', role: 'support', hp: 560, damage: 27, range: 9, fireRate: 1.9, moveSpeed: 5.7, xpPerLevel: 135, attackType: 'energy', projectileColor: 0x4ade80, splash: 1.8, abilityNameKey: 'heroDaryaSkill', abilityDescKey: 'heroDaryaSkillDesc', abilityCooldown: 55, abilityDuration: 7, abilityBuff: 65, abilityKind: 'aegisShield', unlockCost: 500 },
+  kaveh: { id: 'kaveh', nameKey: 'heroKaveh', titleKey: 'heroKavehTitle', descKey: 'heroKavehDesc', role: 'ranger', hp: 450, damage: 36, range: 15, fireRate: 2.3, moveSpeed: 6.8, xpPerLevel: 130, attackType: 'physical', projectileColor: 0xfb923c, abilityNameKey: 'heroKavehSkill', abilityDescKey: 'heroKavehSkillDesc', abilityCooldown: 33, abilityDuration: 0, abilityBuff: 95, abilityKind: 'rainOfArrows', unlockCost: 550 },
+  nyx: { id: 'nyx', nameKey: 'heroNyx', titleKey: 'heroNyxTitle', descKey: 'heroNyxDesc', role: 'assassin', hp: 420, damage: 44, range: 3.8, fireRate: 2.4, moveSpeed: 7.8, xpPerLevel: 125, attackType: 'shadow', projectileColor: 0xc084fc, cleave: 1, abilityNameKey: 'heroNyxSkill', abilityDescKey: 'heroNyxSkillDesc', abilityCooldown: 31, abilityDuration: 5, abilityBuff: 75, abilityKind: 'warFrenzy', unlockCost: 650 },
 };
 
 export const HERO_ROSTER = [
@@ -184,10 +193,16 @@ export const HERO_ROSTER = [
   { id: 'aria', unlocked: false },
   { id: 'radin', unlocked: false },
   { id: 'nila', unlocked: false },
+  { id: 'kaelan', unlocked: false }, { id: 'yara', unlocked: false }, { id: 'veyra', unlocked: false }, { id: 'borin', unlocked: false },
+  { id: 'soren', unlocked: false }, { id: 'darya', unlocked: false }, { id: 'kaveh', unlocked: false }, { id: 'nyx', unlocked: false },
 ];
 
 export const HERO_META = {
   aria: { nameKey: 'heroAria', titleKey: 'heroAriaTitle' },
   radin: { nameKey: 'heroRadin', titleKey: 'heroRadinTitle' },
   nila: { nameKey: 'heroNila', titleKey: 'heroNilaTitle' },
+  kaelan: { nameKey: 'heroKaelan', titleKey: 'heroKaelanTitle' }, yara: { nameKey: 'heroYara', titleKey: 'heroYaraTitle' },
+  veyra: { nameKey: 'heroVeyra', titleKey: 'heroVeyraTitle' }, borin: { nameKey: 'heroBorin', titleKey: 'heroBorinTitle' },
+  soren: { nameKey: 'heroSoren', titleKey: 'heroSorenTitle' }, darya: { nameKey: 'heroDarya', titleKey: 'heroDaryaTitle' },
+  kaveh: { nameKey: 'heroKaveh', titleKey: 'heroKavehTitle' }, nyx: { nameKey: 'heroNyx', titleKey: 'heroNyxTitle' },
 };

@@ -305,6 +305,16 @@ export const ENEMIES: Record<string, EnemyData> = {
     summoner: { enemy: 'shadowSoldier', count: 3, interval: 11 },
     resist: { shadow: 0.25, magic: 0.6, physical: 0.85 },
   },
+
+  boneReaver: { id: 'boneReaver', nameKey: 'enemyBoneReaver', hp: 185, speed: 3.1, armor: 5, reward: 17, coreDamage: 8, scale: 1.05, color: 0x292524, accent: 0xfca5a5, resist: { shadow: 0.8 } },
+  plagueHound: { id: 'plagueHound', nameKey: 'enemyPlagueHound', hp: 115, speed: 4.4, armor: 1, reward: 16, coreDamage: 7, dodgeChance: 0.12, scale: 0.9, color: 0x365314, accent: 0x84cc16 },
+  voidArcher: { id: 'voidArcher', nameKey: 'enemyVoidArcher', hp: 150, speed: 2.7, armor: 2, reward: 19, coreDamage: 7, scale: 1.0, color: 0x312e81, accent: 0x818cf8, resist: { energy: 0.85 } },
+  ironBrute: { id: 'ironBrute', nameKey: 'enemyIronBrute', hp: 760, speed: 1.35, armor: 22, reward: 38, coreDamage: 17, scale: 1.55, color: 0x3f3f46, accent: 0xf97316, resist: { physical: 0.75, magic: 1.15 } },
+  frostWraith: { id: 'frostWraith', nameKey: 'enemyFrostWraith', hp: 290, speed: 2.8, armor: 3, reward: 25, crystalReward: 3, coreDamage: 9, scale: 1.1, color: 0x164e63, accent: 0x67e8f9, flying: true, resist: { ice: 0.25, fire: 1.25 } },
+  emberDrake: { id: 'emberDrake', nameKey: 'enemyEmberDrake', hp: 420, speed: 3.0, armor: 7, reward: 32, crystalReward: 2, coreDamage: 12, scale: 1.3, color: 0x7f1d1d, accent: 0xfb923c, flying: true, resist: { fire: 0.3, ice: 1.25 } },
+  hexPriest: { id: 'hexPriest', nameKey: 'enemyHexPriest', hp: 330, speed: 2.0, armor: 4, reward: 35, crystalReward: 4, coreDamage: 8, scale: 1.08, color: 0x3b0764, accent: 0xe879f9, shieldGiver: { radius: 6, amount: 55, interval: 7 }, resist: { shadow: 0.45 } },
+  siegeCrawler: { id: 'siegeCrawler', nameKey: 'enemySiegeCrawler', hp: 1050, speed: 1.1, armor: 25, reward: 52, coreDamage: 22, scale: 1.7, color: 0x292524, accent: 0xef4444, regen: 8, resist: { physical: 0.65, fire: 0.85 } },
+  abyssBehemoth: { id: 'abyssBehemoth', nameKey: 'enemyAbyssBehemoth', hp: 12500, speed: 0.95, armor: 28, reward: 380, crystalReward: 32, coreDamage: 65, boss: true, scale: 2.75, color: 0x171329, accent: 0x7c3aed, regen: 16, resist: { shadow: 0.35, magic: 0.65, physical: 0.8 } },
 };
 
 /** محاسبه آمار دشمن بر اساس Tier (۱ تا ~۳٫۷ — اعشاری)

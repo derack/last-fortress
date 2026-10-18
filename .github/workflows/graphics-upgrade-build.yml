@@ -1,0 +1,45 @@
+name: Graphics upgrade build
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - graphics-upgrade-2026-10-18
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: last-fortress-graphics-build
+  cancel-in-progress: true
+
+jobs:
+  production-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build production web app
+        run: bun run build
+
+      - name: Upload standalone build
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: last-fortress-web-standalone
+          path: .next/standalone/
+          if-no-files-found: error
+          retention-days: 7
