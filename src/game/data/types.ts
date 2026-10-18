@@ -125,7 +125,7 @@ export interface MagicData {
 
 // ---------------------------- قهرمان ----------------------------
 
-export type HeroRole = 'commander' | 'guardian' | 'berserker' | 'ranger';
+export type HeroRole = 'commander' | 'guardian' | 'berserker' | 'ranger' | 'mage' | 'assassin' | 'engineer' | 'summoner' | 'support';
 
 export interface HeroData {
   id: string;
