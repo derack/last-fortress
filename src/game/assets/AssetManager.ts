@@ -24,8 +24,9 @@ export interface AssetCacheRecord {
   status: AssetStatus;
   /** صحنه اصلی GLB — منبع کلون‌ها (هرگز مستقیم به صحنه بازی اضافه نمی‌شود) */
   source?: THREE.Group;
-  /** انیمیشن‌های داخل GLB */
+  /** GLB-authored clips vs runtime rigid-part fallback — never label generated clips as mocap. */
   animations: THREE.AnimationClip[];
+  animationSource?: 'glb' | 'runtime-procedural' | 'none';
   error?: string;
   loadedAt?: number;
 }
@@ -317,6 +318,7 @@ class AssetManagerImpl {
           status: 'ready',
           source: scene,
           animations: runtimeClips,
+          animationSource: (gltf.animations ?? []).length > 0 ? 'glb' : runtimeClips.length > 0 ? 'runtime-procedural' : 'none',
           loadedAt: performance.now(),
         };
         this.setStatus(entry.id, rec);
