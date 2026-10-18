@@ -377,7 +377,7 @@ export class Tower implements TowerLike {
       // Absolute offset around the captured rest position; never accumulate drift frame-to-frame.
       crystal.position.y = baseY + Math.sin(this.spinPhase * 2) * 0.025;
     }
-    if (ud.spinRing) ud.spinRing.rotation.z += dt * 1.2;
+    if (ud.spinRing) ud.spinRing.rotation.y += dt * 1.2;
   }
 
   private canHit(e: DamageableEnemy): boolean {
