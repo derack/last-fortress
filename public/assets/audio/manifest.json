@@ -1,0 +1,26 @@
+{
+ "music": "/assets/audio/music.mp3",
+ "sfx": {
+  "tap": "/assets/audio/tap.mp3",
+  "place": "/assets/audio/place.mp3",
+  "upgrade": "/assets/audio/upgrade.mp3",
+  "sell": "/assets/audio/sell.mp3",
+  "shoot": "/assets/audio/shoot.mp3",
+  "cannon": "/assets/audio/cannon.mp3",
+  "lightning": "/assets/audio/lightning.mp3",
+  "freeze": "/assets/audio/freeze.mp3",
+  "explosion": "/assets/audio/explosion.mp3",
+  "magic": "/assets/audio/magic.mp3",
+  "death": "/assets/audio/death.mp3",
+  "bossRoar": "/assets/audio/bossRoar.mp3",
+  "victory": "/assets/audio/victory.mp3",
+  "defeat": "/assets/audio/defeat.mp3",
+  "reward": "/assets/audio/reward.mp3",
+  "error": "/assets/audio/error.mp3",
+  "waveStart": "/assets/audio/waveStart.mp3",
+  "heroShot": "/assets/audio/heroShot.mp3",
+  "hit": "/assets/audio/hit.mp3",
+  "bossPhase": "/assets/audio/bossPhase.mp3",
+  "deepFreeze": "/assets/audio/deepFreeze.mp3"
+ }
+}
