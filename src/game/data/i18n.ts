@@ -229,6 +229,11 @@ const fa: Record<string, string> = {
   enemyIceGiant: 'غول یخ',
   enemyBlackDragon: 'اژدهای سیاه',
   enemyDarkLord: 'ارباب تاریکی',
+
+  enemyBoneReaver: 'دَرنده استخوان', enemyPlagueHound: 'سگ تازی طاعون', enemyVoidArcher: 'کماندار خلأ',
+  enemyIronBrute: 'غول آهنین', enemyFrostWraith: 'شبح یخ‌زده', enemyEmberDrake: 'اژدهای اخگر',
+  enemyHexPriest: 'کاهن نفرین', enemySiegeCrawler: 'خزنده محاصره‌گر', enemyAbyssBehemoth: 'هیولای مغاک',
+
   bossIncoming: 'هشدار! یک تهدید عظیم وارد میدان شد',
   waveIncoming: 'موج {0} در حال نزدیک شدن است',
   waveCleared: 'موج پاک‌سازی شد! +{0} سکه',
@@ -276,6 +281,16 @@ const fa: Record<string, string> = {
   heroAriaDesc: 'نگهبان جادویی آریانا؛ با انفجارهای اثری دشمنان را در هم می‌کوبد و هسته را مصون نگه می‌دارد.',
   heroRadinDesc: 'قلب فولادی سنگر؛ با کلنگ عظیم خود صف دشمنان را می‌شکافد و جلوی موج را می‌گیرد.',
   heroNilaDesc: 'چشم تیز تیرانداز؛ از دور با تیرهای انرژی هدف را می‌زند و باران تیر فرو می‌ریزد.',
+
+  heroKaelan: 'کائلان', heroKaelanTitle: 'فرمانده سپیده‌دم', heroKaelanDesc: 'فرمانده خط مقدم؛ با ضربات سنگین و فرمان تاکتیکی، برج‌های دفاعی را تقویت می‌کند.',
+  heroYara: 'یارا', heroYaraTitle: 'افسونگر بلور', heroYaraDesc: 'جادوگری دوربرد که با انرژی بلورین صف دشمنان را می‌شکند و از هسته محافظت می‌کند.',
+  heroVeyra: 'ویرا', heroVeyraTitle: 'سایه‌تیغ', heroVeyraDesc: 'قاتلی سریع و مرگبار که در نبرد نزدیک به دشمنان هجوم می‌برد.',
+  heroBorin: 'بورین', heroBorinTitle: 'مهندس دژ', heroBorinDesc: 'متخصص جنگ‌افزار و انرژی؛ حملات دقیق و تقویت شبکه دفاعی نقطه قوت اوست.',
+  heroSoren: 'سورن', heroSorenTitle: 'احضارگر ارواح', heroSorenDesc: 'جادوگر سایه که انرژی احضار را به موجی از ضربات دوربرد تبدیل می‌کند.',
+  heroDarya: 'دریا', heroDaryaTitle: 'شفابخش سبز', heroDaryaDesc: 'پشتیبان مقاوم با انرژی حیات و سپر اثری برای نجات هسته در لحظات بحرانی.',
+  heroKaveh: 'کاوه', heroKavehTitle: 'کماندار شعله', heroKavehDesc: 'تیرانداز دوربردی که با تیرهای آتشین و رگبار دقیق گروه‌های دشمن را هدف می‌گیرد.',
+  heroNyx: 'نیکس', heroNyxTitle: 'شبح خلأ', heroNyxDesc: 'قاتلی فوق‌سریع با تیغه‌های سایه؛ برای شکار دشمنان سبک و پشتیبان ساخته شده است.',
+
   heroMoveHint: 'روی زمین بزن تا قهرمان به آنجا برود',
   heroRespawnShort: 'بازگشت',
   selectHero: 'انتخاب',
@@ -657,6 +672,11 @@ const en: Record<string, string> = {
   enemyIceGiant: 'Ice Giant',
   enemyBlackDragon: 'Black Dragon',
   enemyDarkLord: 'Dark Lord',
+
+  enemyBoneReaver: 'Bone Reaver', enemyPlagueHound: 'Plague Hound', enemyVoidArcher: 'Void Archer',
+  enemyIronBrute: 'Iron Brute', enemyFrostWraith: 'Frost Wraith', enemyEmberDrake: 'Ember Drake',
+  enemyHexPriest: 'Hex Priest', enemySiegeCrawler: 'Siege Crawler', enemyAbyssBehemoth: 'Abyss Behemoth',
+
   bossIncoming: 'Warning! A massive threat has entered the field',
   waveIncoming: 'Wave {0} is approaching',
   waveCleared: 'Wave cleared! +{0} coins',
@@ -702,6 +722,16 @@ const en: Record<string, string> = {
   heroAriaDesc: 'Ariana’s arcane guardian; crushes foes with aether bursts and keeps the core shielded.',
   heroRadinDesc: 'The steel heart of the fortress; cleaves enemy lines with his massive hammer.',
   heroNilaDesc: 'The sharp eye of the ranger; strikes from afar with energy arrows and rains volleys.',
+
+  heroKaelan: 'Kaelan', heroKaelanTitle: 'Dawn Commander', heroKaelanDesc: 'A frontline commander whose heavy strikes and tactical orders empower the defense.',
+  heroYara: 'Yara', heroYaraTitle: 'Crystal Enchantress', heroYaraDesc: 'A ranged mage who fractures enemy ranks with crystal energy and protects the core.',
+  heroVeyra: 'Veyra', heroVeyraTitle: 'Shadowblade', heroVeyraDesc: 'A swift, lethal assassin built to rush into close combat and cut through enemies.',
+  heroBorin: 'Borin', heroBorinTitle: 'Fortress Engineer', heroBorinDesc: 'A weapons specialist whose precise energy attacks reinforce the defensive network.',
+  heroSoren: 'Soren', heroSorenTitle: 'Spirit Caller', heroSorenDesc: 'A shadow summoner who turns dark energy into volleys against clustered enemies.',
+  heroDarya: 'Darya', heroDaryaTitle: 'Verdant Healer', heroDaryaDesc: 'A resilient support hero wielding life energy and an aether shield to protect the core.',
+  heroKaveh: 'Kaveh', heroKavehTitle: 'Flame Ranger', heroKavehDesc: 'A long-range archer whose burning shots and precise volleys punish enemy groups.',
+  heroNyx: 'Nyx', heroNyxTitle: 'Void Phantom', heroNyxDesc: 'An extremely fast shadow assassin designed to hunt light enemies and support units.',
+
   heroMoveHint: 'Tap the ground to send the hero there',
   heroRespawnShort: 'revive',
   selectHero: 'Select',
