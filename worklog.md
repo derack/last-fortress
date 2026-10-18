@@ -584,3 +584,25 @@ Stage Summary:
 - download/Last-Fortress-v1.2-final.apk (4,039,672 bytes) — ادغام گرافیک + بدون گالری + تطبیق رزولوشن
 - لینک: https://uploadkon.ir/uploads/5a2118_26Last-Fortress-v1-2.zip (HTTP 200، حجم دقیق)
 - main به GitHub push شد (CI خودکار اجرا می‌شود)
+
+---
+Task ID: 26
+Agent: main
+Task: واکنش به «حجمش خیلی کمه» — افزودن محتوای واقعی صوتی + بیلد v1.3 + آپلود مجدد
+
+Work Log:
+- علت کم‌حجمی: بازی ~۹۹٪ پروسیجرال (همه مدل‌ها با کد Three.js ساخته می‌شوند، فقط ۴ GLB کوچک قهرمان ≈ ۴۹۰KB) → ۴MB طبیعی بود
+- کشف: AudioSystem بخش ۱۵ از قبل drop-in file audio با manifest.json پشتیبانی می‌کرد (صفر خط کد لازم)
+- scripts/gen_music.py نوشته شد: موسیقی حماسی ۲:۳۶ دقیقه‌ای (D minor/فریژین، ۶۵ میزان، استریو، سازهای سینتز شده: استرینگز/درام/بیل/کراش + ۲۱ افکت SFX اختصاصی)
+- خروجی: public/assets/audio/ = ۲۲ فایل mp3 + manifest.json (۳.۳MB)، سطوح سالم (max -1.3dB)
+- نسخه: versionName 1.3 / versionCode 4
+- gradle JDK: مسیر قدیمی مُرده بود → /home/z/my-project/android-tools/jdk-21.0.12.1+1
+- نکته: build:cap فقط next build است — cap sync باید جدا اجرا شود (بار اول mp3ها نیامد، بعد sync حل شد)
+- apksigner verify ✓ (همان گواهی CN=Last Fortress)؛ push به main (750842d) → CI خودکار
+- آپلود uploadkon ✓ (content-length دقیق 7,451,824) + بکاپ gofile
+
+Stage Summary:
+- download/Last-Fortress-v1.3-release.apk (7,451,824 bytes = 7.1MB) — گرافیک PBR + ۴ GLB + موسیقی/افکت واقعی
+- لینک اصلی: https://uploadkon.ir/uploads/20e018_26Last-Fortress-v1-3.zip
+- بکاپ: https://gofile.io/d/gl41qxBg
+- audio/ به گیت اضافه شد؛ بیلد CI از این به بعد هم شامل صداست
