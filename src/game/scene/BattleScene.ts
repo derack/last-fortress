@@ -455,7 +455,7 @@ export class BattleScene {
         const ox = side.x * halfWidth * miter;
         const oz = side.z * halfWidth * miter;
         positions.push(pts[i].x + ox, y, pts[i].z + oz, pts[i].x - ox, y, pts[i].z - oz);
-        uvs.push(0, distance / 7, 1, distance / 7);
+        uvs.push(0, distance / 18, 1, distance / 18);
         if (i < pts.length - 1) {
           const v = i * 2;
           indices.push(v, v + 2, v + 1, v + 1, v + 2, v + 3);
@@ -481,8 +481,42 @@ export class BattleScene {
     shoulder.castShadow = false;
     this.scene.add(shoulder);
 
+    // Low-contrast road surface texture: broad worn patches and long compression marks,
+    // deliberately no bright grains, dots or repeated rune decals.
+    const roadCanvas = document.createElement('canvas');
+    roadCanvas.width = roadCanvas.height = 512;
+    const roadCtx = roadCanvas.getContext('2d');
+    const roadColor = new THREE.Color(night ? this.theme.pathNight : this.theme.pathDay);
+    if (roadCtx) {
+      roadCtx.fillStyle = roadColor.getStyle();
+      roadCtx.fillRect(0, 0, 512, 512);
+      let roadSeed = 9029 + Object.keys(ENV_THEMES).indexOf(this.level.env) * 127;
+      const roadRand = () => { roadSeed = (roadSeed * 16807) % 2147483647; return (roadSeed - 1) / 2147483646; };
+      for (let i = 0; i < 24; i++) {
+        const x = roadRand() * 512, y = roadRand() * 512;
+        const radius = 28 + roadRand() * 82;
+        const shade = roadRand() > 0.5 ? '255,255,255' : '12,10,8';
+        const alpha = 0.025 + roadRand() * 0.035;
+        const gradient = roadCtx.createRadialGradient(x, y, 0, x, y, radius);
+        gradient.addColorStop(0, `rgba(${shade},${alpha})`);
+        gradient.addColorStop(1, `rgba(${shade},0)`);
+        roadCtx.fillStyle = gradient;
+        roadCtx.beginPath(); roadCtx.ellipse(x, y, radius, radius * (0.35 + roadRand() * 0.3), roadRand() * 1.2, 0, Math.PI * 2); roadCtx.fill();
+      }
+      roadCtx.lineCap = 'round';
+      roadCtx.strokeStyle = 'rgba(18,14,10,0.055)';
+      for (let i = 0; i < 11; i++) {
+        const x = roadRand() * 512, y = roadRand() * 512;
+        roadCtx.lineWidth = 1 + roadRand() * 2;
+        roadCtx.beginPath(); roadCtx.moveTo(x, y); roadCtx.lineTo(x + 80 + roadRand() * 130, y + (roadRand() - 0.5) * 10); roadCtx.stroke();
+      }
+    }
+    const roadTexture = new THREE.CanvasTexture(roadCanvas);
+    roadTexture.wrapS = roadTexture.wrapT = THREE.RepeatWrapping;
+    roadTexture.colorSpace = THREE.SRGBColorSpace;
+    roadTexture.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
     const pathMesh = new THREE.Mesh(createRibbon(width, 0.065),
-      new THREE.MeshStandardMaterial({ color: night ? this.theme.pathNight : this.theme.pathDay, roughness: 0.98, metalness: 0 }));
+      new THREE.MeshStandardMaterial({ map: roadTexture, color: 0xffffff, roughness: 0.98, metalness: 0 }));
     pathMesh.receiveShadow = this.renderer.shadowMap.enabled;
     pathMesh.castShadow = false;
     pathMesh.name = 'ContinuousRoadSurface';
