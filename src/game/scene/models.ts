@@ -333,6 +333,67 @@ export function buildTowerMesh(towerId: string, level: number): THREE.Group {
   foundationGlow.rotation.x = Math.PI / 2;
   g.add(foundationGlow);
 
+  // Five clearly readable visual tiers: every upgrade changes the silhouette,
+  // not just the combat stats. Keep these accents low-cost for mobile GPUs.
+  const visualTier = Math.max(1, Math.min(5, Math.floor(level || 1)));
+  g.userData.upgradeLevel = visualTier;
+  if (visualTier >= 2) {
+    const armorMat = mat(0x333b49, { metalness: 0.78, roughness: 0.3 });
+    const edgeMat = mat(0x9ca8b8, { metalness: 0.86, roughness: 0.22 });
+    for (let i = 0; i < 4; i++) {
+      const a = i * Math.PI / 2 + Math.PI / 4;
+      const plate = mesh(new THREE.BoxGeometry(0.48, 0.58, 0.13), armorMat,
+        Math.cos(a) * 1.27, 0.68, Math.sin(a) * 1.27);
+      plate.rotation.y = -a;
+      g.add(plate);
+      const rivet = mesh(new THREE.SphereGeometry(0.045, 7, 6), edgeMat,
+        Math.cos(a) * 1.29, 0.82, Math.sin(a) * 1.29);
+      g.add(rivet);
+    }
+  }
+  if (visualTier >= 3) {
+    const conduitMat = glow(accent);
+    for (let i = 0; i < 4; i++) {
+      const a = i * Math.PI / 2;
+      const conduit = mesh(new THREE.BoxGeometry(0.07, 0.72, 0.08), conduitMat,
+        Math.cos(a) * 1.12, 0.83, Math.sin(a) * 1.12);
+      conduit.rotation.y = -a;
+      g.add(conduit);
+    }
+    const lowerRing = mesh(new THREE.TorusGeometry(1.68, 0.045, 6, 32), glow(accent), 0, 0.48, 0);
+    lowerRing.rotation.x = Math.PI / 2;
+    g.add(lowerRing);
+    g.userData.upgradeConduitRing = lowerRing;
+  }
+  if (visualTier >= 4) {
+    const shardMat = glow(accent);
+    const orbitShards: THREE.Mesh[] = [];
+    for (let i = 0; i < 4; i++) {
+      const a = i * Math.PI / 2 + Math.PI / 4;
+      const shard = mesh(new THREE.OctahedronGeometry(0.16, 0), shardMat,
+        Math.cos(a) * 1.92, baseH + 0.48 + (i % 2) * 0.22, Math.sin(a) * 1.92);
+      shard.rotation.set(a * 0.5, a, a * 0.25);
+      g.add(shard);
+      orbitShards.push(shard);
+    }
+    g.userData.upgradeShards = orbitShards;
+  }
+  if (visualTier >= 5) {
+    const ascensionRing = mesh(new THREE.TorusGeometry(1.86, 0.055, 8, 40), glow(accent), 0, baseH + 0.6, 0);
+    ascensionRing.rotation.x = Math.PI / 2;
+    g.add(ascensionRing);
+    g.userData.upgradeAscensionRing = ascensionRing;
+    const crownMat = mat(0xe4e8f0, { metalness: 0.82, roughness: 0.2 });
+    for (let i = 0; i < 8; i++) {
+      const a = i * Math.PI / 4;
+      const crownSpike = mesh(new THREE.ConeGeometry(0.075, 0.28, 5), crownMat,
+        Math.cos(a) * 1.43, baseH + 0.36, Math.sin(a) * 1.43);
+      crownSpike.rotation.z = Math.cos(a) * -0.35;
+      crownSpike.rotation.x = Math.sin(a) * 0.35;
+      g.add(crownSpike);
+    }
+  }
+
   g.traverse((o) => {
     o.userData.selectable = true;
   });
@@ -921,7 +982,7 @@ export function buildHeroMesh(heroId = 'arman'): THREE.Group {
   const skin = mat(heroId === 'aria' ? 0xe8c8a0 : heroId === 'nila' ? 0xd8b890 : 0xc8a06a, { roughness: 0.82 });
   const darkSteel = mat(0x202833, { metalness: 0.78, roughness: 0.28 });
   const trimGold = mat(0xe8bd58, { metalness: 0.82, roughness: 0.24 });
-  const heroAccent = heroId === 'aria' ? 0x67e8f9 : heroId === 'nila' ? 0xc084fc : heroId === 'radin' ? 0xf87171 : 0xffb020;
+  const heroAccent = ({ arman: 0xffb020, aria: 0x67e8f9, nila: 0xc084fc, radin: 0xf87171, kaelan: 0xfbbf24, yara: 0x22d3ee, veyra: 0xf472b6, borin: 0x94a3b8, soren: 0xa78bfa, darya: 0x4ade80, kaveh: 0xfb923c, nyx: 0xc084fc } as Record<string, number>)[heroId] ?? 0xffb020;
   // Boots and articulated knee guards make the silhouette read better from the isometric camera.
   for (const side of [-1, 1]) {
     const boot = mesh(new THREE.BoxGeometry(0.24, 0.17, 0.34), darkSteel, side * (heroId === 'radin' ? 0.23 : 0.17), 0.09, 0.08);
@@ -983,6 +1044,62 @@ export function buildHeroMesh(heroId = 'arman'): THREE.Group {
       arrow.rotation.z = -0.1;
       g.add(arrow);
     }
+  }
+  // Final bespoke silhouette pass for the expanded roster: layered cuirass,
+  // asymmetrical pauldrons, facial/helm accents and a hero-coloured relic.
+  const rosterPalette: Record<string, number> = {
+    arman: 0xffb020, aria: 0x67e8f9, nila: 0xc084fc, radin: 0xf87171,
+    kaelan: 0xfbbf24, yara: 0x22d3ee, veyra: 0xf472b6, borin: 0x94a3b8,
+    soren: 0xa78bfa, darya: 0x4ade80, kaveh: 0xfb923c, nyx: 0xc084fc,
+  };
+  const relicColor = rosterPalette[heroId] ?? 0xffb020;
+  const cuirass = mat(heroId === 'borin' || heroId === 'radin' ? 0x39424f : 0x303443, { metalness: 0.72, roughness: 0.32 });
+  const trim = mat(heroId === 'darya' ? 0xb8f7c8 : 0xd7c18a, { metalness: 0.76, roughness: 0.28 });
+  // Front-facing layered chest plates read clearly from the game's isometric camera.
+  const chestPlate = mesh(new THREE.BoxGeometry(heroId === 'borin' || heroId === 'radin' ? 0.5 : 0.36, 0.26, 0.085), cuirass, 0, 1.06, 0.235);
+  chestPlate.rotation.z = heroId === 'nyx' ? -0.08 : 0;
+  g.add(chestPlate);
+  g.add(mesh(new THREE.BoxGeometry(0.27, 0.045, 0.035), trim, 0, 1.17, 0.29));
+  g.add(mesh(new THREE.OctahedronGeometry(heroId === 'borin' ? 0.14 : 0.105), glow(relicColor), 0, 1.02, 0.31));
+  // A different head silhouette per hero prevents the expanded roster reading as recolours.
+  if (['kaelan', 'kaveh'].includes(heroId)) {
+    const crest = mesh(new THREE.ConeGeometry(0.09, 0.34, 5), trim, 0, 2.02, 0);
+    crest.rotation.z = Math.PI;
+    g.add(crest);
+  } else if (['veyra', 'nyx'].includes(heroId)) {
+    for (const side of [-1, 1]) {
+      const horn = mesh(new THREE.ConeGeometry(0.075, heroId === 'nyx' ? 0.42 : 0.28, 5), cuirass, side * 0.19, 1.88, -0.02);
+      horn.rotation.z = side * -0.38;
+      g.add(horn);
+    }
+  } else if (['borin', 'radin'].includes(heroId)) {
+    const brow = mesh(new THREE.BoxGeometry(0.48, 0.11, 0.12), trim, 0, 1.83, 0.19);
+    g.add(brow);
+  } else if (heroId === 'darya') {
+    for (let i = 0; i < 3; i++) {
+      const leaf = mesh(new THREE.ConeGeometry(0.07, 0.28, 5), mat(0x2f855a, { roughness: 0.7 }), (i - 1) * 0.13, 1.88 + Math.abs(i - 1) * 0.04, -0.04);
+      leaf.rotation.z = (i - 1) * -0.3;
+      g.add(leaf);
+    }
+  }
+  // Distinctive shoulder plates and rivets for every hero, with role-specific asymmetry.
+  for (const side of [-1, 1]) {
+    const shoulderX = side * (heroId === 'borin' || heroId === 'radin' ? 0.52 : 0.39);
+    const pauldron = mesh(new THREE.SphereGeometry(heroId === 'borin' ? 0.3 : 0.22, 12, 10), cuirass, shoulderX, 1.43, 0);
+    pauldron.scale.set(1.2, 0.72, 0.92);
+    g.add(pauldron);
+    g.add(mesh(new THREE.SphereGeometry(0.04, 7, 6), trim, shoulderX, 1.46, 0.19));
+    if (heroId === 'kaelan' || heroId === 'borin') {
+      const spike = mesh(new THREE.ConeGeometry(0.07, 0.24, 5), trim, shoulderX, 1.65, 0);
+      spike.rotation.z = side * -0.35;
+      g.add(spike);
+    }
+  }
+  // Low-cost energy inlays create a premium fantasy read without runtime textures.
+  for (let i = 0; i < 3; i++) {
+    const rune = mesh(new THREE.TetrahedronGeometry(0.055), glow(relicColor), (i - 1) * 0.13, 0.84, 0.28);
+    rune.rotation.z = i * 0.55;
+    g.add(rune);
   }
   g.traverse((o) => {
     o.userData.selectable = true;
