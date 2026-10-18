@@ -151,6 +151,12 @@ function createStaticCharacterClips(scene: THREE.Group, category: CharacterAsset
   const attack = [
     { node: 'arm1', angles: [0, -0.75, 0.2, 0.1, 0] }, { node: 'rightArm', angles: [0, -0.75, 0.2, 0.1, 0] },
     { node: 'arm-1', angles: [0, 0.28, -0.12, 0, 0] }, { node: 'head', angles: [0, -0.08, 0.12, 0, 0] },
+    { node: 'blade', angles: [0, -0.62, 0.18, 0, 0], axis: z },
+    { node: 'bow', angles: [0, -0.28, 0.1, 0, 0], axis: z },
+    { node: 'staff', angles: [0, -0.32, 0.12, 0, 0], axis: z },
+    { node: 'gun', angles: [0, -0.16, 0.06, 0, 0], axis: x },
+    { node: 'cannon', angles: [0, -0.12, 0.04, 0, 0], axis: x },
+    { node: 'staffOrb', angles: [0, 0.45, 0.9, 1.35, 1.8], axis: y },
     { node: 'tail', angles: [0, -0.28, 0.18, 0, 0], axis: y },
   ];
   const hit = clip('Hit', [
@@ -161,7 +167,7 @@ function createStaticCharacterClips(scene: THREE.Group, category: CharacterAsset
   if (category === 'enemies') return [idle, walk, clip('Attack', attack), hit, death];
   return [
     idle, walk, clip('Attack1', attack),
-    clip('Attack2', [{ node: 'arm1', angles: [0, -1.05, 0.3, -0.12, 0] }, { node: 'rightArm', angles: [0, -1.05, 0.3, -0.12, 0] }, { node: 'head', angles: [0, -0.12, 0.16, 0, 0] }, { node: 'tail', angles: [0, -0.4, 0.22, 0, 0], axis: y }]),
+    clip('Attack2', [{ node: 'arm1', angles: [0, -1.05, 0.3, -0.12, 0] }, { node: 'rightArm', angles: [0, -1.05, 0.3, -0.12, 0] }, { node: 'blade', angles: [0, -0.9, 0.25, -0.1, 0], axis: z }, { node: 'staff', angles: [0, -0.5, 0.18, 0, 0], axis: z }, { node: 'head', angles: [0, -0.12, 0.16, 0, 0] }, { node: 'tail', angles: [0, -0.4, 0.22, 0, 0], axis: y }]),
     clip('SpecialAttack', [{ node: 'torso', angles: [0, -0.25, 0.3, -0.05, 0] }, { node: 'body', angles: [0, -0.25, 0.3, -0.05, 0] }, { node: 'core', angles: [0, 0.35, -0.2, 0.1, 0], axis: y }]),
     clip('Roar', [{ node: 'head', angles: [0, -0.2, 0.28, -0.12, 0] }, { node: 'torso', angles: [0, -0.1, 0.14, -0.05, 0] }, { node: 'body', angles: [0, -0.1, 0.14, -0.05, 0] }]),
     hit, clip('PhaseChange', [{ node: 'ModelRoot', angles: [0, 0.25, -0.2, 0.1, 0], axis: y }, { node: 'core', angles: [0, 0.5, -0.4, 0.2, 0], axis: y }]), death,
