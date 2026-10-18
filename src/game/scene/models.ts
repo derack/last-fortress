@@ -1302,11 +1302,22 @@ export function buildRiftMesh(): THREE.Group {
 
 export function buildTree(): THREE.Group {
   const g = new THREE.Group();
-  const trunk = mesh(new THREE.CylinderGeometry(0.18, 0.28, 1.4, 6), mat(0x5d4a36), 0, 0.7, 0);
+  const bark = mat(0x51402f, { roughness: 0.96 });
+  const trunk = mesh(new THREE.CylinderGeometry(0.16, 0.31, 1.55, 7), bark, 0, 0.77, 0);
+  trunk.rotation.z = 0.025;
   g.add(trunk);
-  const leafMat = mat(0x3f7d3a, { roughness: 0.95 });
-  g.add(mesh(new THREE.ConeGeometry(1.15, 1.7, 7), leafMat, 0, 2.2, 0));
-  g.add(mesh(new THREE.ConeGeometry(0.85, 1.3, 7), leafMat, 0, 3.1, 0));
+
+  // Layered, faceted crowns replace the stacked perfect cones. The two masses
+  // share a restrained leaf material so the silhouette reads as foliage, not props.
+  const leafMat = mat(0x365d31, { roughness: 0.98 });
+  const lower = mesh(new THREE.IcosahedronGeometry(1, 1), leafMat, 0, 2.05, 0);
+  lower.scale.set(1.12, 0.92, 1.02);
+  lower.rotation.y = 0.35;
+  g.add(lower);
+  const upper = mesh(new THREE.DodecahedronGeometry(0.78, 0), leafMat, 0.08, 2.78, -0.04);
+  upper.scale.set(0.95, 1.12, 0.9);
+  upper.rotation.set(0.06, 0.7, -0.04);
+  g.add(upper);
   return g;
 }
 
@@ -1415,18 +1426,34 @@ export function buildCrystal(color = 0x22d3ee): THREE.Group {
 
 export function buildMountain(style: 'normal' | 'snow' | 'dark' | 'obsidian' = 'normal'): THREE.Group {
   const g = new THREE.Group();
-  const tint = style === 'dark' ? 0x4a3430 : style === 'obsidian' ? 0x241c30 : 0x7c8494;
-  const m = mat(tint, { roughness: 1 });
-  const peak = mesh(new THREE.ConeGeometry(9, 16, 6), m, 0, 8, 0);
-  g.add(peak);
+  const tint = style === 'dark' ? 0x392a27 : style === 'obsidian' ? 0x211b2b : style === 'snow' ? 0x687d8c : 0x626d78;
+  const rock = mat(tint, { roughness: 0.96, metalness: style === 'obsidian' ? 0.08 : 0.015 });
+
+  // Angular rock masses form an irregular ridge instead of a repeated perfect cone.
+  const main = mesh(new THREE.IcosahedronGeometry(1, 1), rock, 0, 5.0, 0);
+  main.scale.set(8.8, 7.6, 7.2);
+  main.rotation.set(0.03, 0.2, -0.025);
+  g.add(main);
+
+  const shoulder = mesh(new THREE.DodecahedronGeometry(1, 0), rock, -5.6, 3.0, -0.5);
+  shoulder.scale.set(5.1, 4.1, 5.8);
+  shoulder.rotation.y = 0.48;
+  g.add(shoulder);
+
+  const farPeak = mesh(new THREE.DodecahedronGeometry(1, 0), rock, 5.2, 3.7, -1.4);
+  farPeak.scale.set(4.7, 5.0, 4.5);
+  farPeak.rotation.set(0.04, -0.38, 0.02);
+  g.add(farPeak);
+
   if (style === 'normal' || style === 'snow') {
-    const snow = mesh(new THREE.ConeGeometry(3, 4.5, 6), mat(0xe8eaf0, { roughness: 0.7 }), 0, 13.5, 0);
-    g.add(snow);
-  } else if (style === 'dark') {
-    g.add(mesh(new THREE.SphereGeometry(0.5, 6, 6), glow(0xf97316), 1.5, 9, 1.5));
-    g.add(mesh(new THREE.SphereGeometry(0.4, 6, 6), glow(0xf97316), -2, 6, -1));
-  } else {
-    g.add(mesh(new THREE.SphereGeometry(0.45, 6, 6), glow(0xa855f7), 1.8, 8, -1.2));
+    const snowMat = mat(style === 'snow' ? 0xd9e8ef : 0xbcc8d0, { roughness: 0.82 });
+    const cap = mesh(new THREE.IcosahedronGeometry(1, 0), snowMat, 0.15, 10.1, 0.2);
+    cap.scale.set(3.1, 2.3, 2.8);
+    cap.rotation.set(0.05, 0.3, -0.08);
+    g.add(cap);
   }
+
+  // No isolated emissive dots on distant mountains: biome colour comes from
+  // the material and lighting, keeping the horizon cinematic rather than noisy.
   return g;
 }
