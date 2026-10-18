@@ -31,16 +31,16 @@ export const CHAPTERS: ChapterDef[] = [
  * فصل ۵: aetherTank→golem (فصل ۵ بدون جبران بسیار سخت‌تر از فصل ۴ بود)
  * فصل ۶: spider→warrior (فصل ۶ بسیار نرم‌تر از فصل ۵ بود — واریر میانه می‌افزاید) */
 const CHAPTER_POOLS: Record<number, string[]> = {
-  1: ['shadow', 'warrior', 'spider', 'hunter', 'flyer', 'warlock'],
-  2: ['shadowSoldier', 'spider', 'hunter', 'spirit', 'warrior', 'summoner', 'shadow'],
-  3: ['crystalMonster', 'warrior', 'hunter', 'aetherTank', 'flyer', 'warlock', 'golem'],
-  4: ['smallDragon', 'destroyer', 'hunter', 'golem', 'warMachine', 'warlock'],
-  5: ['warMachine', 'destroyer', 'golem', 'summoner', 'hunter', 'flyer'],
-  6: ['shadowSoldier', 'spirit', 'summoner', 'warrior', 'warlock', 'golem'],
-  7: ['crystalMonster', 'aetherTank', 'golem', 'warrior', 'hunter', 'spirit', 'warlock'],
-  8: ['smallDragon', 'destroyer', 'golem', 'warMachine', 'flyer', 'hunter'],
-  9: ['warMachine', 'destroyer', 'summoner', 'aetherTank', 'shadowSoldier', 'flyer'],
-  10: ['shadowSoldier', 'destroyer', 'summoner', 'aetherTank', 'smallDragon', 'spirit', 'hunter', 'warMachine'],
+  1: ['shadow', 'warrior', 'spider', 'hunter', 'flyer', 'warlock', 'plagueHound'],
+  2: ['shadowSoldier', 'spider', 'hunter', 'spirit', 'warrior', 'summoner', 'shadow', 'boneReaver'],
+  3: ['crystalMonster', 'warrior', 'hunter', 'aetherTank', 'flyer', 'warlock', 'golem', 'frostWraith'],
+  4: ['smallDragon', 'destroyer', 'hunter', 'golem', 'warMachine', 'warlock', 'emberDrake'],
+  5: ['warMachine', 'destroyer', 'golem', 'summoner', 'hunter', 'flyer', 'siegeCrawler'],
+  6: ['shadowSoldier', 'spirit', 'summoner', 'warrior', 'warlock', 'golem', 'hexPriest'],
+  7: ['crystalMonster', 'aetherTank', 'golem', 'warrior', 'hunter', 'spirit', 'warlock', 'frostWraith'],
+  8: ['smallDragon', 'destroyer', 'golem', 'warMachine', 'flyer', 'hunter', 'emberDrake'],
+  9: ['warMachine', 'destroyer', 'summoner', 'aetherTank', 'shadowSoldier', 'flyer', 'voidArcher', 'ironBrute'],
+  10: ['shadowSoldier', 'destroyer', 'summoner', 'aetherTank', 'smallDragon', 'spirit', 'hunter', 'warMachine', 'voidArcher', 'abyssBehemoth'],
 };
 
 /** ضریب جبران استخر هر فصل — فصل‌های سنگین دشمن کمتر، نرم‌ها بیشتر
