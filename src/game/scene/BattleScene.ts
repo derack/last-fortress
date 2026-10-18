@@ -108,7 +108,9 @@ export class BattleScene {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = level.timeOfDay === 'night' ? 0.92
+      : level.env === 'tundra' ? 1.02
+      : level.env === 'volcano' || level.env === 'citadel' ? 0.96 : 1.0;
 
     const night = level.timeOfDay === 'night';
     this.theme = ENV_THEMES[level.env] ?? ENV_THEMES.plains;
@@ -119,7 +121,8 @@ export class BattleScene {
       const pmrem = new THREE.PMREMGenerator(this.renderer);
       const envScene = new RoomEnvironment();
       this.scene.environment = pmrem.fromScene(envScene, 0.06).texture;
-      this.scene.environmentIntensity = night ? 0.22 : 0.45;
+      // Keep metal and stone readable without flattening the scene with excessive fill.
+      this.scene.environmentIntensity = night ? 0.24 : 0.48;
       pmrem.dispose();
     }
 
@@ -154,8 +157,15 @@ export class BattleScene {
     this.scene.add(sun);
 
     // نور پرکننده از سمت مخالف — عمق و حجم بهتر مدل‌ها (بدون سایه)
-    const rim = new THREE.DirectionalLight(sunTint, night ? 0.22 : 0.45);
+    const rimColor = level.env === 'tundra' ? 0x8edaff
+      : level.env === 'forest' ? 0x9bc9a1
+      : level.env === 'volcano' ? 0xff6842
+      : level.env === 'wastes' ? 0xe6bd82
+      : level.env === 'citadel' ? 0xb6a0ff
+      : 0xb8d8ff;
+    const rim = new THREE.DirectionalLight(rimColor, night ? 0.28 : 0.52);
     rim.position.set(28, 18, 26);
+    rim.castShadow = false;
     this.scene.add(rim);
 
     // مسیرها — ۱ تا ۳ مسیر حمله، همه به هسته ختم می‌شوند
