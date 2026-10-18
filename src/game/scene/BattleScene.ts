@@ -553,17 +553,55 @@ export class BattleScene {
       roughness: 0.86,
       metalness: this.level.env === 'citadel' || this.level.env === 'volcano' ? 0.22 : 0.04,
     });
-    const landmarkGeo = this.level.env === 'tundra'
-      ? new THREE.ConeGeometry(0.72, 3.4, 5)
-      : this.level.env === 'forest'
-        ? new THREE.ConeGeometry(0.52, 2.6, 5)
+    // Faceted, asymmetrical rock spires replace repeated perfect cones.
+    // One shared geometry keeps the silhouette richer without adding draw calls.
+    const landmarkGeo = (() => {
+      const profile = this.level.env === 'tundra'
+        ? [0.34, 0.92, 0.68, 0.4, 0.025]
         : this.level.env === 'citadel'
-          ? new THREE.CylinderGeometry(0.36, 0.68, 3.5, 6)
+          ? [0.52, 0.84, 0.58, 0.36, 0.035]
           : this.level.env === 'volcano'
-            ? new THREE.ConeGeometry(0.66, 2.9, 6)
+            ? [0.48, 0.78, 0.52, 0.28, 0.015]
             : this.level.env === 'wastes'
-              ? new THREE.ConeGeometry(0.9, 2.2, 5)
-              : new THREE.ConeGeometry(0.48, 2.4, 6);
+              ? [0.68, 0.92, 0.64, 0.42, 0.04]
+              : this.level.env === 'forest'
+                ? [0.62, 0.8, 0.58, 0.3, 0.02]
+                : [0.7, 0.88, 0.62, 0.32, 0.03];
+      const heights = [0, 0.12, 0.38, 0.72, 1];
+      const sides = 7;
+      const positions: number[] = [];
+      const indices: number[] = [];
+      let localSeed = 1709 + Object.keys(ENV_THEMES).indexOf(this.level.env) * 43;
+      const jitter = () => {
+        localSeed = (localSeed * 16807) % 2147483647;
+        return 0.86 + (localSeed / 2147483647) * 0.28;
+      };
+      for (let ring = 0; ring < heights.length; ring++) {
+        for (let side = 0; side < sides; side++) {
+          const angle = side / sides * Math.PI * 2;
+          const r = profile[ring] * jitter();
+          positions.push(Math.cos(angle) * r, heights[ring], Math.sin(angle) * r);
+        }
+      }
+      for (let ring = 0; ring < heights.length - 1; ring++) {
+        for (let side = 0; side < sides; side++) {
+          const a = ring * sides + side;
+          const b = ring * sides + (side + 1) % sides;
+          const c = (ring + 1) * sides + side;
+          const d = (ring + 1) * sides + (side + 1) % sides;
+          indices.push(a, c, b, b, c, d);
+        }
+      }
+      // Close the base so the mesh remains watertight when viewed from elevated cameras.
+      const center = positions.length / 3;
+      positions.push(0, 0, 0);
+      for (let side = 0; side < sides; side++) indices.push(center, (side + 1) % sides, side);
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      return geometry;
+    })();
     const landmarks = new THREE.InstancedMesh(landmarkGeo, landmarkMat, landmarkCount);
     const dummy = new THREE.Object3D();
     let placed = 0;
@@ -574,10 +612,11 @@ export class BattleScene {
       const z = (r() - 0.5) * 61;
       if (nearPath(x, z, 6.2) || Math.hypot(x - this.corePos.x, z - this.corePos.z) < 9) continue;
       if (Math.hypot(x, z) < 10) continue;
-      dummy.position.set(x, 1.1 + r() * 0.3, z);
-      dummy.rotation.set((r() - 0.5) * 0.1, r() * Math.PI * 2, (r() - 0.5) * 0.1);
-      const scale = 0.75 + r() * 1.1;
-      dummy.scale.set(scale * (this.level.env === 'wastes' ? 1.25 : 1), scale, scale);
+      dummy.position.set(x, 0.025, z);
+      dummy.rotation.set((r() - 0.5) * 0.08, r() * Math.PI * 2, (r() - 0.5) * 0.08);
+      const scale = 0.85 + r() * 0.8;
+      const breadth = this.level.env === 'wastes' ? 1.28 : this.level.env === 'tundra' ? 0.82 : 1;
+      dummy.scale.set(scale * breadth, scale * (2.8 + r() * 0.8), scale * breadth);
       dummy.updateMatrix();
       landmarks.setMatrixAt(placed++, dummy.matrix);
     }
