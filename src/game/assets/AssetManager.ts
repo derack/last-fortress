@@ -144,7 +144,6 @@ function createStaticCharacterClips(scene: THREE.Group, category: CharacterAsset
   }
   const idle = clip('Idle', [
     { node: 'head', angles: [0, 0.025, 0, -0.025, 0], axis: y },
-    { node: 'torso', angles: [0, -0.012, 0, 0.012, 0] }, { node: 'body', angles: [0, -0.012, 0, 0.012, 0] },
     { node: 'core', angles: [0, 0.025, 0, -0.025, 0], axis: y },
   ]);
   const walk = clip('Walk', locomotion);
@@ -160,16 +159,16 @@ function createStaticCharacterClips(scene: THREE.Group, category: CharacterAsset
     { node: 'tail', angles: [0, -0.28, 0.18, 0, 0], axis: y },
   ];
   const hit = clip('Hit', [
-    { node: 'torso', angles: [0, -0.22, 0.08, 0, 0], axis: z },
-    { node: 'body', angles: [0, -0.22, 0.08, 0, 0], axis: z }, { node: 'head', angles: [0, 0.12, -0.06, 0, 0] },
+    { node: 'ModelRoot', angles: [0, -0.18, 0.06, 0, 0], axis: z },
+    { node: 'head', angles: [0, 0.12, -0.06, 0, 0] },
   ]);
   const death = clip('Death', [{ node: 'ModelRoot', angles: [0, 0.4, 1.2, 1.2, 1.2], axis: z }]);
   if (category === 'enemies') return [idle, walk, clip('Attack', attack), hit, death];
   return [
     idle, walk, clip('Attack1', attack),
     clip('Attack2', [{ node: 'arm1', angles: [0, -1.05, 0.3, -0.12, 0] }, { node: 'rightArm', angles: [0, -1.05, 0.3, -0.12, 0] }, { node: 'blade', angles: [0, -0.9, 0.25, -0.1, 0], axis: z }, { node: 'staff', angles: [0, -0.5, 0.18, 0, 0], axis: z }, { node: 'head', angles: [0, -0.12, 0.16, 0, 0] }, { node: 'tail', angles: [0, -0.4, 0.22, 0, 0], axis: y }]),
-    clip('SpecialAttack', [{ node: 'torso', angles: [0, -0.25, 0.3, -0.05, 0] }, { node: 'body', angles: [0, -0.25, 0.3, -0.05, 0] }, { node: 'core', angles: [0, 0.35, -0.2, 0.1, 0], axis: y }]),
-    clip('Roar', [{ node: 'head', angles: [0, -0.2, 0.28, -0.12, 0] }, { node: 'torso', angles: [0, -0.1, 0.14, -0.05, 0] }, { node: 'body', angles: [0, -0.1, 0.14, -0.05, 0] }]),
+    clip('SpecialAttack', [{ node: 'ModelRoot', angles: [0, -0.12, 0.2, -0.05, 0], axis: x }, { node: 'core', angles: [0, 0.35, -0.2, 0.1, 0], axis: y }]),
+    clip('Roar', [{ node: 'head', angles: [0, -0.2, 0.28, -0.12, 0] }, { node: 'ModelRoot', angles: [0, -0.08, 0.12, -0.04, 0], axis: x }]),
     hit, clip('PhaseChange', [{ node: 'ModelRoot', angles: [0, 0.25, -0.2, 0.1, 0], axis: y }, { node: 'core', angles: [0, 0.5, -0.4, 0.2, 0], axis: y }]), death,
   ];
 }
