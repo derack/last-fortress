@@ -171,6 +171,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
   scene.updateMatrixWorld(true);
   const maps = getSharedSurfaceMaps();
   const tower = category === 'towers';
+  const characterRoot = scene.getObjectByName('ModelRoot') ?? scene;
   const keepTowerNodes = new Set(['spincrystal', 'spinring', 'ember']);
   const keepWeapon = /weapon|blade|bow|staff|gun|cannon/i;
   const keepAnimatedPart = /^(?:head|torso|body|leftleg|rightleg|leftarm|rightarm|arm-1|arm1|wing-1|wing1|tail|abdomen|carapace|core|shoulder-1|shoulder1|leg\\d+[-_]?\\d+|legjoint\\d+[-_]?\\d+|tendril-?1)$/i;
@@ -205,7 +206,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
     if (tower ? keepTowerNodes.has(name) : (keepWeapon.test(name) || keepAnimatedPart.test(name))) return;
     if (Array.isArray(mesh.material)) return; // retain unusual multi-material meshes safely
 
-    const parent = tower ? findTowerPivot(mesh) : scene;
+    const parent = tower ? findTowerPivot(mesh) : characterRoot;
     const key = parent.uuid + '|' + mesh.material.uuid;
     let bucket = groups.get(key);
     if (!bucket) {
