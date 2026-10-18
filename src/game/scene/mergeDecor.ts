@@ -17,7 +17,31 @@ export function mergeDecorGroups(
   groups: THREE.Object3D[],
   opts?: { castShadow?: boolean; receiveShadow?: boolean }
 ): THREE.Mesh[] {
-  const byMat = new Map<THREE.Material, THREE.BufferGeometry[]>();
+  const byMat = new Map<string, { material: THREE.Material; geos: THREE.BufferGeometry[] }>();
+
+  // Many procedural props create equivalent material instances independently.
+  // Group by render-relevant properties, not object identity, so batching actually works.
+  const materialKey = (material: THREE.Material) => {
+    const m = material as THREE.MeshStandardMaterial;
+    return [
+      material.type,
+      m.color?.getHexString() ?? '',
+      m.emissive?.getHexString() ?? '',
+      m.roughness ?? '',
+      m.metalness ?? '',
+      m.emissiveIntensity ?? '',
+      m.opacity ?? '',
+      m.transparent ?? '',
+      m.side ?? '',
+      m.depthWrite ?? '',
+      m.map?.uuid ?? '',
+      m.normalMap?.uuid ?? '',
+      m.roughnessMap?.uuid ?? '',
+      m.metalnessMap?.uuid ?? '',
+      (m as THREE.MeshPhysicalMaterial).clearcoat ?? '',
+      (m as THREE.MeshPhysicalMaterial).transmission ?? '',
+    ].join('|');
+  };
 
   for (const root of groups) {
     root.updateMatrixWorld(true);
@@ -36,19 +60,20 @@ export function mergeDecorGroups(
         geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(geo.attributes.position.count * 2), 2));
       }
       geo.applyMatrix4(BAKE.copy(me.matrixWorld));
-      const list = byMat.get(mats[0]);
-      if (list) list.push(geo);
-      else byMat.set(mats[0], [geo]);
+      const key = materialKey(mats[0]);
+      const bucket = byMat.get(key);
+      if (bucket) bucket.geos.push(geo);
+      else byMat.set(key, { material: mats[0], geos: [geo] });
     });
   }
 
   const out: THREE.Mesh[] = [];
-  for (const [mat, geos] of byMat) {
+  for (const { material, geos } of byMat.values()) {
     if (geos.length === 0) continue;
     const merged = mergeGeometries(geos, false);
     for (const g of geos) g.dispose();
     if (!merged) continue;
-    const mesh = new THREE.Mesh(merged, mat);
+    const mesh = new THREE.Mesh(merged, material);
     mesh.castShadow = opts?.castShadow ?? true;
     mesh.receiveShadow = opts?.receiveShadow ?? true;
     mesh.matrixAutoUpdate = false;
