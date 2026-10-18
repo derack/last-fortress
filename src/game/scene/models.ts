@@ -316,6 +316,23 @@ export function buildTowerMesh(towerId: string, level: number): THREE.Group {
     }
   }
 
+  // Machined foundation: radial armor fins, fasteners and an energized lower ring.
+  const boltMat = mat(0xb4bdc8, { metalness: 0.88, roughness: 0.22 });
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    const bolt = mesh(new THREE.SphereGeometry(0.075, 8, 6), boltMat, Math.cos(a) * 1.48, 0.19, Math.sin(a) * 1.48);
+    bolt.scale.set(1, 0.55, 1);
+    g.add(bolt);
+    if (i % 2 === 0) {
+      const fin = mesh(new THREE.BoxGeometry(0.12, 0.42 + lv * 0.035, 0.24), mat(0x303744, { metalness: 0.72, roughness: 0.36 }), Math.cos(a) * 1.35, 0.45, Math.sin(a) * 1.35);
+      fin.rotation.y = -a;
+      g.add(fin);
+    }
+  }
+  const foundationGlow = mesh(new THREE.TorusGeometry(1.52, 0.035, 6, 32), glow(accent), 0, 0.22, 0);
+  foundationGlow.rotation.x = Math.PI / 2;
+  g.add(foundationGlow);
+
   g.traverse((o) => {
     o.userData.selectable = true;
   });
@@ -671,6 +688,34 @@ export function buildEnemyMesh(data: EnemyData, tier: number): THREE.Group {
     parts.push({ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' });
   }
 
+  // Extra silhouette detail for humanoid enemies and bosses: layered plates, joints and runic armor.
+  if (['warrior', 'golem', 'golemKing', 'warlock', 'darkLord'].includes(data.id)) {
+    const plate = mat(data.id === 'golem' || data.id === 'golemKing' ? 0x5c626c : 0x292632, { metalness: 0.68, roughness: 0.34 });
+    const edge = mat(0x8c94a3, { metalness: 0.82, roughness: 0.24 });
+    const frontZ = data.id === 'golem' || data.id === 'golemKing' ? 0.43 : 0.24;
+    for (const side of [-1, 1]) {
+      const pauldron = mesh(new THREE.SphereGeometry(data.id === 'golemKing' ? 0.34 : 0.23, 12, 10), plate, side * (data.id === 'golemKing' ? 0.62 : 0.38), data.id === 'golemKing' ? 1.95 : 1.38, 0);
+      pauldron.scale.set(1.1, 0.7, 0.85);
+      g.add(pauldron);
+      g.add(mesh(new THREE.SphereGeometry(0.045, 7, 6), edge, side * (data.id === 'golemKing' ? 0.62 : 0.38), data.id === 'golemKing' ? 1.98 : 1.4, frontZ));
+      if (data.id !== 'golem' && data.id !== 'golemKing') {
+        const shin = mesh(new THREE.BoxGeometry(0.2, 0.26, 0.25), plate, side * 0.16, 0.26, 0.08);
+        g.add(shin);
+      }
+    }
+    if (data.id === 'golemKing' || data.id === 'darkLord') {
+      const crownMat = mat(0x29202f, { metalness: 0.7, roughness: 0.26 });
+      for (let i = -1; i <= 1; i++) {
+        const horn = mesh(new THREE.ConeGeometry(0.09, data.id === 'darkLord' ? 0.55 : 0.42, 6), crownMat, i * 0.2, data.id === 'darkLord' ? 2.68 : 2.78, 0);
+        horn.rotation.z = -i * 0.3;
+        g.add(horn);
+      }
+      const bossHalo = mesh(new THREE.TorusGeometry(0.7, 0.035, 6, 24), acc, 0, data.id === 'darkLord' ? 2.45 : 2.55, -0.05);
+      bossHalo.rotation.x = Math.PI / 2;
+      g.add(bossHalo);
+    }
+  }
+
   g.userData.animParts = parts;
   g.scale.setScalar(s);
   g.traverse((o) => {
@@ -782,6 +827,74 @@ export function buildHeroMesh(heroId = 'arman'): THREE.Group {
     g.add(cape);
     g.userData.animParts = [{ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' }];
     g.userData.rifleTip = new THREE.Vector3(0.42, 1.05, 1.3);
+  }
+  // پاس نهایی جزئیات قهرمان: زره چندلایه، مفصل‌ها، چهره و نشان اختصاصی.
+  // این قطعات هندسه‌های بومی Three.js هستند؛ به فایل خارجی یا دانلود حین بازی نیاز ندارند.
+  const skin = mat(heroId === 'aria' ? 0xe8c8a0 : heroId === 'nila' ? 0xd8b890 : 0xc8a06a, { roughness: 0.82 });
+  const darkSteel = mat(0x202833, { metalness: 0.78, roughness: 0.28 });
+  const trimGold = mat(0xe8bd58, { metalness: 0.82, roughness: 0.24 });
+  const heroAccent = heroId === 'aria' ? 0x67e8f9 : heroId === 'nila' ? 0xc084fc : heroId === 'radin' ? 0xf87171 : 0xffb020;
+  // Boots and articulated knee guards make the silhouette read better from the isometric camera.
+  for (const side of [-1, 1]) {
+    const boot = mesh(new THREE.BoxGeometry(0.24, 0.17, 0.34), darkSteel, side * (heroId === 'radin' ? 0.23 : 0.17), 0.09, 0.08);
+    g.add(boot);
+    const knee = mesh(new THREE.SphereGeometry(0.13, 12, 10), heroId === 'aria' ? trimGold : armor, side * (heroId === 'radin' ? 0.23 : 0.17), 0.49, 0.12);
+    knee.scale.set(1, 0.78, 0.62);
+    g.add(knee);
+    const bracer = mesh(new THREE.CylinderGeometry(0.105, 0.13, 0.3, 8), heroId === 'aria' ? trimGold : darkSteel, side * 0.39, 0.96, 0.04);
+    bracer.rotation.z = side * -0.12;
+    g.add(bracer);
+    const shoulder = mesh(new THREE.SphereGeometry(heroId === 'radin' ? 0.29 : 0.21, 14, 12), heroId === 'aria' ? trimGold : armor, side * (heroId === 'radin' ? 0.51 : 0.35), 1.43, 0);
+    shoulder.scale.set(1.05, 0.72, 0.9);
+    g.add(shoulder);
+    // Small rivets on the front-facing shoulder plates.
+    g.add(mesh(new THREE.SphereGeometry(0.035, 8, 6), trimGold, side * (heroId === 'radin' ? 0.52 : 0.35), 1.46, 0.19));
+  }
+  // Layered belt, central buckle and chest emblem.
+  g.add(mesh(new THREE.CylinderGeometry(heroId === 'radin' ? 0.44 : 0.31, heroId === 'radin' ? 0.44 : 0.31, 0.12, 10), darkSteel, 0, 0.72, 0));
+  g.add(mesh(new THREE.BoxGeometry(0.16, 0.14, 0.055), trimGold, 0, 0.73, 0.24));
+  g.add(mesh(new THREE.OctahedronGeometry(heroId === 'radin' ? 0.12 : 0.095), glow(heroAccent), 0, heroId === 'aria' ? 1.28 : 1.2, 0.29));
+  // Facial details face the +Z camera direction.
+  g.add(mesh(new THREE.SphereGeometry(0.035, 8, 8), darkSteel, -0.085, heroId === 'aria' ? 1.68 : heroId === 'nila' ? 1.6 : heroId === 'radin' ? 1.75 : 1.62, 0.225));
+  g.add(mesh(new THREE.SphereGeometry(0.035, 8, 8), darkSteel, 0.085, heroId === 'aria' ? 1.68 : heroId === 'nila' ? 1.6 : heroId === 'radin' ? 1.75 : 1.62, 0.225));
+  if (heroId === 'arman') {
+    // Commander crest, engraved breastplate and a layered shoulder cape.
+    const crest = mesh(new THREE.ConeGeometry(0.11, 0.42, 5), trimGold, 0, 2.0, 0);
+    crest.rotation.z = Math.PI;
+    g.add(crest);
+    for (const side of [-1, 1]) {
+      const feather = mesh(new THREE.BoxGeometry(0.08, 0.42, 0.04), mat(0x8f2428, { roughness: 0.75 }), side * 0.18, 1.74, -0.23);
+      feather.rotation.z = side * 0.28;
+      g.add(feather);
+    }
+  } else if (heroId === 'aria') {
+    // Floating arcane runes around the staff crystal.
+    for (let i = 0; i < 3; i++) {
+      const a = i * Math.PI * 2 / 3;
+      const rune = mesh(new THREE.TetrahedronGeometry(0.075), glow(heroAccent), 0.48 + Math.cos(a) * 0.27, 2.1 + Math.sin(a) * 0.18, 0.05);
+      g.add(rune);
+    }
+  } else if (heroId === 'radin') {
+    // Heavy shoulder plates and riveted war-hammer head.
+    for (const side of [-1, 1]) {
+      const spike = mesh(new THREE.ConeGeometry(0.085, 0.28, 5), trimGold, side * 0.55, 1.7, 0);
+      spike.rotation.z = side * -0.45;
+      g.add(spike);
+    }
+    g.add(mesh(new THREE.BoxGeometry(0.48, 0.07, 0.31), darkSteel, 0.55, 1.8, 0.2));
+  } else if (heroId === 'nila') {
+    // Hood rim, quiver and glowing bow grip.
+    const rim = mesh(new THREE.TorusGeometry(0.235, 0.035, 6, 18), trimGold, 0, 1.62, -0.02);
+    rim.rotation.x = Math.PI / 2;
+    g.add(rim);
+    const quiver = mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.55, 7), darkSteel, -0.3, 1.05, -0.25);
+    quiver.rotation.z = -0.22;
+    g.add(quiver);
+    for (let i = 0; i < 3; i++) {
+      const arrow = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.62, 4), trimGold, -0.34 + i * 0.04, 1.38, -0.25);
+      arrow.rotation.z = -0.1;
+      g.add(arrow);
+    }
   }
   g.traverse((o) => {
     o.userData.selectable = true;
