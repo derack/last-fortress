@@ -50,6 +50,66 @@ export interface PreloadReport {
  * a draw call for every enemy in a wave. Keep weapons separate for procedural
  * prop-swing, and keep tower pivots/VFX meshes separate for gameplay animation.
  */
+let sharedSurfaceMaps: { color: THREE.CanvasTexture; bump: THREE.CanvasTexture } | null = null;
+
+function getSharedSurfaceMaps() {
+  if (sharedSurfaceMaps || typeof document === 'undefined') return sharedSurfaceMaps;
+  const size = 128;
+  const makeCanvas = (bump: boolean) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const image = ctx.createImageData(size, size);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        // Smooth periodic fields tile seamlessly; no high-frequency colored speckles.
+        const wave = Math.sin((x / size) * Math.PI * 8 + Math.sin((y / size) * Math.PI * 4) * 0.7)
+          + Math.cos((y / size) * Math.PI * 6 + Math.sin((x / size) * Math.PI * 2) * 0.45)
+          + 0.45 * Math.sin(((x + y) / size) * Math.PI * 12);
+        const value = bump ? 128 + wave * 13 : 237 + wave * 3.2;
+        const i = (y * size + x) * 4;
+        image.data[i] = image.data[i + 1] = image.data[i + 2] = Math.max(0, Math.min(255, value));
+        image.data[i + 3] = 255;
+      }
+    }
+    ctx.putImageData(image, 0, 0);
+    return canvas;
+  };
+  const colorCanvas = makeCanvas(false);
+  const bumpCanvas = makeCanvas(true);
+  if (!colorCanvas || !bumpCanvas) return null;
+  const color = new THREE.CanvasTexture(colorCanvas);
+  color.colorSpace = THREE.SRGBColorSpace;
+  color.wrapS = color.wrapT = THREE.RepeatWrapping;
+  color.anisotropy = 4;
+  const bump = new THREE.CanvasTexture(bumpCanvas);
+  bump.colorSpace = THREE.NoColorSpace;
+  bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
+  bump.anisotropy = 4;
+  sharedSurfaceMaps = { color, bump };
+  return sharedSurfaceMaps;
+}
+
+function ensureProceduralUV(geometry: THREE.BufferGeometry) {
+  if (geometry.getAttribute('uv')) return;
+  const position = geometry.getAttribute('position');
+  const normal = geometry.getAttribute('normal');
+  if (!position) return;
+  const uv = new Float32Array(position.count * 2);
+  for (let i = 0; i < position.count; i++) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i);
+    const nx = normal?.getX(i) ?? 0, ny = normal?.getY(i) ?? 0, nz = normal?.getZ(i) ?? 0;
+    let u: number, v: number;
+    if (Math.abs(ny) > 0.72) { u = x + 0.5; v = z + 0.5; }
+    else if (Math.abs(nz) >= Math.abs(nx)) { u = x + 0.5; v = y + 0.5; }
+    else { u = z + 0.5; v = y + 0.5; }
+    uv[i * 2] = u;
+    uv[i * 2 + 1] = v;
+  }
+  geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+}
+
 function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['category']) {
   if (category === 'heroes') return; // preserve existing authored hero hierarchy/rigs
   let hasSkin = false;
@@ -57,6 +117,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
   if (hasSkin) return;
 
   scene.updateMatrixWorld(true);
+  const maps = getSharedSurfaceMaps();
   const tower = category === 'towers';
   const keepTowerNodes = new Set(['spincrystal', 'spinring', 'ember']);
   const keepWeapon = /weapon|blade|bow|staff|gun|cannon/i;
@@ -73,6 +134,20 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
   scene.traverse((o) => {
     const mesh = o as THREE.Mesh;
     if (!mesh.isMesh || !mesh.geometry || !mesh.material) return;
+    ensureProceduralUV(mesh.geometry);
+    if (maps) {
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const material of materials) {
+        const standard = material as THREE.MeshStandardMaterial;
+        if (!standard.isMeshStandardMaterial) continue;
+        if (!standard.map) standard.map = maps.color;
+        if (!standard.bumpMap) {
+          standard.bumpMap = maps.bump;
+          standard.bumpScale = category === 'bosses' ? 0.04 : 0.025;
+        }
+        standard.needsUpdate = true;
+      }
+    }
     const name = mesh.name.toLowerCase();
     if (tower ? keepTowerNodes.has(name) : keepWeapon.test(name)) return;
     if (Array.isArray(mesh.material)) return; // retain unusual multi-material meshes safely
