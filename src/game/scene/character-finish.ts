@@ -24,8 +24,10 @@ const energy = (color: number) =>
 function part(geometry: THREE.BufferGeometry, material: THREE.Material, position: [number, number, number]) {
   const object = new THREE.Mesh(geometry, material);
   object.position.set(...position);
-  object.castShadow = true;
-  object.receiveShadow = true;
+  // These are tiny decorative armor details; casting a shadow from every rivet
+  // multiplies shadow draw calls and can create shimmering self-shadow acne.
+  object.castShadow = false;
+  object.receiveShadow = false;
   return object;
 }
 

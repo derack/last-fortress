@@ -96,16 +96,16 @@ export class BattleScene {
     this.scene = new THREE.Scene();
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: quality === 'high' || quality === 'ultra',
+      antialias: quality === 'ultra',
       powerPreference: 'high-performance',
     });
-    const pixelRatio = quality === 'low' ? 1 : quality === 'medium' ? Math.min(1.5, window.devicePixelRatio) : Math.min(2, window.devicePixelRatio);
+    const pixelRatio = quality === 'low' ? 1 : Math.min(1.35, window.devicePixelRatio || 1);
     this.renderer.setPixelRatio(pixelRatio);
     this.targetRatio = pixelRatio;
     this.currentRatio = pixelRatio;
     this.lastRenderAt = performance.now();
     this.renderer.shadowMap.enabled = quality !== 'low';
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.05;
@@ -141,14 +141,15 @@ export class BattleScene {
     sun.position.set(-30, 45, -20);
     if (this.renderer.shadowMap.enabled) {
       sun.castShadow = true;
-      const shadowSize = quality === 'ultra' ? 2048 : 1024;
+      const shadowSize = quality === 'ultra' ? 1024 : 768;
       sun.shadow.mapSize.set(shadowSize, shadowSize);
       sun.shadow.camera.left = -55;
       sun.shadow.camera.right = 55;
       sun.shadow.camera.top = 55;
       sun.shadow.camera.bottom = -55;
       sun.shadow.camera.far = 130;
-      sun.shadow.bias = -0.0004;
+      sun.shadow.bias = -0.00015;
+      sun.shadow.normalBias = 0.035;
     }
     this.scene.add(sun);
 
@@ -265,81 +266,53 @@ export class BattleScene {
   // ------------------- زمین -------------------
 
   private buildGround(night: boolean) {
+    // Calm, broad material variation instead of thousands of colored speckles.
     const c = document.createElement('canvas');
     c.width = c.height = 512;
     const ctx = c.getContext('2d')!;
     const base = night ? this.theme.groundNight : this.theme.groundDay;
     const dot = night ? this.theme.groundDotNight : this.theme.groundDotDay;
     ctx.fillStyle = base;
-    ctx.fillRect(0, 0, 256, 256);
-    const rnd = (seed: number) => {
-      let s = seed;
-      return () => {
-        s = (s * 16807) % 2147483647;
-        return s / 2147483647;
-      };
+    ctx.fillRect(0, 0, 512, 512);
+
+    let seed = 12345;
+    const rand = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
     };
-    const r = rnd(12345);
-    const density = this.level.env === 'volcano' || this.level.env === 'citadel' ? 2600 : 3600;
-    for (let i = 0; i < density; i++) {
-      const x = r() * 256;
-      const y = r() * 256;
-      const tone = 0.85 + r() * 0.3;
-      const [dr, dg, db] = dot.split(',').map(Number);
-      ctx.fillStyle = `rgba(${Math.round(dr * tone)},${Math.round(dg * tone)},${Math.round(db * tone)},0.5)`;
-      ctx.fillRect(x, y, 2 + r() * 3, 2 + r() * 3);
-    }
-    // لکه‌های بزرگ نرم — بافت زمین یکنواخت نباشد (چمن/خاک/خاکستر)
-    const blobs = 26;
-    const [br, bg, bb] = dot.split(',').map(Number);
-    for (let i = 0; i < blobs; i++) {
-      const x = r() * 256;
-      const y = r() * 256;
-      const rad = 14 + r() * 30;
-      const dark = r() > 0.5;
-      const grad = ctx.createRadialGradient(x, y, 2, x, y, rad);
-      const a = 0.1 + r() * 0.1;
-      grad.addColorStop(0, dark ? `rgba(${Math.round(br * 0.55)},${Math.round(bg * 0.55)},${Math.round(bb * 0.55)},${a})` : `rgba(${Math.min(255, br * 1.45)},${Math.min(255, bg * 1.45)},${Math.min(255, bb * 1.45)},${a})`);
-      grad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = grad;
+    const [dr, dg, db] = dot.split(',').map(Number);
+    // Large, low-contrast patches provide texture without a polka-dot look.
+    for (let i = 0; i < 22; i++) {
+      const x = rand() * 512;
+      const y = rand() * 512;
+      const radius = 35 + rand() * 80;
+      const shade = rand() > 0.5 ? 1.12 : 0.72;
+      const alpha = 0.035 + rand() * 0.035;
+      const gradient = ctx.createRadialGradient(x, y, radius * 0.08, x, y, radius);
+      gradient.addColorStop(0, `rgba(${Math.min(255, Math.round(dr * shade))},${Math.min(255, Math.round(dg * shade))},${Math.min(255, Math.round(db * shade))},${alpha})`);
+      gradient.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(x, y, rad, 0, Math.PI * 2);
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
     }
-    // Fine surface breakup: grass strokes, wind-scoured ice, and ash/stone fissures.
-    const harshGround = this.level.env === 'volcano' || this.level.env === 'citadel' || this.level.env === 'wastes';
-    const detailCount = this.quality === 'low' ? 500 : this.quality === 'medium' ? 1400 : 2600;
-    for (let i = 0; i < detailCount; i++) {
-      const x = r() * 512;
-      const y = r() * 512;
-      if (harshGround) {
-        ctx.strokeStyle = this.level.env === 'volcano'
-          ? (r() > 0.65 ? 'rgba(255,92,35,0.20)' : 'rgba(10,7,7,0.24)')
-          : 'rgba(12,10,16,0.18)';
-        ctx.lineWidth = 0.6 + r() * 1.5;
+    // Only a few broad directional marks on ice/rock; no random bright flecks.
+    if (this.level.env === 'tundra' || this.level.env === 'volcano' || this.level.env === 'wastes') {
+      ctx.strokeStyle = this.level.env === 'tundra' ? 'rgba(245,252,255,0.055)' : 'rgba(8,6,6,0.07)';
+      ctx.lineWidth = 1.2;
+      for (let i = 0; i < 90; i++) {
+        const x = rand() * 512;
+        const y = rand() * 512;
+        const len = 8 + rand() * 24;
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.lineTo(x + (r() - 0.5) * 14, y + 2 + r() * 13);
-        ctx.stroke();
-      } else if (this.level.env === 'tundra') {
-        ctx.strokeStyle = 'rgba(245,252,255,0.20)';
-        ctx.lineWidth = 0.7 + r() * 1.2;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + 2 + r() * 12, y + (r() - 0.5) * 3);
-        ctx.stroke();
-      } else {
-        ctx.strokeStyle = night ? 'rgba(135,170,92,0.12)' : 'rgba(183,210,116,0.18)';
-        ctx.lineWidth = 0.7 + r() * 1.3;
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + (r() - 0.5) * 4, y - 2 - r() * 5);
+        ctx.lineTo(x + len, y + (rand() - 0.5) * 3);
         ctx.stroke();
       }
     }
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(14, 14);
+    tex.repeat.set(5, 5);
     tex.colorSpace = THREE.SRGBColorSpace;
 
     const ground = new THREE.Mesh(
@@ -367,7 +340,7 @@ export class BattleScene {
       const b = pts[i + 1];
       const dir = b.clone().sub(a).normalize();
       const side = new THREE.Vector3(-dir.z, 0, dir.x).multiplyScalar(width);
-      const y = 0.05 + (i % 2) * 0.006; // جلوگیری از z-fighting در همپوشانی
+      const y = 0.065; // one stable plane; alternating heights caused visible striping/flicker
       // چهار راس کوارت
       positions.push(
         a.x + side.x, y, a.z + side.z,
@@ -390,44 +363,8 @@ export class BattleScene {
     pathMesh.receiveShadow = this.renderer.shadowMap.enabled;
     this.scene.add(pathMesh);
 
-    // دیسک‌های اتصال در پیچ‌ها — پوشش گوشه‌ها
-    const discPositions: number[] = [];
-    const discIndices: number[] = [];
-    let dvi = 0;
-    const SIDES = 10;
-    for (let i = 0; i < pts.length; i++) {
-      const p = pts[i];
-      const y = 0.048;
-      for (let s = 0; s < SIDES; s++) {
-        const a1 = (s / SIDES) * Math.PI * 2;
-        const a2 = ((s + 1) / SIDES) * Math.PI * 2;
-        discPositions.push(p.x, y, p.z);
-        discPositions.push(p.x + Math.cos(a1) * width, y, p.z + Math.sin(a1) * width);
-        discPositions.push(p.x + Math.cos(a2) * width, y, p.z + Math.sin(a2) * width);
-        discIndices.push(dvi, dvi + 2, dvi + 1); // winding صحیح رو به بالا
-        dvi += 3;
-      }
-    }
-    const discGeo = new THREE.BufferGeometry();
-    discGeo.setAttribute('position', new THREE.Float32BufferAttribute(discPositions, 3));
-    discGeo.setIndex(discIndices);
-    discGeo.computeVertexNormals();
-    const discMesh = new THREE.Mesh(discGeo, mat);
-    discMesh.receiveShadow = this.renderer.shadowMap.enabled;
-    this.scene.add(discMesh);
-
-    // سنگ‌فرش کنار مسیر + نشانگرهای جادویی — رنگ کریستال تم
-    const runeColor = this.theme.crystal;
-    for (let i = 0; i < pts.length; i += 6) {
-      const p = pts[i];
-      const rune = new THREE.Mesh(
-        new THREE.CircleGeometry(0.5, 6),
-        new THREE.MeshBasicMaterial({ color: runeColor, transparent: true, opacity: night ? 0.55 : 0.4, blending: THREE.AdditiveBlending, depthWrite: false })
-      );
-      rune.rotation.x = -Math.PI / 2;
-      rune.position.set(p.x, 0.09, p.z);
-      this.scene.add(rune);
-    }
+    // Avoid overlapping coplanar disc geometry here: the old layer shimmered
+    // against the ribbon and looked like repeated spots along the route.
 
     // سنگ‌ریزه لبه مسیر — مرز بصری مسیر (InstancedMesh — هزینه نزدیک صفر)
     if (this.quality !== 'low') {
@@ -486,35 +423,9 @@ export class BattleScene {
     const r = rnd(777);
     const theme = this.theme;
 
-    // Seasonal/biome atmosphere: lightweight particles and large readable landmarks.
-    // Each environment receives its own palette and silhouette family.
-    const particleCount = this.quality === 'low' ? 140 : this.quality === 'medium' ? 360 : this.quality === 'high' ? 680 : 1050;
-    const particlePositions = new Float32Array(particleCount * 3);
-    this.ambientVelocity = new Float32Array(particleCount);
-    for (let i = 0; i < particleCount; i++) {
-      particlePositions[i * 3] = (r() - 0.5) * 76;
-      particlePositions[i * 3 + 1] = 0.8 + r() * 13;
-      particlePositions[i * 3 + 2] = (r() - 0.5) * 76;
-      this.ambientVelocity[i] = 0.25 + r() * (this.level.env === 'volcano' ? 1.25 : 0.45);
-    }
-    const particleGeo = new THREE.BufferGeometry();
-    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-    const particleColor = this.level.env === 'volcano' ? 0xff7138
-      : this.level.env === 'tundra' ? 0xc9efff
-      : this.level.env === 'forest' ? 0x8cf0a0
-      : this.level.env === 'citadel' ? 0xc5a6ff
-      : this.level.env === 'wastes' ? 0xe7c78d : 0xc9f5ff;
-    this.ambientFx = new THREE.Points(particleGeo, new THREE.PointsMaterial({
-      color: particleColor,
-      size: this.quality === 'ultra' ? 0.095 : 0.065,
-      transparent: true,
-      opacity: this.level.env === 'volcano' ? 0.62 : 0.42,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      sizeAttenuation: true,
-    }));
-    this.ambientFx.frustumCulled = false;
-    this.scene.add(this.ambientFx);
+    // Keep atmosphere architectural and grounded; avoid full-screen colored particle speckles.
+    this.ambientFx = null;
+    this.ambientVelocity = null;
 
     // Distinct biome landmarks, visible from the isometric camera.
     // Instanced meshes keep draw calls low on mobile.
@@ -564,7 +475,7 @@ export class BattleScene {
     // Warm ember lighting / cool ice bounce makes each biome read differently.
     if (this.level.env === 'tundra' || this.level.env === 'volcano' || this.level.env === 'citadel') {
       const fillColor = this.level.env === 'tundra' ? 0x72cfff : this.level.env === 'volcano' ? 0xff4b24 : 0x9c63ff;
-      const fill = new THREE.PointLight(fillColor, night ? 7 : 3.5, 34, 1.8);
+      const fill = new THREE.PointLight(fillColor, night ? 2.5 : 1.25, 30, 2);
       fill.position.set(-15, 5, 12);
       this.scene.add(fill);
     }
@@ -655,15 +566,12 @@ export class BattleScene {
       c.scale.setScalar(0.8 + r() * 0.5);
       this.scene.add(c);
       this.decorSpinners.push({ obj: c, speed: 0.5 + r() });
-      const l = new THREE.PointLight(theme.crystal, night ? 6 : 3, 8, 1.8);
-      l.position.set(s.x, 1.4, s.z);
-      this.scene.add(l);
     }
 
     // نور قرمز آتشفشان
     if (this.level.env === 'volcano') {
       for (const s of [{ x: -18, z: -18 }, { x: 20, z: 20 }]) {
-        const glow = new THREE.PointLight(0xff5a1f, night ? 14 : 8, 18, 1.6);
+        const glow = new THREE.PointLight(0xff5a1f, night ? 4 : 2.2, 16, 2);
         glow.position.set(s.x, 1, s.z);
         this.scene.add(glow);
       }
@@ -718,22 +626,6 @@ export class BattleScene {
       }
     }
 
-    // Animate environmental snow, embers, spores and dust with biome-specific motion.
-    if (this.ambientFx && this.ambientVelocity) {
-      const positions = this.ambientFx.geometry.getAttribute('position') as THREE.BufferAttribute;
-      const values = positions.array as Float32Array;
-      for (let i = 0; i < this.ambientVelocity.length; i++) {
-        const k = i * 3;
-        const velocity = this.ambientVelocity[i];
-        values[k] += Math.sin(this.portalPulse + i * 0.17) * dt * 0.12;
-        values[k + 1] += (this.level.env === 'volcano' ? 1 : this.level.env === 'tundra' ? -0.7 : -0.15) * velocity * dt;
-        if (values[k + 1] > 14) values[k + 1] = 0.6;
-        if (values[k + 1] < 0.4) values[k + 1] = 13.5;
-      }
-      positions.needsUpdate = true;
-      this.ambientFx.rotation.y += dt * (this.level.env === 'volcano' ? 0.018 : 0.006);
-    }
-
     // کریستال‌های محیط
     for (const d of this.decorSpinners) {
       d.obj.rotation.y += dt * d.speed * 0.4;
@@ -770,14 +662,19 @@ export class BattleScene {
 
   dispose() {
     this.scene.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
+      if (o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.Line) {
         o.geometry.dispose();
-        const m = o.material;
-        if (Array.isArray(m)) m.forEach((mm) => mm.dispose());
-        else m.dispose();
+        const materials = Array.isArray(o.material) ? o.material : [o.material];
+        for (const material of materials) {
+          // Dispose textures as well as materials when a battle scene is torn down.
+          for (const value of Object.values(material)) {
+            if (value instanceof THREE.Texture) value.dispose();
+          }
+          material.dispose();
+        }
       }
     });
+    this.scene.environment?.dispose();
     this.renderer.dispose();
-    this.renderer.forceContextLoss();
   }
 }
