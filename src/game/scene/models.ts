@@ -1496,7 +1496,7 @@ export function buildCrystal(color = 0x22d3ee): THREE.Group {
     color, emissive: color, emissiveIntensity: 0.42,
     roughness: 0.24, metalness: 0.08, clearcoat: 0.72, clearcoatRoughness: 0.18,
   });
-  const deepFacet = mat(0x193545, { roughness: 0.32, metalness: 0.18 });
+  const deepFacet = mat(new THREE.Color(color).multiplyScalar(0.28).getHex(), { roughness: 0.32, metalness: 0.18 });
   const base = mesh(new THREE.DodecahedronGeometry(0.42, 0), deepFacet, 0, 0.18, 0);
   base.scale.set(1.3, 0.55, 1.15);
   g.add(base);
