@@ -87,8 +87,6 @@ interface GameState {
   tutorialStep: string | null;
   toasts: { id: number; key: string; type: string }[];
   battleActive: boolean;
-  /** گالری کاراکترها (صفحه توسعه‌دهنده) */
-  galleryOpen: boolean;
   /** مرحله در انتظار شروع — پیش‌فرض منطقه ۱ */
   pendingLevelId: string;
   /** قهرمان انتخابی برای نبرد بعدی */
@@ -105,7 +103,6 @@ interface GameState {
   handleEvent: (event: string, payload: unknown) => void;
   pushToast: (key: string, type: string) => void;
   resetAll: () => void;
-  setGalleryOpen: (v: boolean) => void;
   setPendingLevel: (id: string) => void;
   setSelectedHero: (id: string) => void;
   unlockHero: (id: string, cost: number) => boolean;
@@ -146,7 +143,6 @@ export const useGameStore = create<GameState>((set, get) => ({
   tutorialStep: null,
   toasts: [],
   battleActive: false,
-  galleryOpen: false,
   pendingLevelId: 'c1s1',
   selectedHero: 'arman',
 
@@ -311,8 +307,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     setLanguage(save.settings.language);
     set({ save });
   },
-
-  setGalleryOpen: (v: boolean) => set({ galleryOpen: v }),
 
   setPendingLevel: (id) => set({ pendingLevelId: id }),
 

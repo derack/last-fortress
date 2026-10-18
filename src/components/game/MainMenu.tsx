@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Swords, Map as MapIcon, Users, Trophy, Settings, Gem, Boxes, X, Flame } from 'lucide-react';
+import { Swords, Map as MapIcon, Users, Trophy, Settings, Gem, X, Flame } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { t, faNum } from '@/game/data/i18n';
 
@@ -15,7 +15,7 @@ import { t, faNum } from '@/game/data/i18n';
 //   openPage / closePage → باز و بستن صفحات از داخل iframe
 // ============================================================
 
-type PageId = 'map' | 'heroes' | 'forge' | 'achievements' | 'settings' | 'gallery';
+type PageId = 'map' | 'heroes' | 'forge' | 'achievements' | 'settings';
 
 const PAGES: { id: PageId; icon: React.ComponentType<{ className?: string }>; labelKey: string }[] = [
   { id: 'map', icon: MapIcon, labelKey: 'campaign' },
@@ -23,7 +23,6 @@ const PAGES: { id: PageId; icon: React.ComponentType<{ className?: string }>; la
   { id: 'forge', icon: Flame, labelKey: 'forge' },
   { id: 'achievements', icon: Trophy, labelKey: 'achievements' },
   { id: 'settings', icon: Settings, labelKey: 'settings' },
-  { id: 'gallery', icon: Boxes, labelKey: 'gallery' },
 ];
 
 export function MainMenu({ onStart }: { onStart: () => void }) {

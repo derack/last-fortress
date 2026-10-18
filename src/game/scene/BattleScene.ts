@@ -82,6 +82,12 @@ export class BattleScene {
   private ambientFx: THREE.Points | null = null;
   private ambientVelocity: Float32Array | null = null;
   private quality: 'low' | 'medium' | 'high' | 'ultra' = 'medium';
+  // تفکیک‌پذیری تطبیقی — روی دستگاه ضعیف خودکار پایین می‌آید تا لگ حذف شود
+  private targetRatio = 1;
+  private currentRatio = 1;
+  private lastRenderAt = 0;
+  private perfAccum = 0;
+  private perfFrames = 0;
   private theme: EnvTheme;
   private level: LevelData;
 
@@ -95,6 +101,9 @@ export class BattleScene {
     });
     const pixelRatio = quality === 'low' ? 1 : quality === 'medium' ? Math.min(1.5, window.devicePixelRatio) : Math.min(2, window.devicePixelRatio);
     this.renderer.setPixelRatio(pixelRatio);
+    this.targetRatio = pixelRatio;
+    this.currentRatio = pixelRatio;
+    this.lastRenderAt = performance.now();
     this.renderer.shadowMap.enabled = quality !== 'low';
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -736,7 +745,27 @@ export class BattleScene {
   }
 
   render(camera: THREE.PerspectiveCamera) {
+    const now = performance.now();
+    const frameMs = now - this.lastRenderAt;
+    this.lastRenderAt = now;
     this.renderer.render(this.scene, camera);
+    // نمونه‌گیری هر ~۱ ثانیه — بالا/پایین کردن تدریجی رزولوشن
+    if (frameMs > 0 && frameMs < 1000) {
+      this.perfAccum += frameMs;
+      this.perfFrames++;
+    }
+    if (this.perfFrames >= 50) {
+      const avg = this.perfAccum / this.perfFrames;
+      this.perfAccum = 0;
+      this.perfFrames = 0;
+      if (avg > 23 && this.currentRatio > 0.8) {
+        this.currentRatio = Math.max(0.8, this.currentRatio - 0.25);
+        this.renderer.setPixelRatio(this.currentRatio);
+      } else if (avg < 15 && this.currentRatio < this.targetRatio) {
+        this.currentRatio = Math.min(this.targetRatio, this.currentRatio + 0.25);
+        this.renderer.setPixelRatio(this.currentRatio);
+      }
+    }
   }
 
   dispose() {

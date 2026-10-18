@@ -8,7 +8,6 @@ import { HeroesPanel } from './HeroesPanel';
 import { ForgePanel } from './ForgePanel';
 import { AchievementsPanel } from './AchievementsPanel';
 import { SettingsPanel } from './SettingsPanel';
-import { CharacterGallery } from './CharacterGallery';
 
 // ============================================================
 // صفحه مستقل — هر پنل به‌صورت روت مجزا برای نمایش در iframe
@@ -21,10 +20,10 @@ import { CharacterGallery } from './CharacterGallery';
 // ذخیره‌سازی مشترک از طریق localStorage همگام می‌ماند.
 // ============================================================
 
-export type StandalonePageId = 'map' | 'heroes' | 'forge' | 'achievements' | 'settings' | 'gallery';
+export type StandalonePageId = 'map' | 'heroes' | 'forge' | 'achievements' | 'settings';
 
 export function isStandalonePage(v: string): v is StandalonePageId {
-  return ['map', 'heroes', 'forge', 'achievements', 'settings', 'gallery'].includes(v);
+  return ['map', 'heroes', 'forge', 'achievements', 'settings'].includes(v);
 }
 
 // ------------------------------------------------------------
@@ -121,7 +120,6 @@ export function StandaloneScreen({ id }: { id: StandalonePageId }) {
         {id === 'forge' && <ForgePanel />}
         {id === 'achievements' && <AchievementsPanel />}
         {id === 'settings' && <SettingsPanel />}
-        {id === 'gallery' && <CharacterGallery onClose={closePage} />}
       </div>
     </PanelErrorBoundary>
   );

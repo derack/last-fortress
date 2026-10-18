@@ -14,7 +14,6 @@ import { SettingsPanel } from './SettingsPanel';
 import { AchievementsPanel } from './AchievementsPanel';
 import { HeroesPanel } from './HeroesPanel';
 import { ForgePanel } from './ForgePanel';
-import { CharacterGallery } from './CharacterGallery';
 import type { SaveData } from '@/game/data/types';
 
 // ============================================================
@@ -37,8 +36,6 @@ export function GameShell() {
   const screen = useGameStore((s) => s.screen);
   const battleActive = useGameStore((s) => s.battleActive);
   const victory = useGameStore((s) => s.victory);
-  const galleryOpen = useGameStore((s) => s.galleryOpen);
-  const setGalleryOpen = useGameStore((s) => s.setGalleryOpen);
 
   // ---------- Splash / بارگذاری Asset (بخش ۱۴) ----------
   const [booting, setBooting] = useState(true);
@@ -66,13 +63,6 @@ export function GameShell() {
       cancelled = true;
     };
   }, []);
-
-  // ---------- گالری با پارامتر URL (?gallery=1) ----------
-  useEffect(() => {
-    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('gallery')) {
-      setGalleryOpen(true);
-    }
-  }, [setGalleryOpen]);
 
   // راه‌اندازی ذخیره
   useEffect(() => {
@@ -195,8 +185,6 @@ export function GameShell() {
       {screen === 'achievements' && <AchievementsPanel />}
       {screen === 'heroes' && <HeroesPanel />}
       {screen === 'forge' && <ForgePanel />}
-
-      {galleryOpen && <CharacterGallery onClose={() => setGalleryOpen(false)} />}
 
       {/* Splash / بارگذاری Asset */}
       {booting && (

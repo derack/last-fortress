@@ -8,10 +8,9 @@ import { notFound } from 'next/navigation';
 //   /page/forge        کوره اثیر (ارتقاهای دائمی)
 //   /page/achievements دستاوردها
 //   /page/settings     تنظیمات
-//   /page/gallery      گالری کاراکترها
 // ============================================================
 
-const PAGE_IDS = ['map', 'heroes', 'forge', 'achievements', 'settings', 'gallery'] as const;
+const PAGE_IDS = ['map', 'heroes', 'forge', 'achievements', 'settings'] as const;
 
 export function generateStaticParams() {
   return PAGE_IDS.map((screen) => ({ screen }));
