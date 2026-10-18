@@ -70,21 +70,21 @@ function getTowerUpgradeGeometry(level: number): THREE.BufferGeometry {
     geometry.applyMatrix4(scale);
     add(geometry, x, y, z, 0, x * 1.8, z * 1.8);
   };
-  ring(0.72, 1.62, 0.045);
+  ring(0.72, 2.35, 0.045);
   if (level >= 3) {
     for (let i = 0; i < 3; i++) {
       const a = i / 3 * Math.PI * 2;
-      crystal(Math.cos(a) * 0.72, 1.86, Math.sin(a) * 0.72, 0.17);
+      crystal(Math.cos(a) * 0.72, 2.58, Math.sin(a) * 0.72, 0.17);
     }
   }
   if (level >= 4) {
-    ring(0.95, 2.02, 0.03);
+    ring(0.95, 2.88, 0.03);
     for (let i = 0; i < 4; i++) {
       const a = i / 4 * Math.PI * 2 + Math.PI / 4;
-      crystal(Math.cos(a) * 0.94, 2.14, Math.sin(a) * 0.94, 0.12);
+      crystal(Math.cos(a) * 0.94, 2.98, Math.sin(a) * 0.94, 0.12);
     }
   }
-  if (level >= 5) crystal(0, 2.34, 0, 0.24);
+  if (level >= 5) crystal(0, 3.18, 0, 0.24);
   const merged = mergeGeometries(parts, false);
   for (const part of parts) part.dispose();
   const geometry = merged ?? new THREE.OctahedronGeometry(0.1, 0);
