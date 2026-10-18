@@ -416,72 +416,65 @@ export class BattleScene {
 
   private buildPathMesh(pts: THREE.Vector3[], night: boolean) {
     const width = 3.0;
-    const segs = pts.length - 1;
 
-    // A wider dark compacted-earth shoulder gives the route a readable, beveled edge.
-    // It sits below the road surface, so the two layers never compete in depth.
-    const shoulderPositions: number[] = [];
-    const shoulderIndices: number[] = [];
-    let shoulderVertex = 0;
-    for (let i = 0; i < segs; i++) {
-      const a = pts[i], b = pts[i + 1];
-      const dir = b.clone().sub(a).normalize();
-      const side = new THREE.Vector3(-dir.z, 0, dir.x).multiplyScalar(3.55);
-      const y = -0.012;
-      shoulderPositions.push(
-        a.x + side.x, y, a.z + side.z,
-        a.x - side.x, y, a.z - side.z,
-        b.x + side.x, y, b.z + side.z,
-        b.x - side.x, y, b.z - side.z
-      );
-      shoulderIndices.push(shoulderVertex, shoulderVertex + 2, shoulderVertex + 1, shoulderVertex + 1, shoulderVertex + 2, shoulderVertex + 3);
-      shoulderVertex += 4;
-    }
-    const shoulderGeo = new THREE.BufferGeometry();
-    shoulderGeo.setAttribute('position', new THREE.Float32BufferAttribute(shoulderPositions, 3));
-    shoulderGeo.setIndex(shoulderIndices);
-    shoulderGeo.computeVertexNormals();
+    // Build a single continuous mitered ribbon per route. Independent segment quads
+    // overlapped at corners and could shimmer; shared vertices remove those seams.
+    const createRibbon = (halfWidth: number, y: number) => {
+      const positions: number[] = [];
+      const uvs: number[] = [];
+      const indices: number[] = [];
+      let distance = 0;
+      for (let i = 0; i < pts.length; i++) {
+        const prev = pts[Math.max(0, i - 1)];
+        const next = pts[Math.min(pts.length - 1, i + 1)];
+        const tangent = next.clone().sub(prev).setY(0).normalize();
+        const side = new THREE.Vector3(-tangent.z, 0, tangent.x);
+        if (i > 0) distance += pts[i].distanceTo(pts[i - 1]);
+        let miter = 1;
+        if (i > 0 && i < pts.length - 1) {
+          const d0 = pts[i].clone().sub(prev).setY(0).normalize();
+          const d1 = next.clone().sub(pts[i]).setY(0).normalize();
+          const side0 = new THREE.Vector3(-d0.z, 0, d0.x);
+          const side1 = new THREE.Vector3(-d1.z, 0, d1.x);
+          const averaged = side0.add(side1).normalize();
+          const denom = Math.max(0.55, Math.abs(averaged.dot(side)));
+          miter = Math.min(1.45, 1 / denom);
+          side.copy(averaged);
+        }
+        const ox = side.x * halfWidth * miter;
+        const oz = side.z * halfWidth * miter;
+        positions.push(pts[i].x + ox, y, pts[i].z + oz, pts[i].x - ox, y, pts[i].z - oz);
+        uvs.push(0, distance / 7, 1, distance / 7);
+        if (i < pts.length - 1) {
+          const v = i * 2;
+          indices.push(v, v + 2, v + 1, v + 1, v + 2, v + 3);
+        }
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      geometry.setIndex(indices);
+      geometry.computeVertexNormals();
+      return geometry;
+    };
+
+    // Dark compacted-earth shoulder beneath the road, creating a clear beveled edge.
     const shoulderColor = this.level.env === 'tundra' ? 0x586873
       : this.level.env === 'volcano' ? 0x211815
       : this.level.env === 'citadel' ? 0x292332
       : this.level.env === 'wastes' ? 0x554a3b
       : night ? 0x302d27 : 0x514638;
-    const shoulder = new THREE.Mesh(shoulderGeo, new THREE.MeshStandardMaterial({ color: shoulderColor, roughness: 1 }));
+    const shoulder = new THREE.Mesh(createRibbon(3.55, -0.012),
+      new THREE.MeshStandardMaterial({ color: shoulderColor, roughness: 1 }));
     shoulder.receiveShadow = this.renderer.shadowMap.enabled;
     shoulder.castShadow = false;
     this.scene.add(shoulder);
 
-    // هر سگمنت یک کوارت مستقل — بدون تاخوردگی در پیچ‌ها
-    const positions: number[] = [];
-    const uvs: number[] = [];
-    const indices: number[] = [];
-    let vi = 0;
-    for (let i = 0; i < segs; i++) {
-      const a = pts[i];
-      const b = pts[i + 1];
-      const dir = b.clone().sub(a).normalize();
-      const side = new THREE.Vector3(-dir.z, 0, dir.x).multiplyScalar(width);
-      const y = 0.065; // one stable plane; alternating heights caused visible striping/flicker
-      // چهار راس کوارت
-      positions.push(
-        a.x + side.x, y, a.z + side.z,
-        a.x - side.x, y, a.z - side.z,
-        b.x + side.x, y, b.z + side.z,
-        b.x - side.x, y, b.z - side.z
-      );
-      uvs.push(0, 0, 1, 0, 0, 1, 1, 1);
-      indices.push(vi, vi + 2, vi + 1, vi + 1, vi + 2, vi + 3);
-      vi += 4;
-    }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-    geo.setIndex(indices);
-    geo.computeVertexNormals();
-
-    const mat = new THREE.MeshStandardMaterial({ color: night ? this.theme.pathNight : this.theme.pathDay, roughness: 1 });
-    const pathMesh = new THREE.Mesh(geo, mat);
+    const pathMesh = new THREE.Mesh(createRibbon(width, 0.065),
+      new THREE.MeshStandardMaterial({ color: night ? this.theme.pathNight : this.theme.pathDay, roughness: 0.98, metalness: 0 }));
     pathMesh.receiveShadow = this.renderer.shadowMap.enabled;
+    pathMesh.castShadow = false;
+    pathMesh.name = 'ContinuousRoadSurface';
     this.scene.add(pathMesh);
 
     // Avoid overlapping coplanar disc geometry here: the old layer shimmered
