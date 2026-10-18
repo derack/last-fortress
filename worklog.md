@@ -625,3 +625,21 @@ Stage Summary:
 - download/Last-Fortress-v1.3.1-release.apk (7,451,208 bytes) — فیکس‌های کاربر + صدا + گرافیک
 - لینک: https://uploadkon.ir/uploads/acc818_26Last-Fortress-v1-3-1.zip
 - محیط بازسازی شد؛ keystore امن دوباره فقط محلی است
+
+---
+Task ID: 28
+Agent: main
+Task: «بیلد بگیر» — ادغام شاخه aaa-art-direction-2026-10-18 (۷۰ کامیت) + بیلد v1.4
+
+Work Log:
+- fetch: شاخه جدید aaa-art-direction-2026-10-18 با ۷۰ کامیت (جاده/کوه/کریستال/سیلوآپ برج‌ها/GLB fidelity/گالری QA)؛ 45 فایل، +1558/-147؛ void.glb جدید؛ بدون تداخل
+- merge به main؛ نسخه 1.4 (versionCode 6)
+- sandbox برای بار دوم android-tools را پاک کرد → JDK+SDK دوباره دانلود/نصب شد (جریان تکرارپذیر Task 27)؛ keystore دوباره از 327863e بازیابی (اثر انگشت تایید)؛ .env از قبل سالم بود
+- build:cap (10 مسیر استاتیک شامل assets-preview) + cap sync + gradle ✓ (2m50s)
+- APK: 7,885,921 bytes، 35 GLB، 22 mp3، امضای همان گواهی
+- push main (2663951) → CI خودکار؛ آپلود uploadkon تایید شد
+
+Stage Summary:
+- download/Last-Fortress-v1.4-release.apk (7.5MB)
+- لینک: https://uploadkon.ir/uploads/8e2318_26LF-v1-4.zip
+- بازیابی محیط حالا رویه‌ای است: دانلود + استخراج + keystore از تاریخچه گیت
