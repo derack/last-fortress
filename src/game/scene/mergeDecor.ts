@@ -131,7 +131,11 @@ export function mergeDecorGroups(
       }
       // یکنواخت‌سازی: همه non-indexed با position/normal/uv — شرط mergeGeometries
       let geo = me.geometry.clone();
-      if (geo.index) geo = geo.toNonIndexed();
+      if (geo.index) {
+        const nonIndexed = geo.toNonIndexed();
+        geo.dispose();
+        geo = nonIndexed;
+      }
       for (const key of Object.keys(geo.attributes)) {
         if (key !== 'position' && key !== 'normal' && key !== 'uv') geo.deleteAttribute(key);
       }
