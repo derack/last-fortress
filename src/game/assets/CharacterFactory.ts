@@ -180,6 +180,7 @@ function propagateTowerUdataFromGlb(model: THREE.Object3D, root: THREE.Object3D)
     });
     const found = exact ?? alias;
     if (found) root.userData[k] = found;
+    else delete root.userData[k]; // never keep detached placeholder pivots after a GLB swap
   }
 }
 
