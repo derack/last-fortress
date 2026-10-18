@@ -5,7 +5,7 @@ import path from 'node:path';
 const root = process.cwd();
 const manifestPath = path.join(root, 'src/game/assets/AssetManifest.ts');
 const manifest = fs.readFileSync(manifestPath, 'utf8');
-const referenced = [...manifest.matchAll(/file:\s*'([^']+\\.glb)'/g)].map((m) => m[1]);
+const referenced = [...manifest.matchAll(/file:\s*'([^']+\.glb)'/g)].map((m) => m[1]);
 const failures = [];
 const warnings = [];
 const checked = new Set();
@@ -64,7 +64,7 @@ function validate(file) {
 }
 
 for (const url of referenced) {
-  const file = path.join(root, 'public', url.replace(/^\\//, ''));
+  const file = path.join(root, 'public', (url.startsWith('/') ? url.slice(1) : url));
   if (!fs.existsSync(file)) {
     failures.push(`Missing manifest asset: public${url}`);
     continue;
