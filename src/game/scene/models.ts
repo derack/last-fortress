@@ -831,6 +831,96 @@ export function buildEnemyMesh(data: EnemyData, tier: number): THREE.Group {
     }
   }
 
+  // Bespoke armor/material pass for each newly added enemy archetype.
+  // These are real Three.js meshes (not flat sprites), kept lightweight for Android.
+  if (['boneReaver', 'plagueHound', 'voidArcher', 'ironBrute', 'frostWraith', 'emberDrake', 'hexPriest', 'siegeCrawler', 'abyssBehemoth'].includes(data.id)) {
+    const darkArmor = mat(data.id === 'frostWraith' ? 0x263d55 : data.id === 'emberDrake' ? 0x43221e : 0x242832, { metalness: 0.72, roughness: 0.3 });
+    const brightTrim = mat(data.id === 'boneReaver' ? 0xd6d3d1 : data.id === 'ironBrute' || data.id === 'siegeCrawler' ? 0xaab4c0 : data.color, { metalness: 0.74, roughness: 0.28 });
+    if (data.id === 'boneReaver') {
+      // Bone ribs and a skull-like crown.
+      for (let i = 0; i < 3; i++) {
+        const rib = mesh(new THREE.TorusGeometry(0.22 + i * 0.035, 0.035, 5, 12, Math.PI), brightTrim, 0, 0.82 + i * 0.13, 0.2);
+        rib.rotation.z = Math.PI;
+        g.add(rib);
+      }
+      for (const side of [-1, 1]) g.add(mesh(new THREE.ConeGeometry(0.07, 0.24, 5), brightTrim, side * 0.16, 1.78, -0.02));
+    } else if (data.id === 'plagueHound') {
+      // Toxic dorsal spines and cheek glands.
+      for (let i = 0; i < 5; i++) {
+        const spine = mesh(new THREE.ConeGeometry(0.08, 0.28 + (i % 2) * 0.08, 5), acc, (i - 2) * 0.18, 1.0, -0.38 + i * 0.08);
+        spine.rotation.z = (i - 2) * -0.12;
+        g.add(spine);
+      }
+      for (const side of [-1, 1]) g.add(mesh(new THREE.SphereGeometry(0.12, 8, 7), acc, side * 0.3, 0.95, 0.42));
+    } else if (data.id === 'voidArcher') {
+      // A visible back quiver with glowing arrowheads.
+      const quiver = mesh(new THREE.CylinderGeometry(0.1, 0.13, 0.58, 7), darkArmor, -0.34, 1.1, -0.24);
+      quiver.rotation.z = -0.2;
+      g.add(quiver);
+      for (let i = 0; i < 3; i++) {
+        const arrow = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.5, 4), brightTrim, -0.39 + i * 0.05, 1.42, -0.25);
+        arrow.rotation.z = -0.12;
+        g.add(arrow);
+        g.add(mesh(new THREE.ConeGeometry(0.035, 0.11, 4), acc, -0.39 + i * 0.05, 1.7, -0.25));
+      }
+    } else if (data.id === 'ironBrute') {
+      // Heavy layered shoulder plates and rivets.
+      for (const side of [-1, 1]) {
+        const plate = mesh(new THREE.BoxGeometry(0.48, 0.34, 0.48), darkArmor, side * 0.62, 1.62, 0);
+        plate.rotation.z = side * -0.12;
+        g.add(plate);
+        for (let i = 0; i < 3; i++) g.add(mesh(new THREE.SphereGeometry(0.045, 6, 6), brightTrim, side * (0.49 + i * 0.12), 1.68, 0.25));
+      }
+      g.add(mesh(new THREE.BoxGeometry(0.42, 0.18, 0.1), acc, 0, 1.42, 0.42));
+    } else if (data.id === 'frostWraith') {
+      // Floating ice shards frame the spectral silhouette.
+      for (let i = 0; i < 5; i++) {
+        const a = i * Math.PI * 2 / 5;
+        const shard = mesh(new THREE.OctahedronGeometry(0.12 + (i % 2) * 0.045), acc, Math.cos(a) * 0.58, 1.15 + Math.sin(a) * 0.48, Math.sin(a) * 0.5);
+        shard.rotation.set(a, a * 0.6, -a * 0.4);
+        g.add(shard);
+      }
+    } else if (data.id === 'emberDrake') {
+      // Horns, dorsal plates and ember-lit jaw.
+      for (const side of [-1, 1]) {
+        const horn = mesh(new THREE.ConeGeometry(0.11, 0.42, 5), darkArmor, side * 0.28, 1.75, -0.08);
+        horn.rotation.z = side * -0.48;
+        g.add(horn);
+      }
+      for (let i = 0; i < 4; i++) {
+        const spike = mesh(new THREE.ConeGeometry(0.09, 0.3, 5), acc, (i - 1.5) * 0.2, 1.25, -0.38 + i * 0.08);
+        spike.rotation.x = Math.PI / 2;
+        g.add(spike);
+      }
+      g.add(mesh(new THREE.BoxGeometry(0.32, 0.09, 0.12), acc, 0, 1.18, 0.46));
+    } else if (data.id === 'hexPriest') {
+      // Crowned ritual collar and a brighter rune focus.
+      const collar = mesh(new THREE.TorusGeometry(0.38, 0.055, 6, 20), brightTrim, 0, 1.24, 0);
+      collar.rotation.x = Math.PI / 2;
+      g.add(collar);
+      g.add(mesh(new THREE.OctahedronGeometry(0.13), acc, 0, 1.95, 0.12));
+    } else if (data.id === 'siegeCrawler') {
+      // Reinforced machine armor and glowing exhaust ports.
+      for (const side of [-1, 1]) {
+        const plate = mesh(new THREE.BoxGeometry(0.52, 0.28, 0.7), darkArmor, side * 0.58, 0.78, 0);
+        plate.rotation.z = side * -0.08;
+        g.add(plate);
+        for (let i = 0; i < 2; i++) g.add(mesh(new THREE.SphereGeometry(0.11, 8, 6), acc, side * 0.6, 0.7, (i - 0.5) * 0.32));
+      }
+      g.add(mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.42, 8), brightTrim, 0, 1.05, -0.4));
+    } else if (data.id === 'abyssBehemoth') {
+      // Boss-grade layered chest armor and a three-point crown.
+      const chest = mesh(new THREE.BoxGeometry(0.7, 0.34, 0.16), darkArmor, 0, 1.45, 0.56);
+      g.add(chest);
+      g.add(mesh(new THREE.OctahedronGeometry(0.2), acc, 0, 1.48, 0.68));
+      for (let i = -1; i <= 1; i++) {
+        const horn = mesh(new THREE.ConeGeometry(0.1, 0.36, 5), brightTrim, i * 0.22, 2.72, -0.05);
+        horn.rotation.z = -i * 0.28;
+        g.add(horn);
+      }
+    }
+  }
+
   g.userData.animParts = parts;
   g.scale.setScalar(s);
   g.traverse((o) => {
