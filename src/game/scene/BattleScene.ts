@@ -79,6 +79,7 @@ export class BattleScene {
   private decorSpinners: { obj: THREE.Object3D; speed: number }[] = [];
   private portalPulse = 0;
   private starPoints: THREE.Points | null = null;
+  private ambientFx: THREE.Points | null = null;
   private quality: 'low' | 'medium' | 'high' | 'ultra' = 'medium';
   private theme: EnvTheme;
   private level: LevelData;
@@ -444,6 +445,87 @@ export class BattleScene {
     const r = rnd(777);
     const theme = this.theme;
 
+    // Seasonal/biome atmosphere: lightweight particles and large readable landmarks.
+    // Each environment receives its own palette and silhouette family.
+    const particleCount = this.quality === 'low' ? 140 : this.quality === 'medium' ? 360 : this.quality === 'high' ? 680 : 1050;
+    const particlePositions = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++) {
+      particlePositions[i * 3] = (r() - 0.5) * 76;
+      particlePositions[i * 3 + 1] = 0.8 + r() * 13;
+      particlePositions[i * 3 + 2] = (r() - 0.5) * 76;
+    }
+    const particleGeo = new THREE.BufferGeometry();
+    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    const particleColor = this.level.env === 'volcano' ? 0xff7138
+      : this.level.env === 'tundra' ? 0xc9efff
+      : this.level.env === 'forest' ? 0x8cf0a0
+      : this.level.env === 'citadel' ? 0xc5a6ff
+      : this.level.env === 'wastes' ? 0xe7c78d : 0xc9f5ff;
+    this.ambientFx = new THREE.Points(particleGeo, new THREE.PointsMaterial({
+      color: particleColor,
+      size: this.quality === 'ultra' ? 0.095 : 0.065,
+      transparent: true,
+      opacity: this.level.env === 'volcano' ? 0.62 : 0.42,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      sizeAttenuation: true,
+    }));
+    this.ambientFx.frustumCulled = false;
+    this.scene.add(this.ambientFx);
+
+    // Distinct biome landmarks, visible from the isometric camera.
+    // Instanced meshes keep draw calls low on mobile.
+    const landmarkCount = this.quality === 'low' ? 5 : this.quality === 'medium' ? 9 : 14;
+    const landmarkMat = new THREE.MeshStandardMaterial({
+      color: this.level.env === 'volcano' ? 0x30211e
+        : this.level.env === 'tundra' ? 0x9ab9ca
+        : this.level.env === 'forest' ? 0x293b30
+        : this.level.env === 'citadel' ? 0x393047
+        : this.level.env === 'wastes' ? 0x665744 : 0x4b6443,
+      roughness: 0.86,
+      metalness: this.level.env === 'citadel' || this.level.env === 'volcano' ? 0.22 : 0.04,
+    });
+    const landmarkGeo = this.level.env === 'tundra'
+      ? new THREE.ConeGeometry(0.72, 3.4, 5)
+      : this.level.env === 'forest'
+        ? new THREE.ConeGeometry(0.52, 2.6, 5)
+        : this.level.env === 'citadel'
+          ? new THREE.CylinderGeometry(0.36, 0.68, 3.5, 6)
+          : this.level.env === 'volcano'
+            ? new THREE.ConeGeometry(0.66, 2.9, 6)
+            : this.level.env === 'wastes'
+              ? new THREE.ConeGeometry(0.9, 2.2, 5)
+              : new THREE.ConeGeometry(0.48, 2.4, 6);
+    const landmarks = new THREE.InstancedMesh(landmarkGeo, landmarkMat, landmarkCount);
+    const dummy = new THREE.Object3D();
+    let placed = 0;
+    let attempts = 0;
+    while (placed < landmarkCount && attempts < landmarkCount * 12) {
+      attempts++;
+      const x = (r() - 0.5) * 61;
+      const z = (r() - 0.5) * 61;
+      if (nearPath(x, z, 6.2) || Math.hypot(x - this.corePos.x, z - this.corePos.z) < 9) continue;
+      if (Math.hypot(x, z) < 10) continue;
+      dummy.position.set(x, 1.1 + r() * 0.3, z);
+      dummy.rotation.set((r() - 0.5) * 0.1, r() * Math.PI * 2, (r() - 0.5) * 0.1);
+      const scale = 0.75 + r() * 1.1;
+      dummy.scale.set(scale * (this.level.env === 'wastes' ? 1.25 : 1), scale, scale);
+      dummy.updateMatrix();
+      landmarks.setMatrixAt(placed++, dummy.matrix);
+    }
+    landmarks.count = placed;
+    landmarks.castShadow = this.renderer.shadowMap.enabled;
+    landmarks.receiveShadow = true;
+    this.scene.add(landmarks);
+
+    // Warm ember lighting / cool ice bounce makes each biome read differently.
+    if (this.level.env === 'tundra' || this.level.env === 'volcano' || this.level.env === 'citadel') {
+      const fillColor = this.level.env === 'tundra' ? 0x72cfff : this.level.env === 'volcano' ? 0xff4b24 : 0x9c63ff;
+      const fill = new THREE.PointLight(fillColor, night ? 7 : 3.5, 34, 1.8);
+      fill.position.set(-15, 5, 12);
+      this.scene.add(fill);
+    }
+
     // کوه‌های دور — رنگ بر اساس تم
     for (let i = 0; i < 7; i++) {
       const m = buildMountain(theme === ENV_THEMES.volcano ? 'dark' : theme === ENV_THEMES.tundra ? 'snow' : theme === ENV_THEMES.citadel ? 'obsidian' : 'normal');
@@ -592,6 +674,9 @@ export class BattleScene {
         portal.rotation.z += dt * 1.2;
       }
     }
+
+    // Biome motes drift slowly to make snow/embers/spores feel alive.
+    if (this.ambientFx) this.ambientFx.rotation.y += dt * (this.level.env === 'volcano' ? 0.018 : 0.006);
 
     // کریستال‌های محیط
     for (const d of this.decorSpinners) {
