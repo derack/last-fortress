@@ -1552,9 +1552,9 @@ export function buildMountain(style: 'normal' | 'snow' | 'dark' | 'obsidian' = '
     cap.rotation.set(0.05, 0.3, -0.08);
     g.add(cap);
     const ledges: [number, number, number, number, number, number][] = [
-      [-4.4, 5.7, 2.7, 2.8, 0.22, 1.05],
-      [3.7, 6.6, 2.2, 2.2, 0.18, 0.9],
-      [0.1, 8.1, 2.45, 1.6, 0.16, 0.8],
+      [-4.4, 5.7, 6.0, 2.8, 0.22, 1.05],
+      [3.7, 6.6, 5.9, 2.2, 0.18, 0.9],
+      [0.1, 8.1, 5.3, 1.6, 0.16, 0.8],
     ];
     ledges.forEach(([x, y, z, sx, sy, sz], i) => {
       const shelf = mesh(new THREE.IcosahedronGeometry(1, 0), snowMat, x, y, z);
@@ -1565,9 +1565,9 @@ export function buildMountain(style: 'normal' | 'snow' | 'dark' | 'obsidian' = '
   } else {
     const strataMat = mat(style === 'obsidian' ? 0x14121b : 0x2b2222, { roughness: 0.98, metalness: 0.04 });
     const strata = [
-      [-4.8, 2.25, 2.4, 3.1, 0.22, 1.0],
-      [3.9, 3.0, 2.0, 2.5, 0.18, 0.85],
-      [0.4, 4.1, 2.7, 3.6, 0.16, 0.75],
+      [-4.8, 2.25, 5.8, 3.1, 0.22, 1.0],
+      [3.9, 3.0, 5.8, 2.5, 0.18, 0.85],
+      [0.4, 4.1, 5.4, 3.6, 0.16, 0.75],
     ];
     strata.forEach(([x, y, z, sx, sy, sz], i) => {
       const band = mesh(new THREE.IcosahedronGeometry(1, 0), strataMat, x, y, z);
