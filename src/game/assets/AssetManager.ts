@@ -137,9 +137,9 @@ function createStaticCharacterClips(scene: THREE.Group, category: CharacterAsset
     { node: 'tail', angles: [0, 0.18, 0, -0.18, 0], axis: y }, { node: 'head', angles: [0, 0.035, 0, -0.035, 0], axis: y },
   ];
   for (const name of names) {
-    if (/^leg\\d+[-_]?\\d+$/i.test(name)) locomotion.push({ node: name, angles: [0, 0.28, 0, -0.28, 0], axis: z });
-    if (/^(?:shard|spine|backshard|dorsalspine)\\d+$/i.test(name)) locomotion.push({ node: name, angles: [0, 0.14, 0, -0.14, 0], axis: y });
-    if (/^tendril-?\\d+$/i.test(name)) locomotion.push({ node: name, angles: [0, 0.18, 0, -0.18, 0], axis: z });
+    if (/^leg\d+[-_]?\d+$/i.test(name)) locomotion.push({ node: name, angles: [0, 0.28, 0, -0.28, 0], axis: z });
+    if (/^(?:shard|spine|backshard|dorsalspine)\d+$/i.test(name)) locomotion.push({ node: name, angles: [0, 0.14, 0, -0.14, 0], axis: y });
+    if (/^tendril-?\d+$/i.test(name)) locomotion.push({ node: name, angles: [0, 0.18, 0, -0.18, 0], axis: z });
   }
   const idle = clip('Idle', [
     { node: 'head', angles: [0, 0.025, 0, -0.025, 0], axis: y },
@@ -179,7 +179,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
   const characterRoot = scene.getObjectByName('ModelRoot') ?? scene;
   const keepTowerNodes = new Set(['spincrystal', 'spinring', 'ember']);
   const keepWeapon = /weapon|blade|bow|staff|gun|cannon/i;
-  const keepAnimatedPart = /^(?:head|torso|body|leftleg|rightleg|leftarm|rightarm|arm-1|arm1|wing-1|wing1|tail|abdomen|carapace|core|shoulder-1|shoulder1|leg\\d+[-_]?\\d+|legjoint\\d+[-_]?\\d+|tendril-?1)$/i;
+  const keepAnimatedPart = /^(?:head|torso|body|leftleg|rightleg|leftarm|rightarm|arm-1|arm1|wing-1|wing1|tail|abdomen|carapace|core|shoulder-1|shoulder1|leg\d+[-_]?\d+|legjoint\d+[-_]?\d+|tendril-?1)$/i;
   const groups = new Map<string, { parent: THREE.Object3D; material: THREE.Material; geometries: THREE.BufferGeometry[]; sources: THREE.Mesh[] }>();
   const findTowerPivot = (mesh: THREE.Object3D): THREE.Object3D => {
     let p = mesh.parent;
