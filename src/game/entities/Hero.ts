@@ -372,7 +372,7 @@ export class Hero {
     const color = this.data.projectileColor;
     const role = this.data.role;
 
-    if (role === 'berserker') {
+    if (role === 'berserker' || role === 'assassin') {
       // رادین — کلنگ سنگین با Cleave زمینی
       const hitPos = target.getPos().clone();
       this.ctx.vfx.burst(hitPos.clone().add(new THREE.Vector3(0, 1, 0)), color, 10, { speed: 5, life: 0.4, size: 0.6, gravity: 4 });
@@ -392,7 +392,7 @@ export class Hero {
       return;
     }
 
-    if (role === 'guardian') {
+    if (role === 'guardian' || role === 'mage' || role === 'support') {
       // آریا — گوی جادویی با انفجار ناحیه‌ای
       const from = this.handle.vfxWorld('weapon', this.tmpV)
         ?? this.position.clone().add(new THREE.Vector3(0, 1.4, 0));
