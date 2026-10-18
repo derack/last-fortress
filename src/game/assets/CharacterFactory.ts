@@ -41,6 +41,52 @@ const TOWER_UDATA_KEYS = ['turret', 'muzzle', 'spinCrystal', 'spinRing', 'ember'
 // from level 1 to 5 without replacing the authored base model on every upgrade.
 const towerUpgradeGeometry = new Map<number, THREE.BufferGeometry>();
 const towerUpgradeMaterials = new Map<number, THREE.MeshStandardMaterial>();
+const contactShadowGeometry = new THREE.CircleGeometry(1, 32);
+let contactShadowMaterial: THREE.MeshBasicMaterial | null = null;
+
+function getContactShadowMaterial() {
+  if (contactShadowMaterial) return contactShadowMaterial;
+  let map: THREE.CanvasTexture | undefined;
+  if (typeof document !== 'undefined') {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const gradient = ctx.createRadialGradient(32, 32, 2, 32, 32, 32);
+      gradient.addColorStop(0, 'rgba(5,8,14,0.42)');
+      gradient.addColorStop(0.55, 'rgba(5,8,14,0.2)');
+      gradient.addColorStop(1, 'rgba(5,8,14,0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 64, 64);
+      map = new THREE.CanvasTexture(canvas);
+      map.colorSpace = THREE.SRGBColorSpace;
+    }
+  }
+  contactShadowMaterial = new THREE.MeshBasicMaterial({
+    color: 0x9ca3af,
+    map,
+    transparent: true,
+    opacity: 0.72,
+    alphaTest: 0.01,
+    depthWrite: false,
+    toneMapped: false,
+    side: THREE.DoubleSide,
+  });
+  return contactShadowMaterial;
+}
+
+function addCharacterContactShadow(root: THREE.Group, entry: CharacterAssetEntry) {
+  if (entry.category !== 'enemies' && entry.category !== 'bosses') return;
+  const shadow = new THREE.Mesh(contactShadowGeometry, getContactShadowMaterial());
+  shadow.name = 'contactShadow';
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = -root.position.y + 0.018;
+  shadow.scale.set(entry.targetHeight * 0.28, entry.targetHeight * 0.18, 1);
+  shadow.renderOrder = 1;
+  shadow.castShadow = false;
+  shadow.receiveShadow = false;
+  root.add(shadow);
+}
 const TOWER_ACCENTS: Record<string, number> = {
   sentinel: 0xf0b65c, lightning: 0x9b6cff, fire: 0xff623d, ice: 0x8be7ff,
   cannon: 0xe4a45b, poison: 0x77dc77, ballista: 0xc9a16b, arcane: 0xe18aff,
@@ -225,6 +271,7 @@ export class CharacterHandle {
     // ۲) نرمال‌سازی و سوار کردن
     const norm = normalizeModel(model, entry, heightScale);
     this.root.add(norm.inner);
+    addCharacterContactShadow(this.root, entry);
     if (entry.category === 'towers') {
       const level = Number(this.root.name.match(/_l(\d+)/)?.[1] ?? 1);
       addTowerUpgradeOrnament(this.root, entry, level);
