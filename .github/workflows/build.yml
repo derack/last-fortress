@@ -2,7 +2,7 @@ name: Game Build (بیلد بازی)
 
 on:
   push:
-    branches: [main]
+    branches: [main, graphics-upgrade-2026-10-18]
   workflow_dispatch:
 
 permissions:
