@@ -389,7 +389,7 @@ export class BattleScene {
       }
       if (nearest < 5.2) {
         const t = THREE.MathUtils.smoothstep(nearest, 2.5, 5.2);
-        height = THREE.MathUtils.lerp(-0.065, height, t);
+        height = THREE.MathUtils.lerp(-0.005, height, t);
       }
       positions.setZ(i, height);
     }
