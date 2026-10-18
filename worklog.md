@@ -545,3 +545,23 @@ Stage Summary:
 - تغییر گرافیک تأیید شد — واقعی و قابل مشاهده
 - شاخه کاربر با CI سازگار است (خط java.home در نسخه شاخه حذف شده)
 - کارهای پندینگ من برای بعد از merge: حذف گالری، بهینه‌سازی لگ، بیلد APK امضاشده
+
+---
+Task ID: 24
+Agent: main (Super Z)
+Task: بیلد release از شاخه گرافیک کاربر + آپلود uploadkon.ir
+
+Work Log:
+- workflow کاربر: latest run success ✓ (کامیت‌های جدید: تکسچر terrain، پارتیکل آب‌وهوا، مانتل قهرمان‌ها، زره دشمن‌ها، تیر برج‌ها)
+- worktree به 9243433 آپدیت شد؛ keystore + keystore.properties کپی شد
+- فیکس مسیرها (cleanup سیستم): JDK → android-tools/jdk-21.0.12.1+1، SDK → android-tools/android-sdk (~/.gradle/gradle.properties + local.properties)
+- versionCode 1→2، versionName 1.0→1.1 (فقط لوکال در worktree — شاخه گیت‌هاب دست نخورده)
+- CAP_BUILD=1 build:cap ✓ → cap sync ✓ → gradlew assembleRelease ✓ (1m44s)
+- apksigner verify: همان گواهی v1.0 (SHA-256 5ee184e5...ff49) → نصب به‌صورت آپدیت
+- آپلود uploadkon (به‌صورت zip چون سرور apk قبول نمی‌کند) + پشتیبان gofile با apk مستقیم
+
+Stage Summary:
+- خروجی: download/Last-Fortress-v1.1-graphics.apk (4,216,436 bytes، v1.1، امضاشده)
+- لینک اصلی: https://uploadkon.ir/uploads/26f218_26Last-Fortress-v1-1.zip (تأیید: HTTP 200، حجم دقیق)
+- پشتیبان: https://gofile.io/d/OcsWYoor
+- پندینگ برای بعد از merge: حذف گالری، بهینه‌سازی لگ، بیلد v1.2
