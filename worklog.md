@@ -606,3 +606,22 @@ Stage Summary:
 - لینک اصلی: https://uploadkon.ir/uploads/20e018_26Last-Fortress-v1-3.zip
 - بکاپ: https://gofile.io/d/gl41qxBg
 - audio/ به گیت اضافه شد؛ بیلد CI از این به بعد هم شامل صداست
+
+---
+Task ID: 27
+Agent: main
+Task: «مجدد بیلد بگیر تغییراتی توی گیتهاب دادم» — ادغام ۴ کامیت جدید کاربر + بیلد v1.3.1
+
+Work Log:
+- fetch: کاربر ۴ کامیت روی graphics-upgrade-2026-10-18 داد (dispose نشتی replay، کاهش سایه، z-fighting مسیر، speckling) → BattleScene.ts -159/+58
+- merge بدون تداخل به main؛ نسخه → 1.3.1 (versionCode 5)
+- بحران sandbox: /home/z/my-project/android-tools (JDK+SDK) و keystore/ و ~/.git-credentials پاک شدند
+- بازیابی: keystore از کامیت قدیمی 327863e استخراج شد (اثر انگشت 5ee184e5... تایید = همان کلید نسخه‌های قبل)؛ .env هم بازگردانده شد
+- JDK 21.0.5 Temurin (198MB) + platform-36 (63MB) + build-tools_r36_linux.zip (63MB، نام صحیح با underscore) + platform-tools دانلود و android-tools از نو ساخته شد؛ licenses دستی نوشته شد
+- build:cap + cap sync + gradle assembleRelease ✓ (2m52s) — 22 mp3 + 4 GLB + امضای همان گواهی
+- push main (7db4325) → CI خودکار؛ آپلود uploadkon + تایید content-length
+
+Stage Summary:
+- download/Last-Fortress-v1.3.1-release.apk (7,451,208 bytes) — فیکس‌های کاربر + صدا + گرافیک
+- لینک: https://uploadkon.ir/uploads/acc818_26Last-Fortress-v1-3-1.zip
+- محیط بازسازی شد؛ keystore امن دوباره فقط محلی است
