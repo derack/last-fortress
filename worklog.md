@@ -473,3 +473,24 @@ Stage Summary:
 - لینک حذف فایل uploadkon: https://uploadkon.ir/go.php?go=del&cd=f9605232fa8aee72579dbf66d61102354128868c
 - نکته برای کاربر: فایل zip بعد از دانلود باید به .apk تغییر نام یابد (یا از لینک gofile استفاده کند)
 - کارهای باقی‌مانده از پیام قبلی کاربر: بهبود گرافیک موبایل / بهینه‌سازی لگ / حذف گالری کاراکتر → سپس بیلد v1.1
+
+---
+Task ID: 20
+Agent: main (Super Z)
+Task: آپلود کل پروژه روی GitHub با توکن کاربر
+
+Work Log:
+- اعتبارسنجی توکن GitHub کاربر (login: derack، scopes: repo+workflow)
+- بررسی ریپوی لوکال git (branch main، 463 فایل tracked، بدون فایل >40MB)
+- افزودن android-tools/ (532MB SDK/JDK لوکال) به .gitignore
+- کشف: keystore و keystore.properties از قبل در تاریخچه git tracked هستند → ریپو حتماً باید Private باشد
+- ساخت ریپوی خصوصی derack/last-fortress با توضیحات فارسی از طریق API
+- commit تغییرات پندینگ + push کامل تاریخچه به main
+- حذف توکن از remote URL (https://github.com/derack/last-fortress.git بدون توکن)
+- ساخت README.md دوزبانه (معرفی، استک، دستورالعمل بیلد و APK) + push مجدد با URL موقت
+- تأیید نهایی از طریق API: شاخه main در commit 71ee610
+
+Stage Summary:
+- ریپو: https://github.com/derack/last-fortress (PRIVATE)
+- شامل: کل سورس بازی + android/ + keystore + download/ (APK + اسکرین‌شات‌ها) + scripts/
+- توصیه امنیتی به کاربر: توکن در چت plaintext به اشتراک گذاشته شده → بعد از اتمام کارها regenerate شود
