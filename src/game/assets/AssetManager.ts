@@ -110,6 +110,58 @@ function ensureProceduralUV(geometry: THREE.BufferGeometry) {
   geometry.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
 }
 
+/**
+ * Lightweight runtime clips for static first-pass GLBs. These animate rigid
+ * parts rather than a skeletal rig; authored rigging/mocap remains a later art task.
+ */
+function createStaticCharacterClips(scene: THREE.Group, category: CharacterAssetEntry['category']): THREE.AnimationClip[] {
+  if (category !== 'enemies' && category !== 'bosses') return [];
+  const names = new Set<string>();
+  scene.traverse((o) => { if (o.name) names.add(o.name); });
+  const times = [0, 0.25, 0.5, 0.75, 1];
+  const q = (axis: THREE.Vector3, angle: number) => new THREE.Quaternion().setFromAxisAngle(axis, angle);
+  const track = (nodeName: string, angles: number[], axis = new THREE.Vector3(1, 0, 0)) => {
+    if (!names.has(nodeName)) return null;
+    return new THREE.QuaternionKeyframeTrack(`${nodeName}.quaternion`, times, angles.flatMap((angle) => q(axis, angle).toArray()));
+  };
+  const clip = (name: string, specs: { node: string; angles: number[]; axis?: THREE.Vector3 }[]) => {
+    const tracks = specs.map((s) => track(s.node, s.angles, s.axis)).filter((t): t is THREE.QuaternionKeyframeTrack => t !== null);
+    return new THREE.AnimationClip(name, 1, tracks);
+  };
+  const x = new THREE.Vector3(1, 0, 0), y = new THREE.Vector3(0, 1, 0), z = new THREE.Vector3(0, 0, 1);
+  const locomotion = [
+    { node: 'leftLeg', angles: [0, 0.32, 0, -0.32, 0] }, { node: 'rightLeg', angles: [0, -0.32, 0, 0.32, 0] },
+    { node: 'arm-1', angles: [0, -0.38, 0, 0.38, 0] }, { node: 'arm1', angles: [0, 0.38, 0, -0.38, 0] },
+    { node: 'leftArm', angles: [0, -0.3, 0, 0.3, 0] }, { node: 'rightArm', angles: [0, 0.3, 0, -0.3, 0] },
+    { node: 'wing-1', angles: [0, -0.42, 0, 0.42, 0], axis: z }, { node: 'wing1', angles: [0, 0.42, 0, -0.42, 0], axis: z },
+    { node: 'tail', angles: [0, 0.18, 0, -0.18, 0], axis: y }, { node: 'head', angles: [0, 0.035, 0, -0.035, 0], axis: y },
+  ];
+  const idle = clip('Idle', [
+    { node: 'head', angles: [0, 0.025, 0, -0.025, 0], axis: y },
+    { node: 'torso', angles: [0, -0.012, 0, 0.012, 0] }, { node: 'body', angles: [0, -0.012, 0, 0.012, 0] },
+    { node: 'core', angles: [0, 0.025, 0, -0.025, 0], axis: y },
+  ]);
+  const walk = clip('Walk', locomotion);
+  const attack = [
+    { node: 'arm1', angles: [0, -0.75, 0.2, 0.1, 0] }, { node: 'rightArm', angles: [0, -0.75, 0.2, 0.1, 0] },
+    { node: 'arm-1', angles: [0, 0.28, -0.12, 0, 0] }, { node: 'head', angles: [0, -0.08, 0.12, 0, 0] },
+    { node: 'tail', angles: [0, -0.28, 0.18, 0, 0], axis: y },
+  ];
+  const hit = clip('Hit', [
+    { node: 'torso', angles: [0, -0.22, 0.08, 0, 0], axis: z },
+    { node: 'body', angles: [0, -0.22, 0.08, 0, 0], axis: z }, { node: 'head', angles: [0, 0.12, -0.06, 0, 0] },
+  ]);
+  const death = clip('Death', [{ node: 'ModelRoot', angles: [0, 0.4, 1.2, 1.2, 1.2], axis: z }]);
+  if (category === 'enemies') return [idle, walk, clip('Attack', attack), hit, death];
+  return [
+    idle, walk, clip('Attack1', attack),
+    clip('Attack2', [{ node: 'arm1', angles: [0, -1.05, 0.3, -0.12, 0] }, { node: 'rightArm', angles: [0, -1.05, 0.3, -0.12, 0] }, { node: 'head', angles: [0, -0.12, 0.16, 0, 0] }, { node: 'tail', angles: [0, -0.4, 0.22, 0, 0], axis: y }]),
+    clip('SpecialAttack', [{ node: 'torso', angles: [0, -0.25, 0.3, -0.05, 0] }, { node: 'body', angles: [0, -0.25, 0.3, -0.05, 0] }, { node: 'core', angles: [0, 0.35, -0.2, 0.1, 0], axis: y }]),
+    clip('Roar', [{ node: 'head', angles: [0, -0.2, 0.28, -0.12, 0] }, { node: 'torso', angles: [0, -0.1, 0.14, -0.05, 0] }, { node: 'body', angles: [0, -0.1, 0.14, -0.05, 0] }]),
+    hit, clip('PhaseChange', [{ node: 'ModelRoot', angles: [0, 0.25, -0.2, 0.1, 0], axis: y }, { node: 'core', angles: [0, 0.5, -0.4, 0.2, 0], axis: y }]), death,
+  ];
+}
+
 function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['category']) {
   if (category === 'heroes') return; // preserve existing authored hero hierarchy/rigs
   let hasSkin = false;
@@ -121,6 +173,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
   const tower = category === 'towers';
   const keepTowerNodes = new Set(['spincrystal', 'spinring', 'ember']);
   const keepWeapon = /weapon|blade|bow|staff|gun|cannon/i;
+  const keepAnimatedPart = /^(?:head|torso|body|leftleg|rightleg|leftarm|rightarm|arm-1|arm1|wing-1|wing1|tail|abdomen|carapace|core|shoulder-1|shoulder1|leg\\d+[-_]?\\d+|legjoint\\d+[-_]?\\d+|tendril-?1)$/i;
   const groups = new Map<string, { parent: THREE.Object3D; material: THREE.Material; geometries: THREE.BufferGeometry[]; sources: THREE.Mesh[] }>();
   const findTowerPivot = (mesh: THREE.Object3D): THREE.Object3D => {
     let p = mesh.parent;
@@ -149,7 +202,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
       }
     }
     const name = mesh.name.toLowerCase();
-    if (tower ? keepTowerNodes.has(name) : keepWeapon.test(name)) return;
+    if (tower ? keepTowerNodes.has(name) : (keepWeapon.test(name) || keepAnimatedPart.test(name))) return;
     if (Array.isArray(mesh.material)) return; // retain unusual multi-material meshes safely
 
     const parent = tower ? findTowerPivot(mesh) : scene;
@@ -240,6 +293,7 @@ class AssetManagerImpl {
       .then((gltf) => {
         const scene = gltf.scene;
         optimizeStaticAsset(scene, entry.category);
+        const runtimeClips = (gltf.animations ?? []).length > 0 ? gltf.animations : createStaticCharacterClips(scene, entry.category);
         scene.visible = true;
         // فراداده استاندارد روی ریشه Asset
         scene.userData.assetId = entry.id;
@@ -252,11 +306,11 @@ class AssetManagerImpl {
         const rec: AssetCacheRecord = {
           status: 'ready',
           source: scene,
-          animations: gltf.animations ?? [],
+          animations: runtimeClips,
           loadedAt: performance.now(),
         };
         this.setStatus(entry.id, rec);
-        console.info(`[AssetManager] GLB بارگذاری شد: ${entry.id} (${entry.file}) — ${rec.animations.length} انیمیشن`);
+        console.info(`[AssetManager] GLB بارگذاری شد: ${entry.id} (${entry.file}) — ${rec.animations.length} کلیپ (GLB/پروسیجرال)`);
         return rec;
       })
       .catch((err: unknown) => {
