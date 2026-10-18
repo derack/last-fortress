@@ -158,9 +158,6 @@ export class BattleScene {
     rim.position.set(28, 18, 26);
     this.scene.add(rim);
 
-    // زمین
-    this.buildGround(night);
-
     // مسیرها — ۱ تا ۳ مسیر حمله، همه به هسته ختم می‌شوند
     const pathDefs = level.paths?.length ? level.paths : [level.paths ?? []];
     for (const def of pathDefs) {
@@ -174,6 +171,9 @@ export class BattleScene {
     this.curve = this.paths[0].curve;
     this.pathPoints = this.paths[0].points;
     this.pathLength = this.paths[0].length;
+
+    // Sculpt the ground after paths exist so the terrain naturally settles around the route.
+    this.buildGround(night);
 
     // هسته آذر (انتهای مشترک همه مسیرها)
     const endPts = this.paths[0].points;
@@ -266,62 +266,150 @@ export class BattleScene {
   // ------------------- زمین -------------------
 
   private buildGround(night: boolean) {
-    // Calm, broad material variation instead of thousands of colored speckles.
-    const c = document.createElement('canvas');
-    c.width = c.height = 512;
-    const ctx = c.getContext('2d')!;
-    const base = night ? this.theme.groundNight : this.theme.groundDay;
-    const dot = night ? this.theme.groundDotNight : this.theme.groundDotDay;
-    ctx.fillStyle = base;
-    ctx.fillRect(0, 0, 512, 512);
+    // Art-directed biome ground: broad painterly strata, restrained micro-detail,
+    // and shallow sculpting that blends into the road instead of a flat green plane.
+    const size = 1024;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    let seed = 12345;
-    const rand = () => {
-      seed = (seed * 16807) % 2147483647;
-      return seed / 2147483647;
+    const env = this.level.env;
+    const palette: Record<RegionEnv, { base: string; mid: string; light: string; dark: string; soil: string }> = {
+      plains:  { base: night ? '#202c20' : '#405b32', mid: night ? '#293927' : '#587343', light: night ? '#34452b' : '#71834b', dark: '#263025', soil: '#65513a' },
+      forest:  { base: night ? '#101a13' : '#203a25', mid: night ? '#19271b' : '#2d4d31', light: night ? '#243322' : '#42613a', dark: '#121b15', soil: '#514233' },
+      tundra:  { base: night ? '#303f4b' : '#a9bec9', mid: night ? '#3b4d59' : '#c4d5dc', light: night ? '#50636c' : '#e2e9e8', dark: '#71858e', soil: '#788b96' },
+      volcano: { base: night ? '#1b1110' : '#30221e', mid: night ? '#2a1714' : '#473027', light: night ? '#3a2119' : '#604033', dark: '#160f0e', soil: '#171414' },
+      wastes:  { base: night ? '#25241f' : '#6a604d', mid: night ? '#302e26' : '#83745b', light: night ? '#40392c' : '#a18c6a', dark: '#4c463a', soil: '#514435' },
+      citadel: { base: night ? '#100e18' : '#272332', mid: night ? '#1a1524' : '#383146', light: night ? '#282035' : '#51465b', dark: '#17131f', soil: '#40333d' },
     };
-    const [dr, dg, db] = dot.split(',').map(Number);
-    // Large, low-contrast patches provide texture without a polka-dot look.
-    for (let i = 0; i < 22; i++) {
-      const x = rand() * 512;
-      const y = rand() * 512;
-      const radius = 35 + rand() * 80;
-      const shade = rand() > 0.5 ? 1.12 : 0.72;
-      const alpha = 0.035 + rand() * 0.035;
-      const gradient = ctx.createRadialGradient(x, y, radius * 0.08, x, y, radius);
-      gradient.addColorStop(0, `rgba(${Math.min(255, Math.round(dr * shade))},${Math.min(255, Math.round(dg * shade))},${Math.min(255, Math.round(db * shade))},${alpha})`);
-      gradient.addColorStop(1, 'rgba(0,0,0,0)');
+    const p = palette[env];
+    ctx.fillStyle = p.base;
+    ctx.fillRect(0, 0, size, size);
+
+    // Wide, overlapping pigment fields create material depth without a dotted/noisy look.
+    let seed = 78123 + Object.keys(ENV_THEMES).indexOf(env) * 991;
+    const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+    const colors = [p.mid, p.light, p.dark, p.soil];
+    for (let i = 0; i < 34; i++) {
+      const x = rand() * size;
+      const y = rand() * size;
+      const rx = 45 + rand() * 170;
+      const ry = 30 + rand() * 135;
+      const gradient = ctx.createRadialGradient(x, y, 2, x, y, Math.max(rx, ry));
+      const col = colors[i % colors.length];
+      const alpha = i % 4 === 1 ? 0.14 : 0.075;
+      gradient.addColorStop(0, col + Math.round(alpha * 255).toString(16).padStart(2, '0'));
+      gradient.addColorStop(1, col + '00');
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate((rand() - 0.5) * 1.4);
+      ctx.scale(1, ry / rx);
       ctx.fillStyle = gradient;
       ctx.beginPath();
-      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.arc(0, 0, rx, 0, Math.PI * 2);
       ctx.fill();
+      ctx.restore();
     }
-    // Only a few broad directional marks on ice/rock; no random bright flecks.
-    if (this.level.env === 'tundra' || this.level.env === 'volcano' || this.level.env === 'wastes') {
-      ctx.strokeStyle = this.level.env === 'tundra' ? 'rgba(245,252,255,0.055)' : 'rgba(8,6,6,0.07)';
-      ctx.lineWidth = 1.2;
-      for (let i = 0; i < 90; i++) {
-        const x = rand() * 512;
-        const y = rand() * 512;
-        const len = 8 + rand() * 24;
+
+    // A small number of long, broken contour strokes read as erosion / strata at game scale.
+    if (env === 'tundra' || env === 'volcano' || env === 'wastes' || env === 'citadel') {
+      ctx.lineCap = 'round';
+      for (let i = 0; i < 26; i++) {
+        const x = rand() * size;
+        const y = rand() * size;
+        const len = 35 + rand() * 145;
+        ctx.strokeStyle = env === 'tundra' ? 'rgba(245,250,255,0.10)' : 'rgba(8,6,6,0.12)';
+        ctx.lineWidth = 1 + rand() * 3;
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.lineTo(x + len, y + (rand() - 0.5) * 3);
+        ctx.bezierCurveTo(x + len * 0.25, y - 4, x + len * 0.55, y + 5, x + len, y + (rand() - 0.5) * 12);
         ctx.stroke();
       }
     }
-    const tex = new THREE.CanvasTexture(c);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(5, 5);
-    tex.colorSpace = THREE.SRGBColorSpace;
 
-    const ground = new THREE.Mesh(
-      new THREE.PlaneGeometry(160, 160),
-      new THREE.MeshStandardMaterial({ map: tex, roughness: 1, metalness: 0 })
-    );
-    ground.rotation.x = -Math.PI / 2;
+    const map = new THREE.CanvasTexture(canvas);
+    map.wrapS = map.wrapT = THREE.RepeatWrapping;
+    map.repeat.set(2.8, 2.8);
+    map.colorSpace = THREE.SRGBColorSpace;
+    map.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+
+    // Subtle grayscale relief derived from broad shapes, not sharp speckle noise.
+    const bumpCanvas = document.createElement('canvas');
+    bumpCanvas.width = bumpCanvas.height = 256;
+    const bctx = bumpCanvas.getContext('2d');
+    if (bctx) {
+      bctx.fillStyle = '#808080';
+      bctx.fillRect(0, 0, 256, 256);
+      for (let i = 0; i < 30; i++) {
+        const x = rand() * 256, y = rand() * 256, radius = 12 + rand() * 38;
+        const shade = Math.round(105 + rand() * 48);
+        const g = bctx.createRadialGradient(x, y, 0, x, y, radius);
+        g.addColorStop(0, `rgb(${shade},${shade},${shade})`);
+        g.addColorStop(1, 'rgba(128,128,128,0)');
+        bctx.fillStyle = g;
+        bctx.beginPath(); bctx.arc(x, y, radius, 0, Math.PI * 2); bctx.fill();
+      }
+    }
+    const bump = new THREE.CanvasTexture(bumpCanvas);
+    bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
+    bump.repeat.copy(map.repeat);
+    bump.colorSpace = THREE.NoColorSpace;
+
+    // A modestly subdivided mesh gives the terrain a real silhouette; the road
+    // corridor is flattened against all active paths to prevent floating roads.
+    const segments = this.quality === 'low' ? 48 : 80;
+    const geometry = new THREE.PlaneGeometry(160, 160, segments, segments);
+    const positions = geometry.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < positions.count; i++) {
+      const x = positions.getX(i);
+      const z = -positions.getY(i);
+      const broad = Math.sin(x * 0.095 + 0.7) * Math.cos(z * 0.08 - 0.4)
+        + Math.sin((x + z) * 0.047) * 0.65
+        + Math.cos((x - z) * 0.031) * 0.45;
+      const edge = Math.max(0, (Math.max(Math.abs(x), Math.abs(z)) - 30) / 50);
+      let height = -0.045 + broad * 0.026 + edge * edge * 0.09;
+      let nearest = 999;
+      for (const path of this.paths) {
+        for (let j = 0; j < path.points.length; j += 2) {
+          const pt = path.points[j];
+          const d = Math.hypot(pt.x - x, pt.z - z);
+          if (d < nearest) nearest = d;
+        }
+      }
+      if (nearest < 5.2) {
+        const t = THREE.MathUtils.smoothstep(nearest, 2.5, 5.2);
+        height = THREE.MathUtils.lerp(-0.065, height, t);
+      }
+      positions.setZ(i, height);
+    }
+    geometry.computeVertexNormals();
+    geometry.rotateX(-Math.PI / 2);
+
+    const groundMaterial = new THREE.MeshStandardMaterial({
+      map,
+      bumpMap: bump,
+      bumpScale: env === 'tundra' ? 0.045 : 0.075,
+      roughness: 0.96,
+      metalness: env === 'citadel' || env === 'volcano' ? 0.08 : 0.015,
+    });
+    const ground = new THREE.Mesh(geometry, groundMaterial);
     ground.receiveShadow = this.renderer.shadowMap.enabled;
+    ground.castShadow = false;
+    ground.frustumCulled = true;
+    ground.name = 'SculptedBiomeTerrain';
     this.scene.add(ground);
+
+    // Darker outer earth lip makes the playable board feel like a designed diorama,
+    // while remaining understated and cheap to render.
+    const rim = new THREE.Mesh(
+      new THREE.CylinderGeometry(82, 84, 1.15, 64, 1, true),
+      new THREE.MeshStandardMaterial({ color: env === 'tundra' ? 0x536571 : env === 'volcano' ? 0x211614 : env === 'citadel' ? 0x201a2b : env === 'wastes' ? 0x4b4031 : 0x253126, roughness: 1, side: THREE.DoubleSide })
+    );
+    rim.position.y = -0.56;
+    rim.receiveShadow = false;
+    rim.castShadow = false;
+    this.scene.add(rim);
   }
 
   // ------------------- مسیر -------------------
