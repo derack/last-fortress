@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { TOWERS } from '../data/towers';
 import type { EnemyData } from '../data/types';
+import { finishEnemyModel, finishHeroModel } from './character-finish';
 
 // ============================================================
 // سازنده مدل‌های سه‌بعدی سبک «واقع‌گرایی سبک‌پردازی‌شده»
@@ -921,6 +922,7 @@ export function buildEnemyMesh(data: EnemyData, tier: number): THREE.Group {
     }
   }
 
+  finishEnemyModel(g, data.id);
   g.userData.animParts = parts;
   g.scale.setScalar(s);
   g.traverse((o) => {
@@ -1226,6 +1228,7 @@ export function buildHeroMesh(heroId = 'arman'): THREE.Group {
   g.traverse((o) => {
     o.userData.selectable = true;
   });
+  finishHeroModel(g, heroId);
   return g;
 }
 
