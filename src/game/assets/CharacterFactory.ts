@@ -167,13 +167,52 @@ function propagateTowerUdata(from: THREE.Object3D, to: THREE.Object3D) {
 
 /** جستجوی گره برج داخل مدل GLB با نام فازی و انتقال به ریشه */
 function propagateTowerUdataFromGlb(model: THREE.Object3D, root: THREE.Object3D) {
+  // Replace stale references from the procedural placeholder with nodes from the
+  // newly mounted GLB. Keep exact matches preferred, with muzzlePoint as a valid muzzle alias.
   for (const k of TOWER_UDATA_KEYS) {
     const nk = k.toLowerCase();
+    let exact: THREE.Object3D | undefined;
+    let alias: THREE.Object3D | undefined;
     model.traverse((o) => {
       const n = o.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (n === nk && root.userData[k] === undefined) root.userData[k] = o;
+      if (n === nk) exact = o;
+      else if (k === 'muzzle' && n === 'muzzlepoint') alias = o;
     });
+    const found = exact ?? alias;
+    if (found) root.userData[k] = found;
   }
+}
+
+const towerSpinRingGeometry = new THREE.TorusGeometry(0.82, 0.04, 6, 28);
+
+function ensureTowerSpinRing(root: THREE.Object3D, entry: CharacterAssetEntry) {
+  const turret = root.userData.turret as THREE.Object3D | undefined;
+  if (!turret) return;
+  const color = TOWER_ACCENTS[entry.id] ?? 0x9bdcff;
+  let material = towerUpgradeMaterials.get(color);
+  if (!material) {
+    material = new THREE.MeshStandardMaterial({
+      color, emissive: color, emissiveIntensity: 0.16,
+      metalness: 0.5, roughness: 0.36,
+    });
+    towerUpgradeMaterials.set(color, material);
+  }
+  let ring = root.userData.spinRing as THREE.Mesh | undefined;
+  if (!ring?.isMesh) {
+    ring = new THREE.Mesh(towerSpinRingGeometry, material);
+    ring.name = 'spinRing';
+    turret.add(ring);
+  } else {
+    ring.geometry = towerSpinRingGeometry;
+    ring.material = material;
+  }
+  ring.position.set(0, 0.55, 0);
+  ring.rotation.set(Math.PI / 2, 0, 0);
+  // A slight ellipse makes rotation visible; a perfect circle spinning on its axis reads as static.
+  ring.scale.set(1, 0.78, 1);
+  ring.castShadow = false;
+  ring.receiveShadow = false;
+  root.userData.spinRing = ring;
 }
 
 export interface VFXPointAccessor {
@@ -287,7 +326,10 @@ export class CharacterHandle {
     this.root.traverse((o) => {
       o.userData.selectable = true;
     });
-    if (entry.category === 'towers') propagateTowerUdataFromGlb(model, this.root);
+    if (entry.category === 'towers') {
+      propagateTowerUdataFromGlb(model, this.root);
+      ensureTowerSpinRing(this.root, entry);
+    }
 
     // ۴) انیمیشن و VFX واقعی
     //    GLB انیمیشن‌دار → میکسر اسکلتی | GLB استاتیک → حرکت پروسیجرال بدنه‌صلب
