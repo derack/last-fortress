@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { LevelData, RegionEnv } from '../data/types';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { buildCoreMesh, buildRiftMesh, buildTree, buildRock, buildHouse, buildCrystal, buildMountain, buildPineTree, buildDeadTree, buildDebris, buildObsidianRock } from './models';
+import { mergeDecorGroups } from './mergeDecor';
 
 // ============================================================
 // صحنه نبرد — زمین، مسیر دشمن (Curve)، هسته آذر، دروازه، محیط
@@ -546,6 +547,7 @@ export class BattleScene {
     };
     const r = rnd(777);
     const theme = this.theme;
+    const naturalProps: THREE.Object3D[] = [];
 
     // Keep atmosphere architectural and grounded; avoid full-screen colored particle speckles.
     this.ambientFx = null;
@@ -670,7 +672,7 @@ export class BattleScene {
         tree.position.set(x, 0, z);
         tree.scale.setScalar(0.7 + r() * 0.8);
         tree.rotation.y = r() * Math.PI;
-        this.scene.add(tree);
+        naturalProps.push(tree);
       }
     }
 
@@ -683,7 +685,17 @@ export class BattleScene {
         ? buildObsidianRock(0.5 + r())
         : buildRock(0.5 + r());
       rock.position.set(x, 0, z);
-      this.scene.add(rock);
+      naturalProps.push(rock);
+    }
+
+    // Batch the static tree/rock silhouettes by equivalent PBR material.
+    // This keeps the richer environment affordable on mid-range Android devices.
+    for (const merged of mergeDecorGroups(naturalProps, {
+      castShadow: this.renderer.shadowMap.enabled,
+      receiveShadow: this.renderer.shadowMap.enabled,
+    })) {
+      merged.name = 'BatchedNaturalEnvironment';
+      this.scene.add(merged);
     }
 
     // سازه‌ها بر اساس تم
