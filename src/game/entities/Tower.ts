@@ -369,8 +369,13 @@ export class Tower implements TowerLike {
     this.spinPhase += dt;
     const ud = this.mesh.userData;
     if (ud.spinCrystal) {
-      ud.spinCrystal.rotation.y += dt * 1.5;
-      ud.spinCrystal.position.y += Math.sin(this.spinPhase * 2) * 0.003;
+      const crystal = ud.spinCrystal as THREE.Object3D;
+      const baseY = typeof crystal.userData.baseY === 'number'
+        ? crystal.userData.baseY
+        : (crystal.userData.baseY = crystal.position.y);
+      crystal.rotation.y += dt * 1.5;
+      // Absolute offset around the captured rest position; never accumulate drift frame-to-frame.
+      crystal.position.y = baseY + Math.sin(this.spinPhase * 2) * 0.025;
     }
     if (ud.spinRing) ud.spinRing.rotation.z += dt * 1.2;
   }
