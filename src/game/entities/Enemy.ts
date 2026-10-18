@@ -533,7 +533,7 @@ export class Enemy implements DamageableEnemy {
       a.z + (b.z - a.z) * f
     );
     // The soft shadow remains on the terrain even when a flying unit bobs above it.
-    const contactShadow = this.mesh.getObjectByName('contactShadow');
+    const contactShadow = this.mesh.userData.contactShadow as THREE.Object3D | undefined;
     if (contactShadow) contactShadow.position.y = -this.mesh.position.y + 0.073;
     // چرخش به سمت جلو
     if (i < pts.length - 1) {
