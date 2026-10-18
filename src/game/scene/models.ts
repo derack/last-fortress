@@ -686,6 +686,60 @@ export function buildEnemyMesh(data: EnemyData, tier: number): THREE.Group {
     const shoulderR = mesh(new THREE.SphereGeometry(0.28, 8, 8), mat(0x241d30, { metalness: 0.6 }), -0.55, 1.95, 0);
     g.add(shoulderL, shoulderR);
     parts.push({ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' });
+  } else {
+    // Expanded roster: distinct procedural silhouettes for newly added enemy archetypes.
+    if (['plagueHound', 'frostWraith', 'emberDrake'].includes(data.id)) {
+      const airborne = data.id !== 'plagueHound';
+      const beast = mesh(new THREE.SphereGeometry(data.id === 'emberDrake' ? 0.48 : 0.4, 10, 8), body, 0, airborne ? 1.1 : 0.65, 0);
+      beast.scale.set(1, data.id === 'frostWraith' ? 1.25 : 0.8, 1.35); g.add(beast);
+      const head = mesh(new THREE.ConeGeometry(0.22, 0.55, 5), body, 0, airborne ? 1.55 : 0.85, 0.42); head.rotation.x = Math.PI / 2; g.add(head);
+      for (const side of [-1, 1]) {
+        g.add(mesh(new THREE.SphereGeometry(0.07, 7, 6), acc, side * 0.14, airborne ? 1.55 : 0.82, 0.65));
+        const wing = mesh(new THREE.BoxGeometry(0.9, 0.06, 0.35), mat(data.id === 'emberDrake' ? 0x451a03 : 0x164e63), side * 0.58, 1.18, -0.08);
+        wing.rotation.z = side * 0.18; g.add(wing);
+        if (airborne) parts.push({ node: wing, kind: 'wing' });
+        else { const leg = mesh(new THREE.CylinderGeometry(0.07, 0.045, 0.42, 5), body, side * 0.25, 0.28, 0.05); g.add(leg); parts.push({ node: leg, kind: side > 0 ? 'leg' : 'leg2' }); }
+      }
+      if (data.id === 'frostWraith') { const veil = mesh(new THREE.ConeGeometry(0.48, 1.0, 7), body, 0, 0.62, -0.1); veil.rotation.x = Math.PI; g.add(veil); }
+    } else if (['siegeCrawler', 'ironBrute'].includes(data.id)) {
+      const hull = mesh(new THREE.BoxGeometry(1.15, 0.8, 1.35), mat(data.color, { metalness: 0.72, roughness: 0.38 }), 0, 1.05, 0); g.add(hull);
+      g.add(mesh(new THREE.OctahedronGeometry(0.22), acc, 0, 1.15, 0.72));
+      for (const [dx, dz] of [[0.58, 0.48], [-0.58, 0.48], [0.58, -0.48], [-0.58, -0.48]] as const) {
+        const leg = mesh(new THREE.CylinderGeometry(0.12, 0.07, 0.85, 6), body, dx, 0.4, dz); leg.rotation.z = dx * 0.16;
+        g.add(leg); parts.push({ node: leg, kind: dx > 0 ? 'leg' : 'leg2' });
+      }
+      for (const side of [-1, 1]) g.add(mesh(new THREE.BoxGeometry(0.28, 0.36, 0.5), mat(0x18181b, { metalness: 0.8 }), side * 0.7, 1.25, 0.15));
+    } else if (data.id === 'abyssBehemoth') {
+      const torso = mesh(new THREE.DodecahedronGeometry(0.8, 1), body, 0, 1.45, 0); torso.scale.set(1.15, 1.2, 0.9); g.add(torso);
+      g.add(mesh(new THREE.OctahedronGeometry(0.3), acc, 0, 1.52, 0.65));
+      for (const side of [-1, 1]) {
+        const arm = mesh(new THREE.BoxGeometry(0.42, 1.25, 0.48), body, side * 0.88, 1.2, 0); arm.rotation.z = side * -0.2; g.add(arm);
+        const horn = mesh(new THREE.ConeGeometry(0.14, 0.72, 5), acc, side * 0.28, 2.45, -0.02); horn.rotation.z = side * 0.42; g.add(horn);
+        parts.push({ node: arm, kind: side > 0 ? 'arm' : 'arm2' });
+      }
+      const legL = mesh(new THREE.BoxGeometry(0.34, 0.78, 0.38), body, 0.28, 0.4, 0);
+      const legR = mesh(new THREE.BoxGeometry(0.34, 0.78, 0.38), body, -0.28, 0.4, 0); g.add(legL, legR);
+      parts.push({ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' });
+      const halo = mesh(new THREE.TorusGeometry(0.85, 0.04, 7, 26), acc, 0, 2.35, -0.05); halo.rotation.x = Math.PI / 2; g.add(halo);
+    } else {
+      // Bone Reaver, Void Archer and Hex Priest: humanoid silhouettes with unique weapons.
+      const torso = mesh(new THREE.BoxGeometry(data.id === 'boneReaver' ? 0.52 : 0.58, 0.72, 0.38), body, 0, 0.98, 0); g.add(torso);
+      const head = mesh(data.id === 'hexPriest' ? new THREE.ConeGeometry(0.27, 0.62, 6) : new THREE.SphereGeometry(0.24, 9, 8), body, 0, 1.55, 0); g.add(head);
+      g.add(mesh(new THREE.SphereGeometry(0.055, 6, 6), acc, -0.09, 1.56, 0.21));
+      g.add(mesh(new THREE.SphereGeometry(0.055, 6, 6), acc, 0.09, 1.56, 0.21));
+      for (const side of [-1, 1]) { const leg = mesh(new THREE.BoxGeometry(0.17, 0.55, 0.2), body, side * 0.16, 0.3, 0); g.add(leg); parts.push({ node: leg, kind: side > 0 ? 'leg' : 'leg2' }); }
+      if (data.id === 'voidArcher') {
+        const bow = mesh(new THREE.TorusGeometry(0.38, 0.045, 6, 16), acc, 0.46, 1.12, 0.18); bow.rotation.z = Math.PI / 2; g.add(bow);
+        g.add(mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.35, 5), body, 0.42, 1.0, 0.12));
+      } else if (data.id === 'hexPriest') {
+        g.add(mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.55, 6), body, 0.48, 0.95, 0));
+        g.add(mesh(new THREE.OctahedronGeometry(0.17), acc, 0.48, 1.78, 0));
+        const ring = mesh(new THREE.TorusGeometry(0.48, 0.025, 6, 18), acc, 0, 1.2, 0); ring.rotation.x = Math.PI / 2; g.add(ring);
+      } else {
+        const blade = mesh(new THREE.BoxGeometry(0.12, 0.8, 0.12), mat(0xd6d3d1, { metalness: 0.7 }), 0.42, 0.9, 0.18); blade.rotation.z = -0.25; g.add(blade);
+        g.add(mesh(new THREE.ConeGeometry(0.08, 0.28, 5), acc, -0.36, 1.9, 0));
+      }
+    }
   }
 
   // Extra silhouette detail for humanoid enemies and bosses: layered plates, joints and runic armor.
@@ -800,6 +854,40 @@ export function buildHeroMesh(heroId = 'arman'): THREE.Group {
     g.add(bow);
     g.userData.animParts = [{ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' }];
     g.userData.rifleTip = new THREE.Vector3(0.42, 1.1, 0.72);
+  } else if (['kaelan', 'yara', 'veyra', 'borin', 'soren', 'darya', 'kaveh', 'nyx'].includes(heroId)) {
+    const palette: Record<string, number> = { kaelan: 0xfbbf24, yara: 0x22d3ee, veyra: 0xf472b6, borin: 0x94a3b8, soren: 0xa78bfa, darya: 0x4ade80, kaveh: 0xfb923c, nyx: 0xc084fc };
+    const accent = palette[heroId] ?? 0xfbbf24;
+    const dark = mat(0x202431, { metalness: 0.72, roughness: 0.34 });
+    const cloth = mat(heroId === 'darya' ? 0x14532d : heroId === 'soren' || heroId === 'nyx' ? 0x211438 : 0x303746, { roughness: 0.8 });
+    const torso = mesh(new THREE.BoxGeometry(heroId === 'borin' ? 0.72 : 0.56, heroId === 'borin' ? 0.82 : 0.7, 0.38), cloth, 0, 1.03, 0); g.add(torso);
+    g.add(mesh(new THREE.OctahedronGeometry(heroId === 'borin' ? 0.15 : 0.12), glow(accent), 0, 1.16, 0.23));
+    g.add(mesh(new THREE.SphereGeometry(0.25, 10, 9), mat(0xc8a98b), 0, 1.62, 0));
+    if (['yara', 'soren', 'nyx'].includes(heroId)) g.add(mesh(new THREE.ConeGeometry(0.32, 0.52, 7), cloth, 0, 1.82, -0.03));
+    else g.add(mesh(new THREE.SphereGeometry(0.29, 10, 8, 0, Math.PI * 2, 0, Math.PI / 1.8), dark, 0, 1.72, 0));
+    const legL = mesh(new THREE.BoxGeometry(0.19, 0.58, 0.22), dark, 0.16, 0.31, 0);
+    const legR = mesh(new THREE.BoxGeometry(0.19, 0.58, 0.22), dark, -0.16, 0.31, 0); g.add(legL, legR);
+    if (['yara', 'soren', 'darya'].includes(heroId)) {
+      g.add(mesh(new THREE.CylinderGeometry(0.04, 0.05, 1.7, 7), dark, 0.48, 1.1, 0.05));
+      g.add(mesh(new THREE.OctahedronGeometry(0.17), glow(accent), 0.48, 1.98, 0.05));
+      g.add(mesh(new THREE.TorusGeometry(0.25, 0.025, 6, 18), glow(accent), 0.48, 1.98, 0.05));
+      g.userData.rifleTip = new THREE.Vector3(0.48, 1.98, 0.05);
+    } else if (['veyra', 'nyx'].includes(heroId)) {
+      for (const side of [-1, 1]) g.add(mesh(new THREE.BoxGeometry(0.07, 0.68, 0.08), dark, side * 0.36, 0.92, 0.2));
+      g.userData.rifleTip = new THREE.Vector3(0.38, 1.0, 0.5);
+    } else if (heroId === 'kaveh') {
+      const bow = mesh(new THREE.TorusGeometry(0.42, 0.03, 6, 20, Math.PI), glow(accent), 0.43, 1.12, 0.18); bow.rotation.z = Math.PI / 2; g.add(bow);
+      g.add(mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.8, 4), glow(accent), 0.43, 1.12, 0.18));
+      g.userData.rifleTip = new THREE.Vector3(0.43, 1.12, 0.65);
+    } else {
+      const weapon = mesh(new THREE.CylinderGeometry(0.07, 0.09, 1.15, 7), dark, 0.45, 1.05, 0.1); weapon.rotation.x = Math.PI / 2; g.add(weapon);
+      g.userData.rifleTip = new THREE.Vector3(0.45, 1.05, 0.75);
+    }
+    for (const side of [-1, 1]) {
+      const shoulder = mesh(new THREE.SphereGeometry(heroId === 'borin' ? 0.25 : 0.19, 10, 8), dark, side * 0.36, 1.38, 0);
+      shoulder.scale.set(1.1, 0.75, 0.85); g.add(shoulder);
+      g.add(mesh(new THREE.SphereGeometry(0.035, 7, 6), glow(accent), side * 0.36, 1.4, 0.18));
+    }
+    g.userData.animParts = [{ node: legL, kind: 'leg' }, { node: legR, kind: 'leg2' }];
   } else {
     // آرمان — فرمانده (پیش‌فرض)
     const torso = mesh(new THREE.BoxGeometry(0.62, 0.75, 0.42), armor, 0, 1.0, 0);
