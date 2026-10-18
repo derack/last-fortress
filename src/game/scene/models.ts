@@ -1322,15 +1322,57 @@ export function buildTree(): THREE.Group {
   upper.scale.set(0.95, 1.12, 0.9);
   upper.rotation.set(0.06, 0.7, -0.04);
   g.add(upper);
+
+  // Uneven secondary crowns and exposed boughs break the repeated two-cone silhouette.
+  const leafDark = mat(0x28472a, { roughness: 0.99 });
+  const leafLight = mat(0x4a6b39, { roughness: 0.98 });
+  const clusters: [number, number, number, number, number, number][] = [
+    [-0.58, 1.82, 0.08, 0.52, 0.64, 0.5],
+    [0.55, 1.96, -0.1, 0.48, 0.6, 0.46],
+    [-0.22, 2.55, -0.46, 0.42, 0.52, 0.42],
+    [0.42, 2.42, 0.34, 0.4, 0.5, 0.38],
+  ];
+  clusters.forEach(([x, y, z, sx, sy, sz], i) => {
+    const crown = mesh(new THREE.IcosahedronGeometry(0.62, 1), i % 2 ? leafDark : leafLight, x, y, z);
+    crown.scale.set(sx, sy, sz);
+    crown.rotation.set(0.1 * i, 0.73 * i, -0.08 * i);
+    g.add(crown);
+  });
+  for (const side of [-1, 1]) {
+    const branch = mesh(new THREE.CylinderGeometry(0.055, 0.1, 0.82, 6), bark, side * 0.32, 1.55, 0.02);
+    branch.rotation.z = side * -0.82;
+    branch.rotation.x = side * 0.12;
+    g.add(branch);
+  }
+  // Root flares anchor the tree visually into the ground instead of making it float.
+  for (let i = 0; i < 4; i++) {
+    const a = i / 4 * Math.PI * 2;
+    const root = mesh(new THREE.CylinderGeometry(0.025, 0.11, 0.55, 5), bark,
+      Math.cos(a) * 0.25, 0.22, Math.sin(a) * 0.25);
+    root.rotation.z = Math.cos(a) * 0.62;
+    root.rotation.x = Math.sin(a) * 0.62;
+    g.add(root);
+  }
   return g;
 }
 
 export function buildRock(scale = 1): THREE.Group {
   const g = new THREE.Group();
-  const r = mesh(new THREE.DodecahedronGeometry(0.7, 0), mat(0x8a8578, { roughness: 1 }), 0, 0.35, 0);
-  r.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-  r.scale.setScalar(scale);
+  const rockMat = mat(0x77766f, { roughness: 0.98 });
+  const rockLight = mat(0x929087, { roughness: 0.99 });
+  const rockDark = mat(0x595a58, { roughness: 1 });
+  const r = mesh(new THREE.IcosahedronGeometry(0.7, 1), rockMat, 0, 0.35, 0);
+  r.rotation.set(Math.random() * 0.9, Math.random() * 3, Math.random() * 0.9);
+  r.scale.set(1.0 * scale, 0.72 * scale, 0.9 * scale);
   g.add(r);
+  const chipA = mesh(new THREE.DodecahedronGeometry(0.36, 0), rockLight, 0.38 * scale, 0.28 * scale, 0.1 * scale);
+  chipA.rotation.set(0.4, 0.7, 0.25);
+  chipA.scale.set(1.1, 0.7, 0.8);
+  g.add(chipA);
+  const chipB = mesh(new THREE.DodecahedronGeometry(0.3, 0), rockDark, -0.28 * scale, 0.2 * scale, -0.2 * scale);
+  chipB.rotation.set(-0.3, 1.2, 0.5);
+  chipB.scale.set(0.9, 0.65, 1.1);
+  g.add(chipB);
   return g;
 }
 
@@ -1362,9 +1404,24 @@ export function buildPineTree(snowy = false): THREE.Group {
   const g = new THREE.Group();
   g.add(mesh(new THREE.CylinderGeometry(0.14, 0.22, 1.2, 6), mat(0x4a3a2a), 0, 0.6, 0));
   const needle = snowy ? mat(0x7a9a8a, { roughness: 0.95 }) : mat(0x2d5a30, { roughness: 0.95 });
-  g.add(mesh(new THREE.ConeGeometry(1.0, 1.5, 7), needle, 0, 1.9, 0));
-  g.add(mesh(new THREE.ConeGeometry(0.72, 1.2, 7), needle, 0, 2.7, 0));
-  g.add(mesh(new THREE.ConeGeometry(0.45, 0.9, 7), needle, 0, 3.4, 0));
+  const lowerCrown = mesh(new THREE.ConeGeometry(1.0, 1.5, 9), needle, 0, 1.9, 0);
+  lowerCrown.rotation.y = 0.18;
+  g.add(lowerCrown);
+  const middleCrown = mesh(new THREE.ConeGeometry(0.72, 1.2, 8), needle, 0.06, 2.7, -0.03);
+  middleCrown.rotation.y = 0.53;
+  g.add(middleCrown);
+  const upperCrown = mesh(new THREE.ConeGeometry(0.45, 0.9, 7), needle, -0.04, 3.4, 0.04);
+  upperCrown.rotation.y = 0.28;
+  g.add(upperCrown);
+  // Broad irregular boughs soften the geometric tiers without adding tiny noisy leaves.
+  for (let i = 0; i < 5; i++) {
+    const a = i / 5 * Math.PI * 2;
+    const bough = mesh(new THREE.IcosahedronGeometry(0.42, 1), needle,
+      Math.cos(a) * 0.52, 1.55 + (i % 2) * 0.38, Math.sin(a) * 0.52);
+    bough.scale.set(1.0, 0.42, 0.82);
+    bough.rotation.y = a;
+    g.add(bough);
+  }
   if (snowy) {
     g.add(mesh(new THREE.ConeGeometry(0.5, 0.5, 7), mat(0xe8f0f4, { roughness: 0.8 }), 0, 3.75, 0));
     g.add(mesh(new THREE.ConeGeometry(0.8, 0.55, 7), mat(0xe8f0f4, { roughness: 0.8 }), 0, 2.95, 0));
