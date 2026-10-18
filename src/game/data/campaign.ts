@@ -21,7 +21,7 @@ export const CHAPTERS: ChapterDef[] = [
   { id: 6, nameKey: 'chapter6', descKey: 'chapter6Desc', env: 'forest', timeOfDay: 'day', tagKey: 'chapter6Tag', bossId: 'golemKing' },
   { id: 7, nameKey: 'chapter7', descKey: 'chapter7Desc', env: 'tundra', timeOfDay: 'night', tagKey: 'chapter7Tag', bossId: 'fireGiant' },
   { id: 8, nameKey: 'chapter8', descKey: 'chapter8Desc', env: 'volcano', timeOfDay: 'day', tagKey: 'chapter8Tag', bossId: 'annihilator' },
-  { id: 9, nameKey: 'chapter9', descKey: 'chapter9Desc', env: 'wastes', timeOfDay: 'night', tagKey: 'chapter9Tag', bossId: 'blackDragon' },
+  { id: 9, nameKey: 'chapter9', descKey: 'chapter9Desc', env: 'wastes', timeOfDay: 'night', tagKey: 'chapter9Tag', bossId: 'abyssBehemoth' },
   { id: 10, nameKey: 'chapter10', descKey: 'chapter10Desc', env: 'citadel', timeOfDay: 'night', tagKey: 'chapter10Tag', bossId: 'darkLord' },
 ];
 
@@ -40,7 +40,7 @@ const CHAPTER_POOLS: Record<number, string[]> = {
   7: ['crystalMonster', 'aetherTank', 'golem', 'warrior', 'hunter', 'spirit', 'warlock', 'frostWraith'],
   8: ['smallDragon', 'destroyer', 'golem', 'warMachine', 'flyer', 'hunter', 'emberDrake'],
   9: ['warMachine', 'destroyer', 'summoner', 'aetherTank', 'shadowSoldier', 'flyer', 'voidArcher', 'ironBrute'],
-  10: ['shadowSoldier', 'destroyer', 'summoner', 'aetherTank', 'smallDragon', 'spirit', 'hunter', 'warMachine', 'voidArcher', 'abyssBehemoth'],
+  10: ['shadowSoldier', 'destroyer', 'summoner', 'aetherTank', 'smallDragon', 'spirit', 'hunter', 'warMachine', 'voidArcher'],
 };
 
 /** ضریب جبران استخر هر فصل — فصل‌های سنگین دشمن کمتر، نرم‌ها بیشتر
