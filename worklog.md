@@ -526,3 +526,22 @@ Work Log:
 Stage Summary:
 - از این پس هر تغییر سورس به‌صورت خودکار commit+push می‌شود به derack/last-fortress
 - ریپو عمومی است تا اطلاع بعدی کاربر
+
+---
+Task ID: 23
+Agent: main (Super Z)
+Task: بررسی بصری تغییرات گرافیکی شاخه کاربر (graphics-upgrade-2026-10-18)
+
+Work Log:
+- fetch شاخه کاربر: 17 کامیت جدید (PBR materials، مدل‌های پروسیجرال جدید، رشد رسترو قهرمان/دشمن، باس فصل 9)
+- diff تحلیل: models.ts +213 خط — MeshStandardMaterial/MeshPhysicalMaterial با metalness تا 0.88، roughness، clearcoat، emissiveIntensity 2.0
+- worktree در wt-graphics + dev server پورت 3001؛ main روی 3000
+- اسکرین‌شات مقایسه‌ای موبایل‌ویو (iPhone 14): منو، نبرد، گالری هر دو نسخه → download/screenshots/cmp-*.png
+- نتیجه بصری: مدل placeholder آرمان از بلوک ساده → سرباز زره‌پوش جزئیات‌دار (کلاه‌خود پرچم‌دار، شانه‌پوش، سینه‌پوش نشان‌دار، کمربند، چکمه)
+- Thor GLB (مدل واقعی کاربر) دست‌نخورده ✓؛ محیط/زمین تغییر نکرده
+- کنسول بدون خطای جدید؛ منو/نبرد/گالری روی شاخه سالم
+
+Stage Summary:
+- تغییر گرافیک تأیید شد — واقعی و قابل مشاهده
+- شاخه کاربر با CI سازگار است (خط java.home در نسخه شاخه حذف شده)
+- کارهای پندینگ من برای بعد از merge: حذف گالری، بهینه‌سازی لگ، بیلد APK امضاشده

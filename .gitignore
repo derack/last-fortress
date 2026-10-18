@@ -60,3 +60,4 @@ android/keystore.properties
 android/keystore/
 download/keystore/
 .env
+wt-graphics/
