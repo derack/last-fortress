@@ -633,13 +633,19 @@ export class BattleScene {
 
   dispose() {
     this.scene.traverse((o) => {
-      if (o instanceof THREE.Mesh) {
+      if (o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.Line) {
         o.geometry.dispose();
-        const m = o.material;
-        if (Array.isArray(m)) m.forEach((mm) => mm.dispose());
-        else m.dispose();
+        const materials = Array.isArray(o.material) ? o.material : [o.material];
+        for (const material of materials) {
+          // Dispose textures as well as materials when a battle scene is torn down.
+          for (const value of Object.values(material)) {
+            if (value instanceof THREE.Texture) value.dispose();
+          }
+          material.dispose();
+        }
       }
     });
+    this.scene.environment?.dispose();
     this.renderer.dispose();
   }
 }
