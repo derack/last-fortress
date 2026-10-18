@@ -39,7 +39,7 @@ const TOWER_UDATA_KEYS = ['turret', 'muzzle', 'spinCrystal', 'spinRing', 'ember'
 
 // Shared one-draw-call upgrade ornaments keep GLB towers visually progressing
 // from level 1 to 5 without replacing the authored base model on every upgrade.
-const towerUpgradeGeometry = new Map<number, THREE.BufferGeometry>();
+const towerUpgradeGeometry = new Map<string, THREE.BufferGeometry>();
 const towerUpgradeMaterials = new Map<number, THREE.MeshStandardMaterial>();
 const contactShadowGeometry = new THREE.CircleGeometry(1, 32);
 let contactShadowMaterial: THREE.MeshBasicMaterial | null = null;
@@ -93,48 +93,107 @@ const TOWER_ACCENTS: Record<string, number> = {
   temple: 0xffcf7c, void: 0xb071ff,
 };
 
-function getTowerUpgradeGeometry(level: number): THREE.BufferGeometry {
-  const cached = towerUpgradeGeometry.get(level);
+function getTowerUpgradeGeometry(towerId: string, level: number): THREE.BufferGeometry {
+  const key = `${towerId}:${level}`;
+  const cached = towerUpgradeGeometry.get(key);
   if (cached) return cached;
   const parts: THREE.BufferGeometry[] = [];
-  const add = (geometry: THREE.BufferGeometry, x: number, y: number, z: number, rx = 0, ry = 0, rz = 0) => {
+  const add = (
+    geometry: THREE.BufferGeometry, x: number, y: number, z: number,
+    sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0,
+  ) => {
     const matrix = new THREE.Matrix4().compose(
       new THREE.Vector3(x, y, z),
       new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)),
-      new THREE.Vector3(1, 1, 1),
+      new THREE.Vector3(sx, sy, sz),
     );
     geometry.applyMatrix4(matrix);
     parts.push(geometry);
   };
-  const ring = (radius: number, y: number, tube = 0.035) => {
-    const geometry = new THREE.TorusGeometry(radius, tube, 6, 24);
-    add(geometry, 0, y, 0, Math.PI / 2);
-  };
-  const crystal = (x: number, y: number, z: number, size: number) => {
-    const geometry = new THREE.OctahedronGeometry(size, 0);
-    const scale = new THREE.Matrix4().makeScale(1, 1.25, 1);
-    geometry.applyMatrix4(scale);
-    add(geometry, x, y, z, 0, x * 1.8, z * 1.8);
-  };
+  const ring = (radius: number, y: number, tube = 0.035) =>
+    add(new THREE.TorusGeometry(radius, tube, 6, 24), 0, y, 0, 1, 1, 1, Math.PI / 2);
+  const crystal = (x: number, y: number, z: number, size: number) =>
+    add(new THREE.OctahedronGeometry(size, 0), x, y, z, 1, 1.25, 1, 0, x * 1.8, z * 1.8);
+  const plate = (x: number, y: number, z: number, sx: number, sy: number, sz: number, ry = 0) =>
+    add(new THREE.BoxGeometry(1, 1, 1), x, y, z, sx, sy, sz, 0, ry, 0);
+  const spike = (x: number, y: number, z: number, sx: number, sy: number, sz: number, ry = 0) =>
+    add(new THREE.ConeGeometry(0.5, 1, 6), x, y, z, sx, sy, sz, 0, ry, 0);
+  const orb = (x: number, y: number, z: number, size: number) =>
+    add(new THREE.SphereGeometry(0.5, 8, 6), x, y, z, size, size, size);
+
   ring(0.72, 2.35, 0.045);
   if (level >= 3) {
     for (let i = 0; i < 3; i++) {
-      const a = i / 3 * Math.PI * 2;
-      crystal(Math.cos(a) * 0.72, 2.58, Math.sin(a) * 0.72, 0.17);
+      const angle = i / 3 * Math.PI * 2;
+      crystal(Math.cos(angle) * 0.72, 2.58, Math.sin(angle) * 0.72, 0.17);
+    }
+    // Each tower family gets its own recognizable upgrade silhouette.
+    switch (towerId) {
+      case 'sentinel':
+        plate(-0.58, 2.62, 0, 0.2, 0.48, 0.18, -0.18);
+        plate(0.58, 2.62, 0, 0.2, 0.48, 0.18, 0.18);
+        break;
+      case 'lightning':
+      case 'arcane':
+        for (let i = 0; i < 4; i++) {
+          const angle = i / 4 * Math.PI * 2;
+          crystal(Math.cos(angle) * 1.02, 2.56, Math.sin(angle) * 1.02, 0.13);
+        }
+        break;
+      case 'fire':
+        spike(-0.52, 2.63, 0, 0.17, 0.48, 0.17, -0.22);
+        spike(0.52, 2.63, 0, 0.17, 0.48, 0.17, 0.22);
+        orb(0, 2.58, 0.3, 0.16);
+        break;
+      case 'ice':
+        for (let i = 0; i < 4; i++) {
+          const angle = i / 4 * Math.PI * 2;
+          spike(Math.cos(angle) * 0.88, 2.68, Math.sin(angle) * 0.88, 0.13, 0.42, 0.13, angle);
+        }
+        break;
+      case 'cannon':
+        add(new THREE.CylinderGeometry(0.5, 0.5, 1, 10), -0.42, 2.58, 0.18, 0.12, 0.36, 0.12);
+        add(new THREE.CylinderGeometry(0.5, 0.5, 1, 10), 0.42, 2.58, 0.18, 0.12, 0.36, 0.12);
+        break;
+      case 'poison':
+        orb(-0.58, 2.58, 0.05, 0.18);
+        orb(0.58, 2.58, 0.05, 0.18);
+        plate(-0.58, 2.72, 0.05, 0.08, 0.18, 0.08);
+        plate(0.58, 2.72, 0.05, 0.08, 0.18, 0.08);
+        break;
+      case 'ballista':
+        plate(0, 2.62, 0, 1.2, 0.1, 0.12);
+        plate(-0.48, 2.6, 0, 0.12, 0.4, 0.12, -0.18);
+        plate(0.48, 2.6, 0, 0.12, 0.4, 0.12, 0.18);
+        break;
+      case 'temple':
+        plate(-0.62, 2.65, 0, 0.14, 0.52, 0.14);
+        plate(0.62, 2.65, 0, 0.14, 0.52, 0.14);
+        plate(0, 2.92, 0, 1.35, 0.12, 0.22);
+        break;
+      case 'void':
+        for (let i = 0; i < 4; i++) {
+          const angle = i / 4 * Math.PI * 2;
+          spike(Math.cos(angle) * 0.86, 2.66, Math.sin(angle) * 0.86, 0.14, 0.5, 0.14, angle);
+        }
+        break;
     }
   }
   if (level >= 4) {
     ring(0.95, 2.88, 0.03);
     for (let i = 0; i < 4; i++) {
-      const a = i / 4 * Math.PI * 2 + Math.PI / 4;
-      crystal(Math.cos(a) * 0.94, 2.98, Math.sin(a) * 0.94, 0.12);
+      const angle = i / 4 * Math.PI * 2 + Math.PI / 4;
+      crystal(Math.cos(angle) * 0.94, 2.98, Math.sin(angle) * 0.94, 0.12);
     }
   }
-  if (level >= 5) crystal(0, 3.18, 0, 0.24);
+  if (level >= 5) {
+    crystal(0, 3.18, 0, 0.24);
+    ring(0.55, 3.28, 0.025);
+  }
   const merged = mergeGeometries(parts, false);
   for (const part of parts) part.dispose();
   const geometry = merged ?? new THREE.OctahedronGeometry(0.1, 0);
-  towerUpgradeGeometry.set(level, geometry);
+  towerUpgradeGeometry.set(key, geometry);
   return geometry;
 }
 
@@ -149,7 +208,7 @@ function addTowerUpgradeOrnament(root: THREE.Group, entry: CharacterAssetEntry, 
     });
     towerUpgradeMaterials.set(color, material);
   }
-  const ornament = new THREE.Mesh(getTowerUpgradeGeometry(level), material);
+  const ornament = new THREE.Mesh(getTowerUpgradeGeometry(entry.id, level), material);
   ornament.name = 'towerUpgradeOrnament';
   ornament.scale.setScalar(entry.targetHeight / 3.5);
   ornament.castShadow = false;
