@@ -1172,6 +1172,38 @@ export function buildHeroMesh(heroId = 'arman'): THREE.Group {
       g.add(leaf);
     }
   }
+  // Individual ceremonial mantle for the eight new heroes. Layered cloth,
+  // stitched edging and a clasp give each silhouette a more authored fantasy-game read.
+  if (['kaelan', 'yara', 'veyra', 'borin', 'soren', 'darya', 'kaveh', 'nyx'].includes(heroId)) {
+    const capeColors: Record<string, number> = {
+      kaelan: 0x56351d, yara: 0x123c4b, veyra: 0x4b1f43, borin: 0x303844,
+      soren: 0x30224d, darya: 0x173d2a, kaveh: 0x66351d, nyx: 0x241a3d,
+    };
+    const capeShape = new THREE.Shape();
+    capeShape.moveTo(-0.29, 0.12);
+    capeShape.quadraticCurveTo(0, 0.2, 0.29, 0.12);
+    capeShape.lineTo(0.48, -0.68);
+    capeShape.quadraticCurveTo(0, -0.94, -0.48, -0.68);
+    capeShape.closePath();
+    const cape = mesh(new THREE.ExtrudeGeometry(capeShape, {
+      depth: 0.035, bevelEnabled: true, bevelSegments: 2, steps: 1,
+      bevelSize: 0.025, bevelThickness: 0.018, curveSegments: 5,
+    }), mat(capeColors[heroId], { roughness: 0.92, metalness: 0.03, side: THREE.DoubleSide }), 0, 1.48, -0.29);
+    cape.rotation.y = heroId === 'nyx' ? -0.06 : 0;
+    g.add(cape);
+    const clasp = mesh(new THREE.OctahedronGeometry(0.105), glow(relicColor), 0, 1.47, -0.22);
+    g.add(clasp);
+    const mantleTrim = mat(heroId === 'borin' ? 0x9ca3af : relicColor, { metalness: 0.68, roughness: 0.3, emissive: relicColor, emissiveIntensity: 0.18 });
+    for (const side of [-1, 1]) {
+      const seam = mesh(new THREE.BoxGeometry(0.035, 0.62, 0.025), mantleTrim, side * 0.32, 1.13, -0.245);
+      seam.rotation.z = side * -0.12;
+      g.add(seam);
+    }
+    // A short shoulder mantle makes the cape attachment feel integrated with armor.
+    const mantle = mesh(new THREE.BoxGeometry(0.74, 0.12, 0.34), mat(capeColors[heroId], { roughness: 0.9 }), 0, 1.43, -0.08);
+    mantle.rotation.x = -0.12;
+    g.add(mantle);
+  }
   // Distinctive shoulder plates and rivets for every hero, with role-specific asymmetry.
   for (const side of [-1, 1]) {
     const shoulderX = side * (heroId === 'borin' || heroId === 'radin' ? 0.52 : 0.39);
