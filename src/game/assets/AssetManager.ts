@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { CharacterAssetEntry } from './AssetManifest';
 
 // ============================================================
@@ -41,6 +42,72 @@ export interface PreloadReport {
   ready: number;
   missing: number;
   error: number;
+}
+
+/**
+ * Merge static GLB body pieces by material at load time. Our authored first-pass
+ * models use many small hard-surface pieces; without batching each part becomes
+ * a draw call for every enemy in a wave. Keep weapons separate for procedural
+ * prop-swing, and keep tower pivots/VFX meshes separate for gameplay animation.
+ */
+function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['category']) {
+  if (category === 'heroes') return; // preserve existing authored hero hierarchy/rigs
+  let hasSkin = false;
+  scene.traverse((o) => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) hasSkin = true; });
+  if (hasSkin) return;
+
+  scene.updateMatrixWorld(true);
+  const tower = category === 'towers';
+  const keepTowerNodes = new Set(['spincrystal', 'spinring', 'ember']);
+  const keepWeapon = /weapon|blade|bow|staff|gun|cannon/i;
+  const groups = new Map<string, { parent: THREE.Object3D; material: THREE.Material; geometries: THREE.BufferGeometry[]; sources: THREE.Mesh[] }>();
+  const findTowerPivot = (mesh: THREE.Object3D): THREE.Object3D => {
+    let p = mesh.parent;
+    while (p && p !== scene) {
+      if (p.name.toLowerCase() === 'turret') return p;
+      p = p.parent;
+    }
+    return scene;
+  };
+
+  scene.traverse((o) => {
+    const mesh = o as THREE.Mesh;
+    if (!mesh.isMesh || !mesh.geometry || !mesh.material) return;
+    const name = mesh.name.toLowerCase();
+    if (tower ? keepTowerNodes.has(name) : keepWeapon.test(name)) return;
+    if (Array.isArray(mesh.material)) return; // retain unusual multi-material meshes safely
+
+    const parent = tower ? findTowerPivot(mesh) : scene;
+    const key = parent.uuid + '|' + mesh.material.uuid;
+    let bucket = groups.get(key);
+    if (!bucket) {
+      bucket = { parent, material: mesh.material, geometries: [], sources: [] };
+      groups.set(key, bucket);
+    }
+    const geometry = mesh.geometry.clone();
+    const relative = new THREE.Matrix4().copy(parent.matrixWorld).invert().multiply(mesh.matrixWorld);
+    geometry.applyMatrix4(relative);
+    bucket.geometries.push(geometry);
+    bucket.sources.push(mesh);
+  });
+
+  for (const bucket of groups.values()) {
+    if (bucket.geometries.length < 2) {
+      for (const geometry of bucket.geometries) geometry.dispose();
+      continue;
+    }
+    const merged = mergeGeometries(bucket.geometries, false);
+    for (const geometry of bucket.geometries) geometry.dispose();
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(merged, bucket.material);
+    mesh.name = tower ? 'BatchedTowerStaticGeometry' : 'BatchedCharacterStaticGeometry';
+    mesh.castShadow = bucket.sources.some((source) => source.castShadow);
+    mesh.receiveShadow = bucket.sources.some((source) => source.receiveShadow);
+    mesh.frustumCulled = true;
+    bucket.parent.add(mesh);
+    for (const source of bucket.sources) source.removeFromParent();
+  }
+  scene.updateMatrixWorld(true);
 }
 
 class AssetManagerImpl {
@@ -97,6 +164,7 @@ class AssetManagerImpl {
       .loadAsync(entry.file)
       .then((gltf) => {
         const scene = gltf.scene;
+        optimizeStaticAsset(scene, entry.category);
         scene.visible = true;
         // فراداده استاندارد روی ریشه Asset
         scene.userData.assetId = entry.id;
