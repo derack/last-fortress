@@ -1307,8 +1307,7 @@ export function buildTree(): THREE.Group {
   trunk.rotation.z = 0.025;
   g.add(trunk);
 
-  // Layered, faceted crowns replace the stacked perfect cones. The two masses
-  // share a restrained leaf material so the silhouette reads as foliage, not props.
+  // Asymmetric faceted crowns replace the stacked perfect cones.
   const leafMat = mat(0x365d31, { roughness: 0.98 });
   const lower = mesh(new THREE.IcosahedronGeometry(1, 1), leafMat, 0, 2.05, 0);
   lower.scale.set(1.12, 0.92, 1.02);
