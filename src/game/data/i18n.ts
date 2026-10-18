@@ -291,6 +291,16 @@ const fa: Record<string, string> = {
   heroKaveh: 'کاوه', heroKavehTitle: 'کماندار شعله', heroKavehDesc: 'تیرانداز دوربردی که با تیرهای آتشین و رگبار دقیق گروه‌های دشمن را هدف می‌گیرد.',
   heroNyx: 'نیکس', heroNyxTitle: 'شبح خلأ', heroNyxDesc: 'قاتلی فوق‌سریع با تیغه‌های سایه؛ برای شکار دشمنان سبک و پشتیبان ساخته شده است.',
 
+  heroKaelanSkill: 'فرمان پیشتاز', heroKaelanSkillDesc: 'سرعت شلیک برج‌ها به مدت {0} ثانیه افزایش می‌یابد.',
+  heroYaraSkill: 'سپر بلورین', heroYaraSkillDesc: 'هسته آذر برای {0} ثانیه در برابر آسیب مصون می‌شود.',
+  heroVeyraSkill: 'خشم سایه', heroVeyraSkillDesc: 'آسیب و سرعت حمله ویرا برای {0} ثانیه افزایش می‌یابد.',
+  heroBorinSkill: 'پروتکل محاصره', heroBorinSkillDesc: 'فرمان تقویت تاکتیکی، سرعت شلیک برج‌ها را {0} ثانیه افزایش می‌دهد.',
+  heroSorenSkill: 'رگبار ارواح', heroSorenSkillDesc: 'رگباری از ضربات اثری روی گروه دشمن فرود می‌آورد.',
+  heroDaryaSkill: 'پناه حیات', heroDaryaSkillDesc: 'هسته آذر برای {0} ثانیه در برابر آسیب مصون می‌شود.',
+  heroKavehSkill: 'باران اخگر', heroKavehSkillDesc: 'بارانی از تیرهای شعله‌ور روی نزدیک‌ترین گروه دشمن.',
+  heroNyxSkill: 'جنون خلأ', heroNyxSkillDesc: 'آسیب و سرعت حمله نیکس برای {0} ثانیه افزایش می‌یابد.',
+
+
   heroMoveHint: 'روی زمین بزن تا قهرمان به آنجا برود',
   heroRespawnShort: 'بازگشت',
   selectHero: 'انتخاب',
@@ -731,6 +741,16 @@ const en: Record<string, string> = {
   heroDarya: 'Darya', heroDaryaTitle: 'Verdant Healer', heroDaryaDesc: 'A resilient support hero wielding life energy and an aether shield to protect the core.',
   heroKaveh: 'Kaveh', heroKavehTitle: 'Flame Ranger', heroKavehDesc: 'A long-range archer whose burning shots and precise volleys punish enemy groups.',
   heroNyx: 'Nyx', heroNyxTitle: 'Void Phantom', heroNyxDesc: 'An extremely fast shadow assassin designed to hunt light enemies and support units.',
+
+  heroKaelanSkill: 'Vanguard Command', heroKaelanSkillDesc: 'Increases tower attack speed for {0} seconds.',
+  heroYaraSkill: 'Crystal Aegis', heroYaraSkillDesc: 'Makes the Azar Core immune to damage for {0} seconds.',
+  heroVeyraSkill: 'Shadow Fury', heroVeyraSkillDesc: 'Increases Veyra’s damage and attack speed for {0} seconds.',
+  heroBorinSkill: 'Siege Protocol', heroBorinSkillDesc: 'A tactical surge increases tower attack speed for {0} seconds.',
+  heroSorenSkill: 'Spirit Volley', heroSorenSkillDesc: 'Unleashes an aether volley against the nearest enemy cluster.',
+  heroDaryaSkill: 'Life Ward', heroDaryaSkillDesc: 'Makes the Azar Core immune to damage for {0} seconds.',
+  heroKavehSkill: 'Ember Rain', heroKavehSkillDesc: 'Calls down a rain of burning arrows on the nearest enemy cluster.',
+  heroNyxSkill: 'Void Frenzy', heroNyxSkillDesc: 'Increases Nyx’s damage and attack speed for {0} seconds.',
+
 
   heroMoveHint: 'Tap the ground to send the hero there',
   heroRespawnShort: 'revive',
