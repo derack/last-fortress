@@ -52,3 +52,5 @@ prompt
 server.log
 # Skills directory
 /skills/
+# local build tools (SDK/JDK, too large for git)
+android-tools/
