@@ -129,13 +129,18 @@ function createStaticCharacterClips(scene: THREE.Group, category: CharacterAsset
     return new THREE.AnimationClip(name, 1, tracks);
   };
   const x = new THREE.Vector3(1, 0, 0), y = new THREE.Vector3(0, 1, 0), z = new THREE.Vector3(0, 0, 1);
-  const locomotion = [
+  const locomotion: { node: string; angles: number[]; axis?: THREE.Vector3 }[] = [
     { node: 'leftLeg', angles: [0, 0.32, 0, -0.32, 0] }, { node: 'rightLeg', angles: [0, -0.32, 0, 0.32, 0] },
     { node: 'arm-1', angles: [0, -0.38, 0, 0.38, 0] }, { node: 'arm1', angles: [0, 0.38, 0, -0.38, 0] },
     { node: 'leftArm', angles: [0, -0.3, 0, 0.3, 0] }, { node: 'rightArm', angles: [0, 0.3, 0, -0.3, 0] },
     { node: 'wing-1', angles: [0, -0.42, 0, 0.42, 0], axis: z }, { node: 'wing1', angles: [0, 0.42, 0, -0.42, 0], axis: z },
     { node: 'tail', angles: [0, 0.18, 0, -0.18, 0], axis: y }, { node: 'head', angles: [0, 0.035, 0, -0.035, 0], axis: y },
   ];
+  for (const name of names) {
+    if (/^leg\\d+[-_]?\\d+$/i.test(name)) locomotion.push({ node: name, angles: [0, 0.28, 0, -0.28, 0], axis: z });
+    if (/^(?:shard|spine|backshard|dorsalspine)\\d+$/i.test(name)) locomotion.push({ node: name, angles: [0, 0.14, 0, -0.14, 0], axis: y });
+    if (/^tendril-?\\d+$/i.test(name)) locomotion.push({ node: name, angles: [0, 0.18, 0, -0.18, 0], axis: z });
+  }
   const idle = clip('Idle', [
     { node: 'head', angles: [0, 0.025, 0, -0.025, 0], axis: y },
     { node: 'torso', angles: [0, -0.012, 0, 0.012, 0] }, { node: 'body', angles: [0, -0.012, 0, 0.012, 0] },
