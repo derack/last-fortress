@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { EnemyData } from '../data/types';
 import { findAssetEntry, type CharacterAssetEntry } from './AssetManifest';
 import { assetManager } from './AssetManager';
@@ -35,6 +36,81 @@ export type AnyAnimationController = CharacterAnimationController | ProceduralAn
 
 /** کلیدهای userData سازنده برج که باید به ریشه Handle منتقل شوند */
 const TOWER_UDATA_KEYS = ['turret', 'muzzle', 'spinCrystal', 'spinRing', 'ember'] as const;
+
+// Shared one-draw-call upgrade ornaments keep GLB towers visually progressing
+// from level 1 to 5 without replacing the authored base model on every upgrade.
+const towerUpgradeGeometry = new Map<number, THREE.BufferGeometry>();
+const towerUpgradeMaterials = new Map<number, THREE.MeshStandardMaterial>();
+const TOWER_ACCENTS: Record<string, number> = {
+  sentinel: 0xf0b65c, lightning: 0x9b6cff, fire: 0xff623d, ice: 0x8be7ff,
+  cannon: 0xe4a45b, poison: 0x77dc77, ballista: 0xc9a16b, arcane: 0xe18aff,
+  temple: 0xffcf7c, void: 0xb071ff,
+};
+
+function getTowerUpgradeGeometry(level: number): THREE.BufferGeometry {
+  const cached = towerUpgradeGeometry.get(level);
+  if (cached) return cached;
+  const parts: THREE.BufferGeometry[] = [];
+  const add = (geometry: THREE.BufferGeometry, x: number, y: number, z: number, rx = 0, ry = 0, rz = 0) => {
+    const matrix = new THREE.Matrix4().compose(
+      new THREE.Vector3(x, y, z),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)),
+      new THREE.Vector3(1, 1, 1),
+    );
+    geometry.applyMatrix4(matrix);
+    parts.push(geometry);
+  };
+  const ring = (radius: number, y: number, tube = 0.035) => {
+    const geometry = new THREE.TorusGeometry(radius, tube, 6, 24);
+    add(geometry, 0, y, 0, Math.PI / 2);
+  };
+  const crystal = (x: number, y: number, z: number, size: number) => {
+    const geometry = new THREE.OctahedronGeometry(size, 0);
+    const scale = new THREE.Matrix4().makeScale(1, 1.25, 1);
+    geometry.applyMatrix4(scale);
+    add(geometry, x, y, z, 0, x * 1.8, z * 1.8);
+  };
+  ring(0.72, 1.62, 0.045);
+  if (level >= 3) {
+    for (let i = 0; i < 3; i++) {
+      const a = i / 3 * Math.PI * 2;
+      crystal(Math.cos(a) * 0.72, 1.86, Math.sin(a) * 0.72, 0.17);
+    }
+  }
+  if (level >= 4) {
+    ring(0.95, 2.02, 0.03);
+    for (let i = 0; i < 4; i++) {
+      const a = i / 4 * Math.PI * 2 + Math.PI / 4;
+      crystal(Math.cos(a) * 0.94, 2.14, Math.sin(a) * 0.94, 0.12);
+    }
+  }
+  if (level >= 5) crystal(0, 2.34, 0, 0.24);
+  const merged = mergeGeometries(parts, false);
+  for (const part of parts) part.dispose();
+  const geometry = merged ?? new THREE.OctahedronGeometry(0.1, 0);
+  towerUpgradeGeometry.set(level, geometry);
+  return geometry;
+}
+
+function addTowerUpgradeOrnament(root: THREE.Group, entry: CharacterAssetEntry, level: number) {
+  if (level < 2) return;
+  const color = TOWER_ACCENTS[entry.id] ?? 0x9bdcff;
+  let material = towerUpgradeMaterials.get(color);
+  if (!material) {
+    material = new THREE.MeshStandardMaterial({
+      color, emissive: color, emissiveIntensity: 0.16,
+      metalness: 0.5, roughness: 0.36,
+    });
+    towerUpgradeMaterials.set(color, material);
+  }
+  const ornament = new THREE.Mesh(getTowerUpgradeGeometry(level), material);
+  ornament.name = 'towerUpgradeOrnament';
+  ornament.scale.setScalar(entry.targetHeight / 3.5);
+  ornament.castShadow = false;
+  ornament.receiveShadow = false;
+  ornament.frustumCulled = true;
+  root.add(ornament);
+}
 
 /** انتقال userData سازنده برج از گروه داخلی به ریشه (Gameplay به این کلیدها تکیه دارد) */
 function propagateTowerUdata(from: THREE.Object3D, to: THREE.Object3D) {
@@ -149,6 +225,10 @@ export class CharacterHandle {
     // ۲) نرمال‌سازی و سوار کردن
     const norm = normalizeModel(model, entry, heightScale);
     this.root.add(norm.inner);
+    if (entry.category === 'towers') {
+      const level = Number(this.root.name.match(/_l(\\d+)/)?.[1] ?? 1);
+      addTowerUpgradeOrnament(this.root, entry, level);
+    }
     for (const node of keepNodes) this.root.add(node);
 
     // ۳) فراداده
