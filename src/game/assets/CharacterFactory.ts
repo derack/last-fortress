@@ -80,7 +80,7 @@ function addCharacterContactShadow(root: THREE.Group, entry: CharacterAssetEntry
   const shadow = new THREE.Mesh(contactShadowGeometry, getContactShadowMaterial());
   shadow.name = 'contactShadow';
   shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = -root.position.y + 0.018;
+  shadow.position.y = -root.position.y + 0.073;
   shadow.scale.set(entry.targetHeight * 0.28, entry.targetHeight * 0.18, 1);
   shadow.renderOrder = 1;
   shadow.castShadow = false;
