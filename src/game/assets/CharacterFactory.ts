@@ -226,7 +226,7 @@ export class CharacterHandle {
     const norm = normalizeModel(model, entry, heightScale);
     this.root.add(norm.inner);
     if (entry.category === 'towers') {
-      const level = Number(this.root.name.match(/_l(\\d+)/)?.[1] ?? 1);
+      const level = Number(this.root.name.match(/_l(\d+)/)?.[1] ?? 1);
       addTowerUpgradeOrnament(this.root, entry, level);
     }
     for (const node of keepNodes) this.root.add(node);
