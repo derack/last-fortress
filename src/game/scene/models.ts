@@ -39,12 +39,17 @@ export function buildTowerMesh(towerId: string, level: number): THREE.Group {
   const lv = level - 1;
   const accent = data.color;
 
-  // پایه فلزی مشترک — مدرن
+  // Shared machined foundation: broader footing, cleaner silhouette and layered metal collars.
   const baseH = 0.9 + lv * 0.12;
-  const base = mesh(new THREE.CylinderGeometry(1.5, 1.8, baseH, 8), mat(0x4a4f58, { metalness: 0.7, roughness: 0.4 }), 0, baseH / 2, 0);
+  const footing = mesh(new THREE.CylinderGeometry(1.78, 1.88, 0.18, 12, 1), mat(0x252b33, { metalness: 0.62, roughness: 0.48 }), 0, 0.09, 0);
+  g.add(footing);
+  const base = mesh(new THREE.CylinderGeometry(1.48, 1.72, baseH, 12, 1), mat(0x414955, { metalness: 0.72, roughness: 0.36 }), 0, baseH / 2 + 0.12, 0);
   g.add(base);
-  const trim = mesh(new THREE.CylinderGeometry(1.55, 1.55, 0.14, 8), mat(0x6b7280, { metalness: 0.8 }), 0, baseH + 0.07, 0);
+  const trim = mesh(new THREE.CylinderGeometry(1.57, 1.57, 0.13, 16, 1), mat(0x7b8490, { metalness: 0.82, roughness: 0.28 }), 0, baseH + 0.185, 0);
   g.add(trim);
+  const lowerCollar = mesh(new THREE.TorusGeometry(1.64, 0.055, 6, 24), mat(0x303741, { metalness: 0.78, roughness: 0.34 }), 0, 0.22, 0);
+  lowerCollar.rotation.x = Math.PI / 2;
+  g.add(lowerCollar);
 
   if (towerId === 'sentinel') {
     // نگهبان — برجک توپ مسلسل
