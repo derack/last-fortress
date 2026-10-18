@@ -198,7 +198,9 @@ function ensureTowerSpinRing(root: THREE.Object3D, entry: CharacterAssetEntry) {
     towerUpgradeMaterials.set(color, material);
   }
   let ring = root.userData.spinRing as THREE.Mesh | undefined;
-  if (!ring?.isMesh) {
+  // Placeholder nodes survive in userData when root.clear() removes their parent.
+  // Reuse only a ring that is actually attached to the mounted GLB turret.
+  if (!ring?.isMesh || ring.parent !== turret) {
     ring = new THREE.Mesh(towerSpinRingGeometry, material);
     ring.name = 'spinRing';
     turret.add(ring);
