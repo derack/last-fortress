@@ -494,3 +494,20 @@ Stage Summary:
 - ریپو: https://github.com/derack/last-fortress (PRIVATE)
 - شامل: کل سورس بازی + android/ + keystore + download/ (APK + اسکرین‌شات‌ها) + scripts/
 - توصیه امنیتی به کاربر: توکن در چت plaintext به اشتراک گذاشته شده → بعد از اتمام کارها regenerate شود
+
+---
+Task ID: 21
+Agent: main (Super Z)
+Task: پابلیک کردن ریپو last-fortress به درخواست کاربر (تا اطلاع بعدی)
+
+Work Log:
+- چک امنیتی قبل از پابلیک: توکن در هیچ commit نیست، .env فقط مسیر sqlite لوکال
+- کشف ۴ فایل حساس tracked: android/keystore.properties (پسورد plaintext)، دو نسخه keystore، KEYSTORE-INFO.txt
+- git rm --cached + افزودن به .gitignore (فایل‌های لوکال دست‌نخورده ماندند) → commit 18aab16 → push
+- تغییر visibility به public با PATCH API
+- تأیید: صفحه repo بدون لاگین HTTP 200، README raw 200، keystore.properties raw 404، keystore raw 404
+- نکته: فایل‌های حساس هنوز در git HISTORY قدیمی موجودند (پیشنهاد پاکسازی عمیق با filter-repo در صورت نیاز)
+
+Stage Summary:
+- ریپو derack/last-fortress اکنون PUBLIC تا وقتی کاربر بگوید
+- keystore و پسوردها فقط روی دیسک لوکال + download/keystore هستند، از ریپو حذف شدند

@@ -1,0 +1,1058 @@
+     1→import * as THREE from 'three';
+     2→import type { LevelData, MagicId, SaveData } from '../data/types';
+     3→import { TOWERS, isTowerUnlocked } from '../data/towers';
+     4→import { ENEMIES } from '../data/enemies';
+     5→import { stagePowerMul } from '../data/levels';
+     6→import { heroMetaPct, heroMetaLevel, towerMetaPct, towerMetaLevel } from '../data/meta';
+     7→import { MAGIC } from '../data/magic';
+     8→import { BattleScene } from '../scene/BattleScene';
+     9→import { CameraController } from './CameraController';
+    10→import { InputController, TapHit } from './InputController';
+    11→import { VFXSystem } from '../systems/VFXSystem';
+    12→import { AudioSystem } from '../systems/AudioSystem';
+    13→import { EventBus } from './EventBus';
+    14→import { Enemy } from '../entities/Enemy';
+    15→import { Tower } from '../entities/Tower';
+    16→import { Projectile } from '../entities/Projectile';
+    17→import { Hero } from '../entities/Hero';
+    18→import { characterFactory } from '../assets';
+    19→import type { DamageableEnemy, GameContext } from '../entities/context';
+    20→
+    21→// ============================================================
+    22→// موتور اصلی بازی — حلقه، موج‌ها، اقتصاد، جادو، پیروزی/شکست
+    23→// ============================================================
+    24→
+    25→interface FireBarrageItem {
+    26→  time: number;
+    27→  pos: THREE.Vector3;
+    28→  damage: number;
+    29→  visual: 'fire' | 'arrow';
+    30→}
+    31→
+    32→export class Game {
+    33→  bus = new EventBus();
+    34→  private canvas: HTMLCanvasElement;
+    35→  private level: LevelData;
+    36→  private scene3d: BattleScene;
+    37→  private cameraCtrl: CameraController;
+    38→  private input: InputController;
+    39→  private vfx: VFXSystem;
+    40→  audio = new AudioSystem();
+    41→  private hero: Hero;
+    42→  private ctx: GameContext;
+    43→
+    44→  private enemies: Enemy[] = [];
+    45→  private towers: Tower[] = [];
+    46→  private projectiles: Projectile[] = [];
+    47→  private towerNextId = 1;
+    48→
+    49→  // اقتصاد
+    50→  coins: number;
+    51→  crystals: number;
+    52→  coreHp: number;
+    53→  coreMaxHp: number;
+    54→  leaks = 0;
+    55→  killsThisLevel = 0;
+    56→  coinsEarned = 0;
+    57→  towersBuilt = 0;
+    58→  upgradesCount = 0;
+    59→  magicCastThisLevel = 0;
+    60→  towersBuiltBeforeBoss: number | null = null;
+    61→
+    62→  // موج
+    63→  waveIndex = 0; // موج بعدی
+    64→  waveActive = false;
+    65→  private waveTime = 0;
+    66→  private spawnQueue: { enemyId: string; tier: number; time: number }[] = [];
+    67→  private autoStartTimer = 18; // زمان آماده‌سازی دژ قبل از موج اول
+    68→  private earlyBonus = 0;
+    69→
+    70→  // جادو
+    71→  private magicCd: Record<string, number> = {};
+    72→  private magicPending: MagicId | null = null;
+    73→  private shieldUntil = 0;
+    74→  private fireBarrage: FireBarrageItem[] = [];
+    75→  private barrageTimer = 0;
+    76→  private blessingUntil = 0; // برکت آذر
+    77→
+    78→  // حالت
+    79→  private paused = false;
+    80→  private speed = 1;
+    81→  private gameOver = false;
+    82→  private buildMode: string | null = null;
+    83→  private heroSelectMode = false;
+    84→  private selectedTower: Tower | null = null;
+    85→  /** پیش‌نمایش محل ساخت — دیسک سبز/قرمز + حلقه برد */
+    86→  private ghostGroup: THREE.Group | null = null;
+    87→  private ghostDisc: THREE.Mesh | null = null;
+    88→  private ghostRing: THREE.Mesh | null = null;
+    89→  private ghostValid = false;
+    90→  /** گرید قابل‌ساخت — فقط در حالت ساخت دیده می‌شود */
+    91→  private buildGrid: THREE.Mesh | null = null;
+    92→  private ghostPulse = 0;
+    93→  private heroMovePulse = 0; // تایمر حلقه پالس جابجایی قهرمان
+    94→  private time = 0;
+    95→  private raf = 0;
+    96→  private lastFrame = 0;
+    97→  private uiTimer = 0;
+    98→  private disposed = false;
+    99→  private save: SaveData;
+   100→  private totalWavesSurvivedAtStart: number;
+   101→
+   102→  constructor(canvas: HTMLCanvasElement, level: LevelData, quality: string, save: SaveData, language: 'fa' | 'en', heroId = 'arman') {
+   103→    this.canvas = canvas;
+   104→    this.level = level;
+   105→    this.save = save;
+   106→    this.coins = level.startCoins;
+   107→    this.crystals = level.startCrystals + save.crystals;
+   108→    this.coreHp = level.coreHp;
+   109→    this.coreMaxHp = level.coreHp;
+   110→    this.totalWavesSurvivedAtStart = save.stats.wavesSurvived;
+   111→    for (const m of Object.values(MAGIC)) this.magicCd[m.id] = 0;
+   112→
+   113→    const w = canvas.clientWidth || window.innerWidth;
+   114→    const h = canvas.clientHeight || window.innerHeight;
+   115→
+   116→    this.scene3d = new BattleScene(canvas, level, (quality as 'low' | 'medium' | 'high' | 'ultra'));
+   117→    this.scene3d.resize(w, h);
+   118→    this.cameraCtrl = new CameraController(w / h);
+   119→    this.cameraCtrl.setBounds(34);
+   120→    this.cameraCtrl.desiredTarget.set(-4, 0, 3);
+   121→    this.vfx = new VFXSystem(this.scene3d.scene);
+   122→    this.vfx.particleScale = quality === 'low' ? 0.4 : quality === 'medium' ? 0.8 : 1.2;
+   123→
+   124→    this.ctx = {
+   125→      pathPoints: this.scene3d.pathPoints,
+   126→      pathLength: this.scene3d.pathLength,
+   127→      corePos: this.scene3d.corePos,
+   128→      enemies: this.enemies as unknown as DamageableEnemy[],
+   129→      towers: this.towers,
+   130→      heroRef: null,
+   131→      vfx: this.vfx,
+   132→      audio: this.audio,
+   133→      cameraShake: (a) => this.cameraCtrl.shake(a),
+   134→      spawnProjectile: (kind, from, target, opts) => {
+   135→        this.projectiles.push(new Projectile(kind, from, target, opts, this.ctx, this.scene3d.scene));
+   136→      },
+   137→      chainLightning: (from, first, chains, damage, color) => this.chainLightning(from, first, chains, damage, color),
+   138→      scheduleFireBarrage: (center, radius, count, damage, visual = 'fire') => this.scheduleFireBarrage(center, radius, count, damage, visual),
+   139→      summonAt: (pos, enemyId) => this.summonShadow(pos, enemyId),
+   140→      requestCoreShield: (duration) => this.requestCoreShield(duration),
+   141→      onEnemyKilled: (e) => this.handleKill(e as Enemy),
+   142→      onEnemyLeak: (e) => this.handleLeak(e as Enemy),
+   143→      heroDamageBuff: 0,
+   144→      towerRateBuff: 0,
+   145→      disableTower: (towerId, duration, color) => this.disableTower(towerId, duration, color),
+   146→      onBossPhase: (nameKey, color) => this.bus.emit('bossPhase', { nameKey, color }),
+   147→    };
+   148→
+   149→    this.hero = new Hero(heroId, this.scene3d.scene, this.ctx, heroMetaPct(heroMetaLevel(this.save, heroId)));
+   150→    // دشمنان از طریق ctx قهرمان را هدف می‌گیرند
+   151→    this.ctx.heroRef = this.hero;
+   152→    this.input = new InputController(canvas, this.cameraCtrl, (hit) => this.handleTap(hit), this.scene3d.scene);
+   153→    // پیش‌نمایش محل ساخت — حرکت موس/درگ انگشت
+   154→    this.input.onGroundHover = (pt) => this.updateGhost(pt);
+   155→
+   156→    this.audio.setVolumes(save.settings.music, save.settings.sfx);
+   157→  }
+   158→
+   159→  resize() {
+   160→    const w = this.canvas.clientWidth || window.innerWidth;
+   161→    const h = this.canvas.clientHeight || window.innerHeight;
+   162→    this.scene3d.resize(w, h);
+   163→    this.cameraCtrl.resize(w / h);
+   164→  }
+   165→
+   166→  // ===================== چرخه اصلی =====================
+   167→
+   168→  start() {
+   169→    this.lastFrame = performance.now();
+   170→    const loop = (t: number) => {
+   171→      if (this.disposed) return;
+   172→      this.raf = requestAnimationFrame(loop);
+   173→      const rawDt = Math.min(0.05, (t - this.lastFrame) / 1000);
+   174→      this.lastFrame = t;
+   175→      if (!this.paused && !this.gameOver) {
+   176→        const dt = rawDt * this.speed;
+   177→        this.update(dt);
+   178→      }
+   179→      this.cameraCtrl.update(rawDt);
+   180→      this.scene3d.update(rawDt);
+   181→      this.vfx.update(this.paused ? rawDt * 0.2 : rawDt * this.speed);
+   182→      this.scene3d.render(this.cameraCtrl.camera);
+   183→    };
+   184→    this.raf = requestAnimationFrame(loop);
+   185→    this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+   186→    this.bus.emit('wave', { wave: this.waveIndex + 1, total: this.level.waves.length, active: false, autoIn: 0 });
+   187→    this.bus.emit('core', { hp: this.coreHp, max: this.coreMaxHp });
+   188→    this.bus.emit('magic', this.magicState());
+   189→    this.bus.emit('hero', this.heroState());
+   190→  }
+   191→
+   192→  private update(dt: number) {
+   193→    this.time += dt;
+   194→
+   195→    // موج — شمارش معکوس شروع خودکار
+   196→    if (!this.waveActive && !this.gameOver) {
+   197→      this.autoStartTimer -= dt;
+   198→      if (this.autoStartTimer <= 0 && this.waveIndex < this.level.waves.length) {
+   199→        if (this.waveIndex > 0 || !this.save.tutorialDone) {
+   200→          // در آموزش شروع خودکار نداریم
+   201→          if (this.save.tutorialDone) this.startWave();
+   202→        } else {
+   203→          this.startWave();
+   204→        }
+   205→      }
+   206→      this.uiTimer -= dt;
+   207→      if (this.uiTimer <= 0) {
+   208→        this.uiTimer = 0.25;
+   209→        this.bus.emit('wave', { wave: this.waveIndex + 1, total: this.level.waves.length, active: false, autoIn: Math.max(0, this.autoStartTimer), earlyBonus: this.earlyBonus });
+   210→      }
+   211→    }
+   212→
+   213→    // اسپاون
+   214→    if (this.waveActive) {
+   215→      this.waveTime += dt;
+   216→      while (this.spawnQueue.length && this.spawnQueue[0].time <= this.waveTime) {
+   217→        const item = this.spawnQueue.shift()!;
+   218→        this.spawnEnemy(item.enemyId, item.tier);
+   219→      }
+   220→    }
+   221→
+   222→    // دشمنان
+   223→    const camPos = this.cameraCtrl.camera.position;
+   224→    for (let i = this.enemies.length - 1; i >= 0; i--) {
+   225→      const e = this.enemies[i];
+   226→      e.update(dt, this.time);
+   227→      e.updateLod(camPos);
+   228→      if (!e.alive && e.getPos().y < -2.4) {
+   229→        e.remove();
+   230→        this.enemies.splice(i, 1);
+   231→      }
+   232→    }
+   233→
+   234→    // اتمام موج
+   235→    if (this.waveActive && this.spawnQueue.length === 0 && this.enemies.length === 0 && !this.gameOver) {
+   236→      this.completeWave();
+   237→    }
+   238→
+   239→    // برج‌ها
+   240→    for (const t of this.towers) {
+   241→      t.update(dt, this.time, this.enemies);
+   242→    }
+   243→
+   244→    // پرتابه‌ها
+   245→    for (let i = this.projectiles.length - 1; i >= 0; i--) {
+   246→      const p = this.projectiles[i];
+   247→      p.update(dt, this.scene3d.scene);
+   248→      if (!p.isAlive) this.projectiles.splice(i, 1);
+   249→    }
+   250→
+   251→    // نبض پیش‌نمایش ساخت
+   252→    if (this.ghostGroup && this.ghostGroup.visible) {
+   253→      this.ghostPulse += dt * 4;
+   254→      const pulse = 0.32 + Math.sin(this.ghostPulse) * 0.1;
+   255→      const color = this.ghostValid ? 0x22c55e : 0xef4444;
+   256→      (this.ghostDisc!.material as THREE.MeshBasicMaterial).opacity = pulse;
+   257→      (this.ghostDisc!.material as THREE.MeshBasicMaterial).color.setHex(color);
+   258→      (this.ghostRing!.material as THREE.MeshBasicMaterial).color.setHex(color);
+   259→    }
+   260→
+   261→    // قهرمان
+   262→    this.hero.update(dt, this.time);
+   263→    this.hero.updateLod(this.cameraCtrl.camera.position);
+   264→    // حلقه پالس حالت جابجایی — زیر قهرمان تا کاربر بداند کجا تپ کند
+   265→    if (this.heroSelectMode && this.hero.alive) {
+   266→      this.heroMovePulse -= dt;
+   267→      if (this.heroMovePulse <= 0) {
+   268→        this.heroMovePulse = 0.55;
+   269→        this.vfx.ring(this.hero.getPos(), 0xffb020, 2.2, 0.5);
+   270→      }
+   271→    }
+   272→    const commandBuff = this.hero.data.abilityKind === 'battleCommand' && this.hero.abilityActiveTime > 0
+   273→      ? this.hero.data.abilityBuff / 100 : 0;
+   274→    const blessingBuff = this.time < this.blessingUntil
+   275→      ? (MAGIC.azarBlessing.rateBuffPct ?? 0) : 0;
+   276→    this.ctx.towerRateBuff = commandBuff + blessingBuff;
+   277→
+   278→    // رگبار آتش/تیر
+   279→    this.barrageTimer -= dt;
+   280→    for (let i = this.fireBarrage.length - 1; i >= 0; i--) {
+   281→      const item = this.fireBarrage[i];
+   282→      item.time -= dt;
+   283→      if (item.time <= 0) {
+   284→        if (item.visual === 'arrow') {
+   285→          const from = item.pos.clone().add(new THREE.Vector3((Math.random() - 0.5) * 8, 16, (Math.random() - 0.5) * 8));
+   286→          this.projectiles.push(new Projectile('bolt', from, null, { damage: item.damage, color: 0xc084fc }, this.ctx, this.scene3d.scene));
+   287→        } else {
+   288→          const from = item.pos.clone().add(new THREE.Vector3(0, 22, 0));
+   289→          this.projectiles.push(new Projectile('fireball', from, null, { damage: item.damage, splash: 2.6, burn: 4, color: 0xf97316 }, this.ctx, this.scene3d.scene));
+   290→        }
+   291→        this.fireBarrage.splice(i, 1);
+   292→      }
+   293→    }
+   294→
+   295→    // سردست‌های جادو
+   296→    for (const id of Object.keys(this.magicCd)) {
+   297→      this.magicCd[id] = Math.max(0, this.magicCd[id] - dt);
+   298→    }
+   299→
+   300→    // سپر هسته
+   301→    if (this.shieldUntil > 0 && this.time > this.shieldUntil) {
+   302→      this.shieldUntil = 0;
+   303→      this.bus.emit('shield', { active: false });
+   304→    }
+   305→
+   306→    // بروزرسانی UI با نرخ محدود
+   307→    this.uiTimer -= dt;
+   308→    if (this.uiTimer <= 0) {
+   309→      this.uiTimer = 0.2;
+   310→      this.bus.emit('magic', this.magicState());
+   311→      this.bus.emit('hero', this.heroState());
+   312→      if (this.selectedTower) this.emitTowerInfo();
+   313→    }
+   314→  }
+   315→
+   316→  // ===================== موج‌ها =====================
+   317→
+   318→  startWave() {
+   319→    if (this.waveActive || this.waveIndex >= this.level.waves.length || this.gameOver) return;
+   320→    const wave = this.level.waves[this.waveIndex];
+   321→    this.waveActive = true;
+   322→    this.waveTime = 0;
+   323→    this.spawnQueue = [];
+   324→    for (const g of wave.groups) {
+   325→      for (let i = 0; i < g.count; i++) {
+   326→        this.spawnQueue.push({ enemyId: g.enemy, tier: g.tier, time: g.delay + i * g.interval });
+   327→      }
+   328→    }
+   329→    this.spawnQueue.sort((a, b) => a.time - b.time);
+   330→    this.earlyBonus = Math.round(15 + this.autoStartTimer * 4);
+   331→    if (this.earlyBonus > 0 && this.autoStartTimer > 1) {
+   332→      this.coins += this.earlyBonus;
+   333→      this.coinsEarned += this.earlyBonus;
+   334→      this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+   335→    }
+   336→    this.autoStartTimer = 0;
+   337→
+   338→    this.audio.play('waveStart');
+   339→    this.bus.emit('banner', { wave: this.waveIndex + 1, boss: !!wave.boss });
+   340→    this.bus.emit('wave', { wave: this.waveIndex + 1, total: this.level.waves.length, active: true, autoIn: 0 });
+   341→
+   342→    if (wave.boss) {
+   343→      this.audio.setBossMode(true);
+   344→      this.audio.play('bossRoar');
+   345→      this.cameraCtrl.shake(0.6);
+   346→      this.towersBuiltBeforeBoss = this.towersBuilt;
+   347→    }
+   348→
+   349→    // پاداش کریستال موج
+   350→    this.crystals += 5;
+   351→    this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+   352→
+   353→    // آموزش
+   354→    if (!this.save.tutorialDone) this.bus.emit('tutorial', 'upgrade');
+   355→  }
+   356→
+   357→  private completeWave() {
+   358→    const wave = this.level.waves[this.waveIndex];
+   359→    this.waveActive = false;
+   360→    this.waveIndex++;
+   361→    this.save.stats.wavesSurvived = this.totalWavesSurvivedAtStart + this.waveIndex;
+   362→    this.coins += wave.coinBonus;
+   363→    this.coinsEarned += wave.coinBonus;
+   364→    this.autoStartTimer = wave.boss ? 0 : 14;
+   365→    this.earlyBonus = 0;
+   366→    this.audio.play('reward');
+   367→    this.bus.emit('waveCleared', { wave: this.waveIndex, bonus: wave.coinBonus });
+   368→    this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+   369→
+   370→    if (this.waveIndex >= this.level.waves.length) {
+   371→      this.doVictory();
+   372→    } else {
+   373→      this.bus.emit('wave', { wave: this.waveIndex + 1, total: this.level.waves.length, active: false, autoIn: this.autoStartTimer, earlyBonus: 0 });
+   374→      if (!this.save.tutorialDone) this.bus.emit('tutorial', 'magic');
+   375→    }
+   376→  }
+   377→
+   378→  // ===================== دشمنان =====================
+   379→
+   380→  private spawnEnemy(enemyId: string, tier: number) {
+   381→    const data = ENEMIES[enemyId];
+   382→    if (!data) return;
+   383→    const enemy = new Enemy(data, tier, this.scene3d.scene, this.ctx, stagePowerMul(this.level.region));
+   384→    this.enemies.push(enemy);
+   385→    this.vfx.burst(enemy.getPos().clone().add(new THREE.Vector3(0, 1.5, 0)), data.accent, 10, { speed: 4, life: 0.5, size: 0.5, gravity: 3 });
+   386→    if (data.boss) {
+   387→      this.audio.play('bossRoar');
+   388→      this.cameraCtrl.shake(0.7);
+   389→    }
+   390→  }
+   391→
+   392→  private summonShadow(pos: THREE.Vector3, enemyId = 'shadow') {
+   393→    const data = ENEMIES[enemyId] ?? ENEMIES.shadow;
+   394→    const e = new Enemy(data, 1, this.scene3d.scene, this.ctx, stagePowerMul(this.level.region));
+   395→    // قرار دادن روی نزدیک‌ترین نقطه مسیر
+   396→    let best = 0;
+   397→    let bestD = Infinity;
+   398→    this.scene3d.pathPoints.forEach((p, i) => {
+   399→      const d = (p.x - pos.x) ** 2 + (p.z - pos.z) ** 2;
+   400→      if (d < bestD) {
+   401→        bestD = d;
+   402→        best = i;
+   403→      }
+   404→    });
+   405→    e.dist = (best / (this.scene3d.pathPoints.length - 1)) * this.scene3d.pathLength;
+   406→    this.enemies.push(e);
+   407→    this.vfx.burst(pos.clone().add(new THREE.Vector3(0, 1, 0)), data.accent, 14, { speed: 5, life: 0.6, size: 0.6, gravity: 3 });
+   408→  }
+   409→
+   410→  /** سپر اثری آریا — مصونیت کامل هسته */
+   411→  private requestCoreShield(duration: number) {
+   412→    this.shieldUntil = Math.max(this.shieldUntil, this.time + duration);
+   413→    this.bus.emit('shield', { active: true, duration });
+   414→  }
+   415→
+   416→  private handleKill(e: Enemy) {
+   417→    this.coins += e.reward;
+   418→    this.coinsEarned += e.reward;
+   419→    this.crystals += e.data.crystalReward ?? 0;
+   420→    this.killsThisLevel++;
+   421→    this.save.stats.kills++;
+   422→    if (e.data.boss) {
+   423→      this.save.stats.bossKills++;
+   424→      this.audio.setBossMode(false);
+   425→    }
+   426→    this.hero.gainXp(e.data.boss ? 200 : 12);
+   427→    this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+   428→  }
+   429→
+   430→  private handleLeak(e: Enemy) {
+   431→    // حذف از صحنه
+   432→    e.alive = false;
+   433→    e.remove();
+   434→    const i = this.enemies.indexOf(e);
+   435→    if (i >= 0) this.enemies.splice(i, 1);
+   436→
+   437→    if (this.time < this.shieldUntil) {
+   438→      // سپر آریانا — جلوگیری کامل
+   439→      this.vfx.ring(this.scene3d.corePos, 0xfbbf24, 6, 0.5);
+   440→      return;
+   441→    }
+   442→    this.leaks++;
+   443→    this.coreHp = Math.max(0, this.coreHp - e.data.coreDamage);
+   444→    this.cameraCtrl.shake(e.data.boss ? 1 : 0.45);
+   445→    this.vfx.explosion(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 2, 0)), 0xef4444, e.data.boss);
+   446→    this.audio.play('explosion');
+   447→    this.bus.emit('core', { hp: this.coreHp, max: this.coreMaxHp });
+   448→    if (this.coreHp <= 0 && !this.gameOver) {
+   449→      this.doDefeat();
+   450→    }
+   451→  }
+   452→
+   453→  // ===================== ساخت / ارتقا / فروش برج =====================
+   454→
+   455→  /** از کار انداختن موقت برج توسط توانایی فاز ۲ Boss */
+   456→  disableTower(towerId: number, duration: number, color = 0xf97316) {
+   457→    const t = this.towers.find((x) => x.id === towerId);
+   458→    if (!t || !t.alive) return;
+   459→    t.disable(duration, color);
+   460→  }
+   461→
+   462→  setBuildMode(towerId: string | null) {
+   463→    // قفل برج — باز شدن تدریجی با ستاره
+   464→    if (towerId && !isTowerUnlocked(this.save, towerId)) {
+   465→      this.audio.play('error');
+   466→      this.bus.emit('toast', { key: 'towerLocked', type: 'error' });
+   467→      return;
+   468→    }
+   469→    this.buildMode = towerId;
+   470→    this.magicPending = null;
+   471→    this.heroSelectMode = false;
+   472→    this.clearGhost();
+   473→    if (towerId) {
+   474→      this.createGhost(towerId);
+   475→      this.setBuildGridVisible(true);
+   476→    } else {
+   477→      this.setBuildGridVisible(false);
+   478→    }
+   479→    this.bus.emit('buildMode', { towerId });
+   480→  }
+   481→
+   482→  selectHeroMode(on: boolean) {
+   483→    this.heroSelectMode = on;
+   484→    this.buildMode = null;
+   485→    this.magicPending = null;
+   486→    this.clearGhost();
+   487→    this.setBuildGridVisible(false);
+   488→  }
+   489→
+   490→  // ------------------- پیش‌نمایش محل ساخت برج -------------------
+   491→
+   492→  /** ساخت Ghost — دیسک پایه + حلقه برد برج (سبز/قرمز هوشمند) */
+   493→  private createGhost(towerId: string) {
+   494→    const data = TOWERS[towerId];
+   495→    this.ghostGroup = new THREE.Group();
+   496→    this.ghostGroup.visible = false;
+   497→
+   498→    // دیسک پایه — محل دقیق قرارگیری
+   499→    this.ghostDisc = new THREE.Mesh(
+   500→      new THREE.CircleGeometry(1.85, 28),
+   501→      new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.35, depthWrite: false })
+   502→    );
+   503→    this.ghostDisc.rotation.x = -Math.PI / 2;
+   504→    this.ghostDisc.position.y = 0.12;
+   505→    this.ghostGroup.add(this.ghostDisc);
+   506→
+   507→    // حلقه برد — شعاع واقعی شلیک برج سطح ۱
+   508→    const range = data.levels[0].range;
+   509→    this.ghostRing = new THREE.Mesh(
+   510→      new THREE.RingGeometry(Math.max(0.1, range - 0.22), range, 72),
+   511→      new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.4, depthWrite: false, side: THREE.DoubleSide })
+   512→    );
+   513→    this.ghostRing.rotation.x = -Math.PI / 2;
+   514→    this.ghostRing.position.y = 0.1;
+   515→    this.ghostGroup.add(this.ghostRing);
+   516→
+   517→    this.scene3d.scene.add(this.ghostGroup);
+   518→  }
+   519→
+   520→  /** پاک‌سازی کامل Ghost */
+   521→  private clearGhost() {
+   522→    if (this.ghostGroup) {
+   523→      this.ghostGroup.traverse((o) => {
+   524→        if (o instanceof THREE.Mesh) {
+   525→          o.geometry.dispose();
+   526→          (o.material as THREE.Material).dispose();
+   527→        }
+   528→      });
+   529→      this.ghostGroup.removeFromParent();
+   530→      this.ghostGroup = null;
+   531→      this.ghostDisc = null;
+   532→      this.ghostRing = null;
+   533→    }
+   534→  }
+   535→
+   536→  /** بروزرسانی Ghost — اسنپ روی تایل + اعتبارسنجی (سبز/قرمز) */
+   537→  private updateGhost(point: THREE.Vector3) {
+   538→    if (!this.buildMode || !this.ghostGroup || !this.ghostDisc || !this.ghostRing) return;
+   539→    const data = TOWERS[this.buildMode];
+   540→    const x = Math.round(point.x / 2) * 2;
+   541→    const z = Math.round(point.z / 2) * 2;
+   542→    const valid = this.scene3d.canBuild(x, z, this.towers.map((t) => t.position)) && this.coins >= data.cost;
+   543→    this.ghostValid = valid;
+   544→    const color = valid ? 0x22c55e : 0xef4444;
+   545→    (this.ghostDisc.material as THREE.MeshBasicMaterial).color.setHex(color);
+   546→    (this.ghostRing.material as THREE.MeshBasicMaterial).color.setHex(color);
+   547→    this.ghostGroup.position.set(x, 0, z);
+   548→    this.ghostGroup.visible = true;
+   549→  }
+   550→
+   551→  /** گرید زمین در حالت ساخت — تایل‌های دوتایی */
+   552→  private setBuildGridVisible(v: boolean) {
+   553→    if (v && !this.buildGrid) {
+   554→      const c = document.createElement('canvas');
+   555→      c.width = c.height = 512;
+   556→      const g = c.getContext('2d')!;
+   557→      g.strokeStyle = 'rgba(120, 220, 255, 0.55)';
+   558→      g.lineWidth = 2;
+   559→      const step = 512 / 16; // ۱۶ تایل در هر بعد — هر تایل ۲ واحد جهانی
+   560→      for (let i = 0; i <= 16; i++) {
+   561→        g.beginPath(); g.moveTo(i * step, 0); g.lineTo(i * step, 512); g.stroke();
+   562→        g.beginPath(); g.moveTo(0, i * step); g.lineTo(512, i * step); g.stroke();
+   563→      }
+   564→      const tex = new THREE.CanvasTexture(c);
+   565→      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+   566→      tex.repeat.set(17, 17);
+   567→      this.buildGrid = new THREE.Mesh(
+   568→        new THREE.PlaneGeometry(68, 68),
+   569→        new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.1, depthWrite: false })
+   570→      );
+   571→      this.buildGrid.rotation.x = -Math.PI / 2;
+   572→      this.buildGrid.position.y = 0.06;
+   573→      this.scene3d.scene.add(this.buildGrid);
+   574→    }
+   575→    if (this.buildGrid) this.buildGrid.visible = v;
+   576→  }
+   577→
+   578→  tryBuild(towerId: string, point: THREE.Vector3): boolean {
+   579→    const data = TOWERS[towerId];
+   580→    if (!data) return false;
+   581→    // قفل برج — حتی با تپ مستقیم روی زمین
+   582→    if (!isTowerUnlocked(this.save, towerId)) {
+   583→      this.audio.play('error');
+   584→      this.bus.emit('toast', { key: 'towerLocked', type: 'error' });
+   585→      return false;
+   586→    }
+   587→    const x = Math.round(point.x / 2) * 2;
+   588→    const z = Math.round(point.z / 2) * 2;
+   589→    if (!this.scene3d.canBuild(x, z, this.towers.map((t) => t.position))) {
+   590→      this.audio.play('error');
+   591→      this.bus.emit('toast', { key: 'invalidSpot', type: 'error' });
+   592→      return false;
+   593→    }
+   594→    if (this.coins < data.cost) {
+   595→      this.audio.play('error');
+   596→      this.bus.emit('toast', { key: 'notEnoughCoins', type: 'error' });
+   597→      return false;
+   598→    }
+   599→    this.coins -= data.cost;
+   600→    const tower = new Tower(this.towerNextId++, towerId, new THREE.Vector3(x, 0, z), this.scene3d.scene, this.ctx);
+   601→    // آهنگری آذر — تقویت دائمی این برج از ذخیره
+   602→    tower.metaPct = towerMetaPct(towerMetaLevel(this.save, towerId));
+   603→    this.towers.push(tower);
+   604→    this.towersBuilt++;
+   605→    this.save.stats.towersBuilt++;
+   606→    this.audio.play('place');
+   607→    this.vfx.ring(tower.position, data.color, 4, 0.5);
+   608→    this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+   609→    // خروج از حالت ساخت — هماهنگ با رویداد buildMode
+   610→    this.buildMode = null;
+   611→    this.clearGhost();
+   612→    this.setBuildGridVisible(false);
+   613→    this.bus.emit('buildMode', { towerId: null });
+   614→    if (!this.save.tutorialDone) this.bus.emit('tutorial', 'wave');
+   615→    return true;
+   616→  }
+   617→
+   618→  upgradeTower(towerId: number): boolean {
+   619→    const t = this.towers.find((x) => x.id === towerId);
+   620→    if (!t) return false;
+   621→    const cost = t.upgradeCost;
+   622→    if (cost < 0) return false;
+   623→    if (this.coins < cost) {
+   624→      this.audio.play('error');
+   625→      this.bus.emit('toast', { key: 'notEnoughCoins', type: 'error' });
+   626→      return false;
+   627→    }
+   628→    this.coins -= cost;
+   629→    t.upgrade();
+   630→    this.upgradesCount++;
+   631→    this.save.stats.upgrades++;
+   632→    this.audio.play('upgrade');
+   633→    this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+   634→    this.emitTowerInfo();
+   635→    if (t.level === 5) this.bus.emit('toast', { key: 'achMaxed', type: 'success' });
+   636→    if (!this.save.tutorialDone) this.bus.emit('tutorial', 'magic');
+   637→    return true;
+   638→  }
+   639→
+   640→  sellTower(towerId: number): boolean {
+   641→    const i = this.towers.findIndex((x) => x.id === towerId);
+   642→    if (i < 0) return false;
+   643→    const v = this.towers[i].sell();
+   644→    this.towers.splice(i, 1);
+   645→    this.coins += v;
+   646→    this.audio.play('sell');
+   647→    this.selectedTower = null;
+   648→    this.bus.emit('selectTower', null);
+   649→    this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+   650→    return true;
+   651→  }
+   652→
+   653→  useTowerAbility(towerId: number): boolean {
+   654→    const t = this.towers.find((x) => x.id === towerId);
+   655→    if (!t) return false;
+   656→    return t.useAbility(this.enemies);
+   657→  }
+   658→
+   659→  cycleTargeting(towerId: number) {
+   660→    const t = this.towers.find((x) => x.id === towerId);
+   661→    if (!t) return;
+   662→    t.cycleTargeting();
+   663→    this.audio.play('tap');
+   664→    this.emitTowerInfo();
+   665→  }
+   666→
+   667→  private emitTowerInfo() {
+   668→    const t = this.selectedTower;
+   669→    if (!t) return;
+   670→    this.bus.emit('selectTower', {
+   671→      id: t.id,
+   672→      towerId: t.towerId,
+   673→      level: t.level,
+   674→      damage: Math.round(t.damage),
+   675→      range: Math.round(t.range),
+   676→      fireRate: Math.round(t.fireRate * 10) / 10,
+   677→      upgradeCost: t.upgradeCost,
+   678→      sellValue: t.sellValue,
+   679→      targeting: t.targeting,
+   680→      abilityCd: t.abilityCd,
+   681→      abilityMax: t.data.abilityCooldown,
+   682→      abilityNameKey: t.data.abilityNameKey,
+   683→    });
+   684→  }
+   685→
+   686→  // ===================== جادو =====================
+   687→
+   688→  setMagicPending(id: MagicId | null) {
+   689→    const m = id ? MAGIC[id] : undefined;
+   690→    if (m && id) {
+   691→      if (this.magicCd[id] > 0) {
+   692→        this.bus.emit('toast', { key: 'magicCooldown', type: 'error' });
+   693→        return;
+   694→      }
+   695→      if (this.crystals < m.crystalCost) {
+   696→        this.audio.play('error');
+   697→        this.bus.emit('toast', { key: 'notEnoughCrystals', type: 'error' });
+   698→        return;
+   699→      }
+   700→      // جادوی بدون هدف — بلافاصله اجرا شود (سپر آریانا)
+   701→      if (!m.targeted) {
+   702→        this.castMagic(id, this.scene3d.corePos.clone());
+   703→        return;
+   704→      }
+   705→    }
+   706→    this.magicPending = id;
+   707→    this.buildMode = null;
+   708→    this.heroSelectMode = false;
+   709→    this.clearGhost();
+   710→    this.setBuildGridVisible(false);
+   711→    this.bus.emit('magicPending', { id });
+   712→  }
+   713→
+   714→  private castMagic(id: MagicId, point: THREE.Vector3): boolean {
+   715→    const m = MAGIC[id];
+   716→    if (!m) return false;
+   717→    if (this.magicCd[id] > 0 || this.crystals < m.crystalCost) return false;
+   718→
+   719→    this.crystals -= m.crystalCost;
+   720→    this.magicCd[id] = m.cooldown;
+   721→    this.magicCastThisLevel++;
+   722→    this.save.stats.magicCasts++;
+   723→    this.audio.play('magic');
+   724→    this.vfx.magicCircle(point, 0xf59e0b, m.radius * 1.2, 1.6);
+   725→
+   726→    switch (id) {
+   727→      case 'skyLightning': {
+   728→        const from = point.clone().add(new THREE.Vector3(0, 34, 0));
+   729→        this.vfx.bolt(from, point.clone(), 0xc4b5fd, true);
+   730→        this.vfx.bolt(from.clone().add(new THREE.Vector3(2, 0, 1)), point.clone().add(new THREE.Vector3(0.5, 0, -0.5)), 0xa78bfa, true);
+   731→        this.vfx.explosion(point, 0xa78bfa, true);
+   732→        this.cameraCtrl.shake(0.55);
+   733→        this.audio.play('lightning');
+   734→        // آسیب ناحیه‌ای
+   735→        for (const e of [...this.enemies]) {
+   736→          if (!e.alive) continue;
+   737→          const d = e.getPos().distanceTo(point);
+   738→          if (d <= m.radius) {
+   739→            e.takeDamage(m.damage! * (1 - (d / m.radius) * 0.4), 'energy');
+   740→          }
+   741→        }
+   742→        break;
+   743→      }
+   744→      case 'fireRain': {
+   745→        for (let i = 0; i < 12; i++) {
+   746→          const a = Math.random() * Math.PI * 2;
+   747→          const r = Math.random() * m.radius;
+   748→          this.fireBarrage.push({
+   749→            time: (i / 12) * (m.duration ?? 4),
+   750→            pos: point.clone().add(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r)),
+   751→            damage: m.damage ?? 38,
+   752→            visual: 'fire',
+   753→          });
+   754→        }
+   755→        this.audio.play('cannon');
+   756→        break;
+   757→      }
+   758→      case 'arianaShield': {
+   759→        this.shieldUntil = this.time + (m.duration ?? 10);
+   760→        this.vfx.ring(this.scene3d.corePos, 0xfbbf24, 6, 0.9);
+   761→        this.vfx.burst(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 3, 0)), 0xfbbf24, 40, { speed: 8, life: 1, size: 0.7, gravity: 1, up: 1 });
+   762→        this.bus.emit('shield', { active: true, duration: m.duration });
+   763→        break;
+   764→      }
+   765→      case 'deepFreeze': {
+   766→        // یخبندان — کندی شدید + آسیب یخ
+   767→        for (const e of [...this.enemies]) {
+   768→          if (!e.alive) continue;
+   769→          const d = e.getPos().distanceTo(point);
+   770→          if (d <= m.radius) {
+   771→            e.applySlow(m.freezeFactor ?? 0.12, m.duration ?? 4);
+   772→            e.takeDamage((m.damage ?? 60) * (1 - (d / m.radius) * 0.3), 'ice');
+   773→          }
+   774→        }
+   775→        this.vfx.ring(point, 0x67e8f9, m.radius + 1, 1.1);
+   776→        this.vfx.burst(point.clone().add(new THREE.Vector3(0, 1, 0)), 0xa5f3fc, 50, { speed: 7, life: 1.1, size: 0.6, gravity: 1, up: 0.6 });
+   777→        this.audio.play('freeze');
+   778→        this.cameraCtrl.shake(0.3);
+   779→        break;
+   780→      }
+   781→      case 'azarBlessing': {
+   782→        this.blessingUntil = this.time + (m.duration ?? 10);
+   783→        this.vfx.ring(this.scene3d.corePos, 0xfcd34d, 30, 1.4);
+   784→        this.audio.play('upgrade');
+   785→        break;
+   786→      }
+   787→      case 'coreMend': {
+   788→        this.coreHp = Math.min(this.coreMaxHp, this.coreHp + (m.healCore ?? 25));
+   789→        this.vfx.ring(this.scene3d.corePos, 0x4ade80, 6, 1.0);
+   790→        this.vfx.burst(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 3, 0)), 0x4ade80, 36, { speed: 6, life: 1, size: 0.6, gravity: -2, up: 1 });
+   791→        this.audio.play('reward');
+   792→        this.bus.emit('core', { hp: this.coreHp, max: this.coreMaxHp });
+   793→        break;
+   794→      }
+   795→    }
+   796→    this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
+   797→    this.bus.emit('magic', this.magicState());
+   798→    if (!this.save.tutorialDone) this.bus.emit('tutorial', { step: 'done' });
+   799→    return true;
+   800→  }
+   801→
+   802→  private magicState() {
+   803→    return Object.values(MAGIC).map((m) => ({
+   804→      id: m.id,
+   805→      cd: Math.round(this.magicCd[m.id] * 10) / 10,
+   806→      cdMax: m.cooldown,
+   807→      cost: m.crystalCost,
+   808→      affordable: this.crystals >= m.crystalCost && this.magicCd[m.id] <= 0,
+   809→    }));
+   810→  }
+   811→
+   812→  private heroState() {
+   813→    const data = this.hero.data;
+   814→    return {
+   815→      level: this.hero.level,
+   816→      xpPct: Math.round((this.hero.xp / (data.xpPerLevel * this.hero.level)) * 100),
+   817→      abilityCd: Math.round(this.hero.abilityCd * 10) / 10,
+   818→      abilityMax: data.abilityCooldown,
+   819→      deployed: this.hero.deployed,
+   820→      hp: Math.round(this.hero.hp),
+   821→      maxHp: this.hero.maxHp,
+   822→      dead: this.hero.isDead,
+   823→      respawnIn: this.hero.respawnIn,
+   824→      heroId: data.id,
+   825→      nameKey: data.nameKey,
+   826→      abilityNameKey: data.abilityNameKey,
+   827→    };
+   828→  }
+   829→
+   830→  // ===================== صاعقه زنجیره‌ای =====================
+   831→
+   832→  private chainLightning(from: THREE.Vector3, first: DamageableEnemy, chains: number, damage: number, color: number) {
+   833→    const hitList: DamageableEnemy[] = [];
+   834→    let current = first;
+   835→    let currentDamage = damage;
+   836→    let currentFrom = from;
+   837→    for (let i = 0; i <= chains; i++) {
+   838→      if (!current || !current.alive) break;
+   839→      this.vfx.bolt(currentFrom, current.getPos().clone().add(new THREE.Vector3(0, 1.2, 0)), color);
+   840→      hitList.push(current);
+   841→      current.takeDamage(currentDamage, 'energy');
+   842→      currentDamage *= 0.72;
+   843→      currentFrom = current.getPos().clone().add(new THREE.Vector3(0, 1, 0));
+   844→      // هدف بعدی
+   845→      let next: DamageableEnemy | null = null;
+   846→      let bestD = 8;
+   847→      for (const e of this.enemies) {
+   848→        if (!e.alive || hitList.includes(e)) continue;
+   849→        const d = e.getPos().distanceTo(currentFrom);
+   850→        if (d < bestD) {
+   851→          bestD = d;
+   852→          next = e;
+   853→        }
+   854→      }
+   855→      current = next as DamageableEnemy;
+   856→      if (!next) break;
+   857→    }
+   858→  }
+   859→
+   860→  private scheduleFireBarrage(center: THREE.Vector3, radius: number, count: number, damage: number, visual: 'fire' | 'arrow' = 'fire') {
+   861→    for (let i = 0; i < count; i++) {
+   862→      const a = Math.random() * Math.PI * 2;
+   863→      const r = Math.random() * radius;
+   864→      this.fireBarrage.push({
+   865→        time: i * 0.3,
+   866→        pos: center.clone().add(new THREE.Vector3(Math.cos(a) * r, 0, Math.sin(a) * r)),
+   867→        damage,
+   868→        visual,
+   869→      });
+   870→    }
+   871→  }
+   872→
+   873→  // ===================== تپ کاربر =====================
+   874→
+   875→  private handleTap(hit: TapHit) {
+   876→    if (this.gameOver) return;
+   877→
+   878→    // انتخاب شیء؟
+   879→    if (hit.objects.length > 0) {
+   880→      const root = hit.objects[0].object;
+   881→      // برج؟
+   882→      const tower = this.towers.find((t) => {
+   883→        let o: THREE.Object3D | null = root;
+   884→        while (o) {
+   885→          if (o === t.mesh) return true;
+   886→          o = o.parent;
+   887→        }
+   888→        return false;
+   889→      });
+   890→      if (tower) {
+   891→        this.selectedTower = tower;
+   892→        this.emitTowerInfo();
+   893→        this.buildMode = null;
+   894→        this.heroSelectMode = false;
+   895→        this.clearGhost();
+   896→        this.setBuildGridVisible(false);
+   897→        this.audio.play('tap');
+   898→        return;
+   899→      }
+   900→      // قهرمان؟ — تپ روی هیرو = ورود به حالت جابجایی
+   901→      if (root === this.hero.mesh || (root.parent && root.parent === this.hero.mesh)) {
+   902→        if (this.hero.alive) {
+   903→          this.buildMode = null;
+   904→          this.clearGhost();
+   905→          this.setBuildGridVisible(false);
+   906→          this.selectHeroMode(true);
+   907→          this.bus.emit('heroSelected', {});
+   908→          this.bus.emit('toast', { key: 'heroMoveHint', type: 'info' });
+   909→        } else {
+   910→          this.bus.emit('heroSelected', {});
+   911→        }
+   912→        this.audio.play('tap');
+   913→        return;
+   914→      }
+   915→    }
+   916→
+   917→    // جادو در انتظار هدف
+   918→    if (this.magicPending) {
+   919→      const id = this.magicPending;
+   920→      this.magicPending = null;
+   921→      this.heroSelectMode = false;
+   922→      this.bus.emit('magicPending', { id: null });
+   923→      this.castMagic(id, hit.ground);
+   924→      return;
+   925→    }
+   926→
+   927→    // حالت ساخت — اول پیش‌نمایش در نقطه تپ، بعد ساخت
+   928→    if (this.buildMode) {
+   929→      this.updateGhost(hit.ground);
+   930→      this.tryBuild(this.buildMode, hit.ground);
+   931→      return;
+   932→    }
+   933→
+   934→    // حرکت/استقرار قهرمان
+   935→    if (this.heroSelectMode) {
+   936→      if (!this.hero.deployed) {
+   937→        this.deployHero(hit.ground);
+   938→      } else {
+   939→        this.hero.moveTo(hit.ground);
+   940→        this.vfx.ring(hit.ground, 0xffb020, 1.5, 0.4);
+   941→      }
+   942→      this.selectHeroMode(false);
+   943→      return;
+   944→    }
+   945→
+   946→    this.selectedTower = null;
+   947→    this.bus.emit('selectTower', null);
+   948→  }
+   949→
+   950→  // پیاده‌سازی قهرمان
+   951→  deployHero(point: THREE.Vector3) {
+   952→    const x = Math.round(point.x / 2) * 2;
+   953→    const z = Math.round(point.z / 2) * 2;
+   954→    this.hero.deploy(new THREE.Vector3(x, 0, z));
+   955→    this.bus.emit('hero', this.heroState());
+   956→  }
+   957→
+   958→  useHeroAbility(): boolean {
+   959→    const ok = this.hero.useAbility();
+   960→    if (ok) this.bus.emit('hero', this.heroState());
+   961→    return ok;
+   962→  }
+   963→
+   964→  // ===================== پایان بازی =====================
+   965→
+   966→  private doVictory() {
+   967→    this.gameOver = true;
+   968→    const healthPct = (this.coreHp / this.coreMaxHp) * 100;
+   969→    const star1 = true;
+   970→    const star2 = healthPct >= this.level.star2HealthPct;
+   971→    const star3 = this.leaks === 0;
+   972→    const stars = (star1 ? 1 : 0) + (star2 ? 1 : 0) + (star3 ? 1 : 0);
+   973→
+   974→    // پاداش‌ها — دانش باستانی با عمق کمپین اوج می‌گیرد + پاداش نخستین فتح
+   975→    const prev = this.save.levels[this.level.id];
+   976→    const firstClear = !prev?.completed;
+   977→    const rewardCrystals = 10 + stars * 5;
+   978→    const rewardKnowledge = 2 + stars + (this.level.region - 1) * 2 + (firstClear ? this.level.region * 5 : 0);
+   979→    this.crystals += rewardCrystals;
+   980→    this.save.crystals = this.crystals;
+   981→    this.save.knowledge += rewardKnowledge;
+   982→    this.save.stats.victories++;
+   983→    if (this.leaks === 0 && !this.save.achievements.includes('untouchable')) this.save.achievements.push('untouchable');
+   984→    if (this.coreHp === this.coreMaxHp && !this.save.achievements.includes('perfect_defense')) this.save.achievements.push('perfect_defense');
+   985→    if (healthPct < 10 && !this.save.achievements.includes('last_stand')) this.save.achievements.push('last_stand');
+   986→
+   987→    const bestStars = Math.max(prev?.stars ?? 0, stars);
+   988→    this.save.levels[this.level.id] = {
+   989→      stars: bestStars,
+   990→      bestHealthPct: Math.max(prev?.bestHealthPct ?? 0, Math.round(healthPct)),
+   991→      completed: true,
+   992→    };
+   993→    // بازمحاسبه مجموع ستاره‌ها
+   994→    this.save.stats.totalStars = Object.values(this.save.levels).reduce((sum, l) => sum + l.stars, 0);
+   995→    this.save.tutorialDone = true;
+   996→
+   997→    this.audio.play('victory');
+   998→    this.vfx.burst(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 3, 0)), 0xfbbf24, 80, { speed: 10, life: 1.4, size: 0.8, gravity: 4, up: 1 });
+   999→    this.bus.emit('victory', {
+  1000→      stars,
+  1001→      healthPct: Math.round(healthPct),
+  1002→      rewards: { crystals: rewardCrystals, knowledge: rewardKnowledge, coins: this.coinsEarned },
+  1003→    });
+  1004→  }
+  1005→
+  1006→  private doDefeat() {
+  1007→    this.gameOver = true;
+  1008→    this.save.crystals = this.crystals; // همگام‌سازی کریستال باقی‌مانده
+  1009→    // دل‌داری — دانش باستانی شکست هم تجربه می‌آموزد
+  1010→    this.save.knowledge += 2;
+  1011→    this.audio.play('defeat');
+  1012→    this.audio.setBossMode(false);
+  1013→    this.cameraCtrl.shake(1);
+  1014→    this.vfx.explosion(this.scene3d.corePos.clone().add(new THREE.Vector3(0, 2.5, 0)), 0xef4444, true);
+  1015→    this.bus.emit('defeat', {});
+  1016→  }
+  1017→
+  1018→  // ===================== کنترل‌های UI =====================
+  1019→
+  1020→  setPaused(p: boolean) {
+  1021→    this.paused = p;
+  1022→    this.bus.emit('paused', { paused: p });
+  1023→  }
+  1024→
+  1025→  isPaused() {
+  1026→    return this.paused;
+  1027→  }
+  1028→
+  1029→  setSpeed(s: number) {
+  1030→    this.speed = s;
+  1031→    this.bus.emit('speed', { speed: s });
+  1032→  }
+  1033→
+  1034→  getSpeed() {
+  1035→    return this.speed;
+  1036→  }
+  1037→
+  1038→  dispose() {
+  1039→    this.disposed = true;
+  1040→    cancelAnimationFrame(this.raf);
+  1041→    this.input.dispose();
+  1042→    this.audio.dispose();
+  1043→    this.hero.dispose();
+  1044→    for (const e of this.enemies) e.remove();
+  1045→    this.clearGhost();
+  1046→    if (this.buildGrid) {
+  1047→      this.buildGrid.geometry.dispose();
+  1048→      ((this.buildGrid.material as THREE.MeshBasicMaterial).map)?.dispose();
+  1049→      (this.buildGrid.material as THREE.Material).dispose();
+  1050→      this.buildGrid.removeFromParent();
+  1051→      this.buildGrid = null;
+  1052→    }
+  1053→    // آزادسازی Poolهای Handle — منابع GLB مشترک در Cache می‌مانند
+  1054→    characterFactory.clearPools();
+  1055→    this.scene3d.dispose();
+  1056→  }
+  1057→}
+  1058→

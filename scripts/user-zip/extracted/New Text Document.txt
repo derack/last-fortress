@@ -1,0 +1,2018 @@
+# MASTER PROMPT
+
+# FINAL GAME COMPLETION & POLISH PASS
+
+# آخرین سنگر: نگهبانان سرزمین
+
+تو روی یک پروژه موجود و نسبتاً کامل Three.js / React / Next.js کار می‌کنی.
+
+نام بازی:
+
+# «آخرین سنگر: نگهبانان سرزمین»
+
+هدف این مرحله:
+
+تبدیل نسخه فعلی به یک **Release Candidate حرفه‌ای و قابل بازی**.
+
+در این مرحله تولید Character Asset سه‌بعدی جدید ممنوع است.
+
+Assetهای سه‌بعدی واقعی بعداً توسط کاربر ساخته و داخل پوشه‌های مشخص پروژه قرار داده می‌شوند.
+
+بنابراین:
+
+DO NOT GENERATE NEW 3D CHARACTERS.
+
+DO NOT REPLACE THE CURRENT PLACEHOLDERS WITH RANDOM MODELS.
+
+DO NOT SPEND THIS PHASE ON 3D MODELING.
+
+تمام زیرساخت Asset Pipeline را حفظ کن تا GLBهای واقعی بعداً بدون تغییر Gameplay وارد شوند.
+
+==================================================
+
+# 1. وضعیت فعلی پروژه
+
+==================================================
+
+قبل از هر تغییر، کل پروژه را بررسی کن.
+
+نسخه فعلی شامل موارد زیر است:
+
+* Three.js
+* React
+* Next.js
+* TypeScript
+* Zustand
+* Game Engine اختصاصی
+* Battle Scene
+* Hero System
+* Enemy System
+* Tower System
+* Wave System
+* Boss System
+* Magic System
+* Campaign Map
+* 100 Battle Stages
+* 10 Chapters
+* Meta Progression
+* Aether Forge
+* 20 Upgrade Levels
+* Save System
+* Audio System
+* VFX System
+* Character Gallery
+* AssetManager
+* AssetManifest
+* AssetValidator
+* CharacterFactory
+* ModelNormalizer
+* CharacterAnimationController
+* ProceduralAnimationController
+* Object Pool
+* GLB Cache
+* LOD infrastructure
+* Fallback System
+* Persian/English localization
+
+این سیستم‌ها را دوباره از صفر نساز.
+
+اول معماری فعلی را بفهم.
+
+سپس فقط قسمت‌هایی را که واقعاً ناقص، ضعیف یا ناسازگار هستند اصلاح کن.
+
+==================================================
+
+# 2. قانون طلایی این مرحله
+
+==================================================
+
+این مرحله:
+
+FINAL GAME POLISH PASS
+
+است.
+
+نه:
+
+NEW GAME REWRITE
+
+نه:
+
+NEW ENGINE
+
+نه:
+
+NEW FRAMEWORK
+
+نه:
+
+NEW ART PIPELINE
+
+نه:
+
+3D CHARACTER GENERATION
+
+هدف:
+
+MAKE THE EXISTING GAME FEEL FINISHED.
+
+==================================================
+
+# 3. Assetهای سه‌بعدی
+
+==================================================
+
+فعلاً هیچ Asset سه‌بعدی جدیدی تولید نکن.
+
+فایل فعلی:
+
+public/assets/3d/heroes/arman.glb
+
+را فقط به عنوان:
+
+TEMPORARY / DO-NOT-SHIP ASSET
+
+در نظر بگیر.
+
+این مدل در آینده با Asset اختصاصی واقعی جایگزین خواهد شد.
+
+سیستم فعلی:
+
+AssetManager
+AssetManifest
+AssetValidator
+CharacterFactory
+ModelNormalizer
+CharacterAnimationController
+ProceduralAnimationController
+
+باید کاملاً حفظ شود.
+
+وقتی کاربر بعداً فایل‌هایی مثل:
+
+heroes/aria.glb
+heroes/radin.glb
+heroes/nila.glb
+
+یا:
+
+enemies/shadow-creature.glb
+enemies/dark-warrior.glb
+...
+
+را اضافه کرد، بازی باید بدون تغییر Gameplay آن‌ها را Load کند.
+
+==================================================
+
+# 4. Asset Pipeline را کامل و مقاوم کن
+
+==================================================
+
+سیستم فعلی را Audit کن.
+
+باید موارد زیر تضمین شود:
+
+* GLB موجود → Load واقعی
+* GLB خراب → Crash نشود
+* GLB ناقص → Fallback
+* GLB بدون Animation → Procedural Animation
+* GLB دارای Skeleton → AnimationMixer
+* GLB دارای VFX Points → استفاده از نقاط واقعی
+* نبود VFX Point → Synthetic Point
+* Scale متفاوت → normalize
+* Rotation متفاوت → rotationOffset
+* Asset تکراری → Cache
+* Enemyهای زیاد → Clone/Pool
+* حذف Enemy → dispose صحیح
+* تغییر Stage → Memory Leak نداشته باشد
+
+هیچ Asset خراب نباید باعث Crash کل بازی شود.
+
+==================================================
+
+# 5. Gameplay Audit
+
+==================================================
+
+کل Gameplay را از ابتدا تا انتها بررسی کن.
+
+Flow اصلی:
+
+MAIN MENU
+↓
+CAMPAIGN
+↓
+STAGE BRIEFING
+↓
+BATTLE
+↓
+WAVES
+↓
+BOSS
+↓
+VICTORY / DEFEAT
+↓
+REWARD
+↓
+UPGRADE
+↓
+NEXT STAGE
+
+این Loop باید کاملاً پایدار باشد.
+
+هیچ صفحه‌ای نباید Dead End داشته باشد.
+
+تمام دکمه‌ها باید واقعاً کار کنند.
+
+هیچ Button نمایشی و بدون Action باقی نماند.
+
+==================================================
+
+# 6. Battle System
+
+==================================================
+
+Battle را کامل Audit کن.
+
+بررسی:
+
+* Enemy Spawn
+* Pathfinding
+* Targeting
+* Attack
+* Damage
+* Critical/Ability
+* Tower Targeting
+* Hero Targeting
+* Enemy Death
+* Wave Completion
+* Boss Spawn
+* Boss Phase
+* Core Damage
+* Victory
+* Defeat
+* Restart
+* Next Stage
+
+مشکلاتی مانند:
+
+* Enemy گیرکرده
+* Enemy خارج از Path
+* Tower بدون Target
+* Projectile گم‌شده
+* Boss بدون Death
+* Wave که هیچ‌وقت تمام نمی‌شود
+* Timer متوقف‌شده
+* Victory دوبار اجرا می‌شود
+* Reward دوبار پرداخت می‌شود
+
+نباید وجود داشته باشد.
+
+==================================================
+
+# 7. Wave System
+
+==================================================
+
+Waveها را بررسی و Polish کن.
+
+هر Stage باید:
+
+* شروع واضح
+* Countdown
+* Wave Indicator
+* Enemy Count
+* Boss Warning
+* Wave Complete Feedback
+* Final Wave
+* Victory State
+
+داشته باشد.
+
+اگر بازیکن در وسط Wave باشد، UI باید دقیقاً وضعیت فعلی را نشان دهد.
+
+از Spawnهای غیرمنطقی جلوگیری کن.
+
+Difficulty باید تدریجی باشد.
+
+==================================================
+
+# 8. Boss System
+
+==================================================
+
+تمام Bossها را Audit کن.
+
+Boss باید:
+
+* ورود ویژه
+* Health Bar
+* Name
+* Warning
+* Attack Pattern
+* Phase
+* Special Attack
+* Hit Reaction
+* Death
+* Reward
+
+داشته باشد.
+
+وقتی Boss وارد می‌شود:
+
+یک:
+
+BOSS INCOMING
+
+Moment
+
+ایجاد کن.
+
+برای Boss Final یک ورود سینمایی‌تر ایجاد کن.
+
+اما از Cutscene سنگین که Performance موبایل را خراب کند استفاده نکن.
+
+==================================================
+
+# 9. Hero System
+
+==================================================
+
+چهار Hero فعلی:
+
+Arman
+Aria
+Radin
+Nila
+
+را از نظر Gameplay بررسی کن.
+
+هر Hero باید نقش مشخص داشته باشد.
+
+### Arman
+
+Commander / Lightning
+
+### Aria
+
+Arcane Guardian
+
+### Radin
+
+Heavy Warrior
+
+### Nila
+
+Ranger
+
+قدرت‌ها نباید صرفاً تغییر Damage باشند.
+
+هر Hero باید احساس متفاوتی داشته باشد.
+
+Cooldownها، Damage، Range و Abilityها را از نظر Balance بررسی کن.
+
+از Power Creep جلوگیری کن.
+
+==================================================
+
+# 10. Tower System
+
+==================================================
+
+تمام Towerها را Audit کن.
+
+Tower باید:
+
+* Placement
+* Range
+* Target
+* Attack
+* Projectile
+* Damage
+* Upgrade
+* Sell
+* Level
+* Visual Feedback
+
+را درست داشته باشد.
+
+بررسی کن که هیچ Towerای عملاً بی‌فایده یا بیش از حد قدرتمند نباشد.
+
+هر Tower باید Role مشخص داشته باشد.
+
+==================================================
+
+# 11. Tower Upgrade Visual Feedback
+
+==================================================
+
+حتی قبل از ورود GLBهای نهایی، ارتقای Tower باید از نظر Visual Feedback مشخص باشد.
+
+Levelهای بالاتر می‌توانند فعلاً با:
+
+* Glow
+* Ring
+* Crystal
+* Particle
+* Emissive
+* Additional procedural components
+
+نمایش داده شوند.
+
+اما Architecture باید برای جایگزینی کامل با GLB آماده بماند.
+
+==================================================
+
+# 12. Magic System
+
+==================================================
+
+Magicها را Polish کن.
+
+هر Magic باید:
+
+* Cast animation
+* Telegraph
+* VFX
+* Sound
+* Impact
+* Damage
+* Cooldown
+* Feedback
+
+داشته باشد.
+
+Magic نباید صرفاً یک Particle ساده باشد.
+
+حداقل:
+
+Lightning
+Fire
+Ice
+Shield
+Summon
+Aether Explosion
+
+باید تفاوت بصری واضح داشته باشند.
+
+==================================================
+
+# 13. VFX
+
+==================================================
+
+تمام VFXها را Audit کن.
+
+هدف:
+
+PREMIUM MOBILE FANTASY
+
+نه:
+
+PARTICLE SPAM.
+
+برای هر Attack:
+
+* Launch
+* Travel
+* Impact
+
+در صورت نیاز داشته باش.
+
+Impact باید واضح باشد اما صفحه را شلوغ نکند.
+
+برای:
+
+* Fire
+* Ice
+* Lightning
+* Shadow
+* Crystal
+* Explosion
+
+هویت بصری جدا ایجاد کن.
+
+==================================================
+
+# 14. Combat Feedback
+
+==================================================
+
+Combat باید Responsive احساس شود.
+
+اضافه کن یا Polish کن:
+
+* Hit Flash
+* Damage Number
+* Critical Number
+* Small Impact Shake
+* Hit VFX
+* Death VFX
+* Boss Impact
+* Core Damage Feedback
+
+اما Screen Shake باید بسیار محدود و کنترل‌شده باشد.
+
+==================================================
+
+# 15. Audio
+
+==================================================
+
+AudioSystem فعلی را Audit کن.
+
+برای رویدادهای مهم:
+
+* Button Click
+* Tower Placement
+* Tower Attack
+* Enemy Hit
+* Enemy Death
+* Hero Attack
+* Magic Cast
+* Boss Spawn
+* Boss Phase
+* Victory
+* Defeat
+* Upgrade
+
+Feedback صوتی ایجاد کن.
+
+اگر فایل صوتی واقعی وجود ندارد:
+
+سیستم را طوری طراحی کن که بعداً Audio Assetها به‌راحتی جایگزین شوند.
+
+صدای مصنوعی بد و آزاردهنده تولید نکن.
+
+==================================================
+
+# 16. Main Menu
+
+==================================================
+
+Main Menu باید شبیه یک بازی واقعی باشد.
+
+شامل:
+
+* Logo
+* Play
+* Campaign
+* Heroes
+* Aether Forge
+* Achievements
+* Settings
+* Language
+* Audio
+
+باشد.
+
+طراحی:
+
+Dark Fantasy
+Premium
+Minimal
+Readable
+
+نه شلوغ.
+
+==================================================
+
+# 17. Campaign Map
+
+==================================================
+
+Campaign اکنون 100 Stage دارد.
+
+ساختار را حفظ کن.
+
+10 Chapter
+×
+10 Stage
+
+هر Chapter باید هویت مشخص داشته باشد.
+
+نمایش:
+
+* Chapter
+* Stage
+* Stars
+* Locked
+* Completed
+* Boss
+* Current Stage
+* Progress
+
+باید واضح باشد.
+
+Stageهای Completed باید سریع قابل تشخیص باشند.
+
+Stage فعلی باید Highlight داشته باشد.
+
+==================================================
+
+# 18. Stage Briefing
+
+==================================================
+
+قبل از Battle:
+
+Stage Briefing
+
+نمایش داده شود.
+
+شامل:
+
+* Stage Number
+* Chapter
+* Environment
+* Difficulty
+* Enemy Types
+* Boss
+* Rewards
+* Best Stars
+* Start Button
+
+باشد.
+
+بازیکن باید بداند وارد چه نبردی می‌شود.
+
+==================================================
+
+# 19. Aether Forge
+
+==================================================
+
+سیستم ارتقای دائمی فعلی:
+
+20 Level
+
+را حفظ کن.
+
+دو شاخه:
+
+Hero Upgrades
+Tower Upgrades
+
+باید واضح باشند.
+
+نمایش:
+
+Current Level
+Next Level
+Current Bonus
+Next Bonus
+Cost
+Available Knowledge
+
+باید خوانا باشد.
+
+اگر بازیکن پول کافی ندارد:
+
+Button باید Disabled باشد.
+
+Feedback واضح بده.
+
+==================================================
+
+# 20. Economy Audit
+
+==================================================
+
+اقتصاد بازی را بررسی کن.
+
+ارزها:
+
+Coins
+Crystals
+Knowledge
+Stars
+
+نباید نقش‌های مبهم داشته باشند.
+
+هر Currency باید کاربرد مشخص داشته باشد.
+
+بررسی کن:
+
+* Reward
+* Cost
+* Upgrade Cost
+* Stage Reward
+* First Clear
+* Replay
+* Boss Reward
+
+متعادل باشند.
+
+هدف:
+
+بازیکن بدون Grind افراطی بتواند Campaign را پیش ببرد.
+
+اما Upgradeها هم نباید بی‌ارزش شوند.
+
+==================================================
+
+# 21. 100 Stage Balance
+
+==================================================
+
+100 مرحله را از نظر Difficulty بررسی کن.
+
+Difficulty باید:
+
+Early Game
+↓
+Mid Game
+↓
+Late Game
+↓
+End Game
+
+به‌صورت تدریجی افزایش یابد.
+
+Stage 1 نباید سخت باشد.
+
+Stage 100 باید واقعاً Final Challenge باشد.
+
+اما افزایش Difficulty نباید فقط:
+
+HP × بزرگ‌تر
+
+باشد.
+
+تا جای ممکن تنوع ایجاد کن:
+
+* Enemy Composition
+* Air Enemy
+* Tank Enemy
+* Fast Enemy
+* Support Enemy
+* Boss
+* Boss Combination
+* Path Layout
+* Wave Timing
+
+==================================================
+
+# 22. Chapter Identity
+
+==================================================
+
+10 Chapter را از نظر Gameplay و Visual Identity بررسی کن.
+
+هر محیط باید تفاوت داشته باشد:
+
+Forest
+Tundra
+Volcano
+Ruins
+Citadel
+
+و ترکیب‌های متنوع آن‌ها.
+
+حتی اگر Environment Asset واقعی بعداً اضافه شود، Data Structure باید آماده باشد.
+
+==================================================
+
+# 23. Mobile UX
+
+==================================================
+
+بازی برای Android طراحی شده.
+
+Touch Controls را Audit کن.
+
+حداقل:
+
+* Tap
+* Drag
+* Pinch
+* Zoom
+* Camera movement
+* Tower selection
+* Hero selection
+* Magic cast
+
+باید قابل کنترل باشند.
+
+Buttonها حداقل اندازه مناسب Touch داشته باشند.
+
+UI در:
+
+16:9
+18:9
+19.5:9
+20:9
+
+نباید بشکند.
+
+Notch / Safe Area
+
+را رعایت کن.
+
+==================================================
+
+# 24. Landscape
+
+==================================================
+
+Battle باید برای Landscape بهینه باشد.
+
+HUD نباید روی Gameplay را بپوشاند.
+
+در رزولوشن‌های مختلف:
+
+* Top HUD
+* Bottom controls
+* Tower panel
+* Hero panel
+* Magic buttons
+
+نباید overlap داشته باشند.
+
+==================================================
+
+# 25. Persian RTL
+
+==================================================
+
+Persian زبان اصلی است.
+
+تمام متن‌های فارسی:
+
+RTL
+
+باشند.
+
+اعداد، درصدها و Currencyها باید خوانا باشند.
+
+از:
+
+Vazirmatn
+
+به‌صورت یکدست استفاده کن.
+
+هیچ متن Placeholder مانند:
+
+Lorem ipsum
+TODO
+Test
+Debug
+
+در UI نهایی باقی نماند.
+
+==================================================
+
+# 26. English Localization
+
+==================================================
+
+English را حفظ کن.
+
+هر Text جدید باید از i18n عبور کند.
+
+هیچ Text hard-coded جدیدی در Componentها اضافه نکن.
+
+FA و EN باید از نظر کلیدهای i18n هماهنگ باشند.
+
+==================================================
+
+# 27. UI Polish
+
+==================================================
+
+تمام UI را از نظر:
+
+* spacing
+* typography
+* hierarchy
+* border
+* glow
+* shadow
+* button states
+* disabled state
+* selected state
+* hover
+* pressed
+* animation
+
+بررسی کن.
+
+Style کلی:
+
+Dark Fantasy
+Aether Energy
+Gold / Amber
+Deep Red
+Dark Blue
+Crystal Glow
+
+باشد.
+
+اما از Glow بیش از حد استفاده نکن.
+
+==================================================
+
+# 28. Loading System
+
+==================================================
+
+یک Loading Experience کامل ایجاد کن.
+
+هنگام:
+
+* Initial Load
+* Stage Load
+* Asset Load
+
+Progress مناسب نمایش بده.
+
+کاربر نباید صفحه سفید ببیند.
+
+==================================================
+
+# 29. Error Handling
+
+==================================================
+
+هیچ Error مهمی نباید باعث White Screen شود.
+
+برای خطاهای:
+
+* Asset
+* Save
+* Audio
+* WebGL
+* Storage
+
+Fallback داشته باش.
+
+در Development Mode:
+
+Error واضح
+
+در Production:
+
+User-friendly message
+
+نمایش داده شود.
+
+==================================================
+
+# 30. Save System
+
+==================================================
+
+Save System را کامل Audit کن.
+
+باید ذخیره شود:
+
+* Completed Stages
+* Stars
+* Current Progress
+* Hero Upgrades
+* Tower Upgrades
+* Knowledge
+* Settings
+* Language
+* Audio Settings
+* Unlocked Content
+
+Migration نسخه‌های قدیمی را حفظ کن.
+
+Save خراب نباید باعث Crash شود.
+
+در صورت Save Corruption:
+
+Safe Recovery
+
+انجام شود.
+
+==================================================
+
+# 31. Reset Save
+
+==================================================
+
+در Settings:
+
+Reset Progress
+
+قرار بده.
+
+اما حتماً:
+
+Confirmation Dialog
+
+دو مرحله‌ای داشته باشد.
+
+مثلاً:
+
+«تمام پیشرفت شما حذف خواهد شد.»
+
+و:
+
+لغو
+تأیید حذف
+
+==================================================
+
+# 32. Settings
+
+==================================================
+
+Settings باید شامل:
+
+Language
+Music
+SFX
+Master Volume
+Quality
+Shadows
+VFX Quality
+Camera Sensitivity
+Reset Progress
+
+باشد.
+
+اگر گزینه‌ای واقعاً روی بازی اثر ندارد:
+
+آن را نمایش نده.
+
+==================================================
+
+# 33. Performance
+
+==================================================
+
+Android Performance بسیار مهم است.
+
+هدف:
+
+Stable 60 FPS
+
+در دستگاه مناسب.
+
+حداقل:
+
+30 FPS قابل قبول
+
+در دستگاه ضعیف.
+
+بررسی:
+
+* Object Pool
+* Enemy Pool
+* Projectile Pool
+* VFX Pool
+* GLB Cache
+* Texture usage
+* Shadow cost
+* Draw Calls
+* Particle count
+* Memory
+* Event listeners
+* Animation mixers
+
+انجام شود.
+
+==================================================
+
+# 34. Memory Leak Audit
+
+==================================================
+
+مخصوصاً بررسی کن:
+
+* Three.js Geometry dispose
+* Material dispose
+* Texture dispose
+* GLTF resource reuse
+* Event listener cleanup
+* AnimationMixer cleanup
+* Scene cleanup
+* Stage reload
+* Battle restart
+
+نباید Memory Leak وجود داشته باشد.
+
+==================================================
+
+# 35. Object Pool Audit
+
+==================================================
+
+Poolهای موجود را بررسی کن.
+
+بعد از:
+
+Enemy Death
+Projectile End
+VFX End
+Stage Restart
+
+Object باید:
+
+reset
+
+شود.
+
+State قبلی نباید به Spawn بعدی منتقل شود.
+
+==================================================
+
+# 36. Camera
+
+==================================================
+
+Camera باید:
+
+* Smooth
+* Responsive
+* محدود
+* بدون لرزش ناخواسته
+
+باشد.
+
+Zoom Limit داشته باشد.
+
+Camera نباید از Map خارج شود.
+
+در Battle:
+
+Core
+Path
+Hero
+Enemy
+
+باید در محدوده دید مناسب باقی بمانند.
+
+==================================================
+
+# 37. Accessibility / Readability
+
+==================================================
+
+رنگ فقط وسیله تشخیص نباشد.
+
+Enemy Typeها با:
+
+Shape
+Icon
+Name
+Color
+
+قابل تشخیص باشند.
+
+Textهای مهم Contrast کافی داشته باشند.
+
+==================================================
+
+# 38. Achievements
+
+==================================================
+
+Achievements فعلی را Audit کن.
+
+Achievementها باید واقعاً Trigger شوند.
+
+مثلاً:
+
+First Victory
+Boss Slayer
+100 Stars
+10 Stages
+50 Stages
+100 Stages
+Forge Level 10
+Forge Level 20
+No Core Damage
+Perfect Victory
+
+در صورت وجود سیستم، Progress آن‌ها درست ذخیره شود.
+
+==================================================
+
+# 39. Replayability
+
+==================================================
+
+Replay Stage باید منطقی باشد.
+
+بازیکن بتواند Stageهای قبلی را دوباره بازی کند.
+
+Stars بهتر باید ذخیره شوند.
+
+اگر Replay جایزه اقتصادی دارد، از Exploit جلوگیری کن.
+
+==================================================
+
+# 40. Anti-Exploit منطقی
+
+==================================================
+
+موارد زیر را بررسی کن:
+
+* Double reward
+* Double victory
+* Multiple click
+* Rapid upgrade
+* Restart abuse
+* Stage completion duplication
+* Boss reward duplication
+
+پرداخت Reward باید idempotent باشد.
+
+==================================================
+
+# 41. Debug Mode
+
+==================================================
+
+Debug امکانات موجود را خراب نکن.
+
+اما Debug UI نباید در Production دیده شود.
+
+هر:
+
+console.log
+
+غیرضروری را حذف یا محدود کن.
+
+console.error
+
+واقعی باید باقی بماند.
+
+==================================================
+
+# 42. Code Quality
+
+==================================================
+
+TypeScript:
+
+Strict
+
+باشد.
+
+از:
+
+any
+
+تا جای ممکن استفاده نکن.
+
+Dead code را حذف کن.
+
+Duplicate logic را ادغام کن.
+
+Constants را data-driven نگه دار.
+
+Gameplay logic از UI جدا باشد.
+
+==================================================
+
+# 43. Architecture Rule
+
+==================================================
+
+این ساختار را حفظ کن:
+
+UI
+↓
+Store
+↓
+Game
+↓
+Systems
+↓
+Entities
+↓
+Assets
+
+UI نباید مستقیماً Gameplay internals را دستکاری کند.
+
+Asset layer نباید Gameplay rules را بشناسد.
+
+==================================================
+
+# 44. Character Future Compatibility
+
+==================================================
+
+کاربر بعداً Assetهای واقعی تولید خواهد کرد.
+
+بنابراین:
+
+هیچ Character-specific hack جدیدی ننویس.
+
+مثلاً:
+
+if arman then ...
+
+تا حد ممکن ممنوع.
+
+از:
+
+AssetManifest
+AssetSpecifications
+CharacterFactory
+
+استفاده کن.
+
+هر GLB جدید باید Drop-In باشد.
+
+==================================================
+
+# 45. Character Gallery
+
+==================================================
+
+Gallery فعلی را کامل کن.
+
+برای هر Asset:
+
+* Name
+* Category
+* Tier
+* Loaded / Missing
+* Animation status
+* Rig status
+* Material status
+* VFX status
+* Validation status
+
+نمایش داده شود.
+
+اگر Asset واقعی موجود نیست:
+
+MISSING ASSET
+
+واضح نمایش داده شود.
+
+اما بازی Crash نکند.
+
+==================================================
+
+# 46. Developer Asset Validation
+
+==================================================
+
+Validator باید بتواند بررسی کند:
+
+✓ File
+✓ Load
+✓ Mesh
+✓ Material
+✓ Texture
+✓ PBR
+✓ Bounding Box
+✓ Height
+✓ Rotation
+✓ Rig
+✓ Animations
+✓ VFX Points
+✓ Triangle Count
+✓ Texture Resolution
+
+و نتیجه را در Gallery نشان دهد.
+
+==================================================
+
+# 47. Temporary Arman
+
+==================================================
+
+arman.glb فعلی را:
+
+TEMPORARY
+
+علامت‌گذاری کن.
+
+در Developer Gallery نشان بده:
+
+TEMPORARY ASSET — DO NOT SHIP
+
+اما Gameplay همچنان بتواند با آن اجرا شود.
+
+بعداً کاربر آن را با Asset اختصاصی جایگزین خواهد کرد.
+
+==================================================
+
+# 48. No New 3D Models
+
+==================================================
+
+در این Task:
+
+هیچ مدل سه‌بعدی جدیدی نساز.
+
+هیچ مدل اینترنتی جدیدی دانلود نکن.
+
+هیچ Character معروفی وارد نکن.
+
+هیچ Asset دارای IP شناخته‌شده‌ای اضافه نکن.
+
+هیچ Thor / Marvel / Warcraft / Elden Ring / Diablo / Fortnite / etc. Assetی استفاده نکن.
+
+تمام Assetهای نهایی آینده باید Original باشند.
+
+==================================================
+
+# 49. Visual Polish Without New Assets
+
+==================================================
+
+تا قبل از رسیدن Assetهای واقعی، کیفیت بصری فعلی را با ابزارهای موجود بهتر کن:
+
+* Lighting
+* Fog
+* Tone Mapping
+* Bloom
+* Shadows
+* VFX
+* Ground Details
+* Decals
+* Particles
+* UI Effects
+* Environment Color
+* Sky
+* Camera
+
+اما:
+
+Do not hide bad geometry with excessive effects.
+
+هدف این است که Placeholderها موقتاً قابل قبول باشند.
+
+==================================================
+
+# 50. Main Gameplay Feel
+
+==================================================
+
+حلقه اصلی بازی باید این احساس را منتقل کند:
+
+PLAN
+↓
+BUILD
+↓
+DEFEND
+↓
+CAST
+↓
+SURVIVE
+↓
+UPGRADE
+↓
+CONQUER
+
+بازیکن باید همیشه بداند:
+
+* چه اتفاقی در حال رخ دادن است؟
+* چه چیزی او را تهدید می‌کند؟
+* چه چیزی می‌تواند ارتقا دهد؟
+* چه زمانی Boss می‌آید؟
+* چه چیزی به دست آورده است؟
+* قدم بعدی چیست؟
+
+==================================================
+
+# 51. UX Micro Animations
+
+==================================================
+
+برای UI از Animationهای کوتاه استفاده کن:
+
+* Button press
+* Panel open
+* Reward reveal
+* Star fill
+* Upgrade success
+* Level unlock
+* Boss warning
+* Victory
+* Defeat
+
+Animationها کوتاه و سریع باشند.
+
+حدود:
+
+150–400ms
+
+مناسب.
+
+==================================================
+
+# 52. Victory Screen
+
+==================================================
+
+Victory Screen باید حس پاداش بدهد.
+
+نمایش:
+
+VICTORY
+
+Stars
+
+Rewards
+
+Knowledge
+
+Coins
+
+Crystals
+
+Best Score
+
+Next Stage
+
+Replay
+
+Campaign
+
+باشد.
+
+ستاره‌ها با Animation ظاهر شوند.
+
+==================================================
+
+# 53. Defeat Screen
+
+==================================================
+
+Defeat نباید حس خراب‌شدن بازی بدهد.
+
+نمایش:
+
+DEFEAT
+
+Reason
+
+Wave Reached
+
+Core HP
+
+Retry
+
+Campaign
+
+Upgrade
+
+باشد.
+
+==================================================
+
+# 54. First-Time Experience
+
+==================================================
+
+شروع بازی باید قابل فهم باشد.
+
+اگر Tutorial فعلی ضعیف است، یک Tutorial بسیار کوتاه اضافه کن.
+
+بازیکن باید در اولین Stage بفهمد:
+
+* Tower چطور ساخته می‌شود
+* Tower چطور Upgrade می‌شود
+* Hero چیست
+* Magic چیست
+* Core چیست
+* Wave چیست
+
+Tutorial نباید طولانی باشد.
+
+==================================================
+
+# 55. Difficulty Modes
+
+==================================================
+
+اگر اضافه کردن آن بدون خراب کردن Balance ممکن است:
+
+سه حالت:
+
+Normal
+Hard
+Nightmare
+
+را به‌صورت معماری آماده کن.
+
+اما اگر باعث پیچیدگی یا خراب شدن 100 Stage می‌شود:
+
+فعلاً فقط Normal را نگه دار.
+
+Feature نصفه ایجاد نکن.
+
+==================================================
+
+# 56. No Fake Features
+
+==================================================
+
+هیچ Feature ناقصی که ظاهراً کار می‌کند ولی واقعاً Action ندارد، باقی نگذار.
+
+اگر Feature وجود دارد:
+
+آن را کامل کن.
+
+اگر امکان تکمیلش در این Task وجود ندارد:
+
+آن را مخفی کن.
+
+==================================================
+
+# 57. Testing
+
+==================================================
+
+بعد از تغییرات:
+
+TypeScript
+
+را اجرا کن.
+
+Lint
+
+را اجرا کن.
+
+Build
+
+را اجرا کن.
+
+سپس Browser Test انجام بده.
+
+حداقل این Flow را تست کن:
+
+Main Menu
+→ Campaign
+→ Stage 1
+→ Battle
+→ Wave
+→ Victory
+→ Reward
+→ Campaign
+→ Stage 2
+
+سپس:
+
+Campaign
+→ Stage 10
+→ Boss
+
+سپس:
+
+Campaign
+→ Stage 50
+
+سپس:
+
+Campaign
+→ Stage 100
+→ Final Boss
+→ Victory
+
+==================================================
+
+# 58. Save Test
+
+==================================================
+
+این موارد را تست کن:
+
+Start
+→ Progress
+→ Reload
+→ Progress remains
+
+Upgrade
+→ Reload
+→ Upgrade remains
+
+Stage Complete
+→ Reload
+→ Stars remain
+
+Language Change
+→ Reload
+→ Language remains
+
+==================================================
+
+# 59. Mobile Test
+
+==================================================
+
+رزولوشن‌های زیر را بررسی کن:
+
+360×800
+390×844
+412×915
+1080×1920
+
+Landscape و Portrait behavior را بررسی کن.
+
+UI نباید:
+
+* Overflow
+* Crop
+* Overlap
+* Invisible Button
+
+داشته باشد.
+
+==================================================
+
+# 60. Final Build
+
+==================================================
+
+در پایان:
+
+npm/bun build
+
+باید موفق باشد.
+
+TypeScript:
+
+0 errors
+
+باید باشد.
+
+Runtime:
+
+0 critical errors
+
+باید باشد.
+
+==================================================
+
+# 61. Final Audit Report
+
+==================================================
+
+بعد از پایان کار، گزارش دقیق بده:
+
+## GAMEPLAY
+
+* چه مشکلاتی پیدا شد؟
+* چه چیزهایی اصلاح شد؟
+
+## UI/UX
+
+* چه پنل‌هایی اصلاح شدند؟
+
+## BALANCE
+
+* چه اعداد و سیستم‌هایی تغییر کردند؟
+
+## AUDIO
+
+* چه چیزهایی اضافه شد؟
+
+## VFX
+
+* چه چیزهایی اصلاح شد؟
+
+## PERFORMANCE
+
+* چه Optimizationهایی انجام شد؟
+
+## SAVE
+
+* چه چیزهایی تست شد؟
+
+## ASSETS
+
+* کدام GLBها موجود هستند؟
+* کدام GLBها Missing هستند؟
+* آیا Asset Pipeline آماده دریافت GLBهای آینده است؟
+
+## TESTING
+
+* TypeScript؟
+* Lint؟
+* Build؟
+* Runtime؟
+* 100 Stage؟
+
+==================================================
+
+# 62. FINAL ACCEPTANCE CHECKLIST
+
+==================================================
+
+کار را فقط زمانی Final اعلام کن که:
+
+[ ] Main Menu سالم
+[ ] Campaign سالم
+[ ] 100 Stage قابل دسترسی
+[ ] 10 Chapter سالم
+[ ] Stage Lock/Unlock سالم
+[ ] Stars سالم
+[ ] Battle سالم
+[ ] Wave سالم
+[ ] Boss سالم
+[ ] Victory سالم
+[ ] Defeat سالم
+[ ] Replay سالم
+[ ] Hero System سالم
+[ ] Tower System سالم
+[ ] Magic سالم
+[ ] Aether Forge سالم
+[ ] 20 Upgrade Level سالم
+[ ] Economy سالم
+[ ] Save سالم
+[ ] Save Migration سالم
+[ ] Settings سالم
+[ ] Persian RTL سالم
+[ ] English سالم
+[ ] Mobile UI سالم
+[ ] Landscape سالم
+[ ] Audio سالم
+[ ] VFX سالم
+[ ] Loading سالم
+[ ] Error Handling سالم
+[ ] Object Pool سالم
+[ ] Asset Cache سالم
+[ ] Asset Validator سالم
+[ ] Character Gallery سالم
+[ ] GLB Fallback سالم
+[ ] Memory Leak بررسی شده
+[ ] Performance بررسی شده
+[ ] TypeScript بدون خطا
+[ ] Build موفق
+[ ] Runtime بدون Critical Error
+
+==================================================
+
+# 63. ABSOLUTELY DO NOT
+
+==================================================
+
+در این Task:
+
+❌ Framework را عوض نکن
+❌ بازی را Rewrite نکن
+❌ Gameplay را از صفر نساز
+❌ سیستم ذخیره را حذف نکن
+❌ Campaign 100 مرحله‌ای را حذف نکن
+❌ Forge 20 Level را حذف نکن
+❌ Asset Pipeline را حذف نکن
+❌ Placeholderها را بدون Fallback حذف نکن
+❌ Character Asset جدید تولید نکن
+❌ Asset اینترنتی تصادفی اضافه نکن
+❌ IP معروف استفاده نکن
+❌ Feature نمایشی و Fake اضافه نکن
+❌ کد کارکرده را فقط برای زیبایی Rewrite نکن
+
+==================================================
+
+# 64. ORDER OF EXECUTION
+
+==================================================
+
+کار را با این ترتیب انجام بده:
+
+PHASE 1
+Full Project Audit
+
+PHASE 2
+Bug Fixes
+
+PHASE 3
+Gameplay Stability
+
+PHASE 4
+Save / Economy / Progression Audit
+
+PHASE 5
+UI/UX Polish
+
+PHASE 6
+Battle Feedback / VFX / Audio
+
+PHASE 7
+100 Stage Balance
+
+PHASE 8
+Mobile Optimization
+
+PHASE 9
+Asset Pipeline Hardening
+
+PHASE 10
+Full Testing
+
+PHASE 11
+Final Build
+
+PHASE 12
+Final Audit Report
+
+در هر Phase:
+
+Analyze
+→ Implement
+→ Test
+→ Fix
+→ Verify
+
+==================================================
+
+# 65. IMPORTANT
+
+==================================================
+
+اگر در حین بررسی متوجه شدی یک سیستم از قبل درست کار می‌کند:
+
+آن را دوباره بازنویسی نکن.
+
+اگر یک Feature از قبل کامل است:
+
+فقط تست و تأیید کن.
+
+هدف:
+
+LESS CODE CHURN
+
+MORE QUALITY
+
+==================================================
+
+# 66. FINAL VISION
+
+==================================================
+
+نسخه نهایی این مرحله باید یک بازی کامل و قابل بازی باشد که:
+
+از Main Menu
+
+تا:
+
+Stage 100
+
+و:
+
+Final Boss
+
+را بتواند بدون Crash و بدون Dead End طی کند.
+
+بازیکن باید بتواند:
+
+Play
+Fight
+Upgrade
+Replay
+Progress
+Save
+Return
+Continue
+
+را بدون مشکل انجام دهد.
+
+مدل‌های سه‌بعدی حرفه‌ای در این مرحله هنوز وارد نمی‌شوند.
+
+اما تمام سیستم بازی باید آماده باشد تا بعداً کاربر Assetهای واقعی را در:
+
+public/assets/3d/
+
+قرار دهد و بازی به‌صورت Drop-In آن‌ها را استفاده کند.
+
+==================================================
+
+# FINAL COMMAND
+
+==================================================
+
+اکنون پروژه موجود را ابتدا Audit کن.
+
+هیچ چیز را حدس نزن.
+
+کد واقعی پروژه را بخوان.
+
+Featureهای موجود را شناسایی کن.
+
+مشکلات واقعی را پیدا کن.
+
+سپس مرحله‌به‌مرحله پروژه را تا سطح:
+
+RELEASE CANDIDATE
+
+ارتقا بده.
+
+بعد از هر تغییر مهم تست انجام بده.
+
+در پایان فقط زمانی کار را تمام‌شده اعلام کن که Build، Runtime، Save، Campaign، Battle و UI واقعاً تست شده باشند.
+
+تمرکز این مرحله:
+
+GAME COMPLETION
+GAME FEEL
+POLISH
+STABILITY
+PERFORMANCE
+MOBILE UX
+
+است.
+
+تولید Characterهای سه‌بعدی را به مرحله بعد موکول کن.

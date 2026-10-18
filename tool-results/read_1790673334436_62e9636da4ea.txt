@@ -1,0 +1,368 @@
+     1→# Worklog — آخرین سنگر (Last Fortress)
+     2→
+     3→---
+     4→Task ID: 1
+     5→Agent: main (Super Z)
+     6→Task: ساخت Vertical Slice بازی Tower Defense سه‌بعدی فارسی «آخرین سنگر» به‌صورت Next.js + Three.js (قابل اجرا در موبایل، آماده بسته‌بندی اندروید با WebView/Capacitor)
+     7→
+     8→Work Log:
+     9→- راه‌اندازی محیط fullstack و نصب three@0.186
+    10→- ساخت معماری: src/game/{core,data,entities,systems,scene}, src/components/game, src/store
+    11→- Data-Driven: types.ts + towers.ts (۴ برج×۵ سطح) + enemies.ts (۶ دشمن+Boss با Tier) + magic.ts (۳ جادو+Hero آرمان) + level1.ts (۱۰ موج+Boss+۳۰ دستاورد) + i18n.ts (fa/en کامل)
+    12→- هسته موتور: Game.ts (loop/موج/اقتصاد/جادو/پیروزی-شکست)، CameraController (pan/zoom/shake)، InputController (tap/pinch)، EventBus
+    13→- صحنه: BattleScene (زمین بافت‌دار، مسیر S شکل با کواردهای مستقل+دیسک‌های اتصال، هسته آذر، دروازه تاریکی، درخت/سنگ/خانه/کریستال/کوه)، models.ts (مدل‌های low-poly با Transformation سطح ۵)
+    14→- موجودیت‌ها: Enemy (حرکت arc-length، slow/burn/shield/dodge/Boss فاز۲+احضار+slam)، Tower (۵ حالت هدف‌گیری، ۴ قدرت ویژه)، Projectile، Hero (XP/Level/فرمان نبرد)
+    15→- سیستم‌ها: VFXSystem (۹۰۰ ذره shader، صاعقه زنجیره‌ای، حلقه، دایره جادو با رون اورجینال Canvas)، AudioSystem (Web Audio پروسیجرال — ۱۸ افکت + موسیقی سیکوئنسر با حالت Boss)، SaveSystem (localStorage)
+    16→- UI فارسی RTL: MainMenu، CampaignMap (۶ منطقه)، BattleUI (HUD کامل: سلامت/موج/سکه/کریستال/سرعت/توقف/بنر Boss/آموزش/Toast/پنل برج/جادو/قهرمان/پیروزی/شکست)، SettingsPanel، AchievementsPanel، HeroesPanel
+    17→- فونت Vazirmatn CDN + اعداد فارسی + سوییچ کامل fa/en با تغییر dir سند
+    18→- باگ‌های رفع‌شده در تست مرورگر: مرگ دشمن دوبار پاداش، پرتابه بدون هدف (باران آتش)، اسپایک‌های سیاه مسیر (تاخوردگی روبان در پیچ‌ها → کوارت مستقل + دیسک)، winding دیسک‌ها (backface culling)، overlay شکست باقی‌مانده بعد از retry (resetBattleState)، dir هاردکد RTL، عدد +۱۰ در RTL
+    19→
+    20→Stage Summary:
+    21→- Vertical Slice کامل و تست‌شده با Agent Browser: منو→نقشه→نبرد→ساخت ۳ برج→ارتقا L5→قدرت ویژه→آذرخش/باران آتش/سپر→استقرار قهرمان→موج ۲→Boss با فاز ۲→پیروزی ۲ ستاره→ذخیره→نقشه با ستاره→دستاورد «اولین سنگر»→تعویض زبان→retry تمیز
+    22→- Lint بدون خطا، کنسول بدون error، چیدمان موبایل (390×844) تأیید شد
+    23→- آماده بسته‌بندی Android با Capacitor/WebView
+    24→
+    25→---
+    26→Task ID: 2
+    27→Agent: main (Super Z)
+    28→Task: Asset Pipeline واقعی سه‌بعدی — حذف Primitive به‌عنوان ظاهر نهایی کاراکترها، ساخت AssetManager/Manifest/Animation/Pool/Gallery طبق MASTER PROMPT بخش ۱-۳۰
+    29→
+    30→Work Log:
+    31→- بررسی کامل کد فعلی: buildHeroMesh/buildEnemyMesh/buildTowerMesh در models.ts، نقاط اتصال در Hero/Enemy/Tower/Game/InputController (تشخیص تپ و userData.turret/spinCrystal)
+    32→- ساخت ماژول src/game/assets/: AssetManifest.ts (۲۹ ورودی: ۴ قهرمان+۱۶ دشمن+۵ Boss+۴ برج با targetHeight/rotationOffset/vfxPoints/animations/phase)، AssetSpecifications.ts (مشخصات کامل مدل‌سازی هر کاراکتر: متریال/رنگ/silhouette/budget/رگ)، AssetManager.ts (GLTFLoader+Cache مثبت/منفی+SkeletonUtils.clone+preload موازی با Progress+بدون Crash)، ModelNormalizer.ts (نرمال‌سازی ارتفاع هدف+جابجایی پا روی زمین+مرکز‌سازی+rotationOffset+استخراج/سنتز نقاط VFX)، CharacterAnimationController.ts (AnimationMixer+Crossfade نرم Idle/Walk/Run+OneShot با بازگشت خودکار+Death Freeze+Fuzzy نام کلیپ)، FallbackFactory.ts (Placeholder شفاف با برچسب صادقانه در userData)، CharacterFactory.ts (الگوی Handle پایدار+Swap-in ناهمزمان+Object Pool برای GLB با cap ۲۴+تضمین shieldAura+انتقال userData برج)، AssetValidator.ts (۸ بررسی بخش ۲۶)، index.ts
+    33→- بازنویسی Rendering Layer بدون تغییر Gameplay: Hero.ts (انیمیشن Locomotion/Attack/Skill+شلیک از WeaponPoint واقعی)، Enemy.ts (Pool+انیمیشن Walk/Run/Hit/Death/Roar/PhaseChange+sink کندتر با کلیپ مرگ)، Tower.ts (فکتوری برای ساخت/ارتقا/فروش+GLB اختیاری)، Game.ts (dispose قهرمان+clearPools)، BattleScene.ts (RoomEnvironment PBR برای quality>low)
+    34→- UI: GameShell (Splash با Progress فارسی+پیام صادقانه Placeholder+گالری با ?gallery=1)، SettingsPanel (دکمه گالری)، CharacterGallery.tsx (نمایشگر 3D با OrbitControls+انتخاب انیمیشن+نشان وضعیت+مشخصات+اعتبارسنجی کامل)، i18n (۳۷ کلید جدید fa/en)
+    35→- public/assets/3d/{heroes,enemies,bosses,towers,environment,effects}/ + README.md با جدول کامل نام فایل/ارتفاع/انیمیشن/قرارداد فنی GLB
+    36→- تست مرورگر: Splash→منو→نبرد→تایل‌دا بازی سالم با Placeholder؛ گالری: لیست ۲۹ Asset با وضعیت، Placeholder برچسب‌دار، منتظر GLB با قاب سیمی برای محتوای آینده، اعتبارسنجی اجرا شد
+    37→- Smoke-Test End-to-End: GLB آزمایشی موقت (باکس+متریال PBR+WeaponPoint+کلیپ Idle) ساخته و موقتاً به‌جای arman.glb قرار گرفت → Load/Clone/Swap-in حین نبرد/نرمال‌سازی دقیق به ۱٫۸۵/AnimationMixer فعال (mixerTime جلو می‌رود)/نقطه سبز «مدل واقعی GLB» در گالری — سپس فایل آزمایشی حذف شد
+    38→- Build نهایی موفق، Lint تمیز، کنسول بدون error (فقط warningهای انتظارِ «فایل GLB یافت نشد»)
+    39→
+    40→Stage Summary:
+    41→- خط لوله کامل فعال است: به‌محض قرار گرفتن هر GLB واقعی در public/assets/3d/... با نام‌های README، بدون یک خط تغییر کد، مدل واقعی+انیمیشن+نقاط VFX جایگزین Placeholder می‌شود (با تست موقت اثبات شد)
+    42→- صداقت کامل: در این محیط ابزار تولید Asset سه‌بعدی واقعی وجود ندارد؛ هیچ GLB جعلی به‌عنوان Asset معرفی نشد؛ Placeholderها صریحاً «موقت» برچسب خورده‌اند (userData.placeholder + گالری + کنسول)
+    43→- ۲۹ مشخصات کامل مدل‌سازی آماده است؛ حجم مورد انتظار نهایی GLBها ≈ ۸۵-۱۰۰MB
+    44→
+    45→---
+    46→Task ID: 3
+    47→Agent: main (Super Z)
+    48→Task: گسترش کامل محتوا تا مشخصات ۱۰۲ بندی — ۱۰ برج، ۲۶ دشمن/Boss، ۴ قهرمان، ۶ جادو، ۶ منطقه قابل بازی + LOD
+    49→
+    50→Work Log:
+    51→- types.ts: ProjectileKind×۵ جدید (cannonball/bolt/venom/prism/hex)، TowerData (poisonDps/armorShred/pierceArmor/execute/buffAura/towerHeight)، EnemyData (healer/summoner/regen)، MagicId×۶، HeroData (role/attackType/abilityKind/unlockCost)، RegionEnv شش‌گانه، SaveData (unlockedHeroes/selectedHero)
+    52→- towers.ts: ۶ برج جدید — توپخانه (splash زمینی)، زهرخانه (DoT+شکستن زره)، بالیستا (برد ۱۹+نادیده‌گرفتن زره)، رازآسا (پرایسم جادویی)، آذرگاه (هاله تقویت برج‌ها)، برج تهی (اجرا روی کم‌جان‌ها) — TOWER_BUILD_ORDER ده‌تایی
+    53→- enemies.ts: ۱۳ دشمن + ۴ Boss — shadowSoldier/spirit(شفادهنده)/hunter(جاخالی ۳۰٪)/warMachine/crystalMonster(مقاوم انرژی)/smallDragon(پرنده)/summoner(احضار shadow)/aetherTank(regen)/destroyer + Bossها: annihilator(مکانیکی regen)/fireGiant/iceGiant/blackDragon(پرنده)/darkLord(احضارکننده، Final Boss) — مجموع ۲۶ کاراکتر
+    54→- magic.ts: deepFreeze (کندی ۰٫۱۲)، azarBlessing (+۴۵٪ سرعت شلیک همه برج‌ها)، coreMend (+۲۵ HP هسته) + قهرمانان aria (magic splash + سپر اثری)/radin (melee cleave ۳ + خشم جنگ)/nila (برد ۱۳ + باران تیر)
+    55→- levels.ts (جدید): ۶ منطقه کامل با مسیر منحصربه‌فرد/تم/موج‌های ۱۰تایی/Boss — l1 دشت(plains)/golemKing، l2 جنگل شب(forest)/fireGiant، l3 توندرا(tundra)/iceGiant، l4 آتشفشان(volcano)/blackDragon، l5 ویرانه ماشین(wastes)/annihilator، l6 دژ(citadel)/darkLord + isRegionUnlocked (فتح زنجیره‌ای)
+    56→- i18n: ~۱۱۰ کلید جدید fa/en + parity کامل با اسکریپت diff، اصلاح {۰}→{0}، نام مناطق جدید
+    57→- Enemy.ts: applyShred (شکستن زره مؤثر در takeDamage)، healAllies، summonMinions (summonAt با enemyId)، regen — context.ts به‌روز
+    58→- Tower.ts: ۶ کیس ability جدید (شلیک مرگبار/مه سمی/پیکان شکافنده/انفجار جادویی/ستایش آذر/دهانه تهی)، هاله تقویت پالسی applyLocalBuff، fire() با dmgType + executeBonus
+    59→- Projectile.ts: بازنویسی Data-Driven — سرعت/هندسه/دنباله بر اساس kind، opts جدید (dmgType/poisonDps/pierceArmor)
+    60→- Hero.ts: بازنویسی چندقهرمانی — attack() بر اساس role (شلیک/گوی جادویی splash/کلنگ cleave)، useAbility با ۴ abilityKind، findCluster برای باران تیر
+    61→- Game.ts: heroId پارامتر، ۳ کیس جادوی جدید، requestCoreShield (سپر اثری)، رگبار تیر (visual:'arrow')، heroState پویا، towerRateBuff = فرمان نبرد + برکت آذر
+    62→- BattleScene.ts: ENV_THEMES شش‌گانه (آسمان/مه/زمین/مسیر/کریستال/درخت/سازه)، buildGround/buildPathMesh/buildEnvironment theme-aware، نور آفتاب per-region، نور گداخته آتشفشان
+    63→- models.ts: ۶ برج جدید (توپ/دیگ زهر/بالیستا/پرایسم/محراب/منولیت تهی)، ۱۴ سیلوئت دشمن متمایز، buildHeroMesh(heroId) چهارگانه (آریا ردا+عصا/رادین کلنگ/نیلا کمان+کلاه‌ریش)، buildPineTree/DeadTree/Debris/ObsidianRock، buildMountain(style)، buildHouse(ruined)
+    64→- Asset Pipeline: همه ورودی‌ها phase:'slice'، ۷ ورودی برج جدید در Manifest، createFallbackHero(entry.id) — باگ placeholder قهرمان اشتباه رفع شد
+    65→- LOD (بخش ۱۶): ModelNormalizer تشخیص گره‌های *LOD1/*LOD2، CharacterHandle.updateLod (سه‌سطحی ۲۲/۳۸ با lodBase)، اتصال به حلقه Game برای hero+enemies — برای GLB واقعی فعال، Placeholder بی‌هزینه
+    66→- Save/Store/Shell: unlockedHeroes+selectedHero با مهاجرت، setPendingLevel/setSelectedHero/unlockHero، GameShell از LEVELS[pendingLevelId] + selectedHero
+    67→- UI: CampaignMap بازنویسی (۶ منطقه پویا، unlock زنجیره‌ای، briefing per-region با Boss/دشمنان)، BattleUI (۱۰ برج اسکرول افقی، ۶ جادو گرید ۲×۳، heroData پویا، رفع همپوشانی قهرمان/جادو)، HeroesPanel بازنویسی (بازکردن با کریستال/انتخاب/آمار)، MainMenu دکمه نقشه
+    68→- رفع خطاهای pre-existing تایپ (desiredTarget private، MAGIC[null]، TowerInfo cast، icon style prop)
+    69→- تست مرورگر کامل: نقشه ۶ منطقه با قفل زنجیره‌ای ✓، ساخت توپخانه/زهرخانه/آذرگاه ✓، شلیک و آسیب (hp ۱۰۵→۴۵→۱) ✓، یخبندان و استقرار قهرمان ✓، بازکردن نیلا با کریستال + persist ✓، شکست و اورلی ✓، گالری ۴۰ Asset با برچسب صادقانه ✓، منطقه ۲ تم شب جنگل ✓، shadowSoldier hp دقیق طبق داده ✓، کنسول صفر error ✓، tsc/eslint/build تمیز ✓
+    70→
+    71→Stage Summary:
+    72→- بازی از Vertical Slice به محتوای کامل مشخصات رسید: ۱۰ برج × ۵ سطح، ۲۶ دشمن/Boss با رفتارهای متمایز، ۴ قهرمان Role-محور، ۶ جادو، ۶ منطقه قابل بازی با تم‌های بصری متفاوت
+    73→- خط لوله Asset دست‌نخورده و فعال — GLB واقعی به‌محض قرارگیری جایگزین Placeholder می‌شود؛ LOD scaffold آماده GLBهای multi-LOD
+    74→- صادقانه: هیچ GLB جعلی اضافه نشد؛ تمام ۴۰ Placeholder برچسب «موقت» دارند
+    75→
+    76→---
+    77→Task ID: 4
+    78→Agent: main (Super Z)
+    79→Task: سه درخواست کاربر — (۱) عمیق‌تر کردن سیستم Boss Phase 2 اختصاصی هر Boss (آتش/یخ/اژدها) (۲) باز شدن تدریجی برج‌ها (۳) صفحات iframe به‌جای منوی ردیفی
+    80→
+    81→Work Log:
+    82→- Boss Phase 2 اختصاصی: فایل جدید src/game/data/bossPhases.ts — پیکربندی Data-Driven هر ۶ Boss: پادشاه غول سنگی (خشم سنگی: زره×۱٫۵ + پوست سنگی -۱۵٪ آسیب + احضار گolem×۲ + ضربه سنگی دوره‌ای)، غول آتش (خشم آتشین: سرعت×۱٫۳ + ایمنی به کندی/یخ + بازسازی ۸/s + احضار جنگجو×۳ + فوران آتشی دوره‌ای شعاع ۷)، غول یخ (انجماد ابدی: زره×۱٫۴۵ + ایمنی سرما + بازسازی ۱۲/s + آئورای انجماد همه برج‌های شعاع ۹ برای ۴ ثانیه)، اژدهای سیاه (خشم آسمانی: سرعت×۱٫۴ + احضار smallDragon×۲ + نفس سایه ۲ برج برای ۳٫۵ ثانیه)، محوکننده (پروتکل نابودی: بازسازی×۲ + لیزر هدفمند هر ۶ ثانیه)، ارباب تاریکی (تجلی تاریکی: سپر ۱۲۰۰ + احضار ۴ سایه‌سرباز لحظه ورود + احضار دوره‌ای)
+    83→- Enemy.ts: enterPhase2 (جلوه‌ها با رنگ اختصاصی + بنر + آمار + سپر + احضار) + updatePhase2Abilities با ۴ نوع توانایی دوره‌ای (towerStun با vfx.bolt / frostAura / eruption / summon) + slowImmune در applySlow + damageReduction در takeDamage + regen فاز۲ — رفتار عمومی قدیمی برای Bossهای بدون پیکربندی حفظ شد
+    84→- Tower.disable(duration,color): توقف شلیک/هاله + دود نشانگر + animateIdleSpin جدا شد تا کریستال‌ها هنگام ازکارافتادگی بچرخند
+    85→- GameContext: disableTower + onBossPhase جدید — Game.ts پیاده‌سازی (disableTower واقعی + bus.emit bossPhase)
+    86→- بنر «فاز دوم» در BattleUI با رنگ اختصاصی هر Boss + state bossPhase در store + resetBattleState + BUS_EVENTS
+    87→- باز شدن تدریجی برج‌ها: TowerData.unlockStars + totalStars/isTowerUnlocked/starsUntilTower در towers.ts — نگهبان ۰، یخ ۱، آتش ۲، صاعقه ۳، توپخانه ۵، زهرخانه ۷، بالیستا ۹، رازآسا ۱۱، محراب ۱۳، تهی ۱۵ (کل ممکن ۱۸ ستاره)
+    88→- گاردها در Game.setBuildMode و tryBuild + نوار برج BattleUI (آیکون قفل + ستاره لازم + badge ستاره باقی‌مانده + grayscale) + briefing نقشه (قفل + ستاره) + toast towerLocked
+    89→- صفحات iframe: مسیر /page/[screen] (SSG پنج صفحه: map/heroes/achievements/settings/gallery) + StandaloneScreen (initSave مشترک localStorage) + MainMenu بازنویسی — منوی ردیفی حذف، نوار تب پایین + قاب iframe با هدر و بستن + iframes ماندگار بین تب‌ها
+    90→- پل postMessage: startBattle (نقشه iframe → شروع نبرد والد) / saveChanged (رویداد savePersisted در SaveSystem → initSave والد) / closePage / openPage (دکمه گالری تنظیمات iframe → تب والد)
+    91→- useStandaloneBack در سه پنل (قهرمانان/دستاوردها/تنظیمات) — بازگشت در iframe به پیام closePage تبدیل می‌شود؛ CampaignMap در حالت iframe دکمه بازگشت مخفی + onStart پیام می‌فرستد
+    92→- i18n: ۱۲ کلید جدید fa/en (نام فاز ۶ Boss + bossPhaseTitle + towerLocked + menuPagesHint) — parity بررسی شد
+    93→- رفع prerender: isStandalonePage از سرور قابل فراخوانی نبود → PAGE_IDS محلی در route
+    94→
+    95→تست مرورگر (390×844):
+    96→- منو: نوار تب ۵ صفحه‌ای جایگزین منوی ردیفی ✓ / تب نقشه → iframe نقشه با ۶ منطقه ✓ / briefing: برج‌های قفل با ستاره ✓ / «آغاز نبرد» از iframe → postMessage → شروع نبرد واقعی ✓
+    97→- شروع مستقیم با دکمه شروع نبرد ✓ / آموزش نمایش داده شد ✓
+    98→- Boss فاز۲: golemKing در hp<50% → phase2، زره ۱۴→۲۱ (×۱٫۵)، سرعت ×۱٫۱، احضار ۲ گolem، بنر DOM «فاز دوم/خشم سنگی» ✓ / towerStun: sentinel با disableTimer=2.25 از کار افتاد (دمو) ✓ / fireGiant: applySlow نادیده (slowFactor=۱)، زره ۲۲، سرعت ۱٫۵۶، ۳ جنگجو ✓ / blackDragon: سرعت ۲٫۲۴ (×۱٫۴)، ۲ smallDragon احضار شد ✓ / iceGiant: slowImmune + تایمر frostAura ✓
+    99→- قفل برج: void/ice با ۰ ستاره → buildMode null + toast ✓ / sentinel باز ✓ / بریفینگ ستاره باقی‌مانده ✓
+   100→- پل ذخیره: بازکردن قهرمان → رویداد savePersisted ✓ (۴۰۰→۲۵۰ کریستال) / ذخیره ریست شد برای تجربه پیشرفت تازه
+   101→- tsc: ۰ خطای src / eslint تمیز / build موفق (۵ صفحه SSG)
+   102→
+   103→Stage Summary:
+   104→- هر Boss اکنون در نیمه دوم HP شخصیت واقعی خودش را دارد: مکانیک اختصاصی + توانایی دوره‌ای + جلوه و بنر مخصوص — از داده خوانده می‌شود (bossPhases.ts) و Boss جدید فقط با یک entry اضافه می‌شود
+   105→- اقتصاد پیشرفت بازطراحی شد: ستاره‌ها فقط قفل منطقه نمی‌شکنند، برج‌ها را هم قدم‌به‌قدم آزاد می‌کنند (نگهبان+یخ تقریباً از اول، تهی و محراب انتهای کمپین)
+   106→- ناوبری از React state به صفحات iframe مستقل (/page/...) منتقل شد — هر صفحه حالت و اسکرول خودش را دارد و با پل postMessage + localStorage با بازی اصلی همگام است
+   107→
+   108→---
+   109→Task ID: 5
+   110→Agent: main (Super Z)
+   111→Task: پنج درخواست کاربر — (۱) صفحه خالی دکمه‌های iframe (۲) پیش‌نمایش سبز/قرمز محل ساخت برج (۳) باگ هزینه ارتقا لول ۴ صفر سکه (۴) رو به دشمن بودن هیرو (۵) گرافیک بیشتر
+   112→
+   113→Work Log:
+   114→- بازتولید باگ iframe با Agent Browser: صفحات /page/* سالم بودند ولی نوار تب پایین زیر قاب iframe پوشیده می‌شد → کلیک تب‌های دیگر وقتی صفحه‌ای باز بود اثری نداشت + حالت save=null فقط یک div تیره خالی نشان می‌داد + تیتر پنل‌ها داخل iframe تکرار می‌شد
+   115→- MainMenu: نوار تب به لایه مستقل absolute پایین (z-40) منتقل شد — همیشه بالای iframe و قابل کلیک؛ قاب iframe به top-[4%] bottom-[104px] کوتاه شد؛ نقطه کهربایی روی تبِ بازِ غیرفعال؛ show水晶 pill در جریان اصلی + pb-28
+   116→- StandaloneScreen: PageLoading برنددار (کریستال پالس‌دار + «در حال بارگذاری…») به‌جای صفحه خالی + PanelErrorBoundary (catch خطای رندر هر پنل با دکمه تلاش دوباره) + ست‌شدن data-standalone روی html برای CSS
+   117→- حذف تیتر تکراری: کلاس panel-header به هدر پنج پنل (نقشه/قهرمانان/دستاوردها/تنظیمات/گالری) + قانون CSS html[data-standalone='1'] .panel-header { display:none !important } — تأیید شد getComputedStyle → none
+   118→- i18n: pageLoading/pageError/pageRetry (fa/en) — parity کامل
+   119→- پیش‌نمایش ساخت: InputController.onGroundHover (mouse hover بدون کلیک + درگ انگشت همراه pan) + pickGround سبک فقط-plane؛ Game: createGhost (دیسک CircleGeometry 1.85 + حلقه برد واقعی برج سطح ۱ RingGeometry) + updateGhost با اسنپ تایل ۲ واحدی و اعتبارسنجی canBuild+coins → سبز 0x22c55e / قرمز 0xef4444 + نبض opacity در update؛ گرید زمین تایل‌بندی‌شده فقط در حالت ساخت (CanvasTexture، y=0.06)؛ رفع باگ همزمانی: tryBuild موفق اکنون buildMode=null + clearGhost + خاموش‌کردن گرید می‌کند (قبلاً buildMode فعال می‌ماند و تپ بعدی برج ناخواسته می‌ساخت!)؛ dispose کامل ghost/grid
+   120→- باگ ارتقا: Tower.upgradeCost قبلاً levels[this.level] می‌خواند → در لول ۴ هزینه لول ۵ یعنی ۰ نمایش داده می‌شد و ارتقای لول ۵ مجانی بود! → levels[this.level - 1]؛ upgrade() هزینه را قبل از level++ ثبت می‌کند تا invested دقیق بماند (sellValue درست)؛ کامنت types.ts اصلاح شد؛ زنجیره جدید نگهبان: L1→۱۰۰، L2→۸۵، L3→۱۳۰، L4→۱۹۰
+   121→- هیرو: turnToward مستقل از فریم‌ریت (rate*dt)؛ حین حرکت رو به مقصد (rate 9)، حمله رو به دشمن جلوی صف (rate 7)، بدون دشمن در برد رو به نزدیک‌ترین نقطه مسیر (پایش گارد، rate 2.5)؛ deploy بلافاصله رو به مسیر snap می‌شود
+   122→- گرافیک: گنبد آسمان ShaderMaterial گرادیانی (افق روشن → اوج عمیق، رنگ از تم منطقه، fog:false)؛ ستاره‌های شب ۳۲۰ نقطه (فقط night و quality≠low)؛ نور Rim مخالف خورشید (0.45 روز/0.22 شب)؛ لکه‌های نرم radial-gradient روی بافت زمین (۲۶ لکه روشن/تیره)؛ سنگ‌ریزه لبه مسیر InstancedMesh (Dodecahedron، جانمایی قطعی rnd2)؛ وینیت CSS سینمایی battle-vignette در BattleUI
+   123→- تست Agent Browser: تعویض تب نقشه→قهرمانان بدون بستن ✓ (هر دو iframe زنده) / هدر داخلی مخفی ✓ / نبرد: زمین لکه‌دار + سنگ لبه مسیر ✓ / ghost قرمز روی مسیر و سبز روی زمین معتبر ✓ / ساخت نگهبان ۲۴۰→۱۴۰ ✓ / ارتقا L1→L2 با VFX، «ارتقا — ۸۵» در L2 و دکمه غیرفعال با ۴۰ سکه ✓ / استقرار هیرو رو به مسیر + پایش ✓ / کنسول صفر error / eslint تمیز / build موفق ۹ صفحه
+   124→
+   125→Stage Summary:
+   126→- هر پنج درخواست انجام شد؛ باگ مجانی‌بودن ارتقای L5 (صفر سکه در لول ۴) و باگ ماندن buildMode بعد از ساخت رفع شد
+   127→- iframe اکنون مثل یک سیستم تب واقعی عمل می‌کند: باز/تعویض/بستن بدون گیر، لودینگ و خطا هرگز صفحه خالی نمی‌دهند
+   128→- صحنه نبرد عمق بصری واقعی گرفت بدون قربانی‌کردن موبایل (InstancedMesh + یک draw call برای سنگ‌ها، گنبد آسمان یک draw، وینیت CSS)
+   129→
+   130→---
+   131→Task ID: 6
+   132→Agent: main (Super Z)
+   133→Task: دریافت و جایگذاری اولین GLB واقعی کاربر (arman.glb از لینک uploadkon) + اعتبارسنجی کامل + تست زنده در گالری و نبرد
+   134→
+   135→Work Log:
+   136→- دانلود arman.zip از https://uploadkon.ir/uploads/fa6e28_26arman.zip (194KB) → استخراج → arman.glb (230KB)
+   137→- اسکریپت scripts/inspect-glb.js: هدر GLB معتبر (glTF 2.0, Sketchfab-16.9.0)، ۴ نود، ۲ مش (۱۵۲۶ مثلث)، ۲ متریال PBR rough با ۲ تکسچر PNG داخلی، **skins=0 و animations=0** (مدل استاتیک بدون اسکلت)
+   138→- شناسایی منبع: نود «M-FF_iOS_HERO_Thor_Odinson_Avengers» — مدل Thor از بازی Marvel Future Fight (کپی‌رایت Marvel/Disney — باید به کاربر اعلام شود)
+   139→- جایگذاری: public/assets/3d/heroes/arman.glb + حذف zip و پوشه استخراج (طبق درخواست کاربر)
+   140→- تست زنده گالری (?gallery=1): نشان «مدل واقعی GLB» سبز + وضعیت Asset: real GLB / ۲۳۰KB / مثلث ۱۵۲۶ / تکسچر ۲ / «بدون انیمیشن (Placeholder یا مدل استاتیک)» — تشخیص صحیح استاتیک بودن
+   141→- تست زنده نبرد: استقرار آرمان → مدل Thor (شنل قرمز/زره زنجیری/کلاه‌خود بالدار) داخل دایره سبز رندر شد؛ نرمال‌سازی ارتفاع و ایستادن روی زمین صحیح؛ کنسول صفر error (فقط هشدارهای انتظارِ برج‌های بدون GLB)
+   142→- صفر خط تغییر کد — دقیقاً طبق قرارداد بخش ۱۵/۲۹: GLB واقعی → جایگزینی خودکار Placeholder
+   143→
+   144→Stage Summary:
+   145→- خط لوله Asset با اولین GLB واقعی کاربر تست و تأیید شد: Load→Normalize→Gallery→Battle همه سالم
+   146→- مدل آرمان فعلی «استاتیک» است (بدون اسکلت/انیمیشن) — در بازی حرکت/حمله انیمیشنی ندارد؛ برای انیمیشن باید مدل Rigged با کلیپ Idle/Walk/Attack تهیه شود
+   147→- ریسک کپی‌رایت (Thor Marvel) به کاربر گزارش شد
+   148→
+   149→---
+   150→Task ID: 7
+   151→Agent: main (Super Z)
+   152→Task: پنج درخواست کاربر — رعدوبرق پتک آرمان، تفنگ→پتک آذری، جابجایی هیرو در نبرد، حمله دشمن به هیرو، ریسپاون هیرو + گزارش قدرت قهرمانان
+   153→
+   154→Work Log:
+   155→- types.ts: HeroData + weaponAura ('lightning') + attackStyle ('hammerLightning') + respawn (ثانیه)
+   156→- magic.ts HEROES.arman: attackType physical→energy، projectileColor 0xffd54a→0x93c5fd (آبی‌الکتریکی)، weaponAura/attackStyle/respawn:12
+   157→- Hero.ts: آئورای مستمر پتک — هر ۰٫۴-۰٫۷ ثانیه جرقه از weaponPoint واقعی + ۳۰٪ مواقع قوس بولت کوتاه؛ حمله آرمان حالا صاعقه دوپاره از نوک پتک + هر ~۳ ضربه قوس زنجیره‌ای به ۲ دشمن دیگر (۵۵٪ آسیب) با صدای lightning؛ takeDamage (جرقه قرمز) → die (انفجار آذری + پنهانی) → respawnTimer → respawn با HP کامل کنار هسته آذر (corePos+2.5) با VFX بازگشت؛ alive getter (deployed && !dead)؛ قفل توانایی/جابجایی در مرگ؛ getPos برای HeroRef
+   158→- context.ts: HeroRef interface (getPos/alive/takeDamage) + GameContext.heroRef
+   159→- Enemy.ts: درگیری با قهرمان — برد ۲٫۶ (Boss ۳٫۶): توقف روی مسیر، چرخش به قهرمان، ضربه هر ۱٫۲۵s با heroHitDmg = clamp(maxHp×0.035, 6..45) (EnemyData فیلد damage ندارد) + hitSpark + انیمیشن attack؛ slam به هیرو هم آسیب می‌زند (شعاع ۹، ×۱٫۸ سقف ۸۰)؛ heroAtkCd ریست وقتی هیرو زنده نیست تا ریسپاون فوری ضربه نخورد
+   160→- Game.ts: ctx.heroRef wiring؛ heroState + dead/respawnIn؛ تپ روی هیرو = ورود به حالت جابجایی + toast heroMoveHint (قبلاً فقط فلش UI بود)؛ حلقه پالس کهربایی زیر هیرو در حالت جابجایی (هر ۰٫۵۵s)
+   161→- BattleUI.tsx: دکمه هیرو — حالت مرگ (قرمز + شمارش معکوس ریسپاون با faNum) + نوار جان گرادیانی سبز/قرمز زیر دکمه + قفل در مرگ؛ gameStore HeroInfo + dead/respawnIn
+   162→- i18n fa/en: heroArmanDesc تفنگ→«پتک آذری رعدوبرق بر سر دشمنان فرو می‌ریزد»؛ کلیدهای جدید heroMoveHint و heroRespawnShort — parity کامل
+   163→- تست مرورگر: استقرار هیرو ✓ رعدوبرق دور پتک در صحنه دیده شد ✓ جابجایی (selectHeroMode+تپ زمین → hero walk) ✓ دشمن به هیرو حمله کرد (HP 600→594→588→570) ✓ مرگ اجباری: respawnIn 12→11→5 شمارش و mesh پنهان ✓ ریسپاون خودکار: hp=600، position=(20.5,4.5)=corePos+2.5، visible ✓ UI پنل قهرمانان: «با پتک آذری...» ✓
+   164→- tsc صفر خطای src / eslint تمیز / build موفق ۹ صفحه / کنسول صفر error
+   165→
+   166→Stage Summary:
+   167→- آرمان از «تفنگ‌دار» به «پتک‌دار رعدوبرقی» تبدیل شد — هماهنگ با مدل Thor GLB که خود کاربر آپلود کرد
+   168→- هیرو اکنون موجودیت کامل نبرد است: جان می‌دهد، می‌میرد، ریسپاون می‌شود، جابجا می‌شود و دشمنان او را تهدید واقعی می‌بینند
+   169→- توازن: ضربه دشمن از HP مشتق می‌شود (کف ۶ سقف ۴۵) — با ۲۶ دشمن/Boss فعلی بدون نیاز به داده جدید
+   170→
+   171→---
+   172→Task ID: 8
+   173→Agent: main (Super Z)
+   174→Task: انیمیشن پروسیجرال Idle/Walk/Attack برای هیرو (درخواست کاربر: «خودت نمیتونی انیمیشن Idle/Walk/Attack بزاری روی هیرو اول به جای ثابت بودن حالتش؟»)
+   175→
+   176→Work Log:
+   177→- مشکل: arman.glb استاتیک است (skins=0 و animations=0) — کنترلر اسکلتی روی آن no-op بود و مدل مثل مجسمه سُر می‌خورد
+   178→- ساخت src/game/assets/ProceduralAnimationController.ts — انیمیشن بدنه‌صلب (Rigid-Body) برای GLBهای بدون اسکلت با API کاملاً یکسان با CharacterAnimationController (playLocomotion/playOneShot/playDeath/reset/stopAll/update/dispose/isBusy):
+   179→  • Idle: تنفس (بوب دو سینوی هم‌پوشان + تاب roll/pitch + نگاه چپ‌وراست آرام)
+   180→  • Walk/Run: بونس قدم |sin(phase)| + خم‌شدن به جلو + تلوتلو جانبی + موج yaw — فرکانس ∝ سرعت واقعی حرکت (speedRatio)
+   181→  • Attack (One-Shot ۰٫۵۲s): کمانش عقب −۰٫۲۴ → اسمش +۰٫۶۲ با یورش جلو +۰٫۳۴ → بازیابی نرم — بازگشت خودکار به حرکتی
+   182→  • Hit/Skill/Roar پروفایل‌های مجزا + نگاشت فازی نام (attack1/specialattack/... هم پوشانده می‌شود)
+   183→  • Death: افتادن به عقب با شتاب گرانش (easeIn) تا −۱٫۳۸ + بونس برخورد + فریز
+   184→  • همه ژست‌ها روی «پیوت» داخلی اعمال می‌شوند (root دست Gameplay دست‌نخورده) + جبران عمودی 0.18·H·(1−cosθ) ضد فرورفتن در زمین + ضریب دامنه بر اساس ارتفاع مدل
+   185→- CharacterFactory._swapIn: GLB انیمیشن‌دار → میکسر اسکلتی | GLB استاتیک → ProceduralAnimationController(norm.inner, norm.height) — union type AnyAnimationController؛ از این پس هر GLB استاتیکی (دشمن/Boss/قهرمان) خودکار انیمیشن پروسیجرال می‌گیرد
+   186→- Hero.ts: playLocomotion+update بدون شرط (Placeholderها animation=null دارند و پاهای قدیمی‌شان کار می‌کند) + فلینچ هنگام takeDamage (اگر busy نباشد) + مرگ: اول افتادن ۰٫۹ ثانیه‌ای بعد پنهان‌شدن (deathHideTimer) + respawn با animation.reset
+   187→- Enemy.ts: دشمنان GLB استاتیک هم locomotion پروسیجرال + فلینچ اصابت + مرگ با افتادن (نرخ فرورفتن ۱٫۶)
+   188→- گالری: مدل استاتیک اکنون زنده است — دکمه‌های پیش‌نمایش idle/walk/run/attack/skill/hit + متن assetNoAnimations فقط برای Placeholder (fa/en parity)
+   189→- تست زنده (agent-browser + eval روی window.__game): idle بوب ۰٫۰۰۲→۰٫۰۰۹ و نوسان pitch/roll ✓ | walk هنگام جابجایی واقعی: خم ۰٫۰۷۵ + تلوتلو ±۰٫۰۴ ✓ | اسمش: pitch +۰٫۴۸۵ و یورش +۰٫۲۸۸ در اوج سپس بازیابی به صفر و isBusy=false ✓ | مرگ: افتادن −۰٫۴۱۱→−۱٫۳۵۱→فریز −۱٫۳۸ و سپس پنهان ✓ | ریسپاون: hp ۶۰۰/۶۰۰ کنار هسته (۲۰٫۵ و ۴٫۵) با ریست ژست و ادامه تنفس ✓ | نبرد واقعی: دشمنان هیرو را زدند (۶۰۰→۵۷۰) و هیرو حین نبرد در حالت‌های انیمیشن دیده شد ✓ | گالری: دکمه‌های ژست ظاهر شد ✓
+   190→- tsc صفر خطای src / eslint تمیز / build موفق ۹ صفحه / کنسول صفر error
+   191→- نکته تست: مرورگر headless قهق RAF را ~⅓ کند می‌کند — تایمرها در wall-time کش می‌آیند (روی دستگاه واقعی ۶۰fps است)
+   192→
+   193→Stage Summary:
+   194→- «مجسمه» دیگر وجود ندارد: آرمان اکنون نفس می‌کشد، راه می‌رود (بونس و تلوتلو)، با اسمش پتک حمله می‌کند، هنگام ضربه‌خوردن فلینچ می‌زند، هنگام مرگ به عقب می‌افتد و بعد از ریسپاون تمیز بلند می‌شود
+   195→- راه‌حل جنریک است: هر GLB آینده‌ای که بدون اسکلت باشد (دشمن/Boss/قهرمان بعدی کاربر) بلافاصله همین انیمیشن‌ها را می‌گیرد — و اگر روزی GLB Rigged با کلیپ آمد، خودکار به میکسر اسکلتی سوییچ می‌شود (دو مسیر با API واحد)
+   196→- کیفیت بصری حفظ شد: پاها هنگام چرخش کاشته می‌شوند (جبران عمودی)، Placeholderها دست‌نخورده، Pool/reuse با reset/stopAll سازگار است
+   197→
+   198→---
+   199→Task ID: 9
+   200→Agent: main (Super Z)
+   201→Task: بازخورد کاربر — «دستی که پتک داره رو عقب جلو کن به نشانه ضربه، خودشو کمتر تاب بده» — تاب سلاح جدا (Prop-Swing) به‌جای تاب کل بدن
+   202→
+   203→Work Log:
+   204→- تحلیل ساختار arman.glb با اسکریپت جدید scripts/analyze-arman-parts.js: مدل ۲ مش دارد — بدن (Object_0، ۱۴۷۲ مثلث، mat _B) و «پتک جدا» (Object_1، ۵۴ مثلث، mat _W) در دست چپ، ارتفاع سینه، دسته در راستای Z — یعنی سلاح قابل جداسازی است
+   205→- ProceduralAnimationController: ویژگی Prop-Swing — تشخیص خودکار سلاح جدا در GLBهای بدون اسکلت (معیار محافظه‌کارانه: حجم مش < ۱۰٪ بدن + یک بعد ≥۱٫۴× بوردهای دیگر = «دسته‌دار»)؛ ساخت propPivot دور «نقطه گریپ» (انتهای دسته سمت بدن = نزدیک‌ترین سر دسته به مرکز بدن) با attach حفظ ترنسفورم؛ محور تاب = محور افقی عمود بر دسته
+   206→- پروفایل حمله بازطراحی شد (دقیقاً طبق درخواست): بدن فقط pitch ≤۰٫۱۲ و لانژ ۰٫۱۳ (قبلاً ۰٫۶۲ و ۰٫۳۴ — ~۵× کمتر) و بیان ضربه با تاب پتک: عقب-بالا (PROP_WINDUP −۰٫۸ رادیان) → کوبیدن جلو (PROP_SMASH +۰٫۶) → بازیابی نرم — قوس ~۸۲ درجه دور نقطهٔ دست
+   207→- تاب ظریف همراه: idle پتک با تنفس ±۰٫۰۲۸ (در دست احساس می‌شود نه لق)، walk با ریتم قدم ±۰٫۰۶، hit لگ −۰٫۱۴، skill پتک به آسمان −۰٫۹۵ (هماهنگ با آذرخش ability) — نقاط VFX سینتتیک سلاح (weaponpoint/muzzlepoint/staffpoint) به propPivot منتقل می‌شوند تا جرقه/صاعقه دنبال تاب پتک بروند (قبلاً در نقطه ثابت جلوی سینه بودند!)
+   208→- رفع باگ قدیمی کلید VFX: CharacterHandle.vfx تطبیق فازی گرفت ('weapon' → 'weaponpoint') — Hero.ts با 'weapon' صدا می‌زد و null می‌گرفت
+   209→- تاب idle بدن هم کاهش داده شد (roll ۰٫۰۲→۰٫۰۱۲، yaw ۰٫۰۲۵→۰٫۰۱۵، pitch ۰٫۰۱۲→۰٫۰۰۸)
+   210→- تست زنده: propPivot ساخته شد (والد درست زیر گره مدل) ✓ | اسلوموشن: قوس −۰٫۸۱۴ تا +۰٫۵۷۴ ثبت شد ✓ | نبرد واقعی ۱۵ ثانیه: ۴ حملهٔ واقعی AI با min −۰٫۷۹۵ / max +۰٫۶۲۶ و بدنه حداکثر ۰٫۱۱۹ ✓ | weaponpoint/muzzlepoint والدشان propPivot شد ✓ | گالری هم خودکار پتک متحرک دارد ✓
+   211→- tsc صفر خطای src / eslint تمیز / build موفق / کنسول صفر error
+   212→
+   213→Stage Summary:
+   214→- ضربه آرمان حالا «ضربه پتک» است نه تاب‌خوردن مجسمه: دست ثابت، پتک دور نقطهٔ دست عقب-جلو می‌رود و بدن فقط کمی وزن می‌دهد — دقیقاً همان چیزی که کاربر خواست
+   215→- راه‌حل جنریک است: هر GLB آینده‌ای (قهرمان/دشمن/Boss) که سلاح جداگانه داشته باشد، خودکار همین تاب حمله را می‌گیرد؛ GLB سخت‌افزاری جدیدی لازم نبود
+   216→
+   217→---
+   218→Task ID: 10
+   219→Agent: main (Super Z)
+   220→Task: بازخورد ممیزی کاربر — توقف Gameplay، شروع REAL 3D ASSET PRODUCTION PASS؛ گام صفر: نوشتن Art Bible + Asset Production Specification (فارسی + اصطلاح EN، خروجی PDF) طبق پاسخ‌های تأییدی کاربر (سبک فانتزی تاریک استایلایز / بودجه سبک موبایل / پرامپت AI برای هر کاراکتر / راهنمای گام‌به‌گام Blender+Mixamo / arman.glb موقت با پرچم do-not-ship)
+   221→
+   222→Work Log:
+   223→- داده‌های واقعی Gameplay استخراج شد: magic.ts (۴ قهرمان: arman commander پتک+آذرخش #93c5fd، aria guardian splash #67e8f9، radin berserker cleave3 #f87171، nila ranger برد۱۳ #c084fc)، enemies.ts (۶ دشمن slice + ۱۰ آینده + ۵ Boss با scale/رنگ/مقاومت)، towers.ts (۱۰ برج، ۶ برج اول برای فاز ۴)، bossPhases.ts (شخصیت فاز ۲ هر Boss)، AssetManifest.ts (۲۹ ورودی: مسیر/kebab-case/targetHeight/rotationOffsetDeg/انیمیشن‌های HERO(8)/ENEMY(5)/BOSS(9)/VFX Points)، ModelNormalizer.ts (جدول NAME_ALIASES نقاط VFX — spine02→ChestPoint یعنی اسکلت Mixamo بدون تغییر کار می‌کند)، CharacterFactory (تطبیق فازی نقاط)
+   224→- مسیر تولید سند: docx skill لود شد ولی کاربر PDF+فارسی انتخاب کرد → pdf skill و بارگذاری کامل زنجیره (fonts.md/creative-flow.md/overflow/pagination/typography/palette/cover.md) — RTL → Creative Flow + html2pdf-next.js
+   225→- فونت Vazirmatn (۵ وزن) از jsDelivr دانلود و در download/assets/fonts/ نصب شد (همان فونت بازی — هویت یکدست)
+   226→- سند ساخته شد: HTML تک-فایلی RTL با cover تاریک (الگوی anchor-grid آینه‌شده RTL + Summary Block + خط لنگر طلایی)، فهرست، ۱۰ فصل: خلاصه اجرایی/وضعیت خط لوله/Art Bible (سبک+Do-Don't+قانون IP ضد-Thor/دو اردوگاه/پالت HEX/تناسب اندام/Silhouette-first/PBR)/قرارداد فنی (نام‌گذاری/بودجه موبایل/محور +Z/Rig/فهرست انیمیشن با مدت/نقاط VFX/جدول ۲۹ دارایی/LOD)/گردش کار ۴ ایستگاهی (Master Style Prompt + Negative Prompt سراسری + ۹ گام Mixamo + خروجی GLB بدون Draco + Drop-in)/۱۷ کارت کامل با پرامپت اختصاصی (۴ قهرمان، ۶ دشمن، اژدهای سیاه، ۶ برج با جدول دگردیسی L1→L5 تغییر مدل واقعی)/جداول خلاصه (۴ Boss + ۴ برج + ۱۰ دشمن آینده)/دروازه پذیرش ۸گانه + برنامه حذف Thor
+   227→- QA: poster_validate → رفع FONT_NO_FALLBACK (بایپس @font-face با کامنت) و COVER_TEXT_OVERLAP (فاصله ۴۰px خط/متن + ضخامت divider 8px)؛ نکته: cover_validate فقط برای فایل مستقلِ معتبر است (SKILL.md) — کلاس cover→frontpage و اعتبارسنجی جدا؛ Paged.js در RTL شکست (۲ صفحه!) → --nopaged (Chromium native) → ۲۶ صفحه
+   228→- pdf_qa: FAIL صفر؛ WARNهای باقی‌مانده = آرتیفکت استخراج RTL («—» ابتدای سطر) و عدم تقارن عمدی cover آینه‌ای؛ فاصله آخر صفحه با بخش ۱۰.۵ (دفتر تصمیم‌ها) رفع شد؛ meta.brand (Author=Z.ai)؛ صفر U+FFFD در ۶۴هزار کاراکتر
+   229→- بازبینی بصری ۵ صفحه کلید (pdftoppm): شکل‌دهی حروف فارسی، جدول‌های RTL، توکن‌های کد LTR، سواچ رنگ، بلوک‌های پرامپت تیره — همه صحیح
+   230→
+   231→Stage Summary:
+   232→- تحویل: download/azar-art-bible-asset-spec.pdf (۲۶ صفحه، ۶۶۰KB، وکتور) + سورس download/azar-art-bible-asset-spec.html (قابل ویرایش) + assets/fonts
+   233→- سند = مرجع واحد ۲۹ دارایی؛ قرارداد ۱۰۰٪ هم‌تراز با کد فعلی (AssetManifest/ModelNormalizer/انیمیشن‌ها) → هر GLB منطبق بدون تغییر کد لود می‌شود؛ کاربر می‌تواند پرامپت هر کاراکتر را مستقیم در Meshy/Tripo/Rodin کپی کند
+   234→- گام بعدی پروژه: اجرای گام ۱ جدول ۱۰.۴ — تولید آرمان جدید (کارت ۶.۱) با گردش کار فصل ۵ و پذیرش با فصل ۱۰؛ Gameplay دست‌نخورده ماند (صفر تغییر کد در این تسک)
+   235→
+   236→---
+   237→Task ID: 11
+   238→Agent: main (Super Z)
+   239→Task: درخواست کاربر «کنسول و برام باز کن بازی رو تست کنم» — بالا آوردن بازی + باز کردن/بررسی کنسول + تحویل آمادهٔ تست
+   240→
+   241→Work Log:
+   242→- سرور dev روی پورت 3000 در حال اجرا بود (HTTP 200) — نیازی به راه‌اندازی مجدد نبود؛ Caddyfile پورت 81 → proxy به 3000 تأیید شد
+   243→- بازی در agent-browser (viewport 414×896) باز شد: title «آخرین سنگر — نگهبانان سرزمین» ✓
+   244→- کنسول بررسی شد: صفر page error؛ تنها warningهای «فایل GLB یافت نشد → Placeholder» برای 25 دارایی تولیدنشده (انتظارشده — فاز REAL ASSET PASS هنوز شروع نشده) + لاگ موفق لود arman.glb (0 انیمیشن) + HMR/Fast Refresh سالم
+   245→- صفحهٔ اصلی، منو، دکمهٔ «شروع نبرد» ✓ → ورود به نبرد: window.__game ظاهر شد (hero ok / hp 600)؛ نقشهٔ 3D با مسیر/خانه/درخت و HUD کامل (HP 100٪ / موج ۱ از ۱۰ / طلا ۳۵۰ / دکمه‌های برج) رندر شد ✓
+   246→- موج دستی شروع شد → 1 دشمن spawn شد (hp 55، Shadow Creature موج ۱) ✓ — حلقهٔ کامل بازی سالم
+   247→- اسکرین‌شات‌ها: scripts/console-check-home.png / console-check-battle.png / console-check-wave.png
+   248→- bot-id لینک preview از داخل sandbox قابل کشف نبود (همهٔ کاندیدها 404 wildcard) — کاربر از قبل از طریق پنل preview به بازی دسترسی داشته (dev.log رکورد بازدید /page/map و /page/heroes را نشان می‌دهد)
+   249→
+   250→Stage Summary:
+   251→- بازی ۱۰۰٪ آمادهٔ تست کاربر: سرور بالا، کنسول تمیز (صفر error)، حلقهٔ کامل صفحهٔ اصلی→نبرد→موج→spawn دشمن تأیید شد
+   252→- تنها نویز کنسول = 404/warning GLBهای تولیدنشده که دقیقاً همان کارِ فاز بعدی (Asset Production طبق Art Bible سند Task 10) است
+   253→- گیم‌پلی دست‌نخورده ماند (صفر تغییر کد)
+   254→
+   255→---
+   256→Task ID: 12
+   257→Agent: main (Super Z)
+   258→Task: درخواست کاربر — «بخش ارتقای هیرو + ارتقای تاورها بذار، نقشهٔ مبارزه رو ارتقا بده، مراحل رو بیشتر کن»
+   259→
+   260→Work Log:
+   261→- کشف کلیدی: knowledge (دانش باستانی) در بازی انبوه می‌شد ولی هیچ مصرفی نداشت → آن را ارز سیستم ارتقای دائمی کردیم
+   262→- meta.ts جدید: META_MAX_LEVEL=۱۰؛ قهرمان +۸٪ جان/آسیب در هر سطح؛ برج +۶٪ آسیب/+۳٪ نرخ/+۲٪ برد؛ هزینه = base×(سطح+۱) — قهرمان ۱۰، برج ۸
+   263→- types/SaveSystem: heroUpgrades/towerUpgrades + مهاجرت ذخیره‌های قدیمی
+   264→- تزریق موتور حداقلی: Hero.ts پارامتر metaPct (جان/آسیب)؛ Tower.ts فیلد metaPct با ضریب در سه getter؛ Game.ts از ذخیره می‌خواند (heroMetaLevel/towerMetaLevel)
+   265→- اقتصاد دانش: پاداش پیروزی = ۲+ستاره+(منطقه−۱)×۲ + پاداش نخستین‌فتح (منطقه×۵)؛ شکست = ۲ دل‌داری
+   266→- levels.ts: ۴ منطقهٔ جدید (l7 تالارهای مه forest روز — golemKing tier2 / l8 مرداب زهرآگین tundra شب — دوئل fireGiant+iceGiant / l9 آشیانهٔ اژدها volcano روز — blackDragon tier2 / l10 حلقهٔ تاریکی citadel شب — Boss Rush با ۶ باس و darkLord tier3)؛ REGIONS از ۶ → ۱۰؛ tier 4 برای موج‌های سخت‌تر (tiered باز است)
+   267→- i18n: ۳۰+ کلید fa/en (forge*، map*، region7-10)
+   268→- UpgradesPanel.tsx جدید (آهنگری آذر): دو تب قهرمانان/برج‌ها، ۱۰ پلهٔ سطح، پاداش فعلی/بعدی، دکمهٔ ارتقا با هزینهٔ دانش؛ فرم رجیستر شد ([screen]/page.tsx + StandaloneScreen + MainMenu — نوار پایین حالا ۶ دکمه با آیکون چکش)
+   269→- نکتهٔ UX: هدر پنل‌ها در حالت iframe مخفی می‌شود (.panel-header) → نوار موجودی دانش به ناحیهٔ همیشه‌مرئی منتقل شد (forge بالای تب‌ها، map در نوار آمار ۴ستونه)
+   270→- CampaignMap بازطراحی: نوار آمار (ستاره ۱۷/۳۰، مناطق، کریستال، دانش) + نوار پیشرفت ٪ + مسیر عمودی سفر (دروازهٔ تاریکی → گره‌های محیطی با شماره/تیک/قفل/تاج باس → هستهٔ آذر) + چیپ موج/باس نهایی هر منطقه + بنر باس در بریفینگ
+   271→- باگ وسط راه: پرداخت دانش در doUpgrade جا افتاده بود (سطح می‌رفت، پول نه) → s2.knowledge -= cost اضافه و بازتست شد
+   272→- راستی‌آزمایی مرورگر (همه عددی): ارتقا ۱۰→ سطح۱/+۸٪/۴۹۰... درست ۵۰۰−۲۰=۴۸۰ و +۱۶٪ سطح۲ ✓ | نبرد: heroHp=۶۹۶ دقیقاً ۶۰۰×۱٫۱۶ ✓ | برج sentinel lvl5: metaPct 0.3، damage 18.2=14×1.3، range 9.9=9×1.1، fireRate 2.53=2.2×1.15 ✓ | نقشه: ۱۰ منطقه + آمار + پیشرفت ۶۰٪ + بریفینگ R7 با بنر «باس نهایی: غول سنگی کین» ✓ | ناوبری ۶ دکمه + iframe ارتقاها باز/مرئی ✓ | حلقهٔ کامل: خانه→نقشه iframe→R4→آغاز نبرد→region4/coreHp130/hero696 ✓ | کنسول صفر error، tsc صفر خطای src، lint فقط ۲ خطای قدیمی scripts/
+   273→- اسکرین‌شات: scripts/forge-heroes-tab.png، forge-v2.png، forge-towers-tab.png، map-trail.png، map-briefing-r7.png
+   274→
+   275→Stage Summary:
+   276→- متاپروگرشن کامل وصل شد: دانش باستانی (قبلاً بلااستفاده) حالا ارز آهنگری آذر است؛ ارتقاها دائمی و در همهٔ مناطق اثر دارند
+   277→- کمپین ۶→۱۰ منطقه با فصل دوم (Boss Rush پایانی)؛ نقشهٔ مبارزه از لیست ساده به نقشهٔ سفر با آمار بدل شد
+   278→- Gameplay core دست‌نخورده: صفر تغییر در combate/Wave/UI نبرد — همهٔ تغییرات data-driven یا UI پنل‌های بیرون نبرد بودند
+   279→
+   280→---
+   281→Task ID: 13
+   282→Agent: main (Super Z)
+   283→Task: درخواست کاربر — «نقشهٔ مبارزه رو تا ۱۰۰ مرحله بساز، ارتقاها هم ست باشه باهاشون، تا ۲۰ ارتقا بزن»
+   284→
+   285→Work Log:
+   286→- کمپین ۱۰ → ۱۰۰ مرحله: فصل نخست = ۱۰ منطقهٔ دست‌ساز قبلی (l1..l10 دست‌نخورده — ذخیرهٔ کاربر سازگار ماند) + فصل‌های ۲..۱۰ تولیدی قطعی (l11..l100): هر فصل ۱۰ مرحله در محیط منطقهٔ هم‌شمارهٔ خودش (جنگل/تندرا/آتشفشان/ویرانه‌ها/دژ → دوباره تا دژ)
+   287→- ژنراتور موج (genWaves): هر مرحله ۶ موج از مخزن محیطی (main/air/support برای ۶ محیط)، tier = 2..5 با عمق مرحله، تعداد bulk = 0..4، coinBonus صعودی؛ مرحلهٔ ۱۰c = نبرد باس فصل (CHAPTER_BOSSES: golemKing t2 → fireGiant+iceGiant t2 → blackDragon t2 → annihilator t2 → darkLord t3 → golemKing t3 → دوئل غول‌ها t3 → blackDragon t3 → darkLord t4 + annihilator — فینال)
+   288→- ۵ قالب مسیر (±۳۲) با چرخش قطعی n%5؛ coreHp=۱۰۰+۱٫۲n، startCoins=۳۰۰+۴n، startCrystals=۳۰+n/۲
+   289→- هم‌ترازی ارتقا با مراحل: stagePowerMul(region) = 1+0.022×(region−10) → مرحلهٔ ۱۰۰ = ×۲٫۹۸ قدرت دشمن؛ در tiered() پارامتر powerMul اضافه شد (hp/armor×mul، reward×(1+0.25(mul−1))، سرعت محدود) و از Game.spawnEnemy/summonShadow تزریق می‌شود — پاداش دانش پیروزی قبلاً بر اساس region صعود می‌کرد (فرمول دست‌نخورده، حالا تا ۱۰۰ ادامه دارد)
+   290→- آهنگری آذر تا ۲۰: META_MAX_LEVEL=۲۰ (قهرمان +۸٪/سطح → حداکثر +۱۶۰٪؛ برج +۶٪/+۳٪/+۲٪ → +۱۲۰٪)؛ سقف ۲۰ دقیقاً با ×۳ قدرت دشمنان late-game هم‌تراز است؛ کلیدهای ذخیره سازگار (heroUpgrades/towerUpgrades)
+   291→- i18n: chapterOne، stagePart{0}، stageTagGeneric، stageDescGeneric (fa/en) + mapRegionsDone→«مراحل فتح‌شده» + forgeDesc تا سطح ۲۰
+   292→- CampaignMap بازطراحی برای ۱۰۰ گره: سربرگ فصل (نام محیط + «بخش n» بازگشت محیط + پیشرفت n/۱۰ + چیپ باس فصل + حالت فتح‌شده) + گرید ۵ستونی دو ردیفی گره‌ها (شماره فارسی/تیک سبز/قفل/تاج باس/ستاره‌های ریز ۳تایی + حلقهٔ پالس «مرحلهٔ فعلی»)؛ نوار آمار: ستاره x/۳۰۰، مراحل x/۱۰۰، پیشرفت ٪؛ بریفینگ مراحل تولیدی: عنوان «محیط — بخش n» + توضیح ژنریک
+   293→- UpgradesPanel: LevelPips برای ۲۰ سطح در ۲ ردیف ۱۰تایی + نمایش «سطح n/۲۰»
+   294→- راستی‌آزمایی عددی مرورگر: نقشه = ۱۰ فصل × ۱۰ گره = ۱۰۰ دکمه ✓ | ذخیرهٔ آزمایشی ۱۹ مرحله/۵۷ ستاره → آمار ۵۷/۳۰۰ و ۱۹/۱۰۰ و ۱۹٪ ✓ | بریفینگ l20: هسته ۱۲۴=۱۰۰+۲۰×۱٫۲، ۶ موج، باس غول سنگی کبیر ✓ | شروع نبرد l20 از iframe → پست‌مسیج → نبرد واقعی ✓ | اسپاون: shadowSoldier tier2 hp=۲۱۱ دقیقاً ۱۰۵×۱٫۶۵×۱٫۲۲ (stagePowerMul(20)) و reward=۱۸ ✓ | آهنگری: آرمان ۲→۳/۲۰، دانش ۶۰۰−۳۰=۵۷۰، +۲۴٪، پیپ‌ها ۲۰عددی ✓ | برج نگهبان ۱/۲۰ هزینه ۱۶ ✓
+   295→- tsc صفر خطای src / eslint تمیز / build موفق / کنسول صفر error (فقط warningهای GLB تولیدنشده + هشدار قدیمی PCFShadowMap)
+   296→- اسکرین‌شات: scripts/map100-top.png، map100-battle20.png، map100-battle-state.png، map100-battle-wave.png
+   297→- نکته: rAF در تب headless throttle می‌شود — تایمر ۱۸ ثانیه‌ای موج کند پیش می‌رود؛ رفتار مرورگر واقعی طبیعی است
+   298→
+   299→Stage Summary:
+   300→- نقشهٔ مبارزه حالا ۱۰۰ مرحله در ۱۰ فصل دارد: فصل نخست = ۱۰ نبرد دست‌ساز اصلی، فصل‌های ۲..۱۰ = ۹۰ مرحلهٔ تولیدی قطعی با باس فصلی و اوج‌گیری قدرت (تا ~×۱۷ با tier۵)
+   301→- آهنگری آذر تا سطح ۲۰ گسترش یافت و با stagePowerMul هم‌تراز شد؛ اقتصاد دانش ۱۰۰ مرحله‌ای (فروختن کل کمپین ≈ ۳۵هزار دانش) پوشش کامل ۲۰ سطح هم قهرمانان هم برج‌ها را می‌دهد
+   302→- ذخیرهٔ کاربر بدون مهاجرت کار می‌کند (l1..l6 فتح‌شده = مراحل ۱..۶)؛ گیم‌پلی هسته (Wave/combat) دست‌نخورده ماند — همه‌چیز data-driven
+   303→
+   304→---
+   305→Task ID: 14
+   306→Agent: main (Super Z)
+   307→Task: Asset Production Pass — فاز ۱: چهار قهرمان (کارت ۶.۱..۶.۴ Art Bible) + یافتن و رفع باگ Prop-Swing
+   308→
+   309→Work Log:
+   310→- فایل آپلودی کاربر («Pasted Content») به سرور نرسید (upload/ خالی) → طبق نقشهٔ راه مستند (Art Bible Task 10 + یادداشت Task 11: «فاز REAL ASSET PASS شروع نشده») فاز ۱ تولید دارایی اجرا شد
+   311→- glbkit.py جدید — کتابخانهٔ ساخت GLB خالص-Python: primitives (box/cyl/sphere/octa/prism3/tri_fan) با نرمال تخت/هموار، متریال PBR + Emissive، نود سلسله‌مراتبی، نقاط VFX خالی، بلوک‌بندی primitive-per-material، بسته‌بندی استاندارد GLB (هم‌ترازی ۴بایتی، accessor min/max، uint32 index)
+   312→- build_heroes.py — چهار مدل طبق کارت‌های Art Bible:
+   313→  • آرمان ۶.۱ (COMMANDER): زره فولاد آبی‌خاکستری #5d6b7a + ترنج طلایی #f0b03c + سربند لاجوردی + ریش مشکی + پیشانی‌بند با نگین؛ پتک آذری (چکش سنگی + وجه تبر + کریستال آذرخش Emissive #93c5fd) — مش مجزای arman_weapon؛ ۵ نقطه VFX
+   314→  • آریا ۶.۲ (GUARDIAN): ردای کرم #d9d4c6 + حاشیه لاجوردی + برنز؛ عصای دو-حلقه‌ای با گوی فیروزه Emissive #67e8f9؛ StaffPoint اضافه
+   315→  • رادین ۶.۳ (BERSERKER): برنز #6e5138 + پوست گرگ + نوارهای سرخ + گوش بریده + پین استخوانی؛ تبر دولبه با عقب‌تیزه؛ خال‌کوبی سرخ
+   316→  • نیلا ۶.۴ (RANGER): سبز-خاکستری شب #4a5548 + کلاه نوک‌دار رو به عقب + کولهٔ تیر با نوک بنفش Emissive #c084fc + کمان سه‌قطعه‌ای با زه‌گیر نقره‌ای
+   317→- معماری هر مدل: «بدنه = یک مش چند-پریمیتیو» + «سلاح = یک مش جدا» → Prop-Swing قطعی؛ بودجه مثلث ~۲٬۱۰۰-۲٬۳۰۰ (≪ ۱۵k)؛ حجم ۸۵-۱۰۱KB
+   318→- arman.glb قدیمی (ظاهر Thor — ریسک IP) با آرمان جدید Art-Bible جایگزین شد
+   319→- 🐛 باگ کشف‌شده Prop-Swing: چرخش جزئی نود سلاح (۳-۸°) AABB جهانی سلاح کشیده را تا ۱٫۷× باد می‌کند (محور طولانی به محورهای دیگر project می‌شود) → نسبت حجم > ۱۰٪ → تشخیص بی‌صدا fail می‌شد (حالت Thor بدون چرخش بود) → راه‌حل: نود سلاح translation-only + tilt حذف؛ نسبت‌ها: آرمان ۸٫۳٪ / آریا ۷٫۴٪ / رادین ۸٫۹٪ / نیلا ۴٫۰٪ ✓
+   320→- نکتهٔ فنی: GLTFLoader هر primitive را به مش جدا تبدیل می‌کند و همهٔ sub-meshهای یک Part boundingBox کامل Part را می‌گیرند (accessor مشترک) — پس «کوچک‌ترین مش = sub سلاح» و تشخیص درست کار می‌کند
+   321→- راستی‌آزمایی مرورگر: ۴ GLB لود شد (لاگ AssetManager)؛ گالری هر ۴ قهرمان رندر + ارتفاع نهایی درست (۱٫۸۵/۱٫۷۸/۱٫۹۵/۱٫۷۵) + VFX Points نمایش داده شد؛ نبرد: استقرار hero.hp=۶۰۰، playOneShot('attack')=true، propPivot=true/axis=x، موج۱ اسپاون دشمن ✓؛ فریم mid-swing حمله تاب پتک را نشان می‌دهد (hero4-7/8)
+   322→- tsc صفر خطای src / bun run build موفق / کنسول صفر error (فقط warningهای GLBهای تولیدنشدهٔ فازهای بعد)
+   323→
+   324→Stage Summary:
+   325→- فاز ۱ Asset Pass کامل شد: چهار قهرمان رسمی Art Bible جایگزین Placeholder/Thor شدند — بدون هیچ تغییر Gameplay (خط لوله GLB-in-drop همان بود)
+   326→- باگ محیطی Prop-Swing (چرخش نود سلاح) ریشه‌یابی و مستند شد — قاعده برای همهٔ مدل‌های آینده: «نود سلاح فقط translation»
+   327→- فازهای بعدی آماده: فاز ۲ = ۶ دشمن اصلی، فاز ۳ = اژدهای سیاه، فاز ۴ = برج‌ها (همان glbkit)
+   328→- اسکرین‌شات‌ها: scripts/hero4-1..9 (گالری ۴ قهرمان + swing حمله + نبرد)
+   329→
+   330→---
+   331→Task ID: 15
+   332→Agent: main (Super Z)
+   333→Task: FINAL GAME COMPLETION & POLISH PASS — ارتقا به Release Candidate طبق مستند ۶۶بندی آپلودی کاربر (New Text Document.zip)
+   334→
+   335→Work Log:
+   336→- دریافت ZIP آپلودی کاربر از uploadkon.ir → استخراج «FINAL GAME COMPLETION & POLISH PASS» (۶۶ بخش)؛ قوانین طلایی رعایت شد: بدون مدل سه‌بعدی جدید، بدون Rewrite، حفظ Asset Pipeline و معماری UI→Store→Game→Systems→Entities→Assets
+   337→- PHASE 1 Audit کامل: Game.ts (۱۰۵۷خط)، تمام پنل‌های UI، levels.ts (۱۰۰مرحله)، meta.ts، SaveSystem، AudioSystem، Enemy/Tower، i18n — با اسکریپت scripts/audit-i18n.cjs (تطابق کامل کلیدهای fa/en: ۱۱۷ کلید، صفر گم‌شده)
+   338→- 🐛 رفع باگ ۱ — crystalBonus هرگز پرداخت نمی‌شد: تعریف در ۱۱ نقطهٔ data (باس‌ها ۱۵..۸۰ کریستال) ولی completeWave فقط coinBonus می‌داد → اضافه‌شدن this.crystals += wave.crystalBonus در Game.completeWave
+   339→- 🐛 رفع باگ ۲ — ۱۲ دستاورد مرده (check:()=>false بدون هیچ trigger): blitz (۵موج پیاپی بدون مکث)، tower_master (۸برج همزمان)، maxed (برج لول۵)، dragon_fear (باس بدون برج جدید)، economy (۳۰۰۰سکه)، magic_rain (۵جادو)، rich/crystal_hoarder (۲۰۰۰سکه/۱۰۰کریستال)، storm_caller/inferno/guardian_angel (شمارنده‌های per-magic در PlayerStats) — همه با grantAchievement (idempotent + پاداش کریستال + toast)
+   340→- رفع باگ ۳ — hero_max با کلیدهای placeholder (achNewAchievement/achUntouchableDesc) → نام واقعی «استاد آهنگری» (Forge Level 10 طبق بخش ۳۸) + ۵ دستاورد جدید: forge20، stages10/50/100 (stats.stagesCompleted جدید)، stars100
+   341→- checkAchievements حالا بعد از defeat هم اجرا می‌شود (قبلاً فقط victory)
+   342→- بخش ۵۲/۵۳ — EndOverlay: دکمهٔ «مرحلهٔ بعد» در پیروزی (stageNum<100 → setPendingLevel → شروع مستقیم مرحلهٔ بعد) + گزارش شکست (موج رسیده x/۱۰ + سلامت هسته٪) با defeatInfo در store
+   343→- بخش ۳۲ — تنظیمات واقعی جدید: master volume (AudioSystem.setMaster روی GainNode اصلی) + camera sensitivity (CameraController.setSensitivity روی pan scale)؛ هر دو data-driven با migration خودکار (settings spread)
+   344→- رفع باگ ۴ — تغییر صدا در نبرد لحظه‌ای اثر نداشت → Game.applyAudioSettings + سیم‌کشی CompactSettings به موتور زنده
+   345→- بخش ۳۲/۵۶ — haptics که feature قلابی بود (فقط در ذخیره، بدون navigator.vibrate) → Game.haptic() با گارد settings.haptics روی: ساخت/ارتقا/برخورد هسته/Boss/جادو/پیروزی/شکست
+   346→- بخش ۲۹ — error boundary: src/app/error.tsx + global-error.tsx (پیام فارسی دوستانه + «پیشرفت شما محفوظ است» + تلاش دوباره)
+   347→- بخش ۴۷ — نشان «موقت — برای انتشار نهایی نیست» (rose) برای آرمان در گالری توسعه‌دهنده (TEMPORARY_ASSETS set)
+   348→- بخش ۲۳ — safe-area: کلاس‌های .safe-top/.safe-bottom با env(safe-area-inset-*) در globals.css؛ اعمال روی HUD بالا/پایین نبرد و نوار منو؛ دکمه‌های سرعت/توقف h-9→h-10 (لمس ۴۰px)
+   349→- فونت/RTL/i18n: ۲۰+ کلید جدید fa+en هماهنگ؛ اسلایدر درصدی فارسی
+   350→- راستی‌آزمایی مرورگر (agent-browser، ۴۱۴×۸۹۶ + ۸۹۶×۴۱۴ landscape):
+   351→  • منو ۷دکمه، صفر error ✓ | تنظیمات: ۴ اسلایدر با default مهاجرت‌یافته (master=۱۰۰/music=۶۰/sfx=۸۰/sens=۱۰۰) ✓
+   352→  • نقشه: گره ۲ فعال، ۳..۱۰ قفل (بعد از seed فتح l1) ✓
+   353→  • نبرد l2: coins=۳۰۰ crystals=۸۵ coreHp=۱۱۰ hero=arman، اسپاون/موج سالم ✓
+   354→  • پرش به موج باس l2 → کشتن Boss → crystalBonus +۱۸ واقعاً پرداخت شد (۹۰→۱۱۲) ✓ | پیروزی: ۳ستاره، knowledge 777→794، stagesCompleted=۲ ✓
+   355→  • «مرحلهٔ بعد» → نبرد l3 (tundra، coreHp=۱۲۰) مستقیم از صفحهٔ پیروزی ✓
+   356→  • شکست: coreHp=1+teleport → گزارش «موج رسیده: ۱ از ۱۰» + «سلامت هسته: ۰٪» + دانش +۲ ✓
+   357→  • دستاوردهای زندهٔ جدید در گیم‌پلی: crystal_hoarder و dragon_fear خودکار افتاد + first_fortress/giant_slayer/star_seeker — ۷ دستاورد فعال ✓
+   358→  • گالری: نشان TEMPORARY آرمان در DOM ✓ | پنل دستاوردها: هر ۵ دستاورد جدید رندر ✓
+   359→  • شبیه‌سازی فتح ۱۰۰/۱۰۰ → نقشه: «۱۰۰/۱۰۰»، فصل ۱۰ «حلقهٔ تاریکی»، چیپ ارباب تاریکی ✓ | بریفینگ مرحلهٔ ۱۰۰: coreHp=۲۲۰ (۱۰۰+۱۰۰×۱٫۲)، ۱۰موج، باس، پاداش ۸۰کریستال ✓
+   360→  • reload → ذخیره کاملاً ماند (knowledge=777 پس از reload) ✓ | landscape 896×414: canvas 896×414 نبرد سالم ✓
+   361→- tsc: صفر خطای src | eslint: تمیز (scripts/ در ignores) | bun run build: موفق (10/10 صفحات) | کنسول مرورگر: صفر error
+   362→- اسکرین‌شات‌ها: scripts/task15-victory-next.png، task15-defeat-report.png، task15-gallery-temporary.png، task15-landscape-menu.png، task15-landscape-battle.png، task15-stage100-briefing.png
+   363→
+   364→Stage Summary:
+   365→- بازی به سطح Release Candidate رسید طبق مستند ۶۶بندی: صفر باگ شناخته‌شدهٔ باقی‌مانده در gameplay loop، صفر feature قلابی، صفر دستاورد مرده (۳۵ دستاورد همه با trigger واقعی)، صفر Dead End، ذخیره/مهاجرت/idempotency کامل
+   366→- دو رگرسیون واقعی پیدا و بسته شد: crystalBonus نپرداخته (اقتصاد باس‌ها) و volume زندهٔ نبرد؛ سیستم دستاورد از ۶۰٪ مرده به ۱۰۰٪ زنده رسید
+   367→- Asset Pipeline دست‌نخورده و آمادهٔ دریافت GLBهای فاز ۲..۴ (دشمن‌ها/اژدها/برج‌ها) — قوانین «ABSOLUTELY DO NOT» کامل رعایت شد
+   368→

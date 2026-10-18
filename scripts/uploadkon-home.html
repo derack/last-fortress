@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="fa-ir" dir="rtl">
+<head>
+	<title>آپلود عکس و آپلود فایل</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no">
+	<link rel="stylesheet" href="https://uploadkon.ir/styles/UploadKon/assets/css/rtl-bootstrap.min.css">
+	<link rel="stylesheet" href="https://uploadkon.ir/styles/UploadKon/assets/css/all.min.css">
+	<link rel="stylesheet" href="https://uploadkon.ir/styles/UploadKon/assets/css/fontiran.css">
+	<link rel="stylesheet" href="https://uploadkon.ir/styles/UploadKon/assets/css/styles.css">
+	<link rel="shortcut icon" href="images/favicon.ico" />
+	<link rel="icon" type="image/gif" href="images/favicon.gif" />
+	<link rel="apple-touch-icon" href="images/apple-touch-icon.png" />
+	<link rel="apple-touch-startup-image" href="images/iPhone.png" />
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet"
+      href="https://lib.arvancloud.ir/sweetalert2/9.17.4/sweetalert2.css">
+
+<!-- SweetAlert2 JS -->
+<script src="https://lib.arvancloud.ir/sweetalert2/9.17.4/sweetalert2.all.js"></script>
+
+<script>
+            !function(e,t,n){e.yektanetAnalyticsObject=n,e[n]=e[n]||function(){e[n].q.push(arguments)},e[n].q=e[n].q||[];var a=t.getElementsByTagName("head")[0],r=new Date,c="https://cdn.yektanet.com/superscript/lVxF1Fkd/native-uploadkon.ir-39498/yn_pub.js?v="+r.getFullYear().toString()+"0"+r.getMonth()+"0"+r.getDate()+"0"+r.getHours(),s=t.createElement("link");s.rel="preload",s.as="script",s.href=c,a.appendChild(s);var l=t.createElement("script");l.async=!0,l.src=c,a.appendChild(l)}(window,document,"yektanet");
+        </script>
+	<script type="text/javascript">
+        <!--
+        var LANG_PAST_URL_HERE = "[ لینک را اینجا وارد کنید ]";
+        var LANG_MORE_F_FILES = "شما به حداکثر میزان فیلد های خود رسیده اید.";
+        var STYLE_PATH  = "https://uploadkon.ir/styles/UploadKon/";
+        -->
+	</script>
+	</head>
+<body>
+	<div class="container h-100 my-4">
+		<div class="row h-100 justify-content-center align-items-center">
+			<div class="col-12">
+			<div class="card border-0">
+				<div class="card-header mainheader p-0 border-0">
+					<nav class="navbar navbar-expand-md navbar-light bg-white py-0">
+						<a class="navbar-brand" href="https://uploadkon.ir/">
+							<img src="https://uploadkon.ir/styles/UploadKon/assets/img/logo.png" alt="">
+						</a>
+						<button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+							<span class="navbar-toggler-icon"></span>
+						</button>
+						<div class="collapse navbar-collapse" id="navbarSupportedContent">
+														<ul class="navbar-nav myLavaLampNav mr-auto">
+																											<li class="nav-item active"><a href="https://uploadkon.ir/" class="nav-link">صفحه اصلی</a></li>
+																																				<li class="nav-item"><a href="https://uploadkon.ir/go.php?go=rules" class="nav-link">قوانین</a></li>
+																																				<li class="nav-item"><a href="https://uploadkon.ir/go.php?go=guide" class="nav-link">راهنمای پسوند ها</a></li>
+																																																					<li class="nav-item"><a href="https://uploadkon.ir/go.php?go=report" class="nav-link">گزارش</a></li>
+																																				<li class="nav-item"><a href="https://uploadkon.ir/go.php?go=call" class="nav-link">تماس با ما</a></li>
+																									<span class="target"></span>
+								<li class="nav-item lavalamp-item"><a href="https://uploadkon.ir/blog" class="nav-link">مجله اینترنتی</a></li>
+							</ul>
+													</div>
+					</nav>
+						
+						<div class="form-inline">				
+																																															<a href="https://my.uploadkon.ir/login" class="btn btn-login fs-12 ml-2">ورود کاربران</a>
+																												<a href="https://my.uploadkon.ir/login" class="btn btn-register fs-12 ml-2">عضویت</a>
+																			</div>
+									</div>
+<div class="alert alert-info d-flex align-items-start gap-2" role="alert">
+    
+    <div>
+         🚀 <strong>فضای بیشتر، ماندگاری بیشتر!</strong>
+    <br>
+    📁 در سرویس رایگان، سقف آپلود <strong>100 مگابایت</strong> است و فایل&zwnj;ها پس از
+    <strong>15 روز 🗓️</strong> حذف می&zwnj;شوند.
+    <br>
+    💎 برای آپلود فایل&zwnj;های حجیم&zwnj;تر و نگهداری طولانی&zwnj;تر،
+    <strong>سرویس اشتراکی</strong> را فعال کنید.
+        <br><a href="https://my.uploadkon.ir/" class="btn btn-success btn-sm mt-2 " style="
+    text-align: center;
+">
+            🚀 مشاهده سرویس&zwnj;های اشتراکی
+        </a>
+    </div>
+</div>
+				<div class="card-body">
+					<div class="inner-card-body bg-white p-3 mb-3"><!-- Powered by kleeja -->
+<div id="content_index">
+	<ul class="list-group list-group-flush mb-3" id="messages">
+			</ul>
+	<h1 class="list-group list-group-flush mb-3" style="font-size: 18px;padding: 8px 0px 8px 0px;">آپلود عکس و آپلود فایل رایگان تا 10 گیگ</h1>
+
+
+	<!-- box loading -->
+
+
+
+	<div id="zone" class="fd-zone">
+		<div id="loadbox" class="card">
+			<div class="card-body">
+				لطفا صبر کنید, فایل ها در حال اپلود شدن بر روی سرور میباشند ! <span id="progress_data"></span>
+				<br>
+				<img src="https://uploadkon.ir/styles/UploadKon/images/loading.gif" alt="{lang.LOADING}" />
+			</div>
+		</div>
+
+		<p class="img"></p>
+		<p><h3><span>فایلهای خود را جهت آپلود <span>انتخاب کنید</span> و یا اینجا بکشید و رها کنید</span></h3></p>
+		<p><span><svg id="Group_12" style="max-width:100%;" data-name="Group 12" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="421" height="65" viewBox="0 0 421 65">
+  <defs>
+    <linearGradient id="linear-gradient" x1="1" y1="0.5" x2="0" y2="0.5" gradientUnits="objectBoundingBox">
+      <stop offset="0" stop-color="#fff"></stop>
+      <stop offset="0.506" stop-color="#fff" stop-opacity="0"></stop>
+      <stop offset="1" stop-color="#fff"></stop>
+    </linearGradient>
+  </defs>
+  <g id="Group_10" data-name="Group 10" transform="translate(47 9)" opacity="0.48">
+    <g id="avi">
+      <path id="Path_1" data-name="Path 1" d="M98.938,0A2.946,2.946,0,0,0,96,2.938V44.063A2.946,2.946,0,0,0,98.938,47h29.375a2.946,2.946,0,0,0,2.938-2.937V11.75L119.5,0Z" transform="translate(-90.125)" fill="#e2e5e7"></path>
+      <path id="Path_2" data-name="Path 2" d="M354.938,11.75h8.813L352,0V8.813A2.946,2.946,0,0,0,354.938,11.75Z" transform="translate(-322.625)" fill="#b0b7bd"></path>
+      <path id="Path_3" data-name="Path 3" d="M392.813,136.813,384,128h8.813Z" transform="translate(-351.688 -116.25)" fill="#cad1d8"></path>
+      <path id="Path_4" data-name="Path 4" d="M67.25,256.156a1.473,1.473,0,0,1-1.469,1.469H33.469A1.473,1.473,0,0,1,32,256.156V241.469A1.473,1.473,0,0,1,33.469,240H65.781a1.473,1.473,0,0,1,1.469,1.469Z" transform="translate(-32 -217.969)" fill="#f15642"></path>
+      <g id="Group_4" data-name="Group 4" transform="translate(7.737 27.059)">
+        <path id="Path_5" data-name="Path 5" d="M116.757,302.975a.829.829,0,0,1-.376-1.128l3.371-6.587a.794.794,0,0,1,1.456,0l3.312,6.587c.482.915-.94,1.644-1.363.727l-.517-1.033h-4.333l-.5,1.034A.882.882,0,0,1,116.757,302.975Zm5.05-2.983-1.328-2.9-1.444,2.9Z" transform="translate(-116.287 -294.783)" fill="#fff"></path>
+        <path id="Path_6" data-name="Path 6" d="M210.02,302.437l-3.1-6.493a.806.806,0,0,1,1.444-.717l1.046,2.36,1.35,3.1,1.326-3.1,1.046-2.36a.786.786,0,0,1,1.434.646l-2.995,6.564C211.3,303.178,210.465,303.354,210.02,302.437Z" transform="translate(-198.516 -294.774)" fill="#fff"></path>
+        <path id="Path_7" data-name="Path 7" d="M306.88,295.877a.777.777,0,0,1,1.551,0v6.7a.776.776,0,0,1-1.551,0Z" transform="translate(-289.384 -295.108)" fill="#fff"></path>
+      </g>
+      <path id="Path_8" data-name="Path 8" d="M123.906,417.469H96v1.469h27.906a1.473,1.473,0,0,0,1.469-1.469V416A1.473,1.473,0,0,1,123.906,417.469Z" transform="translate(-90.125 -377.813)" fill="#cad1d8"></path>
+    </g>
+    <g id="doc" transform="translate(57.043)">
+      <path id="Path_9" data-name="Path 9" d="M98.938,0A2.946,2.946,0,0,0,96,2.938V44.063A2.946,2.946,0,0,0,98.938,47h29.375a2.946,2.946,0,0,0,2.938-2.937V11.75L119.5,0Z" transform="translate(-90.125)" fill="#e2e5e7"></path>
+      <path id="Path_10" data-name="Path 10" d="M354.938,11.75h8.813L352,0V8.813A2.946,2.946,0,0,0,354.938,11.75Z" transform="translate(-322.625)" fill="#b0b7bd"></path>
+      <path id="Path_11" data-name="Path 11" d="M392.813,136.813,384,128h8.813Z" transform="translate(-351.688 -116.25)" fill="#cad1d8"></path>
+      <path id="Path_12" data-name="Path 12" d="M67.25,256.156a1.473,1.473,0,0,1-1.469,1.469H33.469A1.473,1.473,0,0,1,32,256.156V241.469A1.473,1.473,0,0,1,33.469,240H65.781a1.473,1.473,0,0,1,1.469,1.469Z" transform="translate(-32 -217.969)" fill="#50bee8"></path>
+      <g id="Group_5" data-name="Group 5" transform="translate(4.75 26.83)">
+        <path id="Path_13" data-name="Path 13" d="M84.555,303.6a.736.736,0,0,1-.811-.728V296.2a.8.8,0,0,1,.811-.729h2.689c5.367,0,5.248,8.127.1,8.127Zm.74-6.695v5.261h1.949c3.171,0,3.311-5.261,0-5.261Z" transform="translate(-83.744 -295.178)" fill="#fff"></path>
+        <path id="Path_14" data-name="Path 14" d="M184.188,300.81a4.1,4.1,0,0,1-4.428-4.229,4.316,4.316,0,0,1,8.632,0A4.1,4.1,0,0,1,184.188,300.81Zm-.129-7.01a2.784,2.784,0,1,0,2.8,2.783A2.688,2.688,0,0,0,184.059,293.8Z" transform="translate(-170.946 -292.272)" fill="#fff"></path>
+        <path id="Path_15" data-name="Path 15" d="M288.848,297.383a3.953,3.953,0,0,1,4.123-4.215,3.838,3.838,0,0,1,2.689,1.046.762.762,0,1,1-1.046,1.1,2.027,2.027,0,0,0-1.644-.645,2.538,2.538,0,0,0-2.676,2.713,2.583,2.583,0,0,0,2.676,2.8,2.743,2.743,0,0,0,1.833-.752.788.788,0,0,1,1.08.141.81.81,0,0,1-.129,1.1,4.261,4.261,0,0,1-6.906-3.289Z" transform="translate(-270.02 -293.086)" fill="#fff"></path>
+      </g>
+      <path id="Path_16" data-name="Path 16" d="M123.906,417.469H96v1.469h27.906a1.473,1.473,0,0,0,1.469-1.469V416A1.473,1.473,0,0,1,123.906,417.469Z" transform="translate(-90.125 -377.813)" fill="#cad1d8"></path>
+    </g>
+    <g id="gif" transform="translate(114.086)">
+      <path id="Path_17" data-name="Path 17" d="M98.938,0A2.946,2.946,0,0,0,96,2.938V44.063A2.946,2.946,0,0,0,98.938,47h29.375a2.946,2.946,0,0,0,2.938-2.937V11.75L119.5,0Z" transform="translate(-90.125)" fill="#e2e5e7"></path>
+      <path id="Path_18" data-name="Path 18" d="M354.938,11.75h8.813L352,0V8.813A2.946,2.946,0,0,0,354.938,11.75Z" transform="translate(-322.625)" fill="#b0b7bd"></path>
+      <path id="Path_19" data-name="Path 19" d="M392.813,136.813,384,128h8.813Z" transform="translate(-351.688 -116.25)" fill="#cad1d8"></path>
+      <path id="Path_20" data-name="Path 20" d="M67.25,256.156a1.473,1.473,0,0,1-1.469,1.469H33.469A1.473,1.473,0,0,1,32,256.156V241.469A1.473,1.473,0,0,1,33.469,240H65.781a1.473,1.473,0,0,1,1.469,1.469Z" transform="translate(-32 -217.969)" fill="#a066aa"></path>
+      <g id="Group_6" data-name="Group 6" transform="translate(8.301 26.913)">
+        <path id="Path_21" data-name="Path 21" d="M129.538,300.617a4.457,4.457,0,0,1-2.889.987,3.873,3.873,0,0,1-4.217-4.205,4.186,4.186,0,0,1,4.321-4.215,3.846,3.846,0,0,1,2.678,1.034.761.761,0,0,1-1.021,1.128,2.475,2.475,0,0,0-1.657-.74,2.8,2.8,0,0,0-2.794,2.794,2.6,2.6,0,0,0,2.689,2.795,2.988,2.988,0,0,0,1.761-.529v-1.442h-1.761a.718.718,0,1,1,0-1.435H129a.8.8,0,0,1,.833.695v2.5A.949.949,0,0,1,129.538,300.617Z" transform="translate(-122.432 -293.184)" fill="#fff"></path>
+        <path id="Path_22" data-name="Path 22" d="M224.944,295.871a.777.777,0,0,1,1.551,0v6.7a.776.776,0,0,1-1.551,0Z" transform="translate(-215.534 -294.956)" fill="#fff"></path>
+        <path id="Path_23" data-name="Path 23" d="M265.906,296.984v1.867H268.9a.908.908,0,0,1,.846.834.815.815,0,0,1-.846.7h-2.993v2.466a.7.7,0,0,1-.7.728.747.747,0,0,1-.833-.728v-6.67a.741.741,0,0,1,.833-.729h4.123a.732.732,0,0,1,.823.729.81.81,0,0,1-.823.8h-3.418Z" transform="translate(-251.339 -295.247)" fill="#fff"></path>
+      </g>
+      <path id="Path_24" data-name="Path 24" d="M123.906,417.469H96v1.469h27.906a1.473,1.473,0,0,0,1.469-1.469V416A1.473,1.473,0,0,1,123.906,417.469Z" transform="translate(-90.125 -377.813)" fill="#cad1d8"></path>
+    </g>
+    <g id="jpg" transform="translate(171.129)">
+      <path id="Path_25" data-name="Path 25" d="M98.938,0A2.946,2.946,0,0,0,96,2.938V44.063A2.946,2.946,0,0,0,98.938,47h29.375a2.946,2.946,0,0,0,2.938-2.937V11.75L119.5,0Z" transform="translate(-90.125)" fill="#e2e5e7"></path>
+      <path id="Path_26" data-name="Path 26" d="M354.938,11.75h8.813L352,0V8.813A2.946,2.946,0,0,0,354.938,11.75Z" transform="translate(-322.625)" fill="#b0b7bd"></path>
+      <path id="Path_27" data-name="Path 27" d="M392.813,136.813,384,128h8.813Z" transform="translate(-351.688 -116.25)" fill="#cad1d8"></path>
+      <path id="Path_28" data-name="Path 28" d="M67.25,256.156a1.473,1.473,0,0,1-1.469,1.469H33.469A1.473,1.473,0,0,1,32,256.156V241.469A1.473,1.473,0,0,1,33.469,240H65.781a1.473,1.473,0,0,1,1.469,1.469Z" transform="translate(-32 -217.969)" fill="#50bee8"></path>
+      <g id="Group_7" data-name="Group 7" transform="translate(6.003 26.915)">
+        <path id="Path_29" data-name="Path 29" d="M101.485,295.828a.776.776,0,0,1,1.551,0v4.638c0,1.845-.881,2.961-2.913,2.961a2.949,2.949,0,0,1-2.56-1.21c-.6-.717.529-1.749,1.14-1a1.747,1.747,0,0,0,1.538.729c.657-.023,1.234-.319,1.245-1.48v-4.638Z" transform="translate(-97.394 -294.915)" fill="#fff"></path>
+        <path id="Path_30" data-name="Path 30" d="M181.344,295.131a.808.808,0,0,1,.8-.811h2.713a2.936,2.936,0,0,1,0,5.872h-1.961v1.551a.737.737,0,0,1-.752.809.792.792,0,0,1-.8-.809v-6.612Zm1.551.668v2.926h1.961a1.464,1.464,0,0,0,0-2.926Z" transform="translate(-173.638 -294.217)" fill="#fff"></path>
+        <path id="Path_31" data-name="Path 31" d="M272.274,300.632a4.449,4.449,0,0,1-2.889.987,3.872,3.872,0,0,1-4.217-4.205,4.186,4.186,0,0,1,4.321-4.214,3.844,3.844,0,0,1,2.678,1.033.761.761,0,0,1-1.021,1.128,2.482,2.482,0,0,0-1.657-.74,2.8,2.8,0,0,0-2.794,2.794,2.6,2.6,0,0,0,2.689,2.8,3,3,0,0,0,1.761-.529v-1.444h-1.761a.717.717,0,1,1,0-1.434h2.349a.8.8,0,0,1,.833.693V300A.946.946,0,0,1,272.274,300.632Z" transform="translate(-249.767 -293.2)" fill="#fff"></path>
+      </g>
+      <path id="Path_32" data-name="Path 32" d="M123.906,417.469H96v1.469h27.906a1.473,1.473,0,0,0,1.469-1.469V416A1.473,1.473,0,0,1,123.906,417.469Z" transform="translate(-90.125 -377.813)" fill="#cad1d8"></path>
+    </g>
+    <g id="pdf" transform="translate(228.172)">
+      <path id="Path_33" data-name="Path 33" d="M98.938,0A2.946,2.946,0,0,0,96,2.938V44.063A2.946,2.946,0,0,0,98.938,47h29.375a2.946,2.946,0,0,0,2.938-2.937V11.75L119.5,0Z" transform="translate(-90.125)" fill="#e2e5e7"></path>
+      <path id="Path_34" data-name="Path 34" d="M354.938,11.75h8.813L352,0V8.813A2.946,2.946,0,0,0,354.938,11.75Z" transform="translate(-322.625)" fill="#b0b7bd"></path>
+      <path id="Path_35" data-name="Path 35" d="M392.813,136.813,384,128h8.813Z" transform="translate(-351.688 -116.25)" fill="#cad1d8"></path>
+      <path id="Path_36" data-name="Path 36" d="M67.25,256.156a1.473,1.473,0,0,1-1.469,1.469H33.469A1.473,1.473,0,0,1,32,256.156V241.469A1.473,1.473,0,0,1,33.469,240H65.781a1.473,1.473,0,0,1,1.469,1.469Z" transform="translate(-32 -217.969)" fill="#f15642"></path>
+      <g id="Group_8" data-name="Group 8" transform="translate(6.402 27.018)">
+        <path id="Path_37" data-name="Path 37" d="M101.744,295.131a.808.808,0,0,1,.8-.811h2.713a2.936,2.936,0,0,1,0,5.872h-1.961v1.551a.737.737,0,0,1-.752.809.791.791,0,0,1-.8-.809Zm1.55.668v2.926h1.961a1.464,1.464,0,0,0,0-2.926Z" transform="translate(-101.744 -294.32)" fill="#fff"></path>
+        <path id="Path_38" data-name="Path 38" d="M188.635,303.6a.735.735,0,0,1-.811-.727V296.2a.8.8,0,0,1,.811-.729h2.689c5.367,0,5.249,8.127.106,8.127Zm.74-6.693v5.261h1.949c3.171,0,3.312-5.261,0-5.261Z" transform="translate(-179.922 -295.366)" fill="#fff"></path>
+        <path id="Path_39" data-name="Path 39" d="M288.672,296.985v1.867h2.995a.908.908,0,0,1,.846.833.816.816,0,0,1-.846.705h-2.995v2.466a.7.7,0,0,1-.7.727.746.746,0,0,1-.833-.727v-6.671a.742.742,0,0,1,.833-.729h4.123a.732.732,0,0,1,.822.729.811.811,0,0,1-.822.8h-3.419Z" transform="translate(-270.118 -295.352)" fill="#fff"></path>
+      </g>
+      <path id="Path_40" data-name="Path 40" d="M123.906,417.469H96v1.469h27.906a1.473,1.473,0,0,0,1.469-1.469V416A1.473,1.473,0,0,1,123.906,417.469Z" transform="translate(-90.125 -377.813)" fill="#cad1d8"></path>
+    </g>
+    <g id="ppt" transform="translate(285.215)">
+      <path id="Path_41" data-name="Path 41" d="M98.938,0A2.946,2.946,0,0,0,96,2.938V44.063A2.946,2.946,0,0,0,98.938,47h29.375a2.946,2.946,0,0,0,2.938-2.937V11.75L119.5,0Z" transform="translate(-90.125)" fill="#e2e5e7"></path>
+      <path id="Path_42" data-name="Path 42" d="M354.938,11.75h8.813L352,0V8.813A2.946,2.946,0,0,0,354.938,11.75Z" transform="translate(-322.625)" fill="#b0b7bd"></path>
+      <path id="Path_43" data-name="Path 43" d="M392.813,136.813,384,128h8.813Z" transform="translate(-351.688 -116.25)" fill="#cad1d8"></path>
+      <path id="Path_44" data-name="Path 44" d="M67.25,256.156a1.473,1.473,0,0,1-1.469,1.469H33.469A1.473,1.473,0,0,1,32,256.156V241.469A1.473,1.473,0,0,1,33.469,240H65.781a1.473,1.473,0,0,1,1.469,1.469Z" transform="translate(-32 -217.969)" fill="#f15642"></path>
+      <g id="Group_9" data-name="Group 9" transform="translate(6.743 27.018)">
+        <path id="Path_45" data-name="Path 45" d="M105.456,295.131a.808.808,0,0,1,.8-.811h2.713a2.936,2.936,0,0,1,0,5.872h-1.961v1.551a.736.736,0,0,1-.751.809.791.791,0,0,1-.8-.809v-6.612Zm1.55.668v2.926h1.961a1.464,1.464,0,0,0,0-2.926Z" transform="translate(-105.456 -294.32)" fill="#fff"></path>
+        <path id="Path_46" data-name="Path 46" d="M191.616,295.131a.808.808,0,0,1,.8-.811h2.713a2.936,2.936,0,0,1,0,5.872h-1.961v1.551a.737.737,0,0,1-.752.809.792.792,0,0,1-.8-.809Zm1.55.668v2.926h1.961a1.464,1.464,0,0,0,0-2.926Z" transform="translate(-183.707 -294.32)" fill="#fff"></path>
+        <path id="Path_47" data-name="Path 47" d="M273.78,296.607h-2.053a.751.751,0,1,1,0-1.5h5.553a.752.752,0,1,1,0,1.5h-1.949v5.931a.775.775,0,0,1-1.551,0Z" transform="translate(-255.767 -295.032)" fill="#fff"></path>
+      </g>
+      <path id="Path_48" data-name="Path 48" d="M123.906,417.469H96v1.469h27.906a1.473,1.473,0,0,0,1.469-1.469V416A1.473,1.473,0,0,1,123.906,417.469Z" transform="translate(-90.125 -377.813)" fill="#cad1d8"></path>
+    </g>
+  </g>
+  <rect id="Rectangle_9" data-name="Rectangle 9" width="421" height="65" fill="url(#linear-gradient)"></rect>
+</svg>
+</span></p>
+
+	</div>
+
+	<div class="fallabackZone">
+		<input type="file" name="file" class="fd-file" id="fallbackFile" />
+	</div>
+
+
+	
+
+
+</div>
+</div>
+<div class="row ads">
+  <!-- ماهان سرور (dofollow) -->
+  <div class="col-12 col-lg-6 mb-3">
+    <a href="https://mahanserver.net/vps/iran-vps/"
+       target="_blank"
+       rel="noopener"
+       aria-label="خرید سرور مجازی ایران">
+      <img src="https://uploadkon.ir/mahanserver.gif"
+           class="img-fluid mx-auto d-block"
+           alt="خرید سرور مجازی ایران"
+           loading="lazy" decoding="async">
+      <span class="sr-only">خرید سرور مجازی ایران</span>
+    </a>
+  </div>
+
+  <!-- پارسیان کریپتو (nofollow/sponsored) -->
+  <div class="col-12 col-lg-6 mb-3">
+    <a href="https://parsiancrypto.com/"
+       target="_blank"
+       rel="sponsored noopener nofollow"
+       aria-label="پارسیان کریپتو">
+      <img src="https://uploadkon.ir/parsiancrypto.gif"
+           class="img-fluid mx-auto d-block"
+           alt="پارسیان کریپتو"
+           loading="lazy" decoding="async">
+      <span class="sr-only">پارسیان کریپتو</span>
+    </a>
+  </div>
+  
+    <div class="col-12 col-lg-6 mb-3">
+    <a href="https://asansite.org/"
+       target="_blank"
+       rel="sponsored noopener nofollow"
+       aria-label="آسان سایت">
+      <img src="https://uploadkon.ir/asansite.gif"
+           class="img-fluid mx-auto d-block"
+           alt="آسان سایت"
+           loading="lazy" decoding="async">
+      <span class="sr-only">آسان سایت</span>
+    </a>
+  </div>
+</div>
+<hr>
+<ul class="list-unstyled lh-30 mb-0 row">
+      <div class="container my-4">
+  <div class="card shadow-sm rounded-3 p-4" dir="rtl">
+    <div class="d-flex flex-wrap align-items-center justify-content-between">
+
+      <!-- لینک‌ها -->
+      <div class="d-flex flex-wrap align-items-center" style="gap: 2rem;">
+        <a href="https://mahanserver.net/web-hosting/"
+           class="text-decoration-none text-dark d-flex align-items-center"
+           target="_blank" rel="noopener noreferrer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+               class="ms-1" viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M5,0l5,5L5,10,0,5Z" fill="#6278cf"/>
+          </svg>
+          خرید هاست
+        </a>
+
+
+        <a href="https://payam-resan.com/"
+           class="text-decoration-none text-dark d-flex align-items-center"
+           target="_blank" rel="sponsored">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+               class="ms-1" viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M5,0l5,5L5,10,0,5Z" fill="#6278cf"/>
+          </svg>
+          پنل پیامکی
+        </a>
+
+
+        <a href="https://farazkavian.com/blog/clean-room-design/"
+           class="text-decoration-none text-dark d-flex align-items-center"
+           target="_blank" rel="sponsored">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+               class="ms-1" viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M5,0l5,5L5,10,0,5Z" fill="#6278cf"/>
+          </svg>
+          	اتاق تمیز
+        </a>
+
+
+        <a href="https://chamanzar.com/"
+           class="text-decoration-none text-dark d-flex align-items-center"
+           target="_blank" rel="sponsored">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+               class="ms-1" viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M5,0l5,5L5,10,0,5Z" fill="#6278cf"/>
+          </svg>
+          	قیمت چمن مصنوعی
+        </a>
+
+        <a href="https://adsinoo.com/seo/"
+           class="text-decoration-none text-dark d-flex align-items-center"
+           target="_blank" rel="sponsored">
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12"
+               class="ms-1" viewBox="0 0 10 10" aria-hidden="true">
+            <path d="M5,0l5,5L5,10,0,5Z" fill="#6278cf"/>
+          </svg>
+          خدمات سئو سایت وردپرسی
+        </a>
+      </div>
+
+      <!-- ای‌نماد -->
+      <a referrerpolicy="origin" target="_blank" rel="noopener"
+         href="https://trustseal.enamad.ir/?id=519922&Code=lzv9hZxbbfQfYP1qReFNxaHMbckl536P">
+        <img referrerpolicy="origin"
+             src="https://trustseal.enamad.ir/logo.aspx?id=519922&Code=lzv9hZxbbfQfYP1qReFNxaHMbckl536P"
+             alt="نماد اعتماد الکترونیکی"
+             style="cursor:pointer;" width="90" height="90"
+             loading="lazy" decoding="async">
+      </a>
+
+    </div>
+  </div>
+</div>
+<br>  </ul>
+</div>
+</div>
+<div class="d-flex justify-content-between mt-3 footer-texts">
+  <p>شما با آپلود فایل در آپلود کن تمامی قوانین استفاده از این سرویس را پذیرفته اید</p>
+  <p>تمامی حقوق مادی و معنوی برای آپلودکن محفوظ است</p>
+</div>
+  <div class="extras_footer"><a href="/?u=کن-آپلود">کن آپلود</a>
+,<a href="/?u=اشتراکها">اشتراکها</a>
+,<a href="/?u=آپلود">آپلود</a>
+,<a href="/?u=آپ-لود">آپ لود</a>
+,<a href="/?u=آپلود-عكس">آپلود عكس</a>
+,<a href="/?u=آپلود-فايل">آپلود فايل</a>
+,<a href="/?u=آپلود-فيلم">آپلود فيلم</a>
+,<a href="/?u=آپلود-موزيک">آپلود موزيک</a>
+,<a href="/?u=آپلود-آهنگ">آپلود آهنگ</a>
+,<a href="/?u=عکس-رايگان">عکس رايگان</a>
+,<a href="/?u=آپلود-رايگان">آپلود رايگان</a>
+,<a href="/?u=سايت-آپلود-عکس">سايت آپلود عکس</a>
+,<a href="/?u=عكس">عكس</a>
+,<a href="/?u=رايگان">رايگان</a>
+,<a href="/?u=سايت-براي-آپلود">سايت براي آپلود</a>
+,<a href="/?u=آپلودعکس">آپلودعکس</a>
+,<a href="/?u=آپلود-مجاني">آپلود مجاني</a>
+,<a href="/?u=آپلود-رايگان">آپلود رايگان</a>
+,<a href="/?u=آپلود-عکس-رايگان">آپلود عکس رايگان</a>
+,<a href="/?u=اپلود">اپلود</a>
+,<a href="/?u=آپلود-تصوير">آپلود تصوير</a>
+,<a href="/?u=آپلود-با-لينک-مستقيم">آپلود با لينک مستقيم</a>
+,<a href="/?u=سايت-رايگان">سايت رايگان</a>
+,<a href="/?u=آپلود-مجاني-فايل">آپلود مجاني فايل</a>
+,<a href="/?u=آپلود-عکس-بلاگفا">آپلود عکس بلاگفا</a>
+,<a href="/?u=آپلود-عکس-ميهن-بلاگ">آپلود عکس ميهن بلاگ</a>
+,<a href="/?u=بلاگفا">بلاگفا</a>
+,<a href="/?u=ميهن-بلاگ">ميهن بلاگ</a>
+,<a href="/?u=آپلود-فايل-لينک">آپلود فايل لينک</a>
+,<a href="/?u=آپلود-کردن-عکس">آپلود کردن عکس</a>
+,<a href="/?u=آپلود-سنتر">آپلود سنتر</a>
+,<a href="/?u=بهترين-سايت-اپلود">بهترين سايت اپلود</a>
+,<a href="/?u=سايتهاي-آپلود">سايتهاي آپلود</a>
+,<a href="/?u=سايت-آپلود-عکس-رايگان"> سايت آپلود عکس رايگان</a>
+,<a href="/?u=سايت-آپلود-رايگان">سايت آپلود رايگان</a>
+,<a href="/?u=آپلود-دائمي-عکس"> آپلود دائمي عکس</a>
+,<a href="/?u=آپلود-سريع">آپلود سريع</a>
+,<a href="/?u=بهترين-سايت-آپلود-عکس">بهترين سايت آپلود عکس</a>
+,<a href="/?u=آپلود-مستقيم">آپلود مستقيم</a>
+,<a href="/?u=کد-آپلود-عکس">کد آپلود عکس</a>
+,<a href="/?u=آپلود-عکس-98">آپلود عکس 98</a>
+,<a href="/?u=بزرگترين-سايت">بزرگترين سايت</a>
+,<a href="/?u=سايت-آپلود-فايل-با-لينک">سايت آپلود فايل با لينک</a>
+,<a href="/?u=مرکز-آپلود-عکس">مرکز آپلود عکس</a>
+,<a href="/?u=سرور-آپلود-عکس-مستقيم">سرور آپلود عکس مستقيم</a>
+,<a href="/?u=سرور-آپلود-عکس">سرور آپلود عکس</a>
+,<a href="/?u=آپلود-با-لينک-مستقيم">آپلود با لينک مستقيم</a>
+,<a href="/?u=آپلود-سنتر-دائمي">آپلود سنتر دائمي</a>
+,<a href="/?u=آپلود-نامحدود">آپلود نامحدود</a>
+,<a href="/?u=آپلود-از-آدرس-موزيک">آپلود از آدرس موزيک</a>
+,<a href="/?u=آپلود-از-آدرس-آهنگ">آپلود از آدرس آهنگ</a>
+,<a href="/?u=آپلود-از-آدرس-فيلم">آپلود از آدرس فيلم</a>
+,<a href="/?u=آپلود-از-آدرس-عکس">آپلود از آدرس عکس</a>
+,<a href="/?u=آپلود-از-آدرس-فايل">آپلود از آدرس فايل</a>
+,<a href="/?u=آپلود-رايگان-عکس">آپلود رايگان عکس</a>
+,<a href="/?u=آپلود-رايگان-فيلم">آپلود رايگان فيلم</a>
+,<a href="/?u=آپلود-رايگان-موزيک">آپلود رايگان موزيک</a>
+,<a href="/?u=آپلود-رايگان-آهنگ">آپلود رايگان آهنگ</a>
+,<a href="/?u=آپلود-رايگان-فايل">آپلود رايگان فايل</a>
+,<a href="/?u=آپلود-فایل-با-لینک-مستقیم">آپلود فایل با لینک مستقیم</a><br></div>
+</div>
+</div>
+</div>
+<script src="https://uploadkon.ir/styles/UploadKon/assets/js/jquery.min.js"></script>
+<script src="https://uploadkon.ir/styles/UploadKon/assets/js/popper.min.js"></script>
+<script src="https://uploadkon.ir/styles/UploadKon/assets/js/bootstrap.min.js"></script>
+<script src="https://uploadkon.ir/styles/UploadKon/assets/js/filedrop.js"></script>
+<script src="https://uploadkon.ir/styles/UploadKon/assets/js/chunk.js"></script>
+
+<script src="https://uploadkon.ir/styles/UploadKon/assets/js/toast.min.js"></script>
+<script src="https://uploadkon.ir/styles/UploadKon/assets/js/scripts.js"></script>
+<!-- don't ever delete this -->
+<img src="https://uploadkon.ir/go.php?go=queue" width="1" height="1" alt="queue" />
+<script type="text/javascript">
+$(function () {
+  $('[data-toggle="tooltip"]').tooltip()
+})
+
+
+
+
+function show_messages(json_obj) {
+  if (typeof json_obj === 'string') {
+    json_obj = JSON.parse(json_obj);
+  }
+
+  var output="";
+  var message_type = "";
+  for (var i in json_obj) {
+    message_type = json_obj[i].message_type === "info" ? '' : ' list-group-item-danger hide_after_seconds';
+    output+="<li class=\"list-group-item" + message_type + "\">" + json_obj[i].message_content +"</li>";
+  }
+
+  $('#messages').append(output);
+
+  setTimeout(function() {
+    $('.hide_after_seconds').fadeOut('fast');
+  }, 3000);
+}
+
+$(function () {
+  $('#zone').filedrop({
+    fallback_id: 'fallbackFile',
+    url: 'https://uploadkon.ir/',
+    paramname: 'file',
+    maxfilesize : 10737418240,
+    data: { submitr: 1, ajax: 1 },
+    error: function (err, file) {
+      $('#loadbox').css('display', 'none');
+    },
+    maxfiles: 25,
+    uploadStarted: function () {
+      $('#loadbox').css('display', 'block');
+      $('#zone').addClass('fd-zone-current');
+    },
+    uploadFinished: function (i, file, response, time) {
+      $('#loadbox').css('display', 'none');
+      show_messages(response);
+    },
+    globalProgressUpdated: function (progress) {
+      $('#progress_data').html(progress + '/100');
+    },
+    beforeEach: function (file) {
+      return check_selected_file(file);
+    },
+    beforeSend: function (file, i, done) {
+      $('#loadbox').css('display', 'block');
+      done();
+    },
+    afterAll: function () {
+      $('#loadbox').css('display', 'none');
+      $('#zone').removeClass('fd-zone-current');
+    }
+  });
+});
+
+var allowed_exts = ['gif', 'png', 'jpg', 'jpeg', 'bmp', 'zip', 'rar', 'docx', 'doc', 'pdf', 'psd', 'ppt', 'xls', 'xlsx', 'ppsx', 'iso', 'xml', 'srt', '7z', 'svg', 'mp3', 'z01', 'z02', 'gz', 'm4a'];
+var allowed_sizes = [104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600, 104857600];
+
+function check_selected_file(selected_file) {
+  var file_name = selected_file.name;
+  var ext_dot_position = file_name.lastIndexOf(".");
+
+  if (ext_dot_position === -1) {
+    alert('نام فایل "%s" محتوی کلمات غیر مجاز می باشد'.replace('%s', file_name));
+    return false;
+  }
+
+  var file_extension = file_name.substring(ext_dot_position + 1);
+  var file_size = selected_file.size;
+
+  if (!(allowed_exts.indexOf(file_extension) > -1)) {
+    alert('پسوند "%s" پشتیبانی نمیشود!'.replace('%s', file_extension));
+    return false;
+  } else {
+    var ext_allowed_size = allowed_sizes[allowed_exts.indexOf(file_extension)];
+ if (file_size > ext_allowed_size) {
+
+    const maxSize = (ext_allowed_size / 1048576).toFixed(2) + ' MB';
+
+    Swal.fire({
+        icon: 'warning',
+        title: '📦 حجم فایل زیاد است',
+        html: `
+            <div class="upload-alert">
+حجم فایل بیشتر از 100 مگ است <br>
+                🚀 برای آپلود فایل‌های حجیم‌تر،
+                <strong>سرویس اشتراکی</strong> تهیه کنید.
+            </div>
+        `,
+        confirmButtonText: '💎 ارتقای سرویس',
+        cancelButtonText: 'انصراف',
+        showCancelButton: true,
+        confirmButtonColor: '#28a745',
+        cancelButtonColor: '#ff374a',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = 'https://my.uploadkon.ir/';
+        }
+    });
+
+    return false;
+}
+
+
+  }
+  return true;
+}
+
+function update_kleeja_captcha(captcha_file, input_id) {
+  document.getElementById(input_id).value = '';
+  img = document.getElementById('kleeja_img_captcha');
+  img.src = captcha_file + '&' + Math.random();
+}
+</script>
+<style>
+.swal2-popup {
+    font-family: inherit;
+    direction: rtl;
+}
+
+.swal2-title {
+    font-size: 19px !important;
+}
+
+.upload-alert {
+    font-size: 14px;
+    line-height: 1.9;
+    color: #555;
+}
+
+.upload-alert strong {
+    color: #333;
+    font-weight: 600;
+}
+
+.swal2-confirm,
+.swal2-cancel {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+}
+
+</style>
+</body>
+</html>
