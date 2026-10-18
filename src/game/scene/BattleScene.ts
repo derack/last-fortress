@@ -469,17 +469,59 @@ export class BattleScene {
       return geometry;
     };
 
-    // Dark compacted-earth shoulder beneath the road, creating a clear beveled edge.
+    // Dark compacted-earth shoulder plus a sloped side wall, so the road reads as
+    // a built surface embedded in the terrain rather than a floating flat ribbon.
     const shoulderColor = this.level.env === 'tundra' ? 0x586873
       : this.level.env === 'volcano' ? 0x211815
       : this.level.env === 'citadel' ? 0x292332
       : this.level.env === 'wastes' ? 0x554a3b
       : night ? 0x302d27 : 0x514638;
-    const shoulder = new THREE.Mesh(createRibbon(3.55, -0.012),
+    const shoulder = new THREE.Mesh(createRibbon(3.55, 0.008),
       new THREE.MeshStandardMaterial({ color: shoulderColor, roughness: 1 }));
     shoulder.receiveShadow = this.renderer.shadowMap.enabled;
     shoulder.castShadow = false;
     this.scene.add(shoulder);
+
+    const bevelPositions: number[] = [];
+    const bevelIndices: number[] = [];
+    for (let i = 0; i < pts.length; i++) {
+      const prev = pts[Math.max(0, i - 1)];
+      const next = pts[Math.min(pts.length - 1, i + 1)];
+      const tangent = next.clone().sub(prev).setY(0).normalize();
+      let side = new THREE.Vector3(-tangent.z, 0, tangent.x);
+      let miter = 1;
+      if (i > 0 && i < pts.length - 1) {
+        const d0 = pts[i].clone().sub(prev).setY(0).normalize();
+        const d1 = next.clone().sub(pts[i]).setY(0).normalize();
+        const side0 = new THREE.Vector3(-d0.z, 0, d0.x);
+        const side1 = new THREE.Vector3(-d1.z, 0, d1.x);
+        const averaged = side0.add(side1).normalize();
+        miter = Math.min(1.45, 1 / Math.max(0.55, Math.abs(averaged.dot(side))));
+        side = averaged;
+      }
+      const innerX = side.x * width * miter, innerZ = side.z * width * miter;
+      const outerX = side.x * 3.55 * miter, outerZ = side.z * 3.55 * miter;
+      bevelPositions.push(
+        pts[i].x + innerX, 0.065, pts[i].z + innerZ,
+        pts[i].x - innerX, 0.065, pts[i].z - innerZ,
+        pts[i].x + outerX, 0.008, pts[i].z + outerZ,
+        pts[i].x - outerX, 0.008, pts[i].z - outerZ,
+      );
+      if (i < pts.length - 1) {
+        const v = i * 4, n = v + 4;
+        bevelIndices.push(v, n, v + 2, v + 2, n, n + 2);
+        bevelIndices.push(v + 1, v + 3, n + 1, v + 3, n + 3, n + 1);
+      }
+    }
+    const bevelGeo = new THREE.BufferGeometry();
+    bevelGeo.setAttribute('position', new THREE.Float32BufferAttribute(bevelPositions, 3));
+    bevelGeo.setIndex(bevelIndices);
+    bevelGeo.computeVertexNormals();
+    const bevel = new THREE.Mesh(bevelGeo, new THREE.MeshStandardMaterial({ color: shoulderColor, roughness: 1, side: THREE.DoubleSide }));
+    bevel.receiveShadow = this.renderer.shadowMap.enabled;
+    bevel.castShadow = false;
+    bevel.name = 'RoadBeveledShoulder';
+    this.scene.add(bevel);
 
     // Low-contrast road surface texture: broad worn patches and long compression marks,
     // deliberately no bright grains, dots or repeated rune decals.
