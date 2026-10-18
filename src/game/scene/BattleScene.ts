@@ -415,8 +415,41 @@ export class BattleScene {
   // ------------------- مسیر -------------------
 
   private buildPathMesh(pts: THREE.Vector3[], night: boolean) {
-    const width = 3.2;
+    const width = 3.0;
     const segs = pts.length - 1;
+
+    // A wider dark compacted-earth shoulder gives the route a readable, beveled edge.
+    // It sits below the road surface, so the two layers never compete in depth.
+    const shoulderPositions: number[] = [];
+    const shoulderIndices: number[] = [];
+    let shoulderVertex = 0;
+    for (let i = 0; i < segs; i++) {
+      const a = pts[i], b = pts[i + 1];
+      const dir = b.clone().sub(a).normalize();
+      const side = new THREE.Vector3(-dir.z, 0, dir.x).multiplyScalar(3.55);
+      const y = -0.012;
+      shoulderPositions.push(
+        a.x + side.x, y, a.z + side.z,
+        a.x - side.x, y, a.z - side.z,
+        b.x + side.x, y, b.z + side.z,
+        b.x - side.x, y, b.z - side.z
+      );
+      shoulderIndices.push(shoulderVertex, shoulderVertex + 2, shoulderVertex + 1, shoulderVertex + 1, shoulderVertex + 2, shoulderVertex + 3);
+      shoulderVertex += 4;
+    }
+    const shoulderGeo = new THREE.BufferGeometry();
+    shoulderGeo.setAttribute('position', new THREE.Float32BufferAttribute(shoulderPositions, 3));
+    shoulderGeo.setIndex(shoulderIndices);
+    shoulderGeo.computeVertexNormals();
+    const shoulderColor = this.level.env === 'tundra' ? 0x586873
+      : this.level.env === 'volcano' ? 0x211815
+      : this.level.env === 'citadel' ? 0x292332
+      : this.level.env === 'wastes' ? 0x554a3b
+      : night ? 0x302d27 : 0x514638;
+    const shoulder = new THREE.Mesh(shoulderGeo, new THREE.MeshStandardMaterial({ color: shoulderColor, roughness: 1 }));
+    shoulder.receiveShadow = this.renderer.shadowMap.enabled;
+    shoulder.castShadow = false;
+    this.scene.add(shoulder);
 
     // هر سگمنت یک کوارت مستقل — بدون تاخوردگی در پیچ‌ها
     const positions: number[] = [];
