@@ -54,3 +54,9 @@ server.log
 /skills/
 # local build tools (SDK/JDK, too large for git)
 android-tools/
+
+# secrets — never commit
+android/keystore.properties
+android/keystore/
+download/keystore/
+.env
