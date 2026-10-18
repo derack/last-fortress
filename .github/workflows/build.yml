@@ -3,6 +3,8 @@ name: Game Build (بیلد بازی)
 on:
   push:
     branches: [main, graphics-upgrade-2026-10-18]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:

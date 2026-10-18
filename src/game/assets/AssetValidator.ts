@@ -37,8 +37,9 @@ export interface AssetValidationReport {
   checks: ValidationCheck[];
   /** تعداد مثلث مدل (تخمینی) */
   tris?: number;
-  /** نام انیمیشن‌های واقعی داخل GLB */
+  /** Clip names available at runtime (GLB-authored or generated rigid-part clips). */
   actualAnimations?: string[];
+  animationSource?: 'glb' | 'runtime-procedural' | 'none';
   /** نقاط VFX مدل واقعی */
   modelVfx?: string[];
   syntheticVfx?: string[];
@@ -81,6 +82,7 @@ export async function validateAsset(entry: CharacterAssetEntry): Promise<AssetVa
     status: rec.status === 'ready' ? 'ready' : rec.status === 'pending' ? 'loading' : rec.status,
     ok: false,
     checks,
+    animationSource: rec.animationSource,
   };
 
   // ---- فایل ----
@@ -194,6 +196,14 @@ export async function validateAsset(entry: CharacterAssetEntry): Promise<AssetVa
       pass: false,
       level: 'fail',
       detail: `هیچ انیمیشنی نیست — لازم: ${expectedAnims.join(', ')}`,
+    });
+  } else if (rec.animationSource === 'runtime-procedural') {
+    checks.push({
+      id: 'animations',
+      label: 'انیمیشن‌های runtime (بدون rig اسکلتی)',
+      pass: false,
+      level: 'warn',
+      detail: `کلیپ‌های rigid-part در زمان اجرا ساخته می‌شوند؛ ${foundAnims.length} کلیپ موجود است. این مورد جایگزین rig و انیمیشن authored نیست.${missingAnims.length ? ` کمبود نام: ${missingAnims.join(', ')}` : ''}`,
     });
   } else {
     checks.push({

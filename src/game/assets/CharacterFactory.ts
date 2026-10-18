@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { EnemyData } from '../data/types';
 import { findAssetEntry, type CharacterAssetEntry } from './AssetManifest';
 import { assetManager } from './AssetManager';
@@ -36,6 +37,187 @@ export type AnyAnimationController = CharacterAnimationController | ProceduralAn
 /** کلیدهای userData سازنده برج که باید به ریشه Handle منتقل شوند */
 const TOWER_UDATA_KEYS = ['turret', 'muzzle', 'spinCrystal', 'spinRing', 'ember'] as const;
 
+// Shared one-draw-call upgrade ornaments keep GLB towers visually progressing
+// from level 1 to 5 without replacing the authored base model on every upgrade.
+const towerUpgradeGeometry = new Map<string, THREE.BufferGeometry>();
+const towerUpgradeMaterials = new Map<number, THREE.MeshStandardMaterial>();
+const contactShadowGeometry = new THREE.CircleGeometry(1, 32);
+let contactShadowMaterial: THREE.MeshBasicMaterial | null = null;
+
+function getContactShadowMaterial() {
+  if (contactShadowMaterial) return contactShadowMaterial;
+  let map: THREE.CanvasTexture | undefined;
+  if (typeof document !== 'undefined') {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const gradient = ctx.createRadialGradient(32, 32, 2, 32, 32, 32);
+      gradient.addColorStop(0, 'rgba(5,8,14,0.42)');
+      gradient.addColorStop(0.55, 'rgba(5,8,14,0.2)');
+      gradient.addColorStop(1, 'rgba(5,8,14,0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 64, 64);
+      map = new THREE.CanvasTexture(canvas);
+      map.colorSpace = THREE.SRGBColorSpace;
+    }
+  }
+  contactShadowMaterial = new THREE.MeshBasicMaterial({
+    color: 0x9ca3af,
+    map,
+    transparent: true,
+    opacity: 0.72,
+    alphaTest: 0.01,
+    depthWrite: false,
+    toneMapped: false,
+    side: THREE.DoubleSide,
+  });
+  return contactShadowMaterial;
+}
+
+function addCharacterContactShadow(root: THREE.Group, entry: CharacterAssetEntry) {
+  if (entry.category !== 'enemies' && entry.category !== 'bosses') return;
+  const shadow = new THREE.Mesh(contactShadowGeometry, getContactShadowMaterial());
+  shadow.name = 'contactShadow';
+  shadow.rotation.x = -Math.PI / 2;
+  shadow.position.y = -root.position.y + 0.073;
+  shadow.scale.set(entry.targetHeight * 0.28, entry.targetHeight * 0.18, 1);
+  shadow.renderOrder = 1;
+  shadow.castShadow = false;
+  shadow.receiveShadow = false;
+  root.add(shadow);
+  root.userData.contactShadow = shadow;
+}
+const TOWER_ACCENTS: Record<string, number> = {
+  sentinel: 0xf0b65c, lightning: 0x9b6cff, fire: 0xff623d, ice: 0x8be7ff,
+  cannon: 0xe4a45b, poison: 0x77dc77, ballista: 0xc9a16b, arcane: 0xe18aff,
+  temple: 0xffcf7c, void: 0xb071ff,
+};
+
+function getTowerUpgradeGeometry(towerId: string, level: number): THREE.BufferGeometry {
+  const key = `${towerId}:${level}`;
+  const cached = towerUpgradeGeometry.get(key);
+  if (cached) return cached;
+  const parts: THREE.BufferGeometry[] = [];
+  const add = (
+    geometry: THREE.BufferGeometry, x: number, y: number, z: number,
+    sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0,
+  ) => {
+    const matrix = new THREE.Matrix4().compose(
+      new THREE.Vector3(x, y, z),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, rz)),
+      new THREE.Vector3(sx, sy, sz),
+    );
+    geometry.applyMatrix4(matrix);
+    parts.push(geometry);
+  };
+  const ring = (radius: number, y: number, tube = 0.035) =>
+    add(new THREE.TorusGeometry(radius, tube, 6, 24), 0, y, 0, 1, 1, 1, Math.PI / 2);
+  const crystal = (x: number, y: number, z: number, size: number) =>
+    add(new THREE.OctahedronGeometry(size, 0), x, y, z, 1, 1.25, 1, 0, x * 1.8, z * 1.8);
+  const plate = (x: number, y: number, z: number, sx: number, sy: number, sz: number, ry = 0) =>
+    add(new THREE.BoxGeometry(1, 1, 1), x, y, z, sx, sy, sz, 0, ry, 0);
+  const spike = (x: number, y: number, z: number, sx: number, sy: number, sz: number, ry = 0) =>
+    add(new THREE.ConeGeometry(0.5, 1, 6), x, y, z, sx, sy, sz, 0, ry, 0);
+  const orb = (x: number, y: number, z: number, size: number) =>
+    add(new THREE.SphereGeometry(0.5, 8, 6), x, y, z, size, size, size);
+
+  ring(0.72, 2.35, 0.045);
+  if (level >= 3) {
+    for (let i = 0; i < 3; i++) {
+      const angle = i / 3 * Math.PI * 2;
+      crystal(Math.cos(angle) * 0.72, 2.58, Math.sin(angle) * 0.72, 0.17);
+    }
+    // Each tower family gets its own recognizable upgrade silhouette.
+    switch (towerId) {
+      case 'sentinel':
+        plate(-0.58, 2.62, 0, 0.2, 0.48, 0.18, -0.18);
+        plate(0.58, 2.62, 0, 0.2, 0.48, 0.18, 0.18);
+        break;
+      case 'lightning':
+      case 'arcane':
+        for (let i = 0; i < 4; i++) {
+          const angle = i / 4 * Math.PI * 2;
+          crystal(Math.cos(angle) * 1.02, 2.56, Math.sin(angle) * 1.02, 0.13);
+        }
+        break;
+      case 'fire':
+        spike(-0.52, 2.63, 0, 0.17, 0.48, 0.17, -0.22);
+        spike(0.52, 2.63, 0, 0.17, 0.48, 0.17, 0.22);
+        orb(0, 2.58, 0.3, 0.16);
+        break;
+      case 'ice':
+        for (let i = 0; i < 4; i++) {
+          const angle = i / 4 * Math.PI * 2;
+          spike(Math.cos(angle) * 0.88, 2.68, Math.sin(angle) * 0.88, 0.13, 0.42, 0.13, angle);
+        }
+        break;
+      case 'cannon':
+        add(new THREE.CylinderGeometry(0.5, 0.5, 1, 10), -0.42, 2.58, 0.18, 0.12, 0.36, 0.12);
+        add(new THREE.CylinderGeometry(0.5, 0.5, 1, 10), 0.42, 2.58, 0.18, 0.12, 0.36, 0.12);
+        break;
+      case 'poison':
+        orb(-0.58, 2.58, 0.05, 0.18);
+        orb(0.58, 2.58, 0.05, 0.18);
+        plate(-0.58, 2.72, 0.05, 0.08, 0.18, 0.08);
+        plate(0.58, 2.72, 0.05, 0.08, 0.18, 0.08);
+        break;
+      case 'ballista':
+        plate(0, 2.62, 0, 1.2, 0.1, 0.12);
+        plate(-0.48, 2.6, 0, 0.12, 0.4, 0.12, -0.18);
+        plate(0.48, 2.6, 0, 0.12, 0.4, 0.12, 0.18);
+        break;
+      case 'temple':
+        plate(-0.62, 2.65, 0, 0.14, 0.52, 0.14);
+        plate(0.62, 2.65, 0, 0.14, 0.52, 0.14);
+        plate(0, 2.92, 0, 1.35, 0.12, 0.22);
+        break;
+      case 'void':
+        for (let i = 0; i < 4; i++) {
+          const angle = i / 4 * Math.PI * 2;
+          spike(Math.cos(angle) * 0.86, 2.66, Math.sin(angle) * 0.86, 0.14, 0.5, 0.14, angle);
+        }
+        break;
+    }
+  }
+  if (level >= 4) {
+    ring(0.95, 2.88, 0.03);
+    for (let i = 0; i < 4; i++) {
+      const angle = i / 4 * Math.PI * 2 + Math.PI / 4;
+      crystal(Math.cos(angle) * 0.94, 2.98, Math.sin(angle) * 0.94, 0.12);
+    }
+  }
+  if (level >= 5) {
+    crystal(0, 3.18, 0, 0.24);
+    ring(0.55, 3.28, 0.025);
+  }
+  const merged = mergeGeometries(parts, false);
+  for (const part of parts) part.dispose();
+  const geometry = merged ?? new THREE.OctahedronGeometry(0.1, 0);
+  towerUpgradeGeometry.set(key, geometry);
+  return geometry;
+}
+
+function addTowerUpgradeOrnament(root: THREE.Group, entry: CharacterAssetEntry, level: number) {
+  if (level < 2) return;
+  const color = TOWER_ACCENTS[entry.id] ?? 0x9bdcff;
+  let material = towerUpgradeMaterials.get(color);
+  if (!material) {
+    material = new THREE.MeshStandardMaterial({
+      color, emissive: color, emissiveIntensity: 0.16,
+      metalness: 0.5, roughness: 0.36,
+    });
+    towerUpgradeMaterials.set(color, material);
+  }
+  const ornament = new THREE.Mesh(getTowerUpgradeGeometry(entry.id, level), material);
+  ornament.name = 'towerUpgradeOrnament';
+  ornament.scale.setScalar(entry.targetHeight / 3.5);
+  ornament.castShadow = false;
+  ornament.receiveShadow = false;
+  ornament.frustumCulled = true;
+  root.add(ornament);
+}
+
 /** انتقال userData سازنده برج از گروه داخلی به ریشه (Gameplay به این کلیدها تکیه دارد) */
 function propagateTowerUdata(from: THREE.Object3D, to: THREE.Object3D) {
   for (const k of TOWER_UDATA_KEYS) {
@@ -45,13 +227,55 @@ function propagateTowerUdata(from: THREE.Object3D, to: THREE.Object3D) {
 
 /** جستجوی گره برج داخل مدل GLB با نام فازی و انتقال به ریشه */
 function propagateTowerUdataFromGlb(model: THREE.Object3D, root: THREE.Object3D) {
+  // Replace stale references from the procedural placeholder with nodes from the
+  // newly mounted GLB. Keep exact matches preferred, with muzzlePoint as a valid muzzle alias.
   for (const k of TOWER_UDATA_KEYS) {
     const nk = k.toLowerCase();
+    let exact: THREE.Object3D | undefined;
+    let alias: THREE.Object3D | undefined;
     model.traverse((o) => {
       const n = o.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (n === nk && root.userData[k] === undefined) root.userData[k] = o;
+      if (n === nk) exact = o;
+      else if (k === 'muzzle' && n === 'muzzlepoint') alias = o;
     });
+    const found = exact ?? alias;
+    if (found) root.userData[k] = found;
+    else delete root.userData[k]; // never keep detached placeholder pivots after a GLB swap
   }
+}
+
+const towerSpinRingGeometry = new THREE.TorusGeometry(0.82, 0.04, 6, 28);
+
+function ensureTowerSpinRing(root: THREE.Object3D, entry: CharacterAssetEntry) {
+  const turret = root.userData.turret as THREE.Object3D | undefined;
+  if (!turret) return;
+  const color = TOWER_ACCENTS[entry.id] ?? 0x9bdcff;
+  let material = towerUpgradeMaterials.get(color);
+  if (!material) {
+    material = new THREE.MeshStandardMaterial({
+      color, emissive: color, emissiveIntensity: 0.16,
+      metalness: 0.5, roughness: 0.36,
+    });
+    towerUpgradeMaterials.set(color, material);
+  }
+  let ring = root.userData.spinRing as THREE.Mesh | undefined;
+  // Placeholder nodes survive in userData when root.clear() removes their parent.
+  // Reuse only a ring that is actually attached to the mounted GLB turret.
+  if (!ring?.isMesh || ring.parent !== turret) {
+    ring = new THREE.Mesh(towerSpinRingGeometry, material);
+    ring.name = 'spinRing';
+    turret.add(ring);
+  } else {
+    ring.geometry = towerSpinRingGeometry;
+    ring.material = material;
+  }
+  ring.position.set(0, 0.55, 0);
+  ring.rotation.set(Math.PI / 2, 0, 0);
+  // A slight ellipse makes rotation visible; a perfect circle spinning on its axis reads as static.
+  ring.scale.set(1, 0.78, 1);
+  ring.castShadow = false;
+  ring.receiveShadow = false;
+  root.userData.spinRing = ring;
 }
 
 export interface VFXPointAccessor {
@@ -149,6 +373,11 @@ export class CharacterHandle {
     // ۲) نرمال‌سازی و سوار کردن
     const norm = normalizeModel(model, entry, heightScale);
     this.root.add(norm.inner);
+    addCharacterContactShadow(this.root, entry);
+    if (entry.category === 'towers') {
+      const level = Number(this.root.name.match(/_l(\d+)/)?.[1] ?? 1);
+      addTowerUpgradeOrnament(this.root, entry, level);
+    }
     for (const node of keepNodes) this.root.add(node);
 
     // ۳) فراداده
@@ -160,7 +389,10 @@ export class CharacterHandle {
     this.root.traverse((o) => {
       o.userData.selectable = true;
     });
-    if (entry.category === 'towers') propagateTowerUdataFromGlb(model, this.root);
+    if (entry.category === 'towers') {
+      propagateTowerUdataFromGlb(model, this.root);
+      ensureTowerSpinRing(this.root, entry);
+    }
 
     // ۴) انیمیشن و VFX واقعی
     //    GLB انیمیشن‌دار → میکسر اسکلتی | GLB استاتیک → حرکت پروسیجرال بدنه‌صلب

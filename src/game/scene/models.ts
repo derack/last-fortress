@@ -39,12 +39,17 @@ export function buildTowerMesh(towerId: string, level: number): THREE.Group {
   const lv = level - 1;
   const accent = data.color;
 
-  // پایه فلزی مشترک — مدرن
+  // Shared machined foundation: broader footing, cleaner silhouette and layered metal collars.
   const baseH = 0.9 + lv * 0.12;
-  const base = mesh(new THREE.CylinderGeometry(1.5, 1.8, baseH, 8), mat(0x4a4f58, { metalness: 0.7, roughness: 0.4 }), 0, baseH / 2, 0);
+  const footing = mesh(new THREE.CylinderGeometry(1.78, 1.88, 0.18, 12, 1), mat(0x252b33, { metalness: 0.62, roughness: 0.48 }), 0, 0.09, 0);
+  g.add(footing);
+  const base = mesh(new THREE.CylinderGeometry(1.48, 1.72, baseH, 12, 1), mat(0x414955, { metalness: 0.72, roughness: 0.36 }), 0, baseH / 2 + 0.12, 0);
   g.add(base);
-  const trim = mesh(new THREE.CylinderGeometry(1.55, 1.55, 0.14, 8), mat(0x6b7280, { metalness: 0.8 }), 0, baseH + 0.07, 0);
+  const trim = mesh(new THREE.CylinderGeometry(1.57, 1.57, 0.13, 16, 1), mat(0x7b8490, { metalness: 0.82, roughness: 0.28 }), 0, baseH + 0.185, 0);
   g.add(trim);
+  const lowerCollar = mesh(new THREE.TorusGeometry(1.64, 0.055, 6, 24), mat(0x303741, { metalness: 0.78, roughness: 0.34 }), 0, 0.22, 0);
+  lowerCollar.rotation.x = Math.PI / 2;
+  g.add(lowerCollar);
 
   if (towerId === 'sentinel') {
     // نگهبان — برجک توپ مسلسل
@@ -1302,20 +1307,72 @@ export function buildRiftMesh(): THREE.Group {
 
 export function buildTree(): THREE.Group {
   const g = new THREE.Group();
-  const trunk = mesh(new THREE.CylinderGeometry(0.18, 0.28, 1.4, 6), mat(0x5d4a36), 0, 0.7, 0);
+  const bark = mat(0x51402f, { roughness: 0.96 });
+  const trunk = mesh(new THREE.CylinderGeometry(0.16, 0.31, 1.55, 7), bark, 0, 0.77, 0);
+  trunk.rotation.z = 0.025;
   g.add(trunk);
-  const leafMat = mat(0x3f7d3a, { roughness: 0.95 });
-  g.add(mesh(new THREE.ConeGeometry(1.15, 1.7, 7), leafMat, 0, 2.2, 0));
-  g.add(mesh(new THREE.ConeGeometry(0.85, 1.3, 7), leafMat, 0, 3.1, 0));
+
+  // Asymmetric faceted crowns replace the stacked perfect cones.
+  const leafMat = mat(0x365d31, { roughness: 0.98 });
+  const lower = mesh(new THREE.IcosahedronGeometry(1, 1), leafMat, 0, 2.05, 0);
+  lower.scale.set(1.12, 0.92, 1.02);
+  lower.rotation.y = 0.35;
+  g.add(lower);
+  const upper = mesh(new THREE.DodecahedronGeometry(0.78, 0), leafMat, 0.08, 2.78, -0.04);
+  upper.scale.set(0.95, 1.12, 0.9);
+  upper.rotation.set(0.06, 0.7, -0.04);
+  g.add(upper);
+
+  // Uneven secondary crowns and exposed boughs break the repeated two-cone silhouette.
+  const leafDark = mat(0x28472a, { roughness: 0.99 });
+  const leafLight = mat(0x4a6b39, { roughness: 0.98 });
+  const clusters: [number, number, number, number, number, number][] = [
+    [-0.58, 1.82, 0.08, 0.52, 0.64, 0.5],
+    [0.55, 1.96, -0.1, 0.48, 0.6, 0.46],
+    [-0.22, 2.55, -0.46, 0.42, 0.52, 0.42],
+    [0.42, 2.42, 0.34, 0.4, 0.5, 0.38],
+  ];
+  clusters.forEach(([x, y, z, sx, sy, sz], i) => {
+    const crown = mesh(new THREE.IcosahedronGeometry(0.62, 1), i % 2 ? leafDark : leafLight, x, y, z);
+    crown.scale.set(sx, sy, sz);
+    crown.rotation.set(0.1 * i, 0.73 * i, -0.08 * i);
+    g.add(crown);
+  });
+  for (const side of [-1, 1]) {
+    const branch = mesh(new THREE.CylinderGeometry(0.055, 0.1, 0.82, 6), bark, side * 0.32, 1.55, 0.02);
+    branch.rotation.z = side * -0.82;
+    branch.rotation.x = side * 0.12;
+    g.add(branch);
+  }
+  // Root flares anchor the tree visually into the ground instead of making it float.
+  for (let i = 0; i < 4; i++) {
+    const a = i / 4 * Math.PI * 2;
+    const root = mesh(new THREE.CylinderGeometry(0.025, 0.11, 0.55, 5), bark,
+      Math.cos(a) * 0.25, 0.22, Math.sin(a) * 0.25);
+    root.rotation.z = Math.cos(a) * 0.62;
+    root.rotation.x = Math.sin(a) * 0.62;
+    g.add(root);
+  }
   return g;
 }
 
 export function buildRock(scale = 1): THREE.Group {
   const g = new THREE.Group();
-  const r = mesh(new THREE.DodecahedronGeometry(0.7, 0), mat(0x8a8578, { roughness: 1 }), 0, 0.35, 0);
-  r.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-  r.scale.setScalar(scale);
+  const rockMat = mat(0x77766f, { roughness: 0.98 });
+  const rockLight = mat(0x929087, { roughness: 0.99 });
+  const rockDark = mat(0x595a58, { roughness: 1 });
+  const r = mesh(new THREE.IcosahedronGeometry(0.7, 1), rockMat, 0, 0.35, 0);
+  r.rotation.set(Math.random() * 0.9, Math.random() * 3, Math.random() * 0.9);
+  r.scale.set(1.0 * scale, 0.72 * scale, 0.9 * scale);
   g.add(r);
+  const chipA = mesh(new THREE.DodecahedronGeometry(0.36, 0), rockLight, 0.38 * scale, 0.28 * scale, 0.1 * scale);
+  chipA.rotation.set(0.4, 0.7, 0.25);
+  chipA.scale.set(1.1, 0.7, 0.8);
+  g.add(chipA);
+  const chipB = mesh(new THREE.DodecahedronGeometry(0.3, 0), rockDark, -0.28 * scale, 0.2 * scale, -0.2 * scale);
+  chipB.rotation.set(-0.3, 1.2, 0.5);
+  chipB.scale.set(0.9, 0.65, 1.1);
+  g.add(chipB);
   return g;
 }
 
@@ -1347,9 +1404,24 @@ export function buildPineTree(snowy = false): THREE.Group {
   const g = new THREE.Group();
   g.add(mesh(new THREE.CylinderGeometry(0.14, 0.22, 1.2, 6), mat(0x4a3a2a), 0, 0.6, 0));
   const needle = snowy ? mat(0x7a9a8a, { roughness: 0.95 }) : mat(0x2d5a30, { roughness: 0.95 });
-  g.add(mesh(new THREE.ConeGeometry(1.0, 1.5, 7), needle, 0, 1.9, 0));
-  g.add(mesh(new THREE.ConeGeometry(0.72, 1.2, 7), needle, 0, 2.7, 0));
-  g.add(mesh(new THREE.ConeGeometry(0.45, 0.9, 7), needle, 0, 3.4, 0));
+  const lowerCrown = mesh(new THREE.ConeGeometry(1.0, 1.5, 9), needle, 0, 1.9, 0);
+  lowerCrown.rotation.y = 0.18;
+  g.add(lowerCrown);
+  const middleCrown = mesh(new THREE.ConeGeometry(0.72, 1.2, 8), needle, 0.06, 2.7, -0.03);
+  middleCrown.rotation.y = 0.53;
+  g.add(middleCrown);
+  const upperCrown = mesh(new THREE.ConeGeometry(0.45, 0.9, 7), needle, -0.04, 3.4, 0.04);
+  upperCrown.rotation.y = 0.28;
+  g.add(upperCrown);
+  // Broad irregular boughs soften the geometric tiers without adding tiny noisy leaves.
+  for (let i = 0; i < 5; i++) {
+    const a = i / 5 * Math.PI * 2;
+    const bough = mesh(new THREE.IcosahedronGeometry(0.42, 1), needle,
+      Math.cos(a) * 0.52, 1.55 + (i % 2) * 0.38, Math.sin(a) * 0.52);
+    bough.scale.set(1.0, 0.42, 0.82);
+    bough.rotation.y = a;
+    g.add(bough);
+  }
   if (snowy) {
     g.add(mesh(new THREE.ConeGeometry(0.5, 0.5, 7), mat(0xe8f0f4, { roughness: 0.8 }), 0, 3.75, 0));
     g.add(mesh(new THREE.ConeGeometry(0.8, 0.55, 7), mat(0xe8f0f4, { roughness: 0.8 }), 0, 2.95, 0));
@@ -1392,41 +1464,120 @@ export function buildDebris(): THREE.Group {
 /** سنگ سیاه آتشفشانی */
 export function buildObsidianRock(scale = 1): THREE.Group {
   const g = new THREE.Group();
-  const r = mesh(new THREE.DodecahedronGeometry(0.7, 0), mat(0x16121a, { roughness: 0.35, metalness: 0.25 }), 0, 0.35, 0);
-  r.rotation.set(Math.random() * 3, Math.random() * 3, Math.random() * 3);
-  r.scale.setScalar(scale);
+  const obsidian = mat(0x15121b, { roughness: 0.3, metalness: 0.28 });
+  const r = mesh(new THREE.IcosahedronGeometry(0.7, 1), obsidian, 0, 0.35, 0);
+  r.rotation.set(Math.random() * 0.6, Math.random() * 3, Math.random() * 0.6);
+  r.scale.set(1.05 * scale, 0.78 * scale, 0.92 * scale);
   g.add(r);
-  g.add(mesh(new THREE.SphereGeometry(0.06 * scale, 5, 5), glow(0xf97316), 0.2 * scale, 0.3 * scale, 0.3 * scale));
+
+  // Replace the isolated bright dot with restrained, embedded magma fissures.
+  const fissure = new THREE.MeshStandardMaterial({
+    color: 0x7a301c, emissive: 0xf97316, emissiveIntensity: 0.38,
+    roughness: 0.72, metalness: 0.08,
+  });
+  const cracks: [number, number, number, number, number, number][] = [
+    [0.16, 0.48, 0.43, 0.34, 0.035, 0.025],
+    [-0.12, 0.32, 0.48, 0.22, 0.028, 0.022],
+    [0.29, 0.25, 0.34, 0.19, 0.026, 0.02],
+  ];
+  cracks.forEach(([x, y, z, w, h, d], i) => {
+    const crack = mesh(new THREE.BoxGeometry(w * scale, h * scale, d * scale), fissure,
+      x * scale, y * scale, z * scale);
+    crack.rotation.z = (i - 1) * 0.34;
+    crack.rotation.y = (i - 1) * 0.18;
+    g.add(crack);
+  });
   return g;
 }
 
 export function buildCrystal(color = 0x22d3ee): THREE.Group {
   const g = new THREE.Group();
-  const cmat = new THREE.MeshStandardMaterial({
-    color, emissive: color, emissiveIntensity: 1.2, roughness: 0.2, transparent: true, opacity: 0.9,
+  const crystal = new THREE.MeshPhysicalMaterial({
+    color, emissive: color, emissiveIntensity: 0.42,
+    roughness: 0.24, metalness: 0.08, clearcoat: 0.72, clearcoatRoughness: 0.18,
   });
-  const c1 = mesh(new THREE.ConeGeometry(0.3, 1.6, 5), cmat, 0, 0.8, 0);
-  c1.rotation.z = 0.1;
-  g.add(c1);
-  g.add(mesh(new THREE.ConeGeometry(0.2, 1.0, 5), cmat, 0.35, 0.5, 0.1));
-  g.add(mesh(new THREE.ConeGeometry(0.16, 0.8, 5), cmat, -0.28, 0.4, -0.15));
+  const deepFacet = mat(new THREE.Color(color).multiplyScalar(0.28).getHex(), { roughness: 0.32, metalness: 0.18 });
+  const base = mesh(new THREE.DodecahedronGeometry(0.42, 0), deepFacet, 0, 0.18, 0);
+  base.scale.set(1.3, 0.55, 1.15);
+  g.add(base);
+  const main = mesh(new THREE.OctahedronGeometry(0.42, 1), crystal, 0, 0.95, 0);
+  main.scale.set(0.82, 1.9, 0.72);
+  main.rotation.set(0.04, 0.2, 0.08);
+  g.add(main);
+  const sideA = mesh(new THREE.OctahedronGeometry(0.28, 0), crystal, 0.34, 0.48, 0.08);
+  sideA.scale.set(0.72, 1.45, 0.72);
+  sideA.rotation.z = -0.22;
+  g.add(sideA);
+  const sideB = mesh(new THREE.OctahedronGeometry(0.24, 0), deepFacet, -0.3, 0.42, -0.12);
+  sideB.scale.set(0.7, 1.25, 0.68);
+  sideB.rotation.z = 0.24;
+  g.add(sideB);
+  const vein = new THREE.MeshStandardMaterial({
+    color, emissive: color, emissiveIntensity: 0.6, roughness: 0.35, metalness: 0.12,
+  });
+  const crackA = mesh(new THREE.BoxGeometry(0.045, 0.62, 0.035), vein, 0.08, 0.72, 0.33);
+  crackA.rotation.z = -0.16;
+  g.add(crackA);
+  const crackB = mesh(new THREE.BoxGeometry(0.035, 0.42, 0.03), vein, -0.12, 0.48, 0.28);
+  crackB.rotation.z = 0.2;
+  g.add(crackB);
   return g;
 }
 
 export function buildMountain(style: 'normal' | 'snow' | 'dark' | 'obsidian' = 'normal'): THREE.Group {
   const g = new THREE.Group();
-  const tint = style === 'dark' ? 0x4a3430 : style === 'obsidian' ? 0x241c30 : 0x7c8494;
-  const m = mat(tint, { roughness: 1 });
-  const peak = mesh(new THREE.ConeGeometry(9, 16, 6), m, 0, 8, 0);
-  g.add(peak);
+  const tint = style === 'dark' ? 0x392a27 : style === 'obsidian' ? 0x211b2b : style === 'snow' ? 0x687d8c : 0x626d78;
+  const rock = mat(tint, { roughness: 0.96, metalness: style === 'obsidian' ? 0.08 : 0.015 });
+
+  // Angular rock masses form an irregular ridge instead of a repeated perfect cone.
+  const main = mesh(new THREE.IcosahedronGeometry(1, 1), rock, 0, 5.0, 0);
+  main.scale.set(8.8, 7.6, 7.2);
+  main.rotation.set(0.03, 0.2, -0.025);
+  g.add(main);
+
+  const shoulder = mesh(new THREE.DodecahedronGeometry(1, 0), rock, -5.6, 3.0, -0.5);
+  shoulder.scale.set(5.1, 4.1, 5.8);
+  shoulder.rotation.y = 0.48;
+  g.add(shoulder);
+
+  const farPeak = mesh(new THREE.DodecahedronGeometry(1, 0), rock, 5.2, 3.7, -1.4);
+  farPeak.scale.set(4.7, 5.0, 4.5);
+  farPeak.rotation.set(0.04, -0.38, 0.02);
+  g.add(farPeak);
+
   if (style === 'normal' || style === 'snow') {
-    const snow = mesh(new THREE.ConeGeometry(3, 4.5, 6), mat(0xe8eaf0, { roughness: 0.7 }), 0, 13.5, 0);
-    g.add(snow);
-  } else if (style === 'dark') {
-    g.add(mesh(new THREE.SphereGeometry(0.5, 6, 6), glow(0xf97316), 1.5, 9, 1.5));
-    g.add(mesh(new THREE.SphereGeometry(0.4, 6, 6), glow(0xf97316), -2, 6, -1));
+    const snowMat = mat(style === 'snow' ? 0xd9e8ef : 0xbcc8d0, { roughness: 0.82 });
+    const cap = mesh(new THREE.IcosahedronGeometry(1, 0), snowMat, 0.15, 10.1, 0.2);
+    cap.scale.set(3.1, 2.3, 2.8);
+    cap.rotation.set(0.05, 0.3, -0.08);
+    g.add(cap);
+    const ledges: [number, number, number, number, number, number][] = [
+      [-4.4, 5.7, 6.0, 2.8, 0.22, 1.05],
+      [3.7, 6.6, 5.9, 2.2, 0.18, 0.9],
+      [0.1, 8.1, 5.3, 1.6, 0.16, 0.8],
+    ];
+    ledges.forEach(([x, y, z, sx, sy, sz], i) => {
+      const shelf = mesh(new THREE.IcosahedronGeometry(1, 0), snowMat, x, y, z);
+      shelf.scale.set(sx, sy, sz);
+      shelf.rotation.set(0.04 * i, 0.3 * i, -0.08 * i);
+      g.add(shelf);
+    });
   } else {
-    g.add(mesh(new THREE.SphereGeometry(0.45, 6, 6), glow(0xa855f7), 1.8, 8, -1.2));
+    const strataMat = mat(style === 'obsidian' ? 0x14121b : 0x2b2222, { roughness: 0.98, metalness: 0.04 });
+    const strata = [
+      [-4.8, 2.25, 5.8, 3.1, 0.22, 1.0],
+      [3.9, 3.0, 5.8, 2.5, 0.18, 0.85],
+      [0.4, 4.1, 5.4, 3.6, 0.16, 0.75],
+    ];
+    strata.forEach(([x, y, z, sx, sy, sz], i) => {
+      const band = mesh(new THREE.IcosahedronGeometry(1, 0), strataMat, x, y, z);
+      band.scale.set(sx, sy, sz);
+      band.rotation.set(0.05 * i, 0.2 * i, 0.04 * i);
+      g.add(band);
+    });
   }
+
+  // No isolated emissive dots on distant mountains: biome colour comes from
+  // the material and lighting, keeping the horizon cinematic rather than noisy.
   return g;
 }
