@@ -9,15 +9,17 @@ import type { EnemyData } from '../data/types';
 // ============================================================
 
 const mat = (color: number, opts?: Partial<THREE.MeshStandardMaterialParameters>) =>
-  new THREE.MeshStandardMaterial({ color, roughness: 0.65, metalness: 0.25, ...opts });
+  new THREE.MeshStandardMaterial({ color, roughness: 0.52, metalness: 0.3, ...opts });
 
 const glow = (color: number) =>
-  new THREE.MeshStandardMaterial({
+  new THREE.MeshPhysicalMaterial({
     color,
     emissive: color,
-    emissiveIntensity: 1.6,
-    roughness: 0.3,
-    metalness: 0.1,
+    emissiveIntensity: 2.0,
+    roughness: 0.24,
+    metalness: 0.15,
+    clearcoat: 0.65,
+    clearcoatRoughness: 0.2,
   });
 
 function mesh(geo: THREE.BufferGeometry, m: THREE.Material, x = 0, y = 0, z = 0): THREE.Mesh {
