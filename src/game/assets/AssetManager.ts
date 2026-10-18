@@ -193,6 +193,10 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
   scene.traverse((o) => {
     const mesh = o as THREE.Mesh;
     if (!mesh.isMesh || !mesh.geometry || !mesh.material) return;
+    // Heavy actors and towers cast the scene's dynamic shadows; common wave enemies
+    // receive shadows but avoid multiplying shadow-map cost during dense waves.
+    mesh.castShadow = category === 'bosses' || category === 'towers';
+    mesh.receiveShadow = true;
     ensureProceduralUV(mesh.geometry);
     if (maps) {
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
