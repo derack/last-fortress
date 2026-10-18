@@ -80,6 +80,7 @@ export class BattleScene {
   private portalPulse = 0;
   private starPoints: THREE.Points | null = null;
   private ambientFx: THREE.Points | null = null;
+  private ambientVelocity: Float32Array | null = null;
   private quality: 'low' | 'medium' | 'high' | 'ultra' = 'medium';
   private theme: EnvTheme;
   private level: LevelData;
@@ -256,7 +257,7 @@ export class BattleScene {
 
   private buildGround(night: boolean) {
     const c = document.createElement('canvas');
-    c.width = c.height = 256;
+    c.width = c.height = 512;
     const ctx = c.getContext('2d')!;
     const base = night ? this.theme.groundNight : this.theme.groundDay;
     const dot = night ? this.theme.groundDotNight : this.theme.groundDotDay;
@@ -270,7 +271,7 @@ export class BattleScene {
       };
     };
     const r = rnd(12345);
-    const density = this.level.env === 'volcano' || this.level.env === 'citadel' ? 900 : 1400;
+    const density = this.level.env === 'volcano' || this.level.env === 'citadel' ? 2600 : 3600;
     for (let i = 0; i < density; i++) {
       const x = r() * 256;
       const y = r() * 256;
@@ -295,6 +296,37 @@ export class BattleScene {
       ctx.beginPath();
       ctx.arc(x, y, rad, 0, Math.PI * 2);
       ctx.fill();
+    }
+    // Fine surface breakup: grass strokes, wind-scoured ice, and ash/stone fissures.
+    const harshGround = this.level.env === 'volcano' || this.level.env === 'citadel' || this.level.env === 'wastes';
+    const detailCount = this.quality === 'low' ? 500 : this.quality === 'medium' ? 1400 : 2600;
+    for (let i = 0; i < detailCount; i++) {
+      const x = r() * 512;
+      const y = r() * 512;
+      if (harshGround) {
+        ctx.strokeStyle = this.level.env === 'volcano'
+          ? (r() > 0.65 ? 'rgba(255,92,35,0.20)' : 'rgba(10,7,7,0.24)')
+          : 'rgba(12,10,16,0.18)';
+        ctx.lineWidth = 0.6 + r() * 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + (r() - 0.5) * 14, y + 2 + r() * 13);
+        ctx.stroke();
+      } else if (this.level.env === 'tundra') {
+        ctx.strokeStyle = 'rgba(245,252,255,0.20)';
+        ctx.lineWidth = 0.7 + r() * 1.2;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + 2 + r() * 12, y + (r() - 0.5) * 3);
+        ctx.stroke();
+      } else {
+        ctx.strokeStyle = night ? 'rgba(135,170,92,0.12)' : 'rgba(183,210,116,0.18)';
+        ctx.lineWidth = 0.7 + r() * 1.3;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + (r() - 0.5) * 4, y - 2 - r() * 5);
+        ctx.stroke();
+      }
     }
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
@@ -449,10 +481,12 @@ export class BattleScene {
     // Each environment receives its own palette and silhouette family.
     const particleCount = this.quality === 'low' ? 140 : this.quality === 'medium' ? 360 : this.quality === 'high' ? 680 : 1050;
     const particlePositions = new Float32Array(particleCount * 3);
+    this.ambientVelocity = new Float32Array(particleCount);
     for (let i = 0; i < particleCount; i++) {
       particlePositions[i * 3] = (r() - 0.5) * 76;
       particlePositions[i * 3 + 1] = 0.8 + r() * 13;
       particlePositions[i * 3 + 2] = (r() - 0.5) * 76;
+      this.ambientVelocity[i] = 0.25 + r() * (this.level.env === 'volcano' ? 1.25 : 0.45);
     }
     const particleGeo = new THREE.BufferGeometry();
     particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
@@ -675,8 +709,21 @@ export class BattleScene {
       }
     }
 
-    // Biome motes drift slowly to make snow/embers/spores feel alive.
-    if (this.ambientFx) this.ambientFx.rotation.y += dt * (this.level.env === 'volcano' ? 0.018 : 0.006);
+    // Animate environmental snow, embers, spores and dust with biome-specific motion.
+    if (this.ambientFx && this.ambientVelocity) {
+      const positions = this.ambientFx.geometry.getAttribute('position') as THREE.BufferAttribute;
+      const values = positions.array as Float32Array;
+      for (let i = 0; i < this.ambientVelocity.length; i++) {
+        const k = i * 3;
+        const velocity = this.ambientVelocity[i];
+        values[k] += Math.sin(this.portalPulse + i * 0.17) * dt * 0.12;
+        values[k + 1] += (this.level.env === 'volcano' ? 1 : this.level.env === 'tundra' ? -0.7 : -0.15) * velocity * dt;
+        if (values[k + 1] > 14) values[k + 1] = 0.6;
+        if (values[k + 1] < 0.4) values[k + 1] = 13.5;
+      }
+      positions.needsUpdate = true;
+      this.ambientFx.rotation.y += dt * (this.level.env === 'volcano' ? 0.018 : 0.006);
+    }
 
     // کریستال‌های محیط
     for (const d of this.decorSpinners) {
