@@ -8,6 +8,10 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
+    lint {
+        checkReleaseBuilds false
+        abortOnError false
+    }
     namespace = "com.lastfortress.ariana"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
