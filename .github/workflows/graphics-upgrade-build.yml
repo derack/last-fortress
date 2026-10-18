@@ -1,6 +1,9 @@
 name: Graphics upgrade build
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - graphics-upgrade-2026-10-18
