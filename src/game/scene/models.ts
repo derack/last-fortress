@@ -1551,6 +1551,30 @@ export function buildMountain(style: 'normal' | 'snow' | 'dark' | 'obsidian' = '
     cap.scale.set(3.1, 2.3, 2.8);
     cap.rotation.set(0.05, 0.3, -0.08);
     g.add(cap);
+    const ledges: [number, number, number, number, number, number][] = [
+      [-4.4, 5.7, 2.7, 2.8, 0.22, 1.05],
+      [3.7, 6.6, 2.2, 2.2, 0.18, 0.9],
+      [0.1, 8.1, 2.45, 1.6, 0.16, 0.8],
+    ];
+    ledges.forEach(([x, y, z, sx, sy, sz], i) => {
+      const shelf = mesh(new THREE.IcosahedronGeometry(1, 0), snowMat, x, y, z);
+      shelf.scale.set(sx, sy, sz);
+      shelf.rotation.set(0.04 * i, 0.3 * i, -0.08 * i);
+      g.add(shelf);
+    });
+  } else {
+    const strataMat = mat(style === 'obsidian' ? 0x14121b : 0x2b2222, { roughness: 0.98, metalness: 0.04 });
+    const strata = [
+      [-4.8, 2.25, 2.4, 3.1, 0.22, 1.0],
+      [3.9, 3.0, 2.0, 2.5, 0.18, 0.85],
+      [0.4, 4.1, 2.7, 3.6, 0.16, 0.75],
+    ];
+    strata.forEach(([x, y, z, sx, sy, sz], i) => {
+      const band = mesh(new THREE.IcosahedronGeometry(1, 0), strataMat, x, y, z);
+      band.scale.set(sx, sy, sz);
+      band.rotation.set(0.05 * i, 0.2 * i, 0.04 * i);
+      g.add(band);
+    });
   }
 
   // No isolated emissive dots on distant mountains: biome colour comes from
