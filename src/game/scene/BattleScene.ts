@@ -331,7 +331,7 @@ export class BattleScene {
       const b = pts[i + 1];
       const dir = b.clone().sub(a).normalize();
       const side = new THREE.Vector3(-dir.z, 0, dir.x).multiplyScalar(width);
-      const y = 0.05 + (i % 2) * 0.006; // جلوگیری از z-fighting در همپوشانی
+      const y = 0.065; // one stable plane; alternating heights caused visible striping/flicker
       // چهار راس کوارت
       positions.push(
         a.x + side.x, y, a.z + side.z,
@@ -354,31 +354,8 @@ export class BattleScene {
     pathMesh.receiveShadow = this.renderer.shadowMap.enabled;
     this.scene.add(pathMesh);
 
-    // دیسک‌های اتصال در پیچ‌ها — پوشش گوشه‌ها
-    const discPositions: number[] = [];
-    const discIndices: number[] = [];
-    let dvi = 0;
-    const SIDES = 10;
-    for (let i = 0; i < pts.length; i++) {
-      const p = pts[i];
-      const y = 0.048;
-      for (let s = 0; s < SIDES; s++) {
-        const a1 = (s / SIDES) * Math.PI * 2;
-        const a2 = ((s + 1) / SIDES) * Math.PI * 2;
-        discPositions.push(p.x, y, p.z);
-        discPositions.push(p.x + Math.cos(a1) * width, y, p.z + Math.sin(a1) * width);
-        discPositions.push(p.x + Math.cos(a2) * width, y, p.z + Math.sin(a2) * width);
-        discIndices.push(dvi, dvi + 2, dvi + 1); // winding صحیح رو به بالا
-        dvi += 3;
-      }
-    }
-    const discGeo = new THREE.BufferGeometry();
-    discGeo.setAttribute('position', new THREE.Float32BufferAttribute(discPositions, 3));
-    discGeo.setIndex(discIndices);
-    discGeo.computeVertexNormals();
-    const discMesh = new THREE.Mesh(discGeo, mat);
-    discMesh.receiveShadow = this.renderer.shadowMap.enabled;
-    this.scene.add(discMesh);
+    // Avoid overlapping coplanar disc geometry here: the old layer shimmered
+    // against the ribbon and looked like repeated spots along the route.
 
     // سنگ‌ریزه لبه مسیر — مرز بصری مسیر (InstancedMesh — هزینه نزدیک صفر)
     if (this.quality !== 'low') {
