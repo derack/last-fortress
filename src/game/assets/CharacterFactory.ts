@@ -86,6 +86,7 @@ function addCharacterContactShadow(root: THREE.Group, entry: CharacterAssetEntry
   shadow.castShadow = false;
   shadow.receiveShadow = false;
   root.add(shadow);
+  root.userData.contactShadow = shadow;
 }
 const TOWER_ACCENTS: Record<string, number> = {
   sentinel: 0xf0b65c, lightning: 0x9b6cff, fire: 0xff623d, ice: 0x8be7ff,
