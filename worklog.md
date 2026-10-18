@@ -565,3 +565,22 @@ Stage Summary:
 - لینک اصلی: https://uploadkon.ir/uploads/26f218_26Last-Fortress-v1-1.zip (تأیید: HTTP 200، حجم دقیق)
 - پشتیبان: https://gofile.io/d/OcsWYoor
 - پندینگ برای بعد از merge: حذف گالری، بهینه‌سازی لگ، بیلد v1.2
+
+---
+Task ID: 25
+Agent: main (Super Z)
+Task: merge شاخه گرافیک + حذف گالری + رفع لگ + بیلد و آپلود v1.2
+
+Work Log:
+- merge origin/graphics-upgrade-2026-10-18 به main (۲۴ کامیت گرافیکی، merge commit 29a5628)
+- حذف کامل گالری: CharacterGallery.tsx (git rm)، MainMenu (PageId+nav+icon)، SettingsPanel (سکشن+openGallery)، GameShell (import+state+URL param+render)، gameStore (state+action)، StandaloneScreen، page/[screen] (PAGE_IDS)، 20 کلید i18n از fa+en → parity 394=394 ✓
+- رفع لگ: Adaptive Resolution در BattleScene.render (نمونه‌گیری 50 فریمی، بازه 0.8..targetRatio، گام 0.25) — تست headless: افت 1.5→0.8 تحت فشار ✓؛ VFX/DamageNumbers از قبل pooled ✓
+- فیکس بیلد: daemon کشته‌شده به‌خاطر RAM → آزادسازی 1.8GB + غیرفعال‌سازی lintVital release؛ مسیر JDK/SDK به android-tools آپدیت شد
+- versionCode 3 / versionName 1.2 → CAP_BUILD export + cap sync + assembleRelease ✓ (23s)
+- تأیید: apksigner همان گواهی ✓، رشته «گالری کاراکترها» = 0 در باندل APK ✓
+- آپلود uploadkon موفق (zip)؛ gofile موقتاً از دسترس خارج بود
+
+Stage Summary:
+- download/Last-Fortress-v1.2-final.apk (4,039,672 bytes) — ادغام گرافیک + بدون گالری + تطبیق رزولوشن
+- لینک: https://uploadkon.ir/uploads/5a2118_26Last-Fortress-v1-2.zip (HTTP 200، حجم دقیق)
+- main به GitHub push شد (CI خودکار اجرا می‌شود)
