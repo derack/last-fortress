@@ -532,6 +532,9 @@ export class Enemy implements DamageableEnemy {
       this.data.flying ? 5.5 + Math.sin(this.walkPhase * 2) * 0.4 : 0,
       a.z + (b.z - a.z) * f
     );
+    // The soft shadow remains on the terrain even when a flying unit bobs above it.
+    const contactShadow = this.mesh.getObjectByName('contactShadow');
+    if (contactShadow) contactShadow.position.y = -this.mesh.position.y + 0.018;
     // چرخش به سمت جلو
     if (i < pts.length - 1) {
       const targetRot = Math.atan2(b.x - a.x, b.z - a.z);
