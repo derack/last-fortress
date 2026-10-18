@@ -470,7 +470,7 @@ Work Log:
 Stage Summary:
 - لینک اصلی (uploadkon.ir، درخواست کاربر): https://uploadkon.ir/uploads/8d7a01_26Last-Fortress-v1-0.zip
 - لینک پشتیبان (gofile.io، پسوند مستقیم apk): https://gofile.io/d/1yvS2Q9D
-- لینک حذف فایل uploadkon: https://uploadkon.ir/go.php?go=del&cd=f9605232fa8aee72579dbf66d61102354128868c
+- لینک حذف فایل uploadkon: (به دلایل امنیتی از ریپو عمومی حذف شد — نزد کاربر محفوظ است)
 - نکته برای کاربر: فایل zip بعد از دانلود باید به .apk تغییر نام یابد (یا از لینک gofile استفاده کند)
 - کارهای باقی‌مانده از پیام قبلی کاربر: بهبود گرافیک موبایل / بهینه‌سازی لگ / حذف گالری کاراکتر → سپس بیلد v1.1
 
@@ -511,3 +511,18 @@ Work Log:
 Stage Summary:
 - ریپو derack/last-fortress اکنون PUBLIC تا وقتی کاربر بگوید
 - keystore و پسوردها فقط روی دیسک لوکال + download/keystore هستند، از ریپو حذف شدند
+
+---
+Task ID: 22
+Agent: main (Super Z)
+Task: فعال‌سازی دسترسی دائمی sync سورس با GitHub (به درخواست کاربر)
+
+Work Log:
+- اسکن امنیتی HEAD: توکن گیت‌هاب، پسوردهای keystore، رمزها → پاک
+- کشف و اصلاح: لینک حذف uploadkon داخل worklog.md عمومی بود → redact شد
+- تنظیم credential.helper=store + ذخیره توکن در ~/.git-credentials برای push خودکار آینده
+- push تأییدی انجام شد — دسترسی نوشتن سورس فعال است
+
+Stage Summary:
+- از این پس هر تغییر سورس به‌صورت خودکار commit+push می‌شود به derack/last-fortress
+- ریپو عمومی است تا اطلاع بعدی کاربر
