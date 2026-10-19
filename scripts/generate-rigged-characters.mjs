@@ -43,66 +43,79 @@ function encodePng(width,height,rgba) {
   return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),pngChunk('IHDR',header),pngChunk('IDAT',zlib.deflateSync(rows,{level:9})),pngChunk('IEND',Buffer.alloc(0))]);
 }
 function makePbrImages(baseColor,accent,style,category='enemies') {
-  // Higher-frequency, tileable maps: 256px for the mobile roster, 512px for
-  // hero/boss close-ups. Every map is generated deterministically at build time.
+  // Build-specific, seamless material atlases: each surface gets its own
+  // albedo; normal/MR/AO maps are shared per character to keep memory bounded.
   const size=category==='heroes'||category==='bosses'?384:192;
   const emissiveSize=128;
-  const base=new Uint8Array(size*size*4), normal=new Uint8Array(size*size*4);
-  const mr=new Uint8Array(size*size*4), ao=new Uint8Array(size*size*4), emissive=new Uint8Array(emissiveSize*emissiveSize*4);
+  const albedos=Array.from({length:5},()=>new Uint8Array(size*size*4));
+  const normal=new Uint8Array(size*size*4), mr=new Uint8Array(size*size*4);
+  const ao=new Uint8Array(size*size*4), emissive=new Uint8Array(emissiveSize*emissiveSize*4);
+  const tau=Math.PI*2;
   const periodic=(x,y,fx,fy,phase=0)=>
-    Math.sin(x/size*Math.PI*2*fx+phase)*Math.cos(y/size*Math.PI*2*fy-phase*.7);
+    Math.sin(x/size*tau*fx+phase)*Math.cos(y/size*tau*fy-phase*.7);
   const isMetal=/machine|tank|lord|warrior|hunter|ranger|brute|annihilator/i.test(style);
   const isStone=/golem|crystal|tank|giant/i.test(style);
-  // Tileable height field; the normal map is derived from this exact field.
+  const isCloth=/cloth|wraith|mage|spirit|summoner/i.test(style);
   const heightAt=(x,y)=>{
     const broad=periodic(x,y,3,4,.7)*.52+periodic(x,y,5,3,1.8)*.28+periodic(x,y,8,7,2.4)*.14;
     const medium=periodic(x,y,17,13,1.2)*.045+periodic(x,y,23,19,.4)*.028;
     const micro=periodic(x,y,47,31,.9)*.012+periodic(x,y,61,53,2.1)*.008;
-    const brushed=isMetal?Math.sin(y/size*Math.PI*2*92+Math.sin(x/size*Math.PI*2*7)*.12)*.026:0;
-    const scales=isStone?Math.pow(Math.max(0,Math.cos(x/size*Math.PI*2*11+Math.sin(y/size*Math.PI*2*5)*.42)),18)*.11:0;
-    const weave=/cloth|wraith|mage|spirit/i.test(style)?periodic(x,y,29,37,.3)*.05:0;
+    const brushed=isMetal?Math.sin(y/size*tau*92+Math.sin(x/size*tau*7)*.12)*.026:0;
+    const scales=isStone?Math.pow(Math.max(0,Math.cos(x/size*tau*11+Math.sin(y/size*tau*5)*.42)),18)*.11:0;
+    const weave=isCloth?periodic(x,y,29,37,.3)*.05:0;
     return broad*.13+medium+micro+brushed+scales+weave;
   };
-  const color = n => Math.max(0,Math.min(255,Math.round(n)));
+  const color=n=>Math.max(0,Math.min(255,Math.round(n)));
+  const profileShade=(profile,x,y,h,broad,plate)=>{
+    const scratch=Math.pow(Math.max(0,Math.sin(x/size*tau*37+Math.sin(y/size*tau*9)*.3)),18)
+      *(.5+.5*Math.cos(y/size*tau*5));
+    const brushed=.5+.5*Math.sin(y/size*tau*88+Math.sin(x/size*tau*5)*.12);
+    const weave=(.5+.5*Math.sin(x/size*tau*36))*(.5+.5*Math.sin(y/size*tau*44));
+    const seam=Math.pow(Math.max(0,Math.cos(x/size*tau*8+Math.sin(y/size*tau*3)*.25)),48);
+    const cracks=Math.pow(Math.max(0,Math.sin((x+y)/size*tau*13+periodic(x,y,3,4,.2))),12);
+    if(profile===0) return Math.max(.70,Math.min(1.14,.91+h*1.5+broad*.025+plate*.055-seam*.085+scratch*.045));
+    if(profile===1) return Math.max(.74,Math.min(1.18,.96+h*1.2+brushed*.055+scratch*.07));
+    if(profile===2) return Math.max(.70,Math.min(1.12,.88+h*1.4+weave*.045+periodic(x,y,23,29,.4)*.025));
+    if(profile===3) return Math.max(.78,Math.min(1.2,.96+h*.9+cracks*.09+periodic(x,y,5,7,.7)*.025));
+    return Math.max(.68,Math.min(1.08,.83+h*1.6+scratch*.035-seam*.025));
+  };
   for(let y=0;y<size;y++) for(let x=0;x<size;x++) {
-    const i=(y*size+x)*4;
-    const h=heightAt(x,y);
+    const i=(y*size+x)*4, h=heightAt(x,y);
     const broad=periodic(x,y,3,4,.7)*.52+periodic(x,y,5,3,1.8)*.28+periodic(x,y,8,7,2.4)*.14;
-    const plate=Math.pow(Math.max(0,Math.cos(x/size*Math.PI*2*11+Math.sin(y/size*Math.PI*2*5)*.42)),18);
-    const shade=Math.max(.70,Math.min(1.15,.94+h*1.4+broad*.025+plate*.035));
-    // The factor remains the character's palette; albedo supplies surface response.
-    for(let c=0;c<3;c++) base[i+c]=color(shade*255);
-    base[i+3]=255;
+    const plate=Math.pow(Math.max(0,Math.cos(x/size*tau*11+Math.sin(y/size*tau*5)*.42)),18);
+    for(let profile=0;profile<5;profile++) {
+      const shade=profileShade(profile,x,y,h,broad,plate);
+      const o=albedos[profile];
+      o[i]=o[i+1]=o[i+2]=color(shade*255);o[i+3]=255;
+    }
     const dx=(heightAt((x+1)%size,y)-heightAt((x+size-1)%size,y))*.5;
     const dy=(heightAt(x,(y+1)%size)-heightAt(x,(y+size-1)%size))*.5;
-    let nx=-dx*8.0,ny=-dy*8.0,nz=1,len=Math.hypot(nx,ny,nz);
+    let nx=-dx*8,ny=-dy*8,nz=1,len=Math.hypot(nx,ny,nz);
     normal[i]=color((nx/len*.5+.5)*255);
     normal[i+1]=color((ny/len*.5+.5)*255);
     normal[i+2]=color((nz/len*.5+.5)*255);normal[i+3]=255;
     mr[i]=255;
-    // glTF metallic-roughness channels: G=roughness, B=metalness.
-    mr[i+1]=color(Math.max(96,Math.min(248, (isMetal?112:isStone?198:226)+h*120+broad*8)));
+    // glTF MR convention: G=roughness, B=metalness.
+    mr[i+1]=color(Math.max(96,Math.min(248,(isMetal?112:isStone?198:226)+h*120+broad*8)));
     mr[i+2]=color(Math.max(0,Math.min(255,(isMetal?226:isStone?38:12)+plate*22+h*80)));
     mr[i+3]=255;
-    const edge=Math.min(x,y,size-1-x,size-1-y);
-    const cavity=Math.max(.76,Math.min(1,.97-Math.max(0,.1-h)*.35+Math.min(edge/18,1)*.03));
+    // Seamless cavity shading; no border darkening, so repeated tiles do not show seams.
+    const cavity=Math.max(.76,Math.min(1,.96-Math.max(0,.1-h)*.35+Math.abs(broad)*.025));
     ao[i]=ao[i+1]=ao[i+2]=color(cavity*255);ao[i+3]=255;
-
-
   }
   const accentRgb=[(accent>>16)&255,(accent>>8)&255,accent&255];
   for(let y=0;y<emissiveSize;y++) for(let x=0;x<emissiveSize;x++) {
     const i=(y*emissiveSize+x)*4;
-    const pulse=.84+.16*(.5+.5*Math.sin(x/emissiveSize*Math.PI*2*7+Math.sin(y/emissiveSize*Math.PI*2*5)));
+    const pulse=.84+.16*(.5+.5*Math.sin(x/emissiveSize*tau*7+Math.sin(y/emissiveSize*tau*5)));
     for(let c=0;c<3;c++) emissive[i+c]=color((accentRgb[c]/255)*pulse*255);
     emissive[i+3]=255;
   }
   return [
-    encodePng(size,size,base),encodePng(size,size,normal),encodePng(size,size,mr),
+    ...albedos.map(map=>encodePng(size,size,map)),
+    encodePng(size,size,normal),encodePng(size,size,mr),
     encodePng(size,size,ao),encodePng(emissiveSize,emissiveSize,emissive)
   ];
 }
-
 const OUT = path.join(process.cwd(), 'public/assets/3d/rigged');
 fs.mkdirSync(OUT, { recursive: true });
 
@@ -445,16 +458,15 @@ function makeCharacter(id, category, baseColor, accent, style) {
   ];
   const pbrPngs = makePbrImages(baseColor,accent,style,category);
   const imageUris = pbrPngs.map(png => 'data:image/png;base64,'+png.toString('base64'));
-  const textures = [
-    {sampler:0,source:0},{sampler:0,source:1},{sampler:0,source:2},{sampler:0,source:3},{sampler:0,source:4},
-  ];
-  for (const mat of materials) {
-    mat.pbrMetallicRoughness.baseColorTexture={index:0};
-    mat.pbrMetallicRoughness.metallicRoughnessTexture={index:2};
-    mat.normalTexture={index:1,scale:0.7};
-    mat.occlusionTexture={index:3,strength:0.28};
+  const textures = Array.from({length:9},(_,i)=>({sampler:0,source:i}));
+  const albedoTextureIndex={armor:0,edge:1,cloth:2,glow:3,dark:4};
+  for (const [materialName,mat] of [['armor',materials[0]],['edge',materials[1]],['cloth',materials[2]],['glow',materials[3]],['dark',materials[4]]]) {
+    mat.pbrMetallicRoughness.baseColorTexture={index:albedoTextureIndex[materialName]};
+    mat.pbrMetallicRoughness.metallicRoughnessTexture={index:6};
+    mat.normalTexture={index:5,scale:0.7};
+    mat.occlusionTexture={index:7,strength:0.28};
   }
-  materials[3].emissiveTexture={index:4};
+  materials[3].emissiveTexture={index:8};
   const materialIndex={armor:0,edge:1,cloth:2,glow:3,dark:4};
   // Build low-poly primitives in character/model space.
   const buildPrimitive=(piece,lodLevel=0)=>{
