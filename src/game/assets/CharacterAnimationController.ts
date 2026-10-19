@@ -172,6 +172,9 @@ export class CharacterAnimationController {
     }
     const next = this.resolveLoco(state);
     if (!next) return;
+    // A genuine locomotion-state transition cancels any queued cinematic follow-up.
+    this.sequenceQueue = [];
+    this.sequenceOptions = null;
 
     const prevAction = this.oneshotActive ?? (this.currentLoco ? this.resolveLoco(this.currentLoco)?.action : null) ?? null;
     this.currentLoco = state;
