@@ -25,7 +25,9 @@ for (const url of refs) {
     totalBytes += fs.statSync(file).size;
     if (!Array.isArray(doc.images) || doc.images.length < 9) throw new Error('expected five material albedos plus normal, metallic-roughness, AO, and emissive images');
     if (!Array.isArray(doc.textures) || doc.textures.length < 9) throw new Error('expected nine PBR texture bindings');
+    const expectedImageNames = ['Armor Albedo','Forged Edge Albedo','Woven Hide Albedo','Aether Core Albedo','Dark Iron Albedo','Tangent-Space Normal','Metallic-Roughness','Ambient Occlusion','Aether Emissive'];
     for (const [ii,image] of doc.images.entries()) {
+      if (image.name !== expectedImageNames[ii]) throw new Error('image '+ii+' must be named '+expectedImageNames[ii]);
       if (typeof image.uri !== 'string' || !image.uri.startsWith('data:image/png;base64,')) throw new Error('image '+ii+' is not embedded PNG data');
       const png = Buffer.from(image.uri.slice(image.uri.indexOf(',')+1), 'base64');
       if (png.length < 64 || png.readUInt32BE(0) !== 0x89504e47 || png.toString('ascii',1,4) !== 'PNG') throw new Error('image '+ii+' has invalid PNG signature');
