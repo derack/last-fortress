@@ -947,12 +947,14 @@ export class BattleScene {
   dispose() {
     this.scene.traverse((o) => {
       if (o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.Line) {
-        o.geometry.dispose();
+        // GLB assets and contact-shadow resources are cached/shared across scene
+        // instances. Disposing them here can cause missing meshes or flashes on replay.
+        if (!o.geometry.userData.sharedAssetResource) o.geometry.dispose();
         const materials = Array.isArray(o.material) ? o.material : [o.material];
         for (const material of materials) {
-          // Dispose textures as well as materials when a battle scene is torn down.
+          if (material.userData.sharedAssetResource) continue;
           for (const value of Object.values(material)) {
-            if (value instanceof THREE.Texture) value.dispose();
+            if (value instanceof THREE.Texture && !value.userData.sharedAssetResource) value.dispose();
           }
           material.dispose();
         }
