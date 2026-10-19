@@ -162,7 +162,7 @@ const jointNames = [
 const jointIndex = Object.fromEntries(jointNames.map((n,i)=>[n,i]));
 const boneParents = [
   -1,0,1,2,3,4, 3,6,7,3,9,10, 1,12,13,1,15,16, 1,3,19,3,21,5,
-  1,1,1,1,1,1,1,1,18,28
+  1,1,1,1,1,1,1,1,18,32
 ];
 const boneLocal = [
   [0,0,0],[0,0.72,0],[0,0.34,0],[0,0.2,0],[0,0.23,0],[0,0.24,0],
@@ -995,25 +995,37 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
   const idleTracks = beast
     ? [rot('Spine','x',[0,0.025,0,-0.018,0]),rot('Head','y',[0,-0.055,0,0.055,0]),rot('Tail','y',[0,0.08,0,-0.08,0]),rot('Wing_L','z',[0,-0.06,0,-0.035,0]),rot('Wing_R','z',[0,0.06,0,0.035,0])]
     : crawler
-      ? [rot('Spine','x',[0,0.045,0,-0.025,0]),rot('Head','y',[0,-0.08,0,0.08,0]),rot('Leg_L','z',[0,0.04,0,-0.04,0]),rot('Leg_R','z',[0,-0.04,0,0.04,0])]
+      ? [rot('Spine','x',[0,0.045,0,-0.025,0]),rot('Head','y',[0,-0.08,0,0.08,0]),
+        ...['SpiderLegL0','SpiderLegL1','SpiderLegL2','SpiderLegL3'].map((j,i)=>rot(j,'z',[0,0.035+i*0.012,0,-0.035-i*0.012,0])),
+        ...['SpiderLegR0','SpiderLegR1','SpiderLegR2','SpiderLegR3'].map((j,i)=>rot(j,'z',[0,-0.035-i*0.012,0,0.035+i*0.012,0]))]
       : [rot('Spine','x',[0,0.018,0,-0.012,0]),rot('Head','y',[0,-0.035,0,0.035,0]),...(spectral?[rot('Spine','z',[0,-0.025,0,0.025,0])]:[])];
   addAnim('Idle',idleTracks);
   const walkTracks = beast
     ? [rot('Leg_L','x',[0,0.16,0,-0.16,0]),rot('Leg_R','x',[0,-0.16,0,0.16,0]),rot('Wing_L','z',[0,-0.28,0,0.28,0]),rot('Wing_R','z',[0,0.28,0,-0.28,0]),rot('Tail','x',[0,0.12,0,-0.12,0])]
     : crawler
-      ? [rot('Leg_L','z',[0,0.48,0,-0.48,0]),rot('Leg_R','z',[0,-0.48,0,0.48,0]),rot('Spine','x',[0,0.04,0,-0.04,0])]
+      ? [...['SpiderLegL0','SpiderLegL2'].map(j=>rot(j,'z',[0,0.48,0,-0.48,0])),
+          ...['SpiderLegL1','SpiderLegL3'].map(j=>rot(j,'z',[0,-0.42,0,0.42,0])),
+          ...['SpiderLegR0','SpiderLegR2'].map(j=>rot(j,'z',[0,-0.48,0,0.48,0])),
+          ...['SpiderLegR1','SpiderLegR3'].map(j=>rot(j,'z',[0,0.42,0,-0.42,0])),
+          rot('Spine','x',[0,0.04,0,-0.04,0])]
       : [rot('Leg_L','x',[0,0.42,0,-0.42,0]),rot('Leg_R','x',[0,-0.42,0,0.42,0]),rot('Knee_L','x',[0,0.18,0.04,0.32,0]),rot('Knee_R','x',[0,0.32,0.04,0.18,0]),rot('Foot_L','x',[0,-0.12,0,0.1,0]),rot('Foot_R','x',[0,0.1,0,-0.12,0]),rot('Arm_L','x',[0,-0.3,0,0.3,0]),rot('Arm_R','x',[0,0.3,0,-0.3,0]),rot('ForeArm_L','x',[0,-0.08,0.04,0.08,0]),rot('ForeArm_R','x',[0,0.08,0.04,-0.08,0]),rot('Chest','x',[0,0.025,0,-0.025,0]),tr('Hips',[[0,0.72,0],[0,0.76,0],[0,0.72,0],[0,0.76,0],[0,0.72,0]])];
   addAnim('Walk',walkTracks);
   const runTracks = beast
     ? [rot('Leg_L','x',[0,0.3,0,-0.3,0]),rot('Leg_R','x',[0,-0.3,0,0.3,0]),rot('Wing_L','z',[0,-0.62,0,0.62,0]),rot('Wing_R','z',[0,0.62,0,-0.62,0]),rot('Tail','x',[0,0.2,0,-0.2,0])]
     : crawler
-      ? [rot('Leg_L','z',[0,0.75,0,-0.75,0]),rot('Leg_R','z',[0,-0.75,0,0.75,0]),rot('Spine','x',[0,0.08,0,-0.08,0])]
+      ? [...['SpiderLegL0','SpiderLegL2'].map(j=>rot(j,'z',[0,0.75,0,-0.75,0])),
+          ...['SpiderLegL1','SpiderLegL3'].map(j=>rot(j,'z',[0,-0.65,0,0.65,0])),
+          ...['SpiderLegR0','SpiderLegR2'].map(j=>rot(j,'z',[0,-0.75,0,0.75,0])),
+          ...['SpiderLegR1','SpiderLegR3'].map(j=>rot(j,'z',[0,0.65,0,-0.65,0])),
+          rot('Spine','x',[0,0.08,0,-0.08,0])]
       : [rot('Leg_L','x',[0,0.72,0,-0.72,0]),rot('Leg_R','x',[0,-0.72,0,0.72,0]),rot('Knee_L','x',[0,0.42,0,0.18,0]),rot('Knee_R','x',[0,0.18,0,0.42,0]),rot('Foot_L','x',[0,-0.2,0,0.12,0]),rot('Foot_R','x',[0,0.12,0,-0.2,0]),rot('Arm_L','x',[0,-0.48,0,0.48,0]),rot('Arm_R','x',[0,0.48,0,-0.48,0]),rot('ForeArm_L','x',[0,-0.14,0.08,0.14,0]),rot('ForeArm_R','x',[0,0.14,0.08,-0.14,0]),rot('Spine','x',[0,0.08,0,0.08,0]),rot('Chest','x',[0,-0.06,0.02,-0.06,0])];
   addAnim('Run',runTracks);
   const attackTracks = beast
     ? [rot('Head','x',[-0.05,-0.35,0.24,0.08,-0.05]),rot('Jaw','x',[0,0.18,0.38,0.12,0]),rot('Tail','y',[0,0.22,-0.25,0.08,0]),rot('Wing_L','z',[0,-0.5,-0.9,-0.2,0]),rot('Wing_R','z',[0,0.5,0.9,0.2,0])]
     : crawler
-      ? [rot('Head','x',[0,-0.24,0.12,0,0]),rot('Leg_L','z',[0,0.3,-0.6,0.15,0]),rot('Leg_R','z',[0,-0.3,0.6,-0.15,0])]
+      ? [rot('Head','x',[0,-0.24,0.12,0,0]),
+          ...['SpiderLegL0','SpiderLegL2','SpiderLegR1','SpiderLegR3'].map(j=>rot(j,'z',[0,0.3,-0.6,0.15,0])),
+          ...['SpiderLegR0','SpiderLegR2','SpiderLegL1','SpiderLegL3'].map(j=>rot(j,'z',[0,-0.3,0.6,-0.15,0]))]
       : mage
         ? [rot('Arm_R','x',[0,-0.55,-0.25,0.55,0]),rot('Hand_R','x',[0,-0.22,0.38,0.12,0]),rot('Head','x',[0,-0.12,-0.2,0,0]),rot('Spine','y',[0,-0.08,0.16,0,0])]
         : [rot('Arm_R','x',[-0.15,-0.95,0.85,0.3,-0.15]),rot('Hand_R','x',[0,-0.28,0.5,0.16,0]),rot('Spine','y',[0,-0.1,0.12,0,0]),...(heavy?[rot('Arm_L','x',[0,-0.35,0.55,0,0]),rot('Hips','x',[0,-0.05,0.08,0,0])]:[])];
@@ -1022,13 +1034,17 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
   const attack2Tracks = beast
     ? [rot('Head','x',[0,-0.15,0.42,0.1,0]),rot('Jaw','x',[0,0.28,0.52,0.08,0]),rot('Tail','y',[0,-0.3,0.38,-0.1,0]),rot('Wing_L','z',[0,-0.75,-1.0,-0.15,0]),rot('Wing_R','z',[0,0.75,1.0,0.15,0])]
     : crawler
-      ? [rot('Head','x',[0,-0.4,0.24,0,0]),rot('Leg_L','z',[0,0.55,-0.8,0.2,0]),rot('Leg_R','z',[0,-0.55,0.8,-0.2,0])]
+      ? [rot('Head','x',[0,-0.4,0.24,0,0]),
+          ...['SpiderLegL0','SpiderLegL2','SpiderLegR1','SpiderLegR3'].map(j=>rot(j,'z',[0,0.55,-0.8,0.2,0])),
+          ...['SpiderLegR0','SpiderLegR2','SpiderLegL1','SpiderLegL3'].map(j=>rot(j,'z',[0,-0.55,0.8,-0.2,0]))]
       : [rot('Arm_L','x',[0,-0.7,0.95,0.2,0]),rot('Arm_R','x',[0,-0.4,0.65,0.1,0]),rot('Hand_R','x',[0,-0.2,0.42,0.1,0]),rot('Spine','y',[0,0.2,-0.24,0,0]),rot('Hips','x',[0,-0.08,0.1,0,0])];
   addAnim('Attack2',attack2Tracks);
   const specialTracks = beast
     ? [rot('Spine','x',[0,-0.18,-0.36,0.08,0]),rot('Head','x',[0,-0.2,-0.38,-0.05,0]),rot('Wing_L','z',[0,-0.75,-1.05,-0.25,0]),rot('Wing_R','z',[0,0.75,1.05,0.25,0]),rot('Tail','y',[0,0.38,-0.42,0.12,0])]
     : crawler
-      ? [rot('Spine','x',[0,-0.12,-0.25,0.05,0]),rot('Head','x',[0,-0.3,-0.5,-0.1,0]),rot('Leg_L','z',[0,0.65,-0.95,0.1,0]),rot('Leg_R','z',[0,-0.65,0.95,-0.1,0])]
+      ? [rot('Spine','x',[0,-0.12,-0.25,0.05,0]),rot('Head','x',[0,-0.3,-0.5,-0.1,0]),
+          ...['SpiderLegL0','SpiderLegL2','SpiderLegR1','SpiderLegR3'].map(j=>rot(j,'z',[0,0.65,-0.95,0.1,0])),
+          ...['SpiderLegR0','SpiderLegR2','SpiderLegL1','SpiderLegL3'].map(j=>rot(j,'z',[0,-0.65,0.95,-0.1,0]))]
       : id==='darkLord'
         ? [rot('Spine','y',[0,-0.22,0.36,-0.16,0]),rot('Arm_R','x',[0,-0.85,0.72,0.2,0]),rot('Hand_R','x',[0,-0.5,0.62,0.1,0]),rot('Wing_L','z',[0,-0.55,-0.95,-0.2,0]),rot('Wing_R','z',[0,0.42,0.8,0.15,0]),rot('Head','y',[0,-0.2,0.18,0,0])]
         : ['golemKing','fireGiant','iceGiant'].includes(id)
@@ -1043,7 +1059,9 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
   addAnim('Death', beast
     ? [rot('Spine','x',[0,0.12,0.48,0.7,0.7]),rot('Head','x',[0,0.1,0.28,0.32,0.32]),rot('Wing_L','z',[0,-0.18,-0.55,-0.7,-0.7]),rot('Wing_R','z',[0,0.18,0.55,0.7,0.7]),rot('Tail','x',[0,0.18,0.35,0.4,0.4])]
     : crawler
-      ? [rot('Spine','z',[0,0.25,0.9,1.35,1.35]),rot('Head','x',[0,-0.12,-0.22,-0.22,-0.22]),rot('Leg_L','z',[0,0.25,0.6,0.8,0.8]),rot('Leg_R','z',[0,-0.25,-0.6,-0.8,-0.8])]
+      ? [rot('Spine','z',[0,0.25,0.9,1.35,1.35]),rot('Head','x',[0,-0.12,-0.22,-0.22,-0.22]),
+          ...['SpiderLegL0','SpiderLegL1','SpiderLegL2','SpiderLegL3'].map(j=>rot(j,'z',[0,0.25,0.6,0.8,0.8])),
+          ...['SpiderLegR0','SpiderLegR1','SpiderLegR2','SpiderLegR3'].map(j=>rot(j,'z',[0,-0.25,-0.6,-0.8,-0.8]))]
       : [rot('Hips','z',[0,0.35,1.0,1.48,1.48]),rot('Spine','x',[0,-0.15,-0.32,-0.38,-0.38]),rot('Head','x',[0,0.08,0.18,0.22,0.22])]);
   addAnim('Roar', beast
     ? [rot('Head','x',[0,-0.3,-0.55,-0.25,0]),rot('Spine','x',[0,-0.12,-0.2,-0.08,0]),rot('Wing_L','z',[0,-0.4,-0.75,-0.35,0]),rot('Wing_R','z',[0,0.4,0.75,0.35,0])]
