@@ -166,7 +166,7 @@ for (const url of refs) {
     failures.push(url+': '+e.message);
   }
 }
-console.log('Rigged glTF PBR audit: '+refs.length+' manifest assets; '+totalPrimitives+' merged draw primitives; '+Math.round(totalTriangles).toLocaleString()+' triangles; '+(totalBytes/1024).toFixed(1)+' KiB JSON+embedded geometry+five PNG maps per asset.');
+console.log('Rigged glTF PBR audit: '+refs.length+' manifest assets; '+totalPrimitives+' merged draw primitives; '+Math.round(totalTriangles).toLocaleString()+' triangles; '+(totalBytes/1024).toFixed(1)+' KiB JSON+embedded geometry+nine PBR PNG maps per asset (five material albedos, normal, MR, AO, emissive).');
 if (failures.length) {
   for (const failure of failures) console.error('FAIL:', failure);
   process.exitCode = 1;
