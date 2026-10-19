@@ -16,6 +16,10 @@ type AssetInfo = {
   vertexCount: number;
   triangleCount: number;
   materialCount: number;
+  skinnedMeshCount: number;
+  skeletonJointCount: number;
+  uvMeshCount: number;
+  pbrTextureCount: number;
 };
 
 export default function AssetPreviewPage() {
@@ -203,20 +207,33 @@ export default function AssetPreviewPage() {
         towerPartsRef.current = entry.category === 'towers'
           ? { turret: getNode('turret'), crystal: getNode('spinCrystal'), ring: getNode('spinRing') }
           : null;
-        let meshCount = 0, vertexCount = 0, triangleCount = 0;
+        let meshCount = 0, vertexCount = 0, triangleCount = 0, skinnedMeshCount = 0, skeletonJointCount = 0, uvMeshCount = 0;
         const materials = new Set<THREE.Material>();
+        const pbrTextures = new Set<THREE.Texture>();
         normalized.inner.traverse((object) => {
           const mesh = object as THREE.Mesh;
           if (!mesh.isMesh || !mesh.geometry) return;
           meshCount++;
           vertexCount += mesh.geometry.getAttribute('position')?.count ?? 0;
           triangleCount += (mesh.geometry.index?.count ?? mesh.geometry.getAttribute('position')?.count ?? 0) / 3;
-          for (const material of (Array.isArray(mesh.material) ? mesh.material : [mesh.material])) materials.add(material);
+          if (mesh.geometry.getAttribute('uv')) uvMeshCount++;
+          if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) {
+            skinnedMeshCount++;
+            skeletonJointCount = Math.max(skeletonJointCount, (mesh as THREE.SkinnedMesh).skeleton?.bones.length ?? 0);
+          }
+          for (const material of (Array.isArray(mesh.material) ? mesh.material : [mesh.material])) {
+            materials.add(material);
+            const m = material as THREE.MeshStandardMaterial;
+            for (const texture of [m.map, m.normalMap, m.roughnessMap, m.metalnessMap, m.aoMap, m.emissiveMap, m.bumpMap]) {
+              if (texture) pbrTextures.add(texture);
+            }
+          }
         });
         const record = assetManager.record(entry.id);
         setInfo({
           entry, animationNames: names, animationSource: record?.animationSource ?? 'none',
           meshCount, vertexCount, triangleCount: Math.round(triangleCount), materialCount: materials.size,
+          skinnedMeshCount, skeletonJointCount, uvMeshCount, pbrTextureCount: pbrTextures.size,
         });
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
@@ -286,6 +303,10 @@ export default function AssetPreviewPage() {
             <div><span style={{ color: '#7f91a6' }}>تعداد رأس: </span>{info?.vertexCount.toLocaleString() ?? '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>تعداد مثلث: </span>{info?.triangleCount.toLocaleString() ?? '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>متریال‌ها: </span>{info?.materialCount ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>تکسچرهای PBR بارگذاری‌شده: </span>{info?.pbrTextureCount ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>Mesh دارای UV: </span>{info?.uvMeshCount ?? '—'}{info ? ` / ${info.meshCount}` : ''}</div>
+            <div><span style={{ color: '#7f91a6' }}>Mesh اسکلتی: </span>{info?.skinnedMeshCount ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>تعداد مفصل اسکلت: </span>{info?.skeletonJointCount || (info?.entry.category === 'towers' ? '—' : 0)}</div>
             <div><span style={{ color: '#7f91a6' }}>کلیپ‌ها: </span>{info?.animationNames.length ?? '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>منبع انیمیشن: </span>{info ? sourceLabel : '—'}</div>
             <div style={{ color: '#718399', fontSize: 11, wordBreak: 'break-all' }}>{info?.entry.file ?? ''}</div>
