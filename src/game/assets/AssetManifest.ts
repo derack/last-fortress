@@ -1,11 +1,11 @@
 // ============================================================
 // Asset Manifest — منبع واحد حقیقت برای همه Assetهای سه‌بعدی
 // ------------------------------------------------------------
-// هر کاراکتر یک فایل GLB مستقل دارد. این فایل‌ها باید در
-// public/assets/3d/... قرار بگیرند. به محض قرار گرفتن فایل واقعی،
+// دارایی‌ها از GLBهای موجود یا glTFهای ریگ‌شدهٔ تولیدشده در زمان build بارگذاری می‌شوند.
+// دشمن‌ها و باس‌های فعال از scripts/generate-rigged-characters.mjs ساخته می‌شوند.
 // AssetManager آن را Load می‌کند — بدون هیچ تغییری در کد Gameplay.
 //
-// قالب: GLB (glTF 2.0 Binary) — جهت Forward استاندارد: +Z
+// قالب: glTF 2.0 (GLB یا glTF خودبسنده) — جهت Forward استاندارد: +Z
 // ارتفاع: targetHeight بر حسب World Unit (قبل از ضریب scale داده)
 // ============================================================
 
@@ -18,7 +18,7 @@ export interface CharacterAssetEntry {
   /** شناسه یکتا — با id داده‌های Gameplay (EnemyData.id / HeroData.id / TowerData.id) یکی است */
   id: string;
   category: AssetCategory;
-  /** مسیر فایل GLB داخل public */
+  /** مسیر فایل glTF/GLB داخل public */
   file: string;
   displayName: { fa: string; en: string };
   /** برچسب سطح برای گالری */
