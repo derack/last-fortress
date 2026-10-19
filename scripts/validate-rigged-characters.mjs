@@ -97,6 +97,7 @@ for (const url of refs) {
       }
     }
     const jointSet=new Set(skin.joints);
+    const animationMotion = new Map();
     for (const [ai,anim] of (doc.animations ?? []).entries()) {
       if (!anim.channels?.length || !anim.samplers?.length) throw new Error('animation '+anim.name+' has no channels');
       for (const channel of anim.channels) {
@@ -117,8 +118,19 @@ for (const url of refs) {
           if(!Number.isFinite(t)||t<previous) throw new Error('animation '+anim.name+' keyframe times are not finite/ordered');
           previous=t;
         }
+        const ov=doc.bufferViews[output.bufferView], oo=(ov.byteOffset??0)+(output.byteOffset??0);
+        const width=output.type==='VEC4'?4:output.type==='VEC3'?3:output.type==='SCALAR'?1:output.type==='VEC2'?2:0;
+        if(!width) throw new Error('animation '+anim.name+' has unsupported output accessor type');
+        let changed=false;
+        for(let k=1;k<output.count&&!changed;k++) for(let c=0;c<width;c++) {
+          const a=binary.readFloatLE(oo+c*4), b=binary.readFloatLE(oo+(k*width+c)*4);
+          if(!Number.isFinite(a)||!Number.isFinite(b)) throw new Error('animation '+anim.name+' contains non-finite keyframe values');
+          if(Math.abs(a-b)>1e-5) changed=true;
+        }
+        if(changed) animationMotion.set(anim.name,true);
       }
     }
+    for(const clip of requiredClips) if(!animationMotion.get(clip)) throw new Error('animation '+clip+' has no measurable skeletal motion');
   } catch (e) {
     failures.push(url+': '+e.message);
   }
