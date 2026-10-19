@@ -343,8 +343,9 @@ export class Enemy implements DamageableEnemy {
     this.ctx.audio.play('bossPhase'); // بخش ۱۵ — شیپور فاز دوم
     this.ctx.cameraShake(1.0);
     this.ctx.haptic(90); // فاز ۶ — لرزش فاز دوم Boss
-    this.handle.animation?.playOneShot('phasechange', { fade: 0.2 });
-    if (!this.handle.animation?.isBusy()) {
+    // Play the authored transformation, then the roar; the old isBusy check
+    // always skipped roar because phasechange itself immediately marked the controller busy.
+    if (!this.handle.animation?.playSequence(['phasechange', 'roar'], { fade: 0.2 })) {
       this.handle.animation?.playOneShot('roar', { fade: 0.2 });
     }
 
