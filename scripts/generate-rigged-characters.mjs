@@ -552,7 +552,21 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
       cone([side*0.52,0.94,-0.12],[0.08,0.34,0.06],side<0?'Wing_L':'Wing_R',glow,[0,0,side*0.3]);
     }
     for(let i=0;i<7;i++) cone([0,1.12-i*0.12,-0.24-i*0.13],[0.075,0.24,0.075],'Tail',edge,[0.22,0,0]);
-  }
+    for(let i=0;i<5;i++) sphere([0,0.91-i*0.12,-0.35-i*0.12],[0.14-i*0.012,0.09,0.11],'Tail',dark);
+  } else if (id==='darkLord') {
+    // The Dark Lord is a duelist, not another horned brute: split ceremonial
+    // mantle, elongated void blade, crown prongs and a bright chest sigil.
+    for(const side of [-1,1]) {
+      box([side*0.24,0.82,-0.24],[0.25,0.78,0.12],side<0?'Wing_L':'Wing_R',cloth,[0,0,side*0.12]);
+      cone([side*0.35,1.54,-0.12],[0.07,0.28,0.07],'Head',glow,[0,0,side*0.32]);
+      box([side*0.22,1.18,0.255],[0.06,0.25,0.045],'Spine',glow,[0,0,side*0.1]);
+    }
+    // Long asymmetrical sword with a crossguard and pommel, all bound to hand.
+    cyl([0.66,1.02,0.04],[0.045,0.72,0.045],'Hand_R',dark,[0,0,-0.14]);
+    box([0.68,1.4,0.04],[0.13,0.64,0.055],'Hand_R',edge,[0,0,-0.14]);
+    box([0.68,1.13,0.05],[0.3,0.055,0.075],'Hand_R',glow,[0,0,-0.14]);
+    cone([0.68,1.74,0.04],[0.09,0.2,0.07],'Hand_R',glow,[0,0,-0.14]);
+    sphere([0,1.04,0.32],[0.12,0.16,0.06],'Chest',glow);
 
   const materials = [
     {name:'Obsidian Armor',pbrMetallicRoughness:{baseColorFactor:clampColor(baseColor),metallicFactor:0.62,roughnessFactor:0.38}},
@@ -796,7 +810,11 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     ? [rot('Spine','x',[0,-0.18,-0.36,0.08,0]),rot('Head','x',[0,-0.2,-0.38,-0.05,0]),rot('Wing_L','z',[0,-0.75,-1.05,-0.25,0]),rot('Wing_R','z',[0,0.75,1.05,0.25,0]),rot('Tail','y',[0,0.38,-0.42,0.12,0])]
     : crawler
       ? [rot('Spine','x',[0,-0.12,-0.25,0.05,0]),rot('Head','x',[0,-0.3,-0.5,-0.1,0]),rot('Leg_L','z',[0,0.65,-0.95,0.1,0]),rot('Leg_R','z',[0,-0.65,0.95,-0.1,0])]
-      : [rot('Spine','x',[0,-0.18,-0.36,0.08,0]),rot('Head','x',[0,-0.2,-0.38,-0.05,0]),rot('Arm_L','z',[0,-0.45,-0.75,-0.2,0]),rot('Arm_R','z',[0,0.45,0.75,0.2,0]),...(winged?[rot('Wing_L','z',[0,-0.45,-0.85,-0.25,0]),rot('Wing_R','z',[0,0.45,0.85,0.25,0])]:[])];
+      : id==='darkLord'
+        ? [rot('Spine','y',[0,-0.22,0.36,-0.16,0]),rot('Arm_R','x',[0,-0.85,0.72,0.2,0]),rot('Hand_R','x',[0,-0.5,0.62,0.1,0]),rot('Wing_L','z',[0,-0.55,-0.95,-0.2,0]),rot('Wing_R','z',[0,0.42,0.8,0.15,0]),rot('Head','y',[0,-0.2,0.18,0,0])]
+        : ['golemKing','fireGiant','iceGiant'].includes(id)
+          ? [rot('Spine','x',[0,-0.12,-0.34,0.1,0]),rot('Arm_L','x',[0,-0.55,-0.9,-0.18,0]),rot('Arm_R','x',[0,-0.65,-1.0,-0.22,0]),rot('Head','x',[0,-0.18,-0.42,-0.1,0]),rot('Hips','x',[0,-0.06,0.12,0,0])]
+          : [rot('Spine','x',[0,-0.18,-0.36,0.08,0]),rot('Head','x',[0,-0.2,-0.38,-0.05,0]),rot('Arm_L','z',[0,-0.45,-0.75,-0.2,0]),rot('Arm_R','z',[0,0.45,0.75,0.2,0]),...(winged?[rot('Wing_L','z',[0,-0.45,-0.85,-0.25,0]),rot('Wing_R','z',[0,0.45,0.85,0.25,0])]:[])];
   addAnim('SpecialAttack',specialTracks);
   addAnim('Hit', beast
     ? [rot('Head','x',[0,0.25,-0.08,0,0]),rot('Spine','x',[0,0.18,0,0,0]),rot('Tail','y',[0,-0.12,0,0,0])]
