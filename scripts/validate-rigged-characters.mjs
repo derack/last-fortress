@@ -5,7 +5,7 @@ import crypto from 'node:crypto';
 
 const root = process.cwd();
 const manifest = fs.readFileSync(path.join(root, 'src/game/assets/AssetManifest.ts'), 'utf8');
-const refs = [...manifest.matchAll(/file:\s*'([^']+\\.glb')/g)].map(m => m[1]);
+const refs = [...manifest.matchAll(/file:\s*'([^']+\.glb)'/g)].map(m => m[1]);
 const failures = [];
 let totalTriangles = 0, totalBytes = 0, totalPrimitives = 0;
 const requiredClips = ['Idle','Walk','Run','Attack','Attack1','Attack2','SpecialAttack','Skill','Hit','Death','Roar','PhaseChange','Victory'];
