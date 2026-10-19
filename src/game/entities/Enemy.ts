@@ -417,7 +417,7 @@ export class Enemy implements DamageableEnemy {
       // انیمیشن مرگ — GLB (افتادن +) فرورفتن کند | Placeholder: فرورفتن سریع
       this.deathY -= dt * (this.handle.animation ? 1.6 : 3);
       this.mesh.position.y = this.deathY;
-      this.handle.animation?.update(dt);
+      this.handle.updateAnimation(dt);
       if (this.deathY < -2.5) this.remove();
       return;
     }
@@ -466,7 +466,7 @@ export class Enemy implements DamageableEnemy {
         }
         // انیمیشن راه رفتن متوقف — فقط ایست +(mesh) موقعیت ثابت
         this.updateMeshPos();
-        this.handle.animation?.update(dt);
+        this.handle.updateAnimation(dt);
         return;
       }
     } else {
