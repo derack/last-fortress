@@ -1125,7 +1125,7 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     extensionsUsed:['KHR_materials_emissive_strength'],
     scene:0,scenes:[{name:id+' scene',nodes:roots}],
     nodes,meshes:meshDefs,materials,
-    images:imageUris.map((uri,i)=>({name:['Albedo','Normal','MetallicRoughness','AmbientOcclusion','Emissive'][i],uri,mimeType:'image/png'})),
+    images:imageUris.map((uri,i)=>({name:['Armor Albedo','Forged Edge Albedo','Woven Hide Albedo','Aether Core Albedo','Dark Iron Albedo','Tangent-Space Normal','Metallic-Roughness','Ambient Occlusion','Aether Emissive'][i] ?? ('PBR Map '+i),uri,mimeType:'image/png'})),
     textures,samplers:[{magFilter:9729,minFilter:9987,wrapS:10497,wrapT:10497}],
     skins:[{name:id+' rigid-weighted skeleton',inverseBindMatrices:ibm,skeleton:0,joints:jointNames.map((_,i)=>i)}],
     animations,buffers:[{byteLength:bin.length,uri:'data:application/octet-stream;base64,'+bin.toString('base64')}],
