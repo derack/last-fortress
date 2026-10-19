@@ -1064,7 +1064,7 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
           ...['SpiderLegR0','SpiderLegR1','SpiderLegR2','SpiderLegR3'].map(j=>rot(j,'z',[0,-0.25,-0.6,-0.8,-0.8]))]
       : [rot('Hips','z',[0,0.35,1.0,1.48,1.48]),rot('Spine','x',[0,-0.15,-0.32,-0.38,-0.38]),rot('Head','x',[0,0.08,0.18,0.22,0.22])]);
   addAnim('Roar', beast
-    ? [rot('Head','x',[0,-0.3,-0.55,-0.25,0]),rot('Spine','x',[0,-0.12,-0.2,-0.08,0]),rot('Wing_L','z',[0,-0.4,-0.75,-0.35,0]),rot('Wing_R','z',[0,0.4,0.75,0.35,0])]
+    ? [rot('Head','x',[0,-0.3,-0.55,-0.25,0]),rot('Spine','x',[0,-0.12,-0.2,-0.08,0]),rot('Wing_L','z',[0,-0.4,-0.75,-0.35,0]),rot('Wing_R','z',[0,0.4,0.75,0.35,0]),rot('TailMid','y',[0,0.12,-0.14,0.04,0]),rot('TailTip','y',[0,0.2,-0.22,0.06,0])]
     : [rot('Head','x',[0,-0.3,-0.55,-0.25,0]),rot('Spine','x',[0,-0.12,-0.2,-0.08,0]),...(winged?[rot('Wing_L','z',[0,-0.4,-0.75,-0.35,0]),rot('Wing_R','z',[0,0.4,0.75,0.35,0])]:[])]);
   addAnim('PhaseChange',[rot('Spine','x',[0,-0.12,-0.28,-0.12,0]),rot('Arm_L','z',[0,-0.55,-0.9,-0.35,0]),rot('Arm_R','z',[0,0.55,0.9,0.35,0]),rot('Head','y',[0,-0.25,0.25,-0.1,0])]);
   // Hero-specific actions are embedded too; controllers can request Skill/Victory
