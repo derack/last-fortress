@@ -458,7 +458,24 @@ export class CharacterHandle {
           }
           return false;
         });
-      this.lodBase = model.children.filter((c) => !isAncestorOfLod(c));
+      // Only toggle renderable base meshes, never the skeleton root. Hiding a
+      // bone hierarchy can prevent Three.js from updating bone world matrices
+      // while a distant LOD is visible on some renderer paths.
+      const hasRenderable = (root: THREE.Object3D) => {
+        let found = false;
+        root.traverse((node) => {
+          if ((node as THREE.Mesh).isMesh) found = true;
+        });
+        return found;
+      };
+      this.lodBase = model.children.filter((c) => !isAncestorOfLod(c) && hasRenderable(c));
+
+      // glTF defaults every node to visible. Hide both alternate variants on
+      // first mount; otherwise all three skinned meshes render over each other
+      // until the first distance threshold is crossed (z-fighting + extra draw calls).
+      for (const { node } of this.lodNodes) node.visible = false;
+      for (const node of this.lodBase) node.visible = true;
+      this.lodLevel = 0;
     } else {
       this.lodBase = [];
     }
