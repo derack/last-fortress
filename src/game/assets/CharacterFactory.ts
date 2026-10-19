@@ -303,6 +303,8 @@ export class CharacterHandle {
   private lodNodes: { node: THREE.Object3D; level: 1 | 2 }[] = [];
   /** گره‌های مدل پایه (خارج از سلسله‌مراتب LOD) */
   private lodBase: THREE.Object3D[] = [];
+  /** آخرین LOD فعال برای hysteresis و جلوگیری از پرش تصویر نزدیک آستانه‌ها. */
+  private lodLevel: 0 | 1 | 2 = 0;
   /** فاصله‌محور کردن هزینهٔ AnimationMixer برای دستگاه‌های موبایل */
   private animationStep = 1;
   private animationFrame = 0;
@@ -349,15 +351,32 @@ export class CharacterHandle {
    */
   updateLod(camPos: THREE.Vector3) {
     const d = camPos.distanceTo(this.root.position);
+    // LOD thresholds include hysteresis: crossing the same boundary in opposite
+    // directions uses a small dead band, preventing rapid toggling while the
+    // camera follows a unit near 22/38 world units.
+    let nextLevel = this.lodLevel;
+    if (this.lodLevel === 0) {
+      if (d >= 40) nextLevel = 2;
+      else if (d >= 24) nextLevel = 1;
+    } else if (this.lodLevel === 1) {
+      if (d < 20) nextLevel = 0;
+      else if (d >= 40) nextLevel = 2;
+    } else {
+      if (d < 20) nextLevel = 0;
+      else if (d < 35) nextLevel = 1;
+    }
+
     // Close actors update every frame, mid-range every 2nd, distant every 3rd.
     // Accumulated delta is passed to the mixer so animation time never gets lost.
     this.animationStep = d >= 38 ? 3 : d >= 22 ? 2 : 1;
     if (this.lodNodes.length === 0) return;
-    const base = d < 22;
-    const mid = d >= 22 && d < 38;
+    if (nextLevel === this.lodLevel) return;
+    this.lodLevel = nextLevel;
+    const base = nextLevel === 0;
+    const mid = nextLevel === 1;
     for (const n of this.lodBase) n.visible = base;
     for (const { node, level } of this.lodNodes) {
-      node.visible = level === 1 ? mid : d >= 38;
+      node.visible = level === 1 ? mid : nextLevel === 2;
     }
   }
 
@@ -428,6 +447,7 @@ export class CharacterHandle {
     for (const [k, o] of Object.entries(norm.vfx)) this.vfxPoints.set(k, o);
     // گره‌های LOD مدل واقعی — تفکیک مدل پایه از نسخه‌های LOD
     this.lodNodes = norm.lodNodes;
+    this.lodLevel = 0;
     if (this.lodNodes.length > 0) {
       const isAncestorOfLod = (n: THREE.Object3D) =>
         this.lodNodes.some(({ node }) => {
