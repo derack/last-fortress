@@ -37,6 +37,10 @@ export class CharacterAnimationController {
   private currentLoco: LocomotionState | null = null;
   private oneshotActive: THREE.AnimationAction | null = null;
   private oneshotName = '';
+  /** Queued cinematic one-shots (e.g. boss phase shift → roar). */
+  private sequenceQueue: string[] = [];
+  private sequenceOptions: OneShotOptions | null = null;
+  private sequencePlayback = false;
   private dead = false;
   private baseTimeScale = 1;
   private finishedBound: ((e: { action: THREE.AnimationAction }) => void) | null = null;
@@ -70,6 +74,17 @@ export class CharacterAnimationController {
         if (action === this.oneshotActive) {
           if (!this.dead) {
             this.oneshotActive = null;
+            const queued = this.sequenceQueue.shift();
+            if (queued) {
+              const opts = this.sequenceOptions ?? {};
+              this.sequencePlayback = true;
+              const started = this.playOneShot(queued, opts);
+              this.sequencePlayback = false;
+              // Missing optional clips are skipped rather than stalling the sequence.
+              if (!started) this.playNextSequenceClip();
+              return;
+            }
+            this.sequenceOptions = null;
             // بازگشت نرم به حالت حرکتی فعلی
             if (this.currentLoco) {
               const loco = this.resolveLoco(this.currentLoco);
@@ -177,9 +192,46 @@ export class CharacterAnimationController {
     }
   }
 
+  /** Play a short cinematic sequence without allowing one clip to swallow the next. */
+  playSequence(names: string[], opts: OneShotOptions = {}): boolean {
+    if (!this.hasAnimations || this.dead || names.length === 0) return false;
+    const available = names.filter((name) => this.resolve(name) !== null);
+    if (available.length === 0) return false;
+    this.sequenceQueue = available.slice(1);
+    this.sequenceOptions = { ...opts };
+    this.sequencePlayback = true;
+    const started = this.playOneShot(available[0], opts);
+    this.sequencePlayback = false;
+    if (!started) {
+      this.sequenceQueue = [];
+      this.sequenceOptions = null;
+    }
+    return started;
+  }
+
+  /** Skip unavailable clips while preserving sequence order. */
+  private playNextSequenceClip() {
+    while (this.sequenceQueue.length > 0) {
+      const next = this.sequenceQueue.shift()!;
+      this.sequencePlayback = true;
+      const started = this.playOneShot(next, this.sequenceOptions ?? {});
+      this.sequencePlayback = false;
+      if (started) return;
+    }
+    this.sequenceOptions = null;
+    if (!this.dead && this.currentLoco) {
+      const loco = this.resolveLoco(this.currentLoco);
+      if (loco) loco.action.reset().fadeIn(LOCOMOTION_FADE).play();
+    }
+  }
+
   /** تک‌پخش (Attack/Skill/Hit/Roar/...) — بعد از پایان خودکار به حرکتی برمی‌گردد */
   playOneShot(name: string, opts: OneShotOptions = {}): boolean {
     if (!this.hasAnimations || this.dead) return false;
+    if (!this.sequencePlayback) {
+      this.sequenceQueue = [];
+      this.sequenceOptions = null;
+    }
     const { fade = 0.12, returnToLocomotion = true, timeScale = 1 } = opts;
     const action = this.resolve(name);
     if (!action) return false;
@@ -210,6 +262,8 @@ export class CharacterAnimationController {
     if (!action) return false;
     this.dead = true;
     this.oneshotActive = null;
+    this.sequenceQueue = [];
+    this.sequenceOptions = null;
     this.mixer.stopAllAction();
     action.reset();
     action.setLoop(THREE.LoopOnce, 1);
@@ -234,6 +288,8 @@ export class CharacterAnimationController {
     if (!this.hasAnimations) return;
     this.dead = false;
     this.oneshotActive = null;
+    this.sequenceQueue = [];
+    this.sequenceOptions = null;
     this.currentLoco = null;
     this.mixer.stopAllAction();
     this.playLocomotion('idle');
@@ -243,6 +299,8 @@ export class CharacterAnimationController {
     this.mixer.stopAllAction();
     this.currentLoco = null;
     this.oneshotActive = null;
+    this.sequenceQueue = [];
+    this.sequenceOptions = null;
   }
 
   /**
