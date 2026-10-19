@@ -43,9 +43,9 @@ for (const url of refs) {
     }
     for (const [mi,mesh] of (doc.meshes ?? []).entries()) for (const [pi,p] of (mesh.primitives ?? []).entries()) {
       const attrs = p.attributes ?? {};
-      for (const key of ['POSITION','NORMAL','JOINTS_0','WEIGHTS_0']) if (!Number.isInteger(attrs[key])) throw new Error('mesh '+mi+' primitive '+pi+' lacks '+key);
+      for (const key of ['POSITION','NORMAL','TEXCOORD_0','JOINTS_0','WEIGHTS_0']) if (!Number.isInteger(attrs[key])) throw new Error('mesh '+mi+' primitive '+pi+' lacks '+key);
       const vertexCount = doc.accessors[attrs.POSITION].count;
-      for (const key of ['NORMAL','JOINTS_0','WEIGHTS_0']) if (doc.accessors[attrs[key]].count !== vertexCount) throw new Error(key+' count differs from POSITION');
+      for (const key of ['NORMAL','TEXCOORD_0','JOINTS_0','WEIGHTS_0']) if (doc.accessors[attrs[key]].count !== vertexCount) throw new Error(key+' count differs from POSITION');
       const jAccessor=doc.accessors[attrs.JOINTS_0], jView=doc.bufferViews[jAccessor.bufferView];
       const jOffset=(jView.byteOffset??0)+(jAccessor.byteOffset??0);
       const jData=new DataView(binary.buffer,binary.byteOffset,binary.byteLength);
