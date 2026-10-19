@@ -54,6 +54,10 @@ export interface PreloadReport {
 type SurfaceProfile = 'stone' | 'metal' | 'foliage';
 type SurfaceMaps = { color: THREE.CanvasTexture; bump: THREE.CanvasTexture; normal: THREE.CanvasTexture; roughness: THREE.CanvasTexture };
 const sharedSurfaceMaps = new Map<SurfaceProfile, SurfaceMaps>();
+// Android/iOS profile: smaller procedural maps and no extra bump-map sampler.
+// Normal maps remain enabled for material depth at a lower GPU/memory cost.
+const MOBILE_ASSET_BUDGET = typeof navigator !== 'undefined'
+  && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 /**
  * Tileable runtime-authored PBR surfaces. The same deterministic, multi-scale
@@ -64,7 +68,7 @@ function getSharedSurfaceMaps(profile: SurfaceProfile = 'stone'): SurfaceMaps | 
   const cached = sharedSurfaceMaps.get(profile);
   if (cached) return cached;
   if (typeof document === 'undefined') return null;
-  const size = 192;
+  const size = MOBILE_ASSET_BUDGET ? 128 : 192;
   const periodic = (x: number, y: number, fx: number, fy: number, phase = 0) =>
     Math.sin((x / size) * Math.PI * 2 * fx + phase) *
     Math.cos((y / size) * Math.PI * 2 * fy - phase * 0.7);
@@ -125,7 +129,7 @@ function getSharedSurfaceMaps(profile: SurfaceProfile = 'stone'): SurfaceMaps | 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = colorSpace;
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.anisotropy = 4;
+    texture.anisotropy = MOBILE_ASSET_BUDGET ? 2 : 4;
     texture.userData.sharedAssetResource = true;
     return texture;
   };
@@ -249,7 +253,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh || !mesh.geometry || !mesh.material) return;
       mesh.castShadow = category === 'bosses';
-      mesh.receiveShadow = true;
+      mesh.receiveShadow = category === 'bosses';
       ensureProceduralUV(mesh.geometry);
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       for (const material of materials) {
@@ -270,7 +274,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
               standard.normalScale.set(category === 'bosses' ? 0.22 : 0.14, category === 'bosses' ? 0.22 : 0.14);
             }
             if (!standard.roughnessMap) standard.roughnessMap = maps.roughness;
-            if (!standard.bumpMap) {
+            if (!standard.bumpMap && !MOBILE_ASSET_BUDGET) {
               standard.bumpMap = maps.bump;
               standard.bumpScale = category === 'bosses' ? 0.022 : 0.012;
             }
@@ -312,10 +316,10 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
   scene.traverse((o) => {
     const mesh = o as THREE.Mesh;
     if (!mesh.isMesh || !mesh.geometry || !mesh.material) return;
-    // Heavy actors and towers cast the scene's dynamic shadows; common wave enemies
-    // receive shadows but avoid multiplying shadow-map cost during dense waves.
+    // Keep shadow casting on bosses/towers only. Regular enemies use their
+    // contact shadow and avoid per-fragment shadow-map sampling in dense waves.
     mesh.castShadow = category === 'bosses' || category === 'towers';
-    mesh.receiveShadow = true;
+    mesh.receiveShadow = category !== 'enemies';
     ensureProceduralUV(mesh.geometry);
     if (maps) {
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
