@@ -58,7 +58,18 @@ for (const url of refs) {
     }, 0);
     const baseNodes = doc.nodes.filter(node => Number.isInteger(node.mesh) && !/_LOD[12]$/i.test(node.name ?? ''));
     const baseTriangles = baseNodes.reduce((sum,node) => sum + triangleCountForNode(node), 0);
-    const lodGroup = (level) => doc.nodes.find(node => new RegExp('_LOD'+level+'
+    const lodGroup = (level) => doc.nodes.find(node => (node.name ?? '').toLowerCase().endsWith('_lod'+level));
+    const lod1 = lodGroup(1), lod2 = lodGroup(2);
+    if (!lod1 || !lod2 || !lod1.children?.length || !lod2.children?.length) throw new Error('expected populated LOD1 and LOD2 groups');
+    const lodTriangles = (group) => group.children.reduce((sum,index) => sum + triangleCountForNode(doc.nodes[index]), 0);
+    const lod1Triangles = lodTriangles(lod1), lod2Triangles = lodTriangles(lod2);
+    if (!(baseTriangles > lod1Triangles && lod1Triangles > lod2Triangles && lod2Triangles > 0)) {
+      throw new Error('LOD triangle budgets must decrease monotonically (base '+baseTriangles+', LOD1 '+lod1Triangles+', LOD2 '+lod2Triangles+')');
+    }
+    if (lod1Triangles > baseTriangles * 0.92) throw new Error('LOD1 must reduce at least 8% of source triangles');
+    if (lod2Triangles > baseTriangles * 0.75) throw new Error('LOD2 must reduce at least 25% of source triangles');
+
+
     for (const [ai,a] of doc.accessors.entries()) {
       const bv = doc.bufferViews?.[a.bufferView];
       if (!bv) throw new Error('accessor '+ai+' has invalid bufferView');
