@@ -11,6 +11,10 @@ type AssetInfo = {
   entry: CharacterAssetEntry;
   animationNames: string[];
   animationSource: 'glb' | 'runtime-procedural' | 'none';
+  meshCount: number;
+  vertexCount: number;
+  triangleCount: number;
+  materialCount: number;
 };
 
 export default function AssetPreviewPage() {
@@ -20,6 +24,7 @@ export default function AssetPreviewPage() {
   const [animationOptions, setAnimationOptions] = useState<string[]>([]);
   const [info, setInfo] = useState<AssetInfo | null>(null);
   const [error, setError] = useState('');
+  const [renderStats, setRenderStats] = useState({ fps: 0, drawCalls: 0, triangles: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -89,6 +94,8 @@ export default function AssetPreviewPage() {
 
     let frame = 0;
     let last = performance.now();
+    let statsStart = last;
+    let statsFrames = 0;
     const resize = () => {
       const width = Math.max(1, host.clientWidth);
       const height = Math.max(1, host.clientHeight);
@@ -112,6 +119,16 @@ export default function AssetPreviewPage() {
         if (tower.ring) tower.ring.rotation.y += dt * 0.8;
       }
       renderer.render(scene, camera);
+      statsFrames++;
+      if (now - statsStart >= 500) {
+        setRenderStats({
+          fps: Math.round(statsFrames * 1000 / (now - statsStart)),
+          drawCalls: renderer.info.render.calls,
+          triangles: renderer.info.render.triangles,
+        });
+        statsFrames = 0;
+        statsStart = now;
+      }
     };
     frame = requestAnimationFrame(animate);
     return () => {
@@ -178,8 +195,21 @@ export default function AssetPreviewPage() {
         towerPartsRef.current = entry.category === 'towers'
           ? { turret: getNode('turret'), crystal: getNode('spinCrystal'), ring: getNode('spinRing') }
           : null;
+        let meshCount = 0, vertexCount = 0, triangleCount = 0;
+        const materials = new Set<THREE.Material>();
+        normalized.inner.traverse((object) => {
+          const mesh = object as THREE.Mesh;
+          if (!mesh.isMesh || !mesh.geometry) return;
+          meshCount++;
+          vertexCount += mesh.geometry.getAttribute('position')?.count ?? 0;
+          triangleCount += (mesh.geometry.index?.count ?? mesh.geometry.getAttribute('position')?.count ?? 0) / 3;
+          for (const material of (Array.isArray(mesh.material) ? mesh.material : [mesh.material])) materials.add(material);
+        });
         const record = assetManager.record(entry.id);
-        setInfo({ entry, animationNames: names, animationSource: record?.animationSource ?? 'none' });
+        setInfo({
+          entry, animationNames: names, animationSource: record?.animationSource ?? 'none',
+          meshCount, vertexCount, triangleCount: Math.round(triangleCount), materialCount: materials.size,
+        });
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       }
@@ -219,6 +249,11 @@ export default function AssetPreviewPage() {
           {error && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(5,8,14,.9)', color: '#ffaaa5', padding: 24, textAlign: 'center' }}>بارگذاری ناموفق: {error}</div>}
           {!info && !error && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#9aa9bb', pointerEvents: 'none' }}>در حال بارگذاری مدل…</div>}
           <div style={{ position: 'absolute', left: 14, bottom: 12, color: '#718399', fontSize: 11, pointerEvents: 'none' }}>Drag: orbit · Wheel: zoom · Right-drag: pan</div>
+          <div style={{ position: 'absolute', right: 12, top: 12, display: 'flex', gap: 10, flexWrap: 'wrap', background: 'rgba(5,10,17,.82)', border: '1px solid #263548', borderRadius: 8, padding: '7px 9px', color: '#b9c8d8', fontSize: 11, pointerEvents: 'none' }}>
+            <span>FPS <b style={{ color: renderStats.fps >= 50 ? '#8ee6b0' : renderStats.fps >= 30 ? '#f0ce7a' : '#ff9b9b' }}>{renderStats.fps || '—'}</b></span>
+            <span>Draw calls <b>{renderStats.drawCalls}</b></span>
+            <span>Triangles <b>{renderStats.triangles.toLocaleString()}</b></span>
+          </div>
         </div>
 
         <aside style={{ border: '1px solid #263548', borderRadius: 14, padding: 16, background: '#0e1621', alignSelf: 'start' }}>
@@ -239,6 +274,10 @@ export default function AssetPreviewPage() {
           <div style={{ borderTop: '1px solid #263548', paddingTop: 12, display: 'grid', gap: 9, fontSize: 13 }}>
             <div><span style={{ color: '#7f91a6' }}>دسته: </span>{info ? categoryLabel[info.entry.category] : '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>ارتفاع هدف: </span>{info ? info.entry.targetHeight.toFixed(2) : '—'} wu</div>
+            <div><span style={{ color: '#7f91a6' }}>تعداد Mesh: </span>{info?.meshCount.toLocaleString() ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>تعداد رأس: </span>{info?.vertexCount.toLocaleString() ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>تعداد مثلث: </span>{info?.triangleCount.toLocaleString() ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>متریال‌ها: </span>{info?.materialCount ?? '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>کلیپ‌ها: </span>{info?.animationNames.length ?? '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>منبع انیمیشن: </span>{info ? sourceLabel : '—'}</div>
             <div style={{ color: '#718399', fontSize: 11, wordBreak: 'break-all' }}>{info?.entry.file ?? ''}</div>
