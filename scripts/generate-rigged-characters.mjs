@@ -49,7 +49,9 @@ function makePbrImages(baseColor,accent,style,category='enemies') {
   // texture tier to reduce decoded/GPU texture memory by roughly 4x.
   const mobileProfile = process.env.CAP_BUILD === '1' || process.env.ASSET_TEXTURE_PROFILE === 'mobile';
   const isLargeAsset = category === 'heroes' || category === 'bosses';
-  const size = mobileProfile ? (isLargeAsset ? 256 : 128) : (isLargeAsset ? 384 : 192);
+  // Balanced texture tiers: preserve readable PBR detail while keeping the 25-model roster practical to ship.
+  // Large hero/boss atlases use 256px on web and 192px on mobile; standard units use 128px/96px.
+  const size = mobileProfile ? (isLargeAsset ? 192 : 96) : (isLargeAsset ? 256 : 128);
   const emissiveSize = mobileProfile ? 64 : 128;
   const albedos=Array.from({length:5},()=>new Uint8Array(size*size*4));
   const normal=new Uint8Array(size*size*4), mr=new Uint8Array(size*size*4);
