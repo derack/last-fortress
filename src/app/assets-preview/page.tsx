@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { allAssetEntries, type CharacterAssetEntry } from '@/game/assets/AssetManifest';
 import { assetManager } from '@/game/assets/AssetManager';
@@ -53,6 +54,12 @@ export default function AssetPreviewPage() {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envScene = new RoomEnvironment();
+    scene.environment = pmrem.fromScene(envScene, 0.06).texture;
+    scene.environmentIntensity = 0.5;
+    envScene.dispose();
+    pmrem.dispose();
 
     scene.add(new THREE.HemisphereLight(0xc9ddf6, 0x25202b, 1.25));
     const key = new THREE.DirectionalLight(0xffdfb4, 2.15);
@@ -137,6 +144,7 @@ export default function AssetPreviewPage() {
       controls.dispose();
       mixerRef.current?.stopAllAction();
       mixerRef.current = null;
+      scene.environment?.dispose();
       renderer.dispose();
       scene.clear();
       sceneRef.current = null;
