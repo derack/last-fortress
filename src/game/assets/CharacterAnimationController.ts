@@ -40,9 +40,23 @@ export class CharacterAnimationController {
   private dead = false;
   private baseTimeScale = 1;
   private finishedBound: ((e: { action: THREE.AnimationAction }) => void) | null = null;
+  /** Stable per-instance variation prevents crowds from marching in lockstep. */
+  private readonly phaseOffset: number;
+  private readonly speedVariation: number;
 
   constructor(root: THREE.Object3D, clips: THREE.AnimationClip[]) {
     this.mixer = new THREE.AnimationMixer(root);
+    // Derive repeatable variation from the cloned root UUID: no frame-time RNG,
+    // no shared mutable state, and no synchronization between identical enemies.
+    let seed = 2166136261;
+    for (let i = 0; i < root.uuid.length; i++) {
+      seed ^= root.uuid.charCodeAt(i);
+      seed = Math.imul(seed, 16777619) >>> 0;
+    }
+    const unit = seed / 0xffffffff;
+    const unit2 = ((Math.imul(seed ^ 0x9e3779b9, 2246822519) >>> 0) / 0xffffffff);
+    this.phaseOffset = unit;
+    this.speedVariation = 0.94 + unit2 * 0.12;
 
     for (const clip of clips) {
       const action = this.mixer.clipAction(clip);
@@ -137,7 +151,7 @@ export class CharacterAnimationController {
       // هماهنگی سرعت انیمیشن با سرعت واقعی حرکت
       const cur = this.resolveLoco(state);
       if (cur) {
-        cur.action.timeScale = cur.timeScale * Math.min(1.4, Math.max(0.75, speedRatio));
+        cur.action.timeScale = cur.timeScale * this.speedVariation * Math.min(1.4, Math.max(0.75, speedRatio));
       }
       return;
     }
@@ -150,7 +164,10 @@ export class CharacterAnimationController {
 
     next.action.reset();
     next.action.setLoop(THREE.LoopRepeat, Infinity);
-    next.action.timeScale = next.timeScale;
+    // Start at a different point in the loop for each instance; after reset the
+    // time must be assigned before play/crossfade to avoid a visible snap.
+    next.action.time = next.action.getClip().duration * this.phaseOffset;
+    next.action.timeScale = next.timeScale * this.speedVariation;
     next.action.enabled = true;
     if (prevAction && prevAction !== next.action && prevAction.isRunning()) {
       next.action.play();
@@ -171,7 +188,7 @@ export class CharacterAnimationController {
     if (returnToLocomotion) this.oneshotActive = action;
     action.reset();
     action.setLoop(THREE.LoopOnce, 1);
-    action.timeScale = timeScale;
+    action.timeScale = timeScale * this.speedVariation;
     action.enabled = true;
     action.setEffectiveWeight(1);
     action.clampWhenFinished = !returnToLocomotion;
