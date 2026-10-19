@@ -662,7 +662,7 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
       cone([i*0.13,1.85,0.02],[0.065,0.3+(i===0?0.12:0),0.065],'Head',edge,[0,0,-i*0.16]);
     }
     for(const side of [-1,1]) {
-      cone([side*0.56,1.18,-0.26],[0.13,0.66,0.08],side<0?'Wing_L':'Wing_R',[0,0,side*0.24].includes(999)?edge:armor,[0,0,side*0.28]);
+      cone([side*0.56,1.18,-0.26],[0.13,0.66,0.08],side<0?'Wing_L':'Wing_R',armor,[0,0,side*0.28]);
       cone([side*0.62,1.48,-0.22],[0.09,0.36,0.07],side<0?'Wing_L':'Wing_R',glow,[0,0,side*0.34]);
     }
     sphere([0,1.08,0.31],[0.2,0.24,0.07],'Chest',glow);
