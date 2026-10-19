@@ -89,6 +89,9 @@ export class BattleScene {
   private lastRenderAt = 0;
   private perfAccum = 0;
   private perfFrames = 0;
+  private debugOverlay: HTMLDivElement | null = null;
+  private debugFrames = 0;
+  private debugWindowStart = 0;
   private theme: EnvTheme;
   private level: LevelData;
 
@@ -116,6 +119,15 @@ export class BattleScene {
     const night = level.timeOfDay === 'night';
     this.theme = ENV_THEMES[level.env] ?? ENV_THEMES.plains;
     this.level = level;
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('graphicsDebug') === '1') {
+      const overlay = document.createElement('div');
+      overlay.setAttribute('aria-label', 'Graphics performance diagnostics');
+      overlay.style.cssText = 'position:fixed;top:8px;right:8px;z-index:99999;white-space:pre-line;pointer-events:none;padding:9px 11px;border:1px solid rgba(148,184,220,.35);border-radius:8px;background:rgba(5,10,18,.88);color:#d8e7f8;font:11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;backdrop-filter:blur(8px);';
+      overlay.textContent = 'LAST FORTRESS · GRAPHICS QA\nCollecting frame data…';
+      document.body.appendChild(overlay);
+      this.debugOverlay = overlay;
+      this.debugWindowStart = performance.now();
+    }
 
     // نورپردازی محیطی PBR — متریال‌های واقعی GLB (فلز/سنگ/پارچه) درست دیده شوند
     if (quality !== 'low') {
@@ -124,6 +136,7 @@ export class BattleScene {
       this.scene.environment = pmrem.fromScene(envScene, 0.06).texture;
       // Keep metal and stone readable without flattening the scene with excessive fill.
       this.scene.environmentIntensity = night ? 0.24 : 0.48;
+      envScene.dispose();
       pmrem.dispose();
     }
 
@@ -367,6 +380,36 @@ export class BattleScene {
     bump.repeat.copy(map.repeat);
     bump.colorSpace = THREE.NoColorSpace;
 
+    // Convert the broad height field into a seamless tangent-space normal map.
+    // This gives rocks/soil readable grazing-light detail without adding particles.
+    const normalCanvas = document.createElement('canvas');
+    normalCanvas.width = normalCanvas.height = 256;
+    const nctx = normalCanvas.getContext('2d');
+    if (nctx && bctx) {
+      const source = bctx.getImageData(0, 0, 256, 256).data;
+      const image = nctx.createImageData(256, 256);
+      const heightAt = (x: number, y: number) => source[((y + 256) % 256 * 256 + (x + 256) % 256) * 4] / 255;
+      for (let y = 0; y < 256; y++) {
+        for (let x = 0; x < 256; x++) {
+          const dx = (heightAt(x + 1, y) - heightAt(x - 1, y)) * 1.8;
+          const dy = (heightAt(x, y + 1) - heightAt(x, y - 1)) * 1.8;
+          const nx = -dx, ny = -dy, nz = 1;
+          const len = Math.hypot(nx, ny, nz);
+          const i = (y * 256 + x) * 4;
+          image.data[i] = Math.round((nx / len * 0.5 + 0.5) * 255);
+          image.data[i + 1] = Math.round((ny / len * 0.5 + 0.5) * 255);
+          image.data[i + 2] = Math.round((nz / len * 0.5 + 0.5) * 255);
+          image.data[i + 3] = 255;
+        }
+      }
+      nctx.putImageData(image, 0, 0);
+    }
+    const normal = new THREE.CanvasTexture(normalCanvas);
+    normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
+    normal.repeat.copy(map.repeat);
+    normal.colorSpace = THREE.NoColorSpace;
+    normal.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+
     // A modestly subdivided mesh gives the terrain a real silhouette; the road
     // corridor is flattened against all active paths to prevent floating roads.
     const segments = this.quality === 'low' ? 48 : 80;
@@ -400,7 +443,9 @@ export class BattleScene {
     const groundMaterial = new THREE.MeshStandardMaterial({
       map,
       bumpMap: bump,
-      bumpScale: env === 'tundra' ? 0.045 : 0.075,
+      bumpScale: env === 'tundra' ? 0.035 : 0.05,
+      normalMap: normal,
+      normalScale: new THREE.Vector2(0.22, 0.22),
       roughness: 0.96,
       metalness: env === 'citadel' || env === 'volcano' ? 0.08 : 0.015,
     });
@@ -713,6 +758,122 @@ export class BattleScene {
     landmarks.receiveShadow = true;
     this.scene.add(landmarks);
 
+    // Biome-specific silhouette kit: a pair of instanced meshes adds recognizable
+    // landmarks without turning the scene into a high-draw-call prop collection.
+    // Each family has a distinct profile/material response, not only a color swap.
+    const biome = this.level.env;
+    const biomeKit = (() => {
+      if (biome === 'tundra') return {
+        primary: new THREE.OctahedronGeometry(0.78, 0),
+        secondary: new THREE.ConeGeometry(0.3, 1.05, 5, 1),
+        primaryColor: 0x6f9cae, secondaryColor: 0xb5e6f4,
+        primaryScale: [0.9, 2.7, 0.9] as [number, number, number],
+        secondaryScale: [0.7, 1.8, 0.7] as [number, number, number],
+        count: 5,
+      };
+      if (biome === 'volcano') return {
+        primary: new THREE.CylinderGeometry(0.48, 0.86, 2.7, 6, 1),
+        secondary: new THREE.IcosahedronGeometry(0.62, 0),
+        primaryColor: 0x342522, secondaryColor: 0x6b3328,
+        primaryScale: [1.0, 1.0, 1.0] as [number, number, number],
+        secondaryScale: [1.2, 0.55, 0.9] as [number, number, number],
+        count: 5,
+      };
+      if (biome === 'citadel') return {
+        primary: new THREE.BoxGeometry(0.82, 2.85, 0.82),
+        secondary: new THREE.TorusGeometry(0.62, 0.12, 6, 14, Math.PI * 1.25),
+        primaryColor: 0x45404f, secondaryColor: 0x74618a,
+        primaryScale: [1.0, 1.0, 1.0] as [number, number, number],
+        secondaryScale: [1.1, 1.1, 1.1] as [number, number, number],
+        count: 4,
+      };
+      if (biome === 'forest') return {
+        primary: new THREE.DodecahedronGeometry(0.92, 0),
+        secondary: new THREE.CylinderGeometry(0.24, 0.42, 1.65, 6, 1),
+        primaryColor: 0x3c4a35, secondaryColor: 0x554337,
+        primaryScale: [1.4, 1.7, 1.0] as [number, number, number],
+        secondaryScale: [1.0, 1.0, 1.0] as [number, number, number],
+        count: 5,
+      };
+      if (biome === 'wastes') return {
+        primary: new THREE.CylinderGeometry(0.28, 0.92, 2.5, 5, 1),
+        secondary: new THREE.BoxGeometry(1.35, 0.22, 0.52),
+        primaryColor: 0x78634a, secondaryColor: 0x514537,
+        primaryScale: [1.2, 1.0, 1.0] as [number, number, number],
+        secondaryScale: [1.0, 1.0, 1.0] as [number, number, number],
+        count: 5,
+      };
+      return {
+        primary: new THREE.DodecahedronGeometry(0.9, 1),
+        secondary: new THREE.ConeGeometry(0.28, 1.1, 5, 1),
+        primaryColor: 0x59664a, secondaryColor: 0x73785a,
+        primaryScale: [1.35, 1.0, 1.0] as [number, number, number],
+        secondaryScale: [0.8, 1.2, 0.8] as [number, number, number],
+        count: 4,
+      };
+    })();
+    const biomeKitCount = this.quality === 'low' ? Math.max(2, biomeKit.count - 2)
+      : this.quality === 'medium' ? biomeKit.count : biomeKit.count + 2;
+    const biomePrimary = new THREE.InstancedMesh(
+      biomeKit.primary,
+      new THREE.MeshStandardMaterial({
+        color: biomeKit.primaryColor,
+        roughness: biome === 'tundra' ? 0.38 : 0.9,
+        metalness: biome === 'citadel' ? 0.24 : 0.025,
+        flatShading: biome !== 'forest',
+      }),
+      biomeKitCount,
+    );
+    const biomeSecondary = new THREE.InstancedMesh(
+      biomeKit.secondary,
+      new THREE.MeshStandardMaterial({
+        color: biomeKit.secondaryColor,
+        roughness: biome === 'tundra' ? 0.32 : 0.88,
+        metalness: biome === 'citadel' ? 0.3 : 0.025,
+      }),
+      biomeKitCount,
+    );
+    let kitPlaced = 0;
+    let kitAttempts = 0;
+    while (kitPlaced < biomeKitCount && kitAttempts < biomeKitCount * 16) {
+      kitAttempts++;
+      const x = (r() - 0.5) * 58;
+      const z = (r() - 0.5) * 58;
+      if (nearPath(x, z, 8.0) || Math.hypot(x - this.corePos.x, z - this.corePos.z) < 12) continue;
+      if (Math.hypot(x, z) < 11) continue;
+      const scale = 0.72 + r() * 0.72;
+      dummy.position.set(x, biomeKit.primaryScale[1] * scale * 0.5, z);
+      dummy.rotation.set((r() - 0.5) * 0.12, r() * Math.PI * 2, (r() - 0.5) * 0.12);
+      dummy.scale.set(
+        biomeKit.primaryScale[0] * scale,
+        biomeKit.primaryScale[1] * scale,
+        biomeKit.primaryScale[2] * scale,
+      );
+      dummy.updateMatrix();
+      biomePrimary.setMatrixAt(kitPlaced, dummy.matrix);
+
+      const accentScale = 0.75 + r() * 0.6;
+      dummy.position.set(x + (r() - 0.5) * 0.55, biomeKit.secondaryScale[1] * accentScale * 0.5, z + (r() - 0.5) * 0.55);
+      dummy.rotation.set((r() - 0.5) * 0.2, r() * Math.PI * 2, (r() - 0.5) * 0.2);
+      dummy.scale.set(
+        biomeKit.secondaryScale[0] * accentScale,
+        biomeKit.secondaryScale[1] * accentScale,
+        biomeKit.secondaryScale[2] * accentScale,
+      );
+      dummy.updateMatrix();
+      biomeSecondary.setMatrixAt(kitPlaced, dummy.matrix);
+      kitPlaced++;
+    }
+    biomePrimary.count = kitPlaced;
+    biomeSecondary.count = kitPlaced;
+    biomePrimary.castShadow = false;
+    biomePrimary.receiveShadow = true;
+    biomeSecondary.castShadow = false;
+    biomeSecondary.receiveShadow = false;
+    biomePrimary.frustumCulled = true;
+    biomeSecondary.frustumCulled = true;
+    this.scene.add(biomePrimary, biomeSecondary);
+
     // Warm ember lighting / cool ice bounce makes each biome read differently.
     if (this.level.env === 'tundra' || this.level.env === 'volcano' || this.level.env === 'citadel') {
       const fillColor = this.level.env === 'tundra' ? 0x72cfff : this.level.env === 'volcano' ? 0xff4b24 : 0x9c63ff;
@@ -892,6 +1053,20 @@ export class BattleScene {
     const frameMs = now - this.lastRenderAt;
     this.lastRenderAt = now;
     this.renderer.render(this.scene, camera);
+    if (this.debugOverlay) {
+      this.debugFrames++;
+      const elapsed = now - this.debugWindowStart;
+      if (elapsed >= 1000) {
+        const fps = Math.round(this.debugFrames * 1000 / elapsed);
+        const info = this.renderer.info.render;
+        this.debugOverlay.textContent = `LAST FORTRESS · GRAPHICS QA
+FPS: ${fps}   Frame: ${frameMs.toFixed(1)} ms
+Draw calls: ${info.calls}   Triangles: ${info.triangles.toLocaleString()}
+Quality: ${this.quality}   Pixel ratio: ${this.currentRatio.toFixed(2)}`;
+        this.debugFrames = 0;
+        this.debugWindowStart = now;
+      }
+    }
     // نمونه‌گیری هر ~۱ ثانیه — بالا/پایین کردن تدریجی رزولوشن
     if (frameMs > 0 && frameMs < 1000) {
       this.perfAccum += frameMs;
@@ -914,18 +1089,22 @@ export class BattleScene {
   dispose() {
     this.scene.traverse((o) => {
       if (o instanceof THREE.Mesh || o instanceof THREE.Points || o instanceof THREE.Line) {
-        o.geometry.dispose();
+        // GLB assets and contact-shadow resources are cached/shared across scene
+        // instances. Disposing them here can cause missing meshes or flashes on replay.
+        if (!o.geometry.userData.sharedAssetResource) o.geometry.dispose();
         const materials = Array.isArray(o.material) ? o.material : [o.material];
         for (const material of materials) {
-          // Dispose textures as well as materials when a battle scene is torn down.
+          if (material.userData.sharedAssetResource) continue;
           for (const value of Object.values(material)) {
-            if (value instanceof THREE.Texture) value.dispose();
+            if (value instanceof THREE.Texture && !value.userData.sharedAssetResource) value.dispose();
           }
           material.dispose();
         }
       }
     });
     this.scene.environment?.dispose();
+    this.debugOverlay?.remove();
+    this.debugOverlay = null;
     this.renderer.dispose();
   }
 }

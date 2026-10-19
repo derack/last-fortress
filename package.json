@@ -3,15 +3,16 @@
   "version": "0.2.1",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000 2>&1 | tee dev.log",
-    "build": "next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
-    "build:cap": "CAP_BUILD=1 next build",
+    "dev": "node scripts/generate-rigged-characters.mjs && next dev -p 3000",
+    "build": "node scripts/generate-rigged-characters.mjs && node scripts/validate-rigged-characters.mjs && node scripts/validate-glb-assets.mjs && next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
+    "build:cap": "node scripts/generate-rigged-characters.mjs && node scripts/validate-rigged-characters.mjs && node scripts/validate-glb-assets.mjs && CAP_BUILD=1 next build",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset"
+    "db:reset": "prisma migrate reset",
+    "assets:rigged": "node scripts/generate-rigged-characters.mjs && node scripts/validate-rigged-characters.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",

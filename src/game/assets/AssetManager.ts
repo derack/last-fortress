@@ -51,12 +51,43 @@ export interface PreloadReport {
  * a draw call for every enemy in a wave. Keep weapons separate for procedural
  * prop-swing, and keep tower pivots/VFX meshes separate for gameplay animation.
  */
-let sharedSurfaceMaps: { color: THREE.CanvasTexture; bump: THREE.CanvasTexture } | null = null;
+type SurfaceProfile = 'stone' | 'metal' | 'foliage';
+type SurfaceMaps = { color: THREE.CanvasTexture; bump: THREE.CanvasTexture; normal: THREE.CanvasTexture; roughness: THREE.CanvasTexture };
+const sharedSurfaceMaps = new Map<SurfaceProfile, SurfaceMaps>();
+// Android/iOS profile: smaller procedural maps and no extra bump-map sampler.
+// Normal maps remain enabled for material depth at a lower GPU/memory cost.
+const MOBILE_ASSET_BUDGET = typeof navigator !== 'undefined'
+  && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-function getSharedSurfaceMaps() {
-  if (sharedSurfaceMaps || typeof document === 'undefined') return sharedSurfaceMaps;
-  const size = 128;
-  const makeCanvas = (bump: boolean) => {
+/**
+ * Tileable runtime-authored PBR surfaces. The same deterministic, multi-scale
+ * fields drive albedo, height, normals and roughness so the maps agree physically.
+ * Values stay low-contrast: no neon speckles or noisy "procedural dirt" overlay.
+ */
+function getSharedSurfaceMaps(profile: SurfaceProfile = 'stone'): SurfaceMaps | null {
+  const cached = sharedSurfaceMaps.get(profile);
+  if (cached) return cached;
+  if (typeof document === 'undefined') return null;
+  const size = MOBILE_ASSET_BUDGET ? 128 : 192;
+  const periodic = (x: number, y: number, fx: number, fy: number, phase = 0) =>
+    Math.sin((x / size) * Math.PI * 2 * fx + phase) *
+    Math.cos((y / size) * Math.PI * 2 * fy - phase * 0.7);
+  const field = (x: number, y: number) => {
+    const broad = periodic(x, y, 3, 4, 0.7) * 0.52
+      + periodic(x, y, 5, 3, 1.8) * 0.28
+      + periodic(x, y, 8, 7, 2.4) * 0.14
+      + periodic(x, y, 13, 11, 0.4) * 0.06;
+    if (profile === 'metal') {
+      const brushed = Math.sin((y / size) * Math.PI * 2 * 72 + Math.sin((x / size) * Math.PI * 2 * 5) * 0.16);
+      return broad * 0.12 + brushed * 0.055 + periodic(x, y, 2, 19, 0.6) * 0.025;
+    }
+    if (profile === 'foliage') {
+      const vein = Math.pow(Math.max(0, Math.cos((x / size) * Math.PI * 2 * 7 + Math.sin((y / size) * Math.PI * 2 * 3) * 1.15)), 10);
+      return broad * 0.62 + vein * 0.16 + periodic(x, y, 11, 5, 1.2) * 0.1;
+    }
+    return broad;
+  };
+  const makeCanvas = (kind: 'color' | 'bump' | 'normal' | 'roughness') => {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = size;
     const ctx = canvas.getContext('2d');
@@ -64,32 +95,52 @@ function getSharedSurfaceMaps() {
     const image = ctx.createImageData(size, size);
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
-        // Smooth periodic fields tile seamlessly; no high-frequency colored speckles.
-        const wave = Math.sin((x / size) * Math.PI * 8 + Math.sin((y / size) * Math.PI * 4) * 0.7)
-          + Math.cos((y / size) * Math.PI * 6 + Math.sin((x / size) * Math.PI * 2) * 0.45)
-          + 0.45 * Math.sin(((x + y) / size) * Math.PI * 12);
-        const value = bump ? 128 + wave * 13 : 237 + wave * 3.2;
+        const f = field(x, y);
+        const dx = (field((x + 1) % size, y) - field((x + size - 1) % size, y)) * 0.5;
+        const dy = (field(x, (y + 1) % size) - field(x, (y + size - 1) % size)) * 0.5;
         const i = (y * size + x) * 4;
-        image.data[i] = image.data[i + 1] = image.data[i + 2] = Math.max(0, Math.min(255, value));
+        if (kind === 'normal') {
+          const strength = profile === 'metal' ? 0.75 : profile === 'foliage' ? 1.45 : 1.2;
+          const nx = -dx * strength, ny = -dy * strength, nz = 1;
+          const len = Math.hypot(nx, ny, nz);
+          image.data[i] = Math.round((nx / len * 0.5 + 0.5) * 255);
+          image.data[i + 1] = Math.round((ny / len * 0.5 + 0.5) * 255);
+          image.data[i + 2] = Math.round((nz / len * 0.5 + 0.5) * 255);
+        } else {
+          const value = kind === 'bump'
+            ? 128 + f * (profile === 'metal' ? 28 : profile === 'foliage' ? 30 : 38)
+            : kind === 'roughness'
+              ? (profile === 'metal' ? 105 : profile === 'foliage' ? 190 : 218) + f * 18
+              : 226 + f * (profile === 'metal' ? 16 : profile === 'foliage' ? 22 : 24);
+          image.data[i] = image.data[i + 1] = image.data[i + 2] = Math.max(0, Math.min(255, Math.round(value)));
+        }
         image.data[i + 3] = 255;
       }
     }
     ctx.putImageData(image, 0, 0);
     return canvas;
   };
-  const colorCanvas = makeCanvas(false);
-  const bumpCanvas = makeCanvas(true);
-  if (!colorCanvas || !bumpCanvas) return null;
-  const color = new THREE.CanvasTexture(colorCanvas);
-  color.colorSpace = THREE.SRGBColorSpace;
-  color.wrapS = color.wrapT = THREE.RepeatWrapping;
-  color.anisotropy = 4;
-  const bump = new THREE.CanvasTexture(bumpCanvas);
-  bump.colorSpace = THREE.NoColorSpace;
-  bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
-  bump.anisotropy = 4;
-  sharedSurfaceMaps = { color, bump };
-  return sharedSurfaceMaps;
+  const colorCanvas = makeCanvas('color');
+  const bumpCanvas = makeCanvas('bump');
+  const normalCanvas = makeCanvas('normal');
+  const roughnessCanvas = makeCanvas('roughness');
+  if (!colorCanvas || !bumpCanvas || !normalCanvas || !roughnessCanvas) return null;
+  const makeTexture = (canvas: HTMLCanvasElement, colorSpace: THREE.ColorSpace) => {
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = colorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = MOBILE_ASSET_BUDGET ? 2 : 4;
+    texture.userData.sharedAssetResource = true;
+    return texture;
+  };
+  const maps = {
+    color: makeTexture(colorCanvas, THREE.SRGBColorSpace),
+    bump: makeTexture(bumpCanvas, THREE.NoColorSpace),
+    normal: makeTexture(normalCanvas, THREE.NoColorSpace),
+    roughness: makeTexture(roughnessCanvas, THREE.NoColorSpace),
+  };
+  sharedSurfaceMaps.set(profile, maps);
+  return maps;
 }
 
 function ensureProceduralUV(geometry: THREE.BufferGeometry) {
@@ -173,14 +224,80 @@ function createStaticCharacterClips(scene: THREE.Group, category: CharacterAsset
   ];
 }
 
+function markSharedAssetResources(scene: THREE.Object3D) {
+  scene.traverse((object) => {
+    const mesh = object as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.geometry.userData.sharedAssetResource = true;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      material.userData.sharedAssetResource = true;
+      for (const value of Object.values(material)) {
+        if (value instanceof THREE.Texture) value.userData.sharedAssetResource = true;
+      }
+    }
+  });
+}
+
 function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['category']) {
-  if (category === 'heroes') return; // preserve existing authored hero hierarchy/rigs
+  if (category === 'heroes') {
+    markSharedAssetResources(scene);
+    return; // preserve existing authored hero hierarchy/rigs
+  }
   let hasSkin = false;
   scene.traverse((o) => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) hasSkin = true; });
-  if (hasSkin) return;
+  if (hasSkin) {
+    // Rigged models must retain their hierarchy and weights, but still receive
+    // the same seamless PBR maps and UV preparation as static assets.
+    scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.geometry || !mesh.material) return;
+      mesh.castShadow = category === 'bosses';
+      mesh.receiveShadow = category === 'bosses';
+      ensureProceduralUV(mesh.geometry);
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const material of materials) {
+        const standard = material as THREE.MeshStandardMaterial;
+        if (!standard.isMeshStandardMaterial) continue;
+        const emissiveStrength = standard.emissive.r + standard.emissive.g + standard.emissive.b;
+        if (emissiveStrength <= 0.08) {
+          const hue = { h: 0, s: 0, l: 0 };
+          standard.color.getHSL(hue);
+          const profile: SurfaceProfile = standard.metalness > 0.4
+            ? 'metal'
+            : hue.h > 0.19 && hue.h < 0.46 && hue.s > 0.18 ? 'foliage' : 'stone';
+          const maps = getSharedSurfaceMaps(profile);
+          if (maps) {
+            if (!standard.map) standard.map = maps.color;
+            if (!standard.normalMap) {
+              standard.normalMap = maps.normal;
+              standard.normalScale.set(category === 'bosses' ? 0.22 : 0.14, category === 'bosses' ? 0.22 : 0.14);
+            }
+            if (!standard.roughnessMap) standard.roughnessMap = maps.roughness;
+            if (!standard.bumpMap && !MOBILE_ASSET_BUDGET) {
+              standard.bumpMap = maps.bump;
+              standard.bumpScale = category === 'bosses' ? 0.022 : 0.012;
+            }
+          }
+        }
+        if (emissiveStrength > 0.08) {
+          standard.roughness = Math.min(standard.roughness, 0.3);
+          standard.metalness = Math.min(standard.metalness, 0.12);
+        } else if (standard.metalness > 0.4) {
+          standard.metalness = Math.max(standard.metalness, 0.68);
+          standard.roughness = Math.min(standard.roughness, 0.42);
+        } else {
+          standard.metalness = Math.min(standard.metalness, 0.08);
+          standard.roughness = Math.max(standard.roughness, 0.82);
+        }
+        standard.needsUpdate = true;
+      }
+    });
+    markSharedAssetResources(scene);
+    return;
+  }
 
   scene.updateMatrixWorld(true);
-  const maps = getSharedSurfaceMaps();
   const tower = category === 'towers';
   const characterRoot = scene.getObjectByName('ModelRoot') ?? scene;
   const keepTowerNodes = new Set(['spincrystal', 'spinring', 'ember']);
@@ -199,20 +316,50 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
   scene.traverse((o) => {
     const mesh = o as THREE.Mesh;
     if (!mesh.isMesh || !mesh.geometry || !mesh.material) return;
-    // Heavy actors and towers cast the scene's dynamic shadows; common wave enemies
-    // receive shadows but avoid multiplying shadow-map cost during dense waves.
+    // Keep shadow casting on bosses/towers only. Regular enemies use their
+    // contact shadow and avoid per-fragment shadow-map sampling in dense waves.
     mesh.castShadow = category === 'bosses' || category === 'towers';
-    mesh.receiveShadow = true;
+    mesh.receiveShadow = category !== 'enemies';
     ensureProceduralUV(mesh.geometry);
     if (maps) {
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       for (const material of materials) {
         const standard = material as THREE.MeshStandardMaterial;
         if (!standard.isMeshStandardMaterial) continue;
-        if (!standard.map) standard.map = maps.color;
-        if (!standard.bumpMap) {
-          standard.bumpMap = maps.bump;
-          standard.bumpScale = category === 'bosses' ? 0.04 : 0.025;
+        // Emissive cores stay clean; stone and forged metal receive distinct
+        // seamless surface families instead of one generic texture for everything.
+        const emissiveStrength = standard.emissive.r + standard.emissive.g + standard.emissive.b;
+        if (emissiveStrength <= 0.08) {
+          const hue = { h: 0, s: 0, l: 0 };
+            standard.color.getHSL(hue);
+            const profile: SurfaceProfile = standard.metalness > 0.4
+              ? 'metal'
+              : hue.h > 0.19 && hue.h < 0.46 && hue.s > 0.18 ? 'foliage' : 'stone';
+            const maps = getSharedSurfaceMaps(profile);
+          if (maps) {
+            if (!standard.map) standard.map = maps.color;
+            if (!standard.normalMap) {
+              standard.normalMap = maps.normal;
+              standard.normalScale.set(category === 'bosses' ? 0.22 : 0.14, category === 'bosses' ? 0.22 : 0.14);
+            }
+            if (!standard.roughnessMap) standard.roughnessMap = maps.roughness;
+            if (!standard.bumpMap && !MOBILE_ASSET_BUDGET) {
+              standard.bumpMap = maps.bump;
+              standard.bumpScale = category === 'bosses' ? 0.022 : 0.012;
+            }
+          }
+        }
+        // Give materials physically distinct response instead of making every surface
+        // equally dull: metals retain reflections, stone stays matte, emissive cores glow.
+        if (emissiveStrength > 0.08) {
+          standard.roughness = Math.min(standard.roughness, 0.3);
+          standard.metalness = Math.min(standard.metalness, 0.12);
+        } else if (standard.metalness > 0.4) {
+          standard.metalness = Math.max(standard.metalness, 0.68);
+          standard.roughness = Math.min(standard.roughness, 0.42);
+        } else {
+          standard.metalness = Math.min(standard.metalness, 0.08);
+          standard.roughness = Math.max(standard.roughness, 0.82);
         }
         standard.needsUpdate = true;
       }
@@ -252,6 +399,9 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
     for (const source of bucket.sources) source.removeFromParent();
   }
   scene.updateMatrixWorld(true);
+  // GLB resources are cached and cloned across battles; scene teardown must not
+  // dispose their shared GPU buffers, materials or texture maps.
+  markSharedAssetResources(scene);
 }
 
 class AssetManagerImpl {
@@ -308,6 +458,11 @@ class AssetManagerImpl {
       .loadAsync(entry.file)
       .then((gltf) => {
         const scene = gltf.scene;
+        // glTF has no core per-node visibility flag. Keep distance variants hidden
+        // until CharacterHandle.updateLod selects exactly one representation.
+        scene.traverse((node) => {
+          if (/_LOD[12]$/i.test(node.name)) node.visible = false;
+        });
         optimizeStaticAsset(scene, entry.category);
         const runtimeClips = (gltf.animations ?? []).length > 0 ? gltf.animations : createStaticCharacterClips(scene, entry.category);
         scene.visible = true;

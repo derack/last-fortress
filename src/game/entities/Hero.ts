@@ -31,6 +31,8 @@ export class Hero {
   readonly data: HeroData;
   private ctx: GC;
   private walkPhase = 0;
+  /** Alternating authored attack clips keep repeated auto-attacks from looking like a looped single swing. */
+  private attackCombo = 0;
   private muzzleFlash = 0;
   deployed = false;
   private frenzyActive = false;
@@ -277,7 +279,7 @@ export class Hero {
       // جسد — ادامه انیمیشن افتادن تا پنهان شدن
       if (this.deathHideTimer > 0) {
         this.deathHideTimer -= dt;
-        this.handle.animation?.update(dt);
+        this.handle.updateAnimation(dt);
         if (this.deathHideTimer <= 0) this.mesh.visible = false;
       }
       this.respawnTimer -= dt;
@@ -353,7 +355,7 @@ export class Hero {
     // انیمیشن حرکتی — اسکلتی (GLB انیمیشن‌دار) یا پروسیجرال بدنه‌صلب (GLB استاتیک)
     // Placeholderها animation=null دارند و با پاهای پروسیجرال قدیمی کار می‌کنند
     this.handle.animation?.playLocomotion(moving ? 'walk' : 'idle');
-    this.handle.animation?.update(dt);
+    this.handle.updateAnimation(dt);
 
     this.mesh.position.copy(this.position);
     this.muzzleFlash = Math.max(0, this.muzzleFlash - dt);
@@ -367,6 +369,20 @@ export class Hero {
     return Math.max(0, Math.ceil(this.respawnTimer));
   }
 
+  /** Alternate authored attack clips; fall back gracefully for legacy assets. */
+  private playAttackAnimation() {
+    const animation = this.handle.animation;
+    if (!animation) return;
+    const first = this.attackCombo % 2 === 0 ? 'attack1' : 'attack2';
+    const second = first === 'attack1' ? 'attack2' : 'attack1';
+    this.attackCombo++;
+    if (!animation.playOneShot(first, { fade: 0.08, returnToLocomotion: true })) {
+      if (!animation.playOneShot(second, { fade: 0.08, returnToLocomotion: true })) {
+        animation.playOneShot('attack', { fade: 0.08, returnToLocomotion: true });
+      }
+    }
+  }
+
   /** حمله بر اساس Role */
   private attack(target: DE, inRange: DE[]) {
     const color = this.data.projectileColor;
@@ -378,7 +394,7 @@ export class Hero {
       this.ctx.vfx.burst(hitPos.clone().add(new THREE.Vector3(0, 1, 0)), color, 10, { speed: 5, life: 0.4, size: 0.6, gravity: 4 });
       this.ctx.vfx.ring(hitPos, color, 2.2, 0.3);
       this.ctx.audio.play('heroShot');
-      this.handle.animation?.playOneShot('attack', { fade: 0.08, returnToLocomotion: true });
+      this.playAttackAnimation();
       target.takeDamage(this.currentDamage, this.data.attackType);
       // Cleave — تا N هدف اضافه در نزدیکی هدف اصلی
       const extras = inRange
@@ -403,7 +419,7 @@ export class Hero {
         dmgType: this.data.attackType,
       });
       this.ctx.audio.play('magic');
-      this.handle.animation?.playOneShot('attack', { fade: 0.08, returnToLocomotion: true });
+      this.playAttackAnimation();
       return;
     }
 
@@ -425,7 +441,7 @@ export class Hero {
       );
       this.ctx.vfx.burst(targetPos, 0xe0f2fe, 8, { speed: 5, life: 0.3, size: 0.45, gravity: 3 });
       this.ctx.audio.play('lightning');
-      this.handle.animation?.playOneShot('attack', { fade: 0.08, returnToLocomotion: true });
+      this.playAttackAnimation();
       target.takeDamage(this.currentDamage, this.data.attackType);
       // هر سومین ضربه — قوس زنجیره‌ای به ۲ دشمن دیگر
       if (Math.random() < 0.34) {
@@ -444,7 +460,7 @@ export class Hero {
     this.ctx.vfx.burst(tip, color, 2, { speed: 1.5, life: 0.12, size: 0.35, gravity: 0 });
     this.ctx.vfx.bolt(tip, targetPos, color);
     this.ctx.audio.play('heroShot');
-    this.handle.animation?.playOneShot('attack', { fade: 0.08, returnToLocomotion: true });
+    this.playAttackAnimation();
     target.takeDamage(this.currentDamage, this.data.attackType);
   }
 

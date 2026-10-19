@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { allAssetEntries, type CharacterAssetEntry } from '@/game/assets/AssetManifest';
 import { assetManager } from '@/game/assets/AssetManager';
@@ -11,15 +12,27 @@ type AssetInfo = {
   entry: CharacterAssetEntry;
   animationNames: string[];
   animationSource: 'glb' | 'runtime-procedural' | 'none';
+  meshCount: number;
+  vertexCount: number;
+  triangleCount: number;
+  materialCount: number;
+  skinnedMeshCount: number;
+  skeletonJointCount: number;
+  uvMeshCount: number;
+  pbrTextureCount: number;
+  lodTriangleCounts: { full: number; lod1: number; lod2: number };
 };
 
 export default function AssetPreviewPage() {
   const entries = useMemo(() => allAssetEntries(), []);
   const [selectedId, setSelectedId] = useState(entries[0]?.id ?? '');
   const [animationName, setAnimationName] = useState('Idle');
+  const [lodMode, setLodMode] = useState<'full' | 'lod1' | 'lod2'>('full');
+  const [materialView, setMaterialView] = useState<'lit' | 'albedo' | 'normal' | 'mr' | 'ao' | 'emissive' | 'wireframe'>('lit');
   const [animationOptions, setAnimationOptions] = useState<string[]>([]);
   const [info, setInfo] = useState<AssetInfo | null>(null);
   const [error, setError] = useState('');
+  const [renderStats, setRenderStats] = useState({ fps: 0, drawCalls: 0, triangles: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -30,6 +43,8 @@ export default function AssetPreviewPage() {
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const clipRootRef = useRef<THREE.Object3D | null>(null);
   const clipsRef = useRef<THREE.AnimationClip[]>([]);
+  const originalMaterialsRef = useRef<Map<THREE.Mesh, THREE.Material | THREE.Material[]>>(new Map());
+  const materialOverridesRef = useRef<THREE.Material[]>([]);
   const towerPartsRef = useRef<{ turret?: THREE.Object3D; crystal?: THREE.Object3D; ring?: THREE.Object3D } | null>(null);
 
   useEffect(() => {
@@ -48,6 +63,12 @@ export default function AssetPreviewPage() {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.0;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envScene = new RoomEnvironment();
+    scene.environment = pmrem.fromScene(envScene, 0.06).texture;
+    scene.environmentIntensity = 0.5;
+    envScene.dispose();
+    pmrem.dispose();
 
     scene.add(new THREE.HemisphereLight(0xc9ddf6, 0x25202b, 1.25));
     const key = new THREE.DirectionalLight(0xffdfb4, 2.15);
@@ -89,6 +110,8 @@ export default function AssetPreviewPage() {
 
     let frame = 0;
     let last = performance.now();
+    let statsStart = last;
+    let statsFrames = 0;
     const resize = () => {
       const width = Math.max(1, host.clientWidth);
       const height = Math.max(1, host.clientHeight);
@@ -112,6 +135,16 @@ export default function AssetPreviewPage() {
         if (tower.ring) tower.ring.rotation.y += dt * 0.8;
       }
       renderer.render(scene, camera);
+      statsFrames++;
+      if (now - statsStart >= 500) {
+        setRenderStats({
+          fps: Math.round(statsFrames * 1000 / (now - statsStart)),
+          drawCalls: renderer.info.render.calls,
+          triangles: renderer.info.render.triangles,
+        });
+        statsFrames = 0;
+        statsStart = now;
+      }
     };
     frame = requestAnimationFrame(animate);
     return () => {
@@ -120,6 +153,7 @@ export default function AssetPreviewPage() {
       controls.dispose();
       mixerRef.current?.stopAllAction();
       mixerRef.current = null;
+      scene.environment?.dispose();
       renderer.dispose();
       scene.clear();
       sceneRef.current = null;
@@ -144,6 +178,9 @@ export default function AssetPreviewPage() {
     clipRootRef.current = null;
     clipsRef.current = [];
     towerPartsRef.current = null;
+    for (const material of materialOverridesRef.current) material.dispose();
+    materialOverridesRef.current = [];
+    originalMaterialsRef.current.clear();
     root.clear();
 
     (async () => {
@@ -166,6 +203,11 @@ export default function AssetPreviewPage() {
           camera.updateProjectionMatrix();
           controls.update();
         }
+        originalMaterialsRef.current.clear();
+        normalized.inner.traverse((object) => {
+          const mesh = object as THREE.Mesh;
+          if (mesh.isMesh && mesh.material) originalMaterialsRef.current.set(mesh, mesh.material);
+        });
         const names = instance.animations.map((clip) => clip.name);
         clipsRef.current = instance.animations;
         setAnimationOptions(names);
@@ -178,8 +220,51 @@ export default function AssetPreviewPage() {
         towerPartsRef.current = entry.category === 'towers'
           ? { turret: getNode('turret'), crystal: getNode('spinCrystal'), ring: getNode('spinRing') }
           : null;
+        let meshCount = 0, vertexCount = 0, triangleCount = 0, skinnedMeshCount = 0, skeletonJointCount = 0, uvMeshCount = 0;
+        const lodTriangleCounts = { full: 0, lod1: 0, lod2: 0 };
+        const materials = new Set<THREE.Material>();
+        const pbrTextures = new Set<THREE.Texture>();
+        const lodLevelOf = (object: THREE.Object3D): 'full' | 'lod1' | 'lod2' => {
+          let parent = object.parent;
+          while (parent) {
+            if (/_LOD2$/i.test(parent.name)) return 'lod2';
+            if (/_LOD1$/i.test(parent.name)) return 'lod1';
+            parent = parent.parent;
+          }
+          return 'full';
+        };
+        normalized.inner.traverse((object) => {
+          const mesh = object as THREE.Mesh;
+          if (!mesh.isMesh || !mesh.geometry) return;
+          const level = lodLevelOf(mesh);
+          const triangles = (mesh.geometry.index?.count ?? mesh.geometry.getAttribute('position')?.count ?? 0) / 3;
+          lodTriangleCounts[level] += triangles;
+          // The headline mesh/vertex/triangle stats describe the full-quality
+          // representation only; LOD variants are reported separately below.
+          if (level !== 'full') return;
+          meshCount++;
+          vertexCount += mesh.geometry.getAttribute('position')?.count ?? 0;
+          triangleCount += triangles;
+          if (mesh.geometry.getAttribute('uv')) uvMeshCount++;
+          if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) {
+            skinnedMeshCount++;
+            skeletonJointCount = Math.max(skeletonJointCount, (mesh as THREE.SkinnedMesh).skeleton?.bones.length ?? 0);
+          }
+          for (const material of (Array.isArray(mesh.material) ? mesh.material : [mesh.material])) {
+            materials.add(material);
+            const m = material as THREE.MeshStandardMaterial;
+            for (const texture of [m.map, m.normalMap, m.roughnessMap, m.metalnessMap, m.aoMap, m.emissiveMap, m.bumpMap]) {
+              if (texture) pbrTextures.add(texture);
+            }
+          }
+        });
         const record = assetManager.record(entry.id);
-        setInfo({ entry, animationNames: names, animationSource: record?.animationSource ?? 'none' });
+        setInfo({
+          entry, animationNames: names, animationSource: record?.animationSource ?? 'none',
+          meshCount, vertexCount, triangleCount: Math.round(triangleCount), materialCount: materials.size,
+          skinnedMeshCount, skeletonJointCount, uvMeshCount, pbrTextureCount: pbrTextures.size,
+          lodTriangleCounts: Object.fromEntries(Object.entries(lodTriangleCounts).map(([key, value]) => [key, Math.round(value)])) as { full: number; lod1: number; lod2: number },
+        });
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
       }
@@ -194,6 +279,68 @@ export default function AssetPreviewPage() {
     const clip = clipsRef.current.find((item) => item.name === animationName);
     if (clip) mixer.clipAction(clip).reset().setLoop(THREE.LoopRepeat, Infinity).play();
   }, [animationName, info]);
+
+  // Material diagnostic view: inspect authored/generated PBR maps without
+  // mutating shared cached materials or disposing textures owned by AssetManager.
+  useEffect(() => {
+    const originals = originalMaterialsRef.current;
+    for (const material of materialOverridesRef.current) material.dispose();
+    materialOverridesRef.current = [];
+    originals.forEach((original, mesh) => {
+      if (materialView === 'lit') {
+        mesh.material = original;
+        return;
+      }
+      const sourceMaterials = Array.isArray(original) ? original : [original];
+      const overrides = sourceMaterials.map((source) => {
+        if (materialView === 'wireframe') {
+          const wire = new THREE.MeshBasicMaterial({ color: 0x8ecbff, wireframe: true, side: THREE.DoubleSide });
+          materialOverridesRef.current.push(wire);
+          return wire;
+        }
+        const pbr = source as THREE.MeshStandardMaterial;
+        const texture = materialView === 'albedo' ? pbr.map
+          : materialView === 'normal' ? pbr.normalMap
+          : materialView === 'mr' ? (pbr.metalnessMap ?? pbr.roughnessMap)
+          : materialView === 'ao' ? pbr.aoMap
+          : pbr.emissiveMap;
+        const debug = new THREE.MeshBasicMaterial({
+          map: texture ?? null,
+          color: texture ? 0xffffff : 0x252a35,
+          side: THREE.DoubleSide,
+          toneMapped: false,
+        });
+        materialOverridesRef.current.push(debug);
+        return debug;
+      });
+      mesh.material = Array.isArray(original) ? overrides : overrides[0];
+    });
+    return () => {
+      for (const material of materialOverridesRef.current) material.dispose();
+      materialOverridesRef.current = [];
+    };
+  }, [materialView, info, selectedId]);
+
+  // ART QA only: manually compare the same rigged asset at each generated LOD.
+  // Gameplay uses distance-driven switching; this control makes each budget inspectable.
+  useEffect(() => {
+    const root = modelRootRef.current;
+    if (!root) return;
+    const lodLevelOf = (object: THREE.Object3D): 'full' | 'lod1' | 'lod2' => {
+      let parent = object.parent;
+      while (parent) {
+        if (/_LOD2$/i.test(parent.name)) return 'lod2';
+        if (/_LOD1$/i.test(parent.name)) return 'lod1';
+        parent = parent.parent;
+      }
+      return 'full';
+    };
+    root.traverse((object) => {
+      if ((object as THREE.Mesh).isMesh) object.visible = lodLevelOf(object) === lodMode;
+      if (/_LOD1$/i.test(object.name)) object.visible = lodMode === 'lod1';
+      else if (/_LOD2$/i.test(object.name)) object.visible = lodMode === 'lod2';
+    });
+  }, [lodMode, info, selectedId]);
 
   const categoryLabel: Record<string, string> = { heroes: 'قهرمانان', enemies: 'دشمنان', bosses: 'باس‌ها', towers: 'برج‌ها' };
   const sourceLabel = info?.animationSource === 'glb'
@@ -219,6 +366,11 @@ export default function AssetPreviewPage() {
           {error && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: 'rgba(5,8,14,.9)', color: '#ffaaa5', padding: 24, textAlign: 'center' }}>بارگذاری ناموفق: {error}</div>}
           {!info && !error && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: '#9aa9bb', pointerEvents: 'none' }}>در حال بارگذاری مدل…</div>}
           <div style={{ position: 'absolute', left: 14, bottom: 12, color: '#718399', fontSize: 11, pointerEvents: 'none' }}>Drag: orbit · Wheel: zoom · Right-drag: pan</div>
+          <div style={{ position: 'absolute', right: 12, top: 12, display: 'flex', gap: 10, flexWrap: 'wrap', background: 'rgba(5,10,17,.82)', border: '1px solid #263548', borderRadius: 8, padding: '7px 9px', color: '#b9c8d8', fontSize: 11, pointerEvents: 'none' }}>
+            <span>FPS <b style={{ color: renderStats.fps >= 50 ? '#8ee6b0' : renderStats.fps >= 30 ? '#f0ce7a' : '#ff9b9b' }}>{renderStats.fps || '—'}</b></span>
+            <span>Draw calls <b>{renderStats.drawCalls}</b></span>
+            <span>Triangles <b>{renderStats.triangles.toLocaleString()}</b></span>
+          </div>
         </div>
 
         <aside style={{ border: '1px solid #263548', borderRadius: 14, padding: 16, background: '#0e1621', alignSelf: 'start' }}>
@@ -231,6 +383,24 @@ export default function AssetPreviewPage() {
             ))}
           </select>
 
+          <label style={{ display: 'block', fontSize: 12, color: '#8ea0b5', marginBottom: 6 }}>حالت بررسی متریال</label>
+          <select value={materialView} onChange={(e) => setMaterialView(e.target.value as 'lit' | 'albedo' | 'normal' | 'mr' | 'ao' | 'emissive' | 'wireframe')} style={{ width: '100%', background: '#172333', color: '#e5edf7', border: '1px solid #34465c', borderRadius: 8, padding: '10px 8px', marginBottom: 14 }}>
+            <option value="lit">نورپردازی نهایی</option>
+            <option value="albedo">Albedo · رنگ سطح</option>
+            <option value="normal">Normal · جزئیات سطح</option>
+            <option value="mr">Metallic / Roughness</option>
+            <option value="ao">Ambient Occlusion</option>
+            <option value="emissive">Emissive · هسته‌های نورانی</option>
+            <option value="wireframe">Wireframe · توپولوژی</option>
+          </select>
+
+          <label style={{ display: 'block', fontSize: 12, color: '#8ea0b5', marginBottom: 6 }}>سطح جزئیات مدل (LOD)</label>
+          <select value={lodMode} onChange={(e) => setLodMode(e.target.value as 'full' | 'lod1' | 'lod2')} disabled={!info || (info.lodTriangleCounts.lod1 === 0 && info.lodTriangleCounts.lod2 === 0)} style={{ width: '100%', background: '#172333', color: '#e5edf7', border: '1px solid #34465c', borderRadius: 8, padding: '10px 8px', marginBottom: 14 }}>
+            <option value="full">جزئیات کامل</option>
+            <option value="lod1">LOD 1 · فاصله متوسط</option>
+            <option value="lod2">LOD 2 · فاصله دور</option>
+          </select>
+
           <label style={{ display: 'block', fontSize: 12, color: '#8ea0b5', marginBottom: 6 }}>انیمیشن</label>
           <select value={animationName} onChange={(e) => setAnimationName(e.target.value)} disabled={!animationOptions.length} style={{ width: '100%', background: '#172333', color: '#e5edf7', border: '1px solid #34465c', borderRadius: 8, padding: '10px 8px', marginBottom: 14 }}>
             {animationOptions.length ? animationOptions.map((name) => <option key={name} value={name}>{name}</option>) : <option value="">بدون کلیپ</option>}
@@ -239,6 +409,15 @@ export default function AssetPreviewPage() {
           <div style={{ borderTop: '1px solid #263548', paddingTop: 12, display: 'grid', gap: 9, fontSize: 13 }}>
             <div><span style={{ color: '#7f91a6' }}>دسته: </span>{info ? categoryLabel[info.entry.category] : '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>ارتفاع هدف: </span>{info ? info.entry.targetHeight.toFixed(2) : '—'} wu</div>
+            <div><span style={{ color: '#7f91a6' }}>تعداد Mesh: </span>{info?.meshCount.toLocaleString() ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>تعداد رأس: </span>{info?.vertexCount.toLocaleString() ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>تعداد مثلث: </span>{info?.triangleCount.toLocaleString() ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>بودجهٔ مثلث LOD کامل / ۱ / ۲: </span>{info ? `${info.lodTriangleCounts.full.toLocaleString()} / ${info.lodTriangleCounts.lod1.toLocaleString()} / ${info.lodTriangleCounts.lod2.toLocaleString()}` : '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>متریال‌ها: </span>{info?.materialCount ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>تکسچرهای PBR بارگذاری‌شده: </span>{info?.pbrTextureCount ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>Mesh دارای UV: </span>{info?.uvMeshCount ?? '—'}{info ? ` / ${info.meshCount}` : ''}</div>
+            <div><span style={{ color: '#7f91a6' }}>Mesh اسکلتی: </span>{info?.skinnedMeshCount ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>تعداد مفصل اسکلت: </span>{info?.skeletonJointCount || (info?.entry.category === 'towers' ? '—' : 0)}</div>
             <div><span style={{ color: '#7f91a6' }}>کلیپ‌ها: </span>{info?.animationNames.length ?? '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>منبع انیمیشن: </span>{info ? sourceLabel : '—'}</div>
             <div style={{ color: '#718399', fontSize: 11, wordBreak: 'break-all' }}>{info?.entry.file ?? ''}</div>

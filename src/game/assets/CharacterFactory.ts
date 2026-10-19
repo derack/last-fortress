@@ -42,6 +42,7 @@ const TOWER_UDATA_KEYS = ['turret', 'muzzle', 'spinCrystal', 'spinRing', 'ember'
 const towerUpgradeGeometry = new Map<string, THREE.BufferGeometry>();
 const towerUpgradeMaterials = new Map<number, THREE.MeshStandardMaterial>();
 const contactShadowGeometry = new THREE.CircleGeometry(1, 32);
+contactShadowGeometry.userData.sharedAssetResource = true;
 let contactShadowMaterial: THREE.MeshBasicMaterial | null = null;
 
 function getContactShadowMaterial() {
@@ -72,6 +73,8 @@ function getContactShadowMaterial() {
     toneMapped: false,
     side: THREE.DoubleSide,
   });
+  contactShadowMaterial.userData.sharedAssetResource = true;
+  if (map) map.userData.sharedAssetResource = true;
   return contactShadowMaterial;
 }
 
@@ -300,6 +303,12 @@ export class CharacterHandle {
   private lodNodes: { node: THREE.Object3D; level: 1 | 2 }[] = [];
   /** گره‌های مدل پایه (خارج از سلسله‌مراتب LOD) */
   private lodBase: THREE.Object3D[] = [];
+  /** آخرین LOD فعال برای hysteresis و جلوگیری از پرش تصویر نزدیک آستانه‌ها. */
+  private lodLevel: 0 | 1 | 2 = 0;
+  /** فاصله‌محور کردن هزینهٔ AnimationMixer برای دستگاه‌های موبایل */
+  private animationStep = 1;
+  private animationFrame = 0;
+  private animationDelta = 0;
   disposed = false;
   private pooled = false;
   /** کلید Pool (assetId|tier) — هنگام acquire تنظیم می‌شود */
@@ -341,14 +350,45 @@ export class CharacterHandle {
    * برای Placeholderها بدون گره LOD هیچ‌کاری نمی‌کند (هزینه صفر).
    */
   updateLod(camPos: THREE.Vector3) {
-    if (this.lodNodes.length === 0) return;
     const d = camPos.distanceTo(this.root.position);
-    const base = d < 22;
-    const mid = d >= 22 && d < 38;
+    // LOD thresholds include hysteresis: crossing the same boundary in opposite
+    // directions uses a small dead band, preventing rapid toggling while the
+    // camera follows a unit near 22/38 world units.
+    let nextLevel = this.lodLevel;
+    if (this.lodLevel === 0) {
+      if (d >= 40) nextLevel = 2;
+      else if (d >= 24) nextLevel = 1;
+    } else if (this.lodLevel === 1) {
+      if (d < 20) nextLevel = 0;
+      else if (d >= 40) nextLevel = 2;
+    } else {
+      if (d < 20) nextLevel = 0;
+      else if (d < 35) nextLevel = 1;
+    }
+
+    // Close actors update every frame, mid-range every 2nd, distant every 3rd.
+    // Accumulated delta is passed to the mixer so animation time never gets lost.
+    this.animationStep = d >= 38 ? 3 : d >= 22 ? 2 : 1;
+    if (this.lodNodes.length === 0) return;
+    if (nextLevel === this.lodLevel) return;
+    this.lodLevel = nextLevel;
+    const base = nextLevel === 0;
+    const mid = nextLevel === 1;
     for (const n of this.lodBase) n.visible = base;
     for (const { node, level } of this.lodNodes) {
-      node.visible = level === 1 ? mid : d >= 38;
+      node.visible = level === 1 ? mid : nextLevel === 2;
     }
+  }
+
+  /** Distance-adaptive animation tick with delta accumulation for mobile performance. */
+  updateAnimation(dt: number) {
+    if (!this.animation) return;
+    this.animationDelta += Math.min(Math.max(dt, 0), 0.1);
+    this.animationFrame++;
+    if (this.animationFrame % this.animationStep !== 0) return;
+    const accumulated = this.animationDelta;
+    this.animationDelta = 0;
+    this.animation?.update(accumulated);
   }
 
   /** تنظیم نقاط VFX اولیه (Placeholder) */
@@ -399,11 +439,15 @@ export class CharacterHandle {
     this.animation = clips.length > 0
       ? new CharacterAnimationController(this.root, clips)
       : new ProceduralAnimationController(norm.inner, norm.height);
+    this.animationFrame = 0;
+    this.animationDelta = 0;
+    this.animationStep = 1;
     this.proceduralAnimParts = [];
     this.vfxPoints.clear();
     for (const [k, o] of Object.entries(norm.vfx)) this.vfxPoints.set(k, o);
     // گره‌های LOD مدل واقعی — تفکیک مدل پایه از نسخه‌های LOD
     this.lodNodes = norm.lodNodes;
+    this.lodLevel = 0;
     if (this.lodNodes.length > 0) {
       const isAncestorOfLod = (n: THREE.Object3D) =>
         this.lodNodes.some(({ node }) => {
@@ -414,7 +458,7 @@ export class CharacterHandle {
           }
           return false;
         });
-      this.lodBase = norm.inner.children.filter((c) => !isAncestorOfLod(c));
+      this.lodBase = model.children.filter((c) => !isAncestorOfLod(c));
     } else {
       this.lodBase = [];
     }
@@ -547,6 +591,8 @@ export class CharacterFactory {
       // ریست کامل برای reuse
       handle.root.rotation.set(0, 0, 0);
       handle.root.position.set(0, 0, 0);
+      // Restore transform after a boss phase-two visual pulse before pooling.
+      handle.root.scale.set(1, 1, 1);
       handle.root.visible = false;
       const aura = handle.root.getObjectByName('shieldAura');
       if (aura) (aura as THREE.Mesh).visible = false;
@@ -590,6 +636,7 @@ export class CharacterFactory {
 
     const root = new THREE.Group();
     root.name = `tower_${entry.id}_l${level}`;
+    addCharacterContactShadow(root, entry);
     root.add(fb.group);
     root.userData.characterSource = 'procedural';
     root.userData.selectable = true;

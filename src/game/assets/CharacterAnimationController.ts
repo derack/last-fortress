@@ -37,12 +37,30 @@ export class CharacterAnimationController {
   private currentLoco: LocomotionState | null = null;
   private oneshotActive: THREE.AnimationAction | null = null;
   private oneshotName = '';
+  /** Queued cinematic one-shots (e.g. boss phase shift → roar). */
+  private sequenceQueue: string[] = [];
+  private sequenceOptions: OneShotOptions | null = null;
+  private sequencePlayback = false;
   private dead = false;
   private baseTimeScale = 1;
   private finishedBound: ((e: { action: THREE.AnimationAction }) => void) | null = null;
+  /** Stable per-instance variation prevents crowds from marching in lockstep. */
+  private readonly phaseOffset: number;
+  private readonly speedVariation: number;
 
   constructor(root: THREE.Object3D, clips: THREE.AnimationClip[]) {
     this.mixer = new THREE.AnimationMixer(root);
+    // Derive repeatable variation from the cloned root UUID: no frame-time RNG,
+    // no shared mutable state, and no synchronization between identical enemies.
+    let seed = 2166136261;
+    for (let i = 0; i < root.uuid.length; i++) {
+      seed ^= root.uuid.charCodeAt(i);
+      seed = Math.imul(seed, 16777619) >>> 0;
+    }
+    const unit = seed / 0xffffffff;
+    const unit2 = ((Math.imul(seed ^ 0x9e3779b9, 2246822519) >>> 0) / 0xffffffff);
+    this.phaseOffset = unit;
+    this.speedVariation = 0.94 + unit2 * 0.12;
 
     for (const clip of clips) {
       const action = this.mixer.clipAction(clip);
@@ -56,6 +74,17 @@ export class CharacterAnimationController {
         if (action === this.oneshotActive) {
           if (!this.dead) {
             this.oneshotActive = null;
+            const queued = this.sequenceQueue.shift();
+            if (queued) {
+              const opts = this.sequenceOptions ?? {};
+              this.sequencePlayback = true;
+              const started = this.playOneShot(queued, opts);
+              this.sequencePlayback = false;
+              // Missing optional clips are skipped rather than stalling the sequence.
+              if (!started) this.playNextSequenceClip();
+              return;
+            }
+            this.sequenceOptions = null;
             // بازگشت نرم به حالت حرکتی فعلی
             if (this.currentLoco) {
               const loco = this.resolveLoco(this.currentLoco);
@@ -137,12 +166,15 @@ export class CharacterAnimationController {
       // هماهنگی سرعت انیمیشن با سرعت واقعی حرکت
       const cur = this.resolveLoco(state);
       if (cur) {
-        cur.action.timeScale = cur.timeScale * Math.min(1.4, Math.max(0.75, speedRatio));
+        cur.action.timeScale = cur.timeScale * this.speedVariation * Math.min(1.4, Math.max(0.75, speedRatio));
       }
       return;
     }
     const next = this.resolveLoco(state);
     if (!next) return;
+    // A genuine locomotion-state transition cancels any queued cinematic follow-up.
+    this.sequenceQueue = [];
+    this.sequenceOptions = null;
 
     const prevAction = this.oneshotActive ?? (this.currentLoco ? this.resolveLoco(this.currentLoco)?.action : null) ?? null;
     this.currentLoco = state;
@@ -150,7 +182,10 @@ export class CharacterAnimationController {
 
     next.action.reset();
     next.action.setLoop(THREE.LoopRepeat, Infinity);
-    next.action.timeScale = next.timeScale;
+    // Start at a different point in the loop for each instance; after reset the
+    // time must be assigned before play/crossfade to avoid a visible snap.
+    next.action.time = next.action.getClip().duration * this.phaseOffset;
+    next.action.timeScale = next.timeScale * this.speedVariation;
     next.action.enabled = true;
     if (prevAction && prevAction !== next.action && prevAction.isRunning()) {
       next.action.play();
@@ -160,9 +195,46 @@ export class CharacterAnimationController {
     }
   }
 
+  /** Play a short cinematic sequence without allowing one clip to swallow the next. */
+  playSequence(names: string[], opts: OneShotOptions = {}): boolean {
+    if (!this.hasAnimations || this.dead || names.length === 0) return false;
+    const available = names.filter((name) => this.resolve(name) !== null);
+    if (available.length === 0) return false;
+    this.sequenceQueue = available.slice(1);
+    this.sequenceOptions = { ...opts };
+    this.sequencePlayback = true;
+    const started = this.playOneShot(available[0], opts);
+    this.sequencePlayback = false;
+    if (!started) {
+      this.sequenceQueue = [];
+      this.sequenceOptions = null;
+    }
+    return started;
+  }
+
+  /** Skip unavailable clips while preserving sequence order. */
+  private playNextSequenceClip() {
+    while (this.sequenceQueue.length > 0) {
+      const next = this.sequenceQueue.shift()!;
+      this.sequencePlayback = true;
+      const started = this.playOneShot(next, this.sequenceOptions ?? {});
+      this.sequencePlayback = false;
+      if (started) return;
+    }
+    this.sequenceOptions = null;
+    if (!this.dead && this.currentLoco) {
+      const loco = this.resolveLoco(this.currentLoco);
+      if (loco) loco.action.reset().fadeIn(LOCOMOTION_FADE).play();
+    }
+  }
+
   /** تک‌پخش (Attack/Skill/Hit/Roar/...) — بعد از پایان خودکار به حرکتی برمی‌گردد */
   playOneShot(name: string, opts: OneShotOptions = {}): boolean {
     if (!this.hasAnimations || this.dead) return false;
+    if (!this.sequencePlayback) {
+      this.sequenceQueue = [];
+      this.sequenceOptions = null;
+    }
     const { fade = 0.12, returnToLocomotion = true, timeScale = 1 } = opts;
     const action = this.resolve(name);
     if (!action) return false;
@@ -171,7 +243,7 @@ export class CharacterAnimationController {
     if (returnToLocomotion) this.oneshotActive = action;
     action.reset();
     action.setLoop(THREE.LoopOnce, 1);
-    action.timeScale = timeScale;
+    action.timeScale = timeScale * this.speedVariation;
     action.enabled = true;
     action.setEffectiveWeight(1);
     action.clampWhenFinished = !returnToLocomotion;
@@ -193,6 +265,8 @@ export class CharacterAnimationController {
     if (!action) return false;
     this.dead = true;
     this.oneshotActive = null;
+    this.sequenceQueue = [];
+    this.sequenceOptions = null;
     this.mixer.stopAllAction();
     action.reset();
     action.setLoop(THREE.LoopOnce, 1);
@@ -217,6 +291,8 @@ export class CharacterAnimationController {
     if (!this.hasAnimations) return;
     this.dead = false;
     this.oneshotActive = null;
+    this.sequenceQueue = [];
+    this.sequenceOptions = null;
     this.currentLoco = null;
     this.mixer.stopAllAction();
     this.playLocomotion('idle');
@@ -226,6 +302,8 @@ export class CharacterAnimationController {
     this.mixer.stopAllAction();
     this.currentLoco = null;
     this.oneshotActive = null;
+    this.sequenceQueue = [];
+    this.sequenceOptions = null;
   }
 
   /**
