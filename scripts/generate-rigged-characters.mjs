@@ -43,9 +43,11 @@ const boneLocal = [
   [0,0,0],[0,0.72,0],[0,0.34,0],[0,0.47,0],[-0.39,0.24,0],[0.39,0.24,0],
   [-0.16,-0.23,0],[0.16,-0.23,0],[0,-0.12,-0.25],[-0.31,0.28,-0.08],[0.31,0.28,-0.08],[0,-0.14,0.12],
 ];
-const boneWorld = boneLocal.map((p,i)=> {
-  const parent=boneParents[i]; return parent<0?[...p]:p.map((v,k)=>v+boneWorld[parent][k]);
-});
+const boneWorld = [];
+for (let i = 0; i < boneLocal.length; i++) {
+  const p = boneLocal[i], parent = boneParents[i];
+  boneWorld.push(parent < 0 ? [...p] : p.map((v, k) => v + boneWorld[parent][k]));
+}
 
 const v3=(x,y,z)=>[x,y,z];
 function quat(axis, angle) {
