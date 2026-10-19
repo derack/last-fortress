@@ -343,7 +343,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
               standard.normalScale.set(category === 'bosses' ? 0.22 : 0.14, category === 'bosses' ? 0.22 : 0.14);
             }
             if (!standard.roughnessMap) standard.roughnessMap = maps.roughness;
-            if (!standard.bumpMap) {
+            if (!standard.bumpMap && !MOBILE_ASSET_BUDGET) {
               standard.bumpMap = maps.bump;
               standard.bumpScale = category === 'bosses' ? 0.022 : 0.012;
             }
