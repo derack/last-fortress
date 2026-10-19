@@ -144,5 +144,5 @@ if (failures.length) {
   for (const failure of failures) console.error('FAIL:', failure);
   process.exitCode = 1;
 } else {
-  console.log('All generated enemy/boss models have valid skin data, UVs, embedded PBR PNG maps, and Idle/Walk/Run/Attack/Hit/Death animation clips.');
+  console.log('All generated character models (heroes, enemies, and bosses) have valid skin data, UVs, embedded PBR PNG maps, and the full validated animation set.');
 }
