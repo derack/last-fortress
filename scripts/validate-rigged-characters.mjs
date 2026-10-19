@@ -51,6 +51,26 @@ for (const url of refs) {
       if (!jointNames.has(required)) throw new Error('skeleton missing articulated joint '+required);
     }
     const animationNames = new Set((doc.animations ?? []).map(a => a.name));
+    const assetId = path.basename(url, '.gltf');
+    if (assetId === 'spider') {
+      for (const joint of ['SpiderLegL0','SpiderLegR0','SpiderLegL1','SpiderLegR1','SpiderLegL2','SpiderLegR2','SpiderLegL3','SpiderLegR3']) {
+        if (!jointNames.has(joint)) throw new Error('spider rig missing independent leg joint '+joint);
+      }
+      for (const clip of ['Idle','Walk','Run','Attack','Attack2','SpecialAttack','Death']) {
+        const clipDoc = (doc.animations ?? []).find(a => a.name === clip);
+        const targets = new Set((clipDoc?.channels ?? []).map(ch => doc.nodes[ch.target.node]?.name));
+        if (!['Idle','Walk','Run'].includes(clip) && !targets.size) throw new Error('spider '+clip+' clip has no joint targets');
+        if (['Idle','Walk','Run'].includes(clip) && ![...targets].some(name => name?.startsWith('SpiderLeg'))) throw new Error('spider '+clip+' does not animate independent legs');
+      }
+    }
+    if (['smallDragon','blackDragon','flyer'].includes(assetId)) {
+      for (const joint of ['TailMid','TailTip']) if (!jointNames.has(joint)) throw new Error(assetId+' rig missing segmented tail joint '+joint);
+      for (const clip of ['Idle','Walk','Run','Attack','SpecialAttack','Roar']) {
+        const clipDoc = (doc.animations ?? []).find(a => a.name === clip);
+        const targets = new Set((clipDoc?.channels ?? []).map(ch => doc.nodes[ch.target.node]?.name));
+        if (!targets.has('TailMid') || !targets.has('TailTip')) throw new Error(assetId+' '+clip+' must animate TailMid and TailTip');
+      }
+    }
     for (const clip of requiredClips) if (!animationNames.has(clip)) throw new Error('missing animation clip '+clip);
     if ((doc.animations ?? []).length < 6) throw new Error('expected at least six embedded animation clips');
     for (const [ni,node] of doc.nodes.entries()) {
