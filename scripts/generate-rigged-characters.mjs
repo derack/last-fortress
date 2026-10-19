@@ -841,8 +841,8 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
       for(const f of faces) for(let i=0;i<6;i+=3) pushTri(v[f[i]],v[f[i+1]],v[f[i+2]]);
     } else if(piece.kind==='sphere') {
       // Indexed smooth sphere: reuse vertices instead of duplicating every triangle corner.
-      const baseLat=(category==='heroes'||category==='bosses')?12:8;
-      const baseLon=(category==='heroes'||category==='bosses')?16:12;
+      const baseLat=(category==='heroes'||category==='bosses')?16:12;
+      const baseLon=(category==='heroes'||category==='bosses')?24:18;
       const lat=Math.max(4,baseLat-lodLevel*2);
       const lon=Math.max(6,baseLon-lodLevel*4);
       const base=pos.length/3, points=[];
