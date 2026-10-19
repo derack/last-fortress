@@ -552,7 +552,7 @@ export class Enemy implements DamageableEnemy {
     if (anim) {
       // GLB — انیمیشن اسکلتی یا پروسیجرال بدنه‌صلب، هم‌گام با سرعت واقعی حرکت
       anim.playLocomotion(speed > 3.6 ? 'run' : 'walk', speed / Math.max(0.01, this.data.speed));
-      anim.update(dt);
+      this.handle.updateAnimation(dt);
     } else {
       // Placeholder — انیمیشن پروسیجرال بخش‌ها
       const parts = this.handle.proceduralAnimParts;
