@@ -93,7 +93,7 @@ for (const url of refs) {
       const a = doc.accessors[p.indices];
       return sum + (a?.count ?? 0) / 3;
     }, 0);
-    const baseNodes = doc.nodes.filter(node => Number.isInteger(node.mesh) && !/(?:_LOD1|_LOD2)$/i.test(node.name ?? ''));
+    const baseNodes = doc.nodes.filter(node => Number.isInteger(node.mesh) && !/(?:_LOD[12](?:_PART)?)$/i.test(node.name ?? ''));
     const baseTriangles = baseNodes.reduce((sum,node) => sum + triangleCountForNode(node), 0);
     const lodGroup = (level) => doc.nodes.find(node => (node.name ?? '').toLowerCase().endsWith('_lod'+level));
     const lod1 = lodGroup(1), lod2 = lodGroup(2);
