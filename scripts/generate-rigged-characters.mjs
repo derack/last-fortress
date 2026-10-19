@@ -56,7 +56,7 @@ function makePbrImages(baseColor,accent,style) {
       ? Math.sin(y/size*Math.PI*2*44+Math.sin(x/size*Math.PI*2*5)*.12)*.035 : 0;
     const plate=Math.pow(Math.max(0,Math.cos(x/size*Math.PI*2*6+Math.sin(y/size*Math.PI*2*3)*.35)),18)*.055;
     const shade=Math.max(.72,Math.min(1.12,.94+broad*.11+grain+brushed+plate));
-    for(let c=0;c<3;c++) base[i+c]=Math.max(0,Math.min(255,Math.round(((baseColor>>(16-c*8))&255)*shade)));
+    for(let c=0;c<3;c++) base[i+c]=Math.max(0,Math.min(255,Math.round(shade*255)));
     base[i+3]=255;
     const dx=(periodic((x+1)%size,y,3,4,.7)-periodic((x+size-1)%size,y,3,4,.7))*.5;
     const dy=(periodic(x,(y+1)%size,3,4,.7)-periodic(x,(y+size-1)%size,3,4,.7))*.5;
@@ -71,7 +71,7 @@ function makePbrImages(baseColor,accent,style) {
     const occlusion=Math.max(0.72,Math.min(1,.96+Math.min(edge/12,1)*.04+broad*.025));
     ao[i]=ao[i+1]=ao[i+2]=Math.round(occlusion*255); ao[i+3]=255;
     const pulse=.88+.12*(.5+.5*Math.sin(x/size*Math.PI*2*4+Math.sin(y/size*Math.PI*2*3)));
-    for(let c=0;c<3;c++) emissive[i+c]=Math.round(((accent>>(16-c*8))&255)*pulse);
+    for(let c=0;c<3;c++) emissive[i+c]=Math.round(255*pulse);
     emissive[i+3]=255;
   }
   return [
