@@ -42,6 +42,7 @@ const TOWER_UDATA_KEYS = ['turret', 'muzzle', 'spinCrystal', 'spinRing', 'ember'
 const towerUpgradeGeometry = new Map<string, THREE.BufferGeometry>();
 const towerUpgradeMaterials = new Map<number, THREE.MeshStandardMaterial>();
 const contactShadowGeometry = new THREE.CircleGeometry(1, 32);
+contactShadowGeometry.userData.sharedAssetResource = true;
 let contactShadowMaterial: THREE.MeshBasicMaterial | null = null;
 
 function getContactShadowMaterial() {
@@ -72,6 +73,8 @@ function getContactShadowMaterial() {
     toneMapped: false,
     side: THREE.DoubleSide,
   });
+  contactShadowMaterial.userData.sharedAssetResource = true;
+  if (map) map.userData.sharedAssetResource = true;
   return contactShadowMaterial;
 }
 
