@@ -928,7 +928,7 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
       const w=accessor(weights,'VEC4',5126,weights.length/4,34962);
       const idxType=g.indices.length>65535?Uint32Array:Uint16Array;
       const ix=accessor(new idxType(g.indices),'SCALAR',idxType===Uint32Array?5125:5123,g.indices.length,34963);
-      const meshName=id+'_'+materials[g.mat].name+suffix;
+      const meshName=id+'_'+materials[g.mat].name+(suffix ? suffix+'_Part' : '');
       meshDefs.push({name:meshName,primitives:[{attributes:{POSITION:p,NORMAL:n,TEXCOORD_0:tex,JOINTS_0:j,WEIGHTS_0:w},indices:ix,material:g.mat,mode:4}]});
       meshNodes.push({name:meshName,mesh:meshDefs.length-1,skin:0});
     }
