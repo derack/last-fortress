@@ -321,6 +321,50 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     cone([0.69,1.4,0.05],[0.12,0.68,0.06],'Arm_R',edge,[0,0,-0.12]);
   }
 
+  // Playable-hero signature equipment: distinct silhouettes and hand-attached gear.
+  // These are real mesh pieces bound to the rig, not UI icons or floating VFX.
+  if (id==='arman') {
+    // Aegis shield on the left forearm and a broad, two-tone greatsword.
+    box([-0.58,1.02,0.12],[0.34,0.62,0.12],'Arm_L',edge,[0,0,-0.08]);
+    cone([-0.58,1.38,0.13],[0.16,0.18,0.14],'Arm_L',glow);
+    box([-0.58,1.02,0.19],[0.22,0.43,0.035],'Arm_L',dark,[0,0,-0.08]);
+    cone([0.61,1.49,0.05],[0.12,0.36,0.055],'Arm_R',edge,[0,0,-0.12]);
+    box([0.61,1.24,0.05],[0.07,0.28,0.07],'Arm_R',dark,[0,0,-0.12]);
+    sphere([0.61,1.08,0.05],[0.1,0.07,0.1],'Arm_R',glow);
+  }
+  if (id==='aria') {
+    // Recurve bow limbs, grip, string and a back-mounted arrow quiver.
+    for (const side of [-1,1]) {
+      cyl([-0.58,1.25+side*0.18,0.08],[0.035,0.23,0.035],'Arm_L',edge,[0,0,side*0.22]);
+      cone([-0.58+side*0.055,1.43,0.08],[0.035,0.1,0.035],'Arm_L',glow,[0,0,side*0.3]);
+    }
+    cyl([-0.58,1.25,0.09],[0.045,0.16,0.045],'Arm_L',dark);
+    cyl([-0.58,1.25,0.115],[0.009,0.52,0.009],'Arm_L',edge,[0,0,0.04]);
+    box([-0.2,1.03,-0.25],[0.18,0.38,0.16],'Spine',dark,[0.1,0,0.1]);
+    for(let i=0;i<4;i++) cone([-0.2+i*0.035,1.26,-0.25],[0.018,0.28,0.018],'Spine',edge,[0,0,-0.08]);
+  }
+  if (id==='radin') {
+    // Twin curved daggers, each attached to its own animated hand.
+    for (const side of [-1,1]) {
+      const hand=side<0?'Arm_L':'Arm_R';
+      cyl([side*0.49,0.91,0.08],[0.045,0.22,0.045],hand,dark,[0,0,side*0.12]);
+      cone([side*0.49,0.69,0.12],[0.075,0.3,0.045],hand,edge,[0,0,side*0.18]);
+      cone([side*0.49,0.54,0.15],[0.035,0.11,0.035],hand,glow,[0,0,side*0.12]);
+    }
+    box([0,1.07,-0.2],[0.48,0.22,0.09],'Spine',dark,[0.12,0,0]);
+  }
+  if (id==='nila') {
+    // Arcane staff, faceted crown and orbiting crystal prongs attached to the right hand.
+    cyl([0.57,1.13,0.02],[0.045,1.15,0.045],'Arm_R',dark,[0,0,-0.08]);
+    sphere([0.52,1.76,0.02],[0.15,0.18,0.15],'Arm_R',glow);
+    for(let i=0;i<4;i++) {
+      const a=i*Math.PI/2;
+      cone([0.52+Math.cos(a)*0.17,1.76+Math.sin(a)*0.17,0.02],[0.035,0.15,0.035],'Arm_R',edge,[0,0,a]);
+    }
+    for(let i=0;i<3;i++) cone([0.52,1.52+i*0.11,-0.08],[0.035,0.1,0.035],'Arm_R',glow,[0.12,0,0]);
+    box([0,0.92,-0.2],[0.42,0.34,0.08],'Spine',cloth,[0.12,0,0]);
+  }
+
   // Signature armor silhouette: layered shoulder plates, chest crest, bracers and boots.
   const boss=category==='bosses';
   if(!['spider','dragon','dragonBoss','flyer','wraith'].includes(style)) {
