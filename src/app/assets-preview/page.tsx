@@ -28,6 +28,7 @@ export default function AssetPreviewPage() {
   const [selectedId, setSelectedId] = useState(entries[0]?.id ?? '');
   const [animationName, setAnimationName] = useState('Idle');
   const [lodMode, setLodMode] = useState<'full' | 'lod1' | 'lod2'>('full');
+  const [materialView, setMaterialView] = useState<'lit' | 'albedo' | 'normal' | 'mr' | 'ao' | 'emissive' | 'wireframe'>('lit');
   const [animationOptions, setAnimationOptions] = useState<string[]>([]);
   const [info, setInfo] = useState<AssetInfo | null>(null);
   const [error, setError] = useState('');
@@ -42,6 +43,8 @@ export default function AssetPreviewPage() {
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const clipRootRef = useRef<THREE.Object3D | null>(null);
   const clipsRef = useRef<THREE.AnimationClip[]>([]);
+  const originalMaterialsRef = useRef<Map<THREE.Mesh, THREE.Material | THREE.Material[]>>(new Map());
+  const materialOverridesRef = useRef<THREE.Material[]>([]);
   const towerPartsRef = useRef<{ turret?: THREE.Object3D; crystal?: THREE.Object3D; ring?: THREE.Object3D } | null>(null);
 
   useEffect(() => {
@@ -175,6 +178,9 @@ export default function AssetPreviewPage() {
     clipRootRef.current = null;
     clipsRef.current = [];
     towerPartsRef.current = null;
+    for (const material of materialOverridesRef.current) material.dispose();
+    materialOverridesRef.current = [];
+    originalMaterialsRef.current.clear();
     root.clear();
 
     (async () => {
@@ -197,6 +203,11 @@ export default function AssetPreviewPage() {
           camera.updateProjectionMatrix();
           controls.update();
         }
+        originalMaterialsRef.current.clear();
+        normalized.inner.traverse((object) => {
+          const mesh = object as THREE.Mesh;
+          if (mesh.isMesh && mesh.material) originalMaterialsRef.current.set(mesh, mesh.material);
+        });
         const names = instance.animations.map((clip) => clip.name);
         clipsRef.current = instance.animations;
         setAnimationOptions(names);
@@ -269,6 +280,47 @@ export default function AssetPreviewPage() {
     if (clip) mixer.clipAction(clip).reset().setLoop(THREE.LoopRepeat, Infinity).play();
   }, [animationName, info]);
 
+  // Material diagnostic view: inspect authored/generated PBR maps without
+  // mutating shared cached materials or disposing textures owned by AssetManager.
+  useEffect(() => {
+    const originals = originalMaterialsRef.current;
+    for (const material of materialOverridesRef.current) material.dispose();
+    materialOverridesRef.current = [];
+    originals.forEach((original, mesh) => {
+      if (materialView === 'lit') {
+        mesh.material = original;
+        return;
+      }
+      const sourceMaterials = Array.isArray(original) ? original : [original];
+      const overrides = sourceMaterials.map((source) => {
+        if (materialView === 'wireframe') {
+          const wire = new THREE.MeshBasicMaterial({ color: 0x8ecbff, wireframe: true, side: THREE.DoubleSide });
+          materialOverridesRef.current.push(wire);
+          return wire;
+        }
+        const pbr = source as THREE.MeshStandardMaterial;
+        const texture = materialView === 'albedo' ? pbr.map
+          : materialView === 'normal' ? pbr.normalMap
+          : materialView === 'mr' ? (pbr.metalnessMap ?? pbr.roughnessMap)
+          : materialView === 'ao' ? pbr.aoMap
+          : pbr.emissiveMap;
+        const debug = new THREE.MeshBasicMaterial({
+          map: texture ?? null,
+          color: texture ? 0xffffff : 0x252a35,
+          side: THREE.DoubleSide,
+          toneMapped: false,
+        });
+        materialOverridesRef.current.push(debug);
+        return debug;
+      });
+      mesh.material = Array.isArray(original) ? overrides : overrides[0];
+    });
+    return () => {
+      for (const material of materialOverridesRef.current) material.dispose();
+      materialOverridesRef.current = [];
+    };
+  }, [materialView, info, selectedId]);
+
   // ART QA only: manually compare the same rigged asset at each generated LOD.
   // Gameplay uses distance-driven switching; this control makes each budget inspectable.
   useEffect(() => {
@@ -329,6 +381,17 @@ export default function AssetPreviewPage() {
                 {entries.filter((entry) => entry.category === category).map((entry) => <option key={entry.id} value={entry.id}>{entry.displayName.fa} · {entry.id}</option>)}
               </optgroup>
             ))}
+          </select>
+
+          <label style={{ display: 'block', fontSize: 12, color: '#8ea0b5', marginBottom: 6 }}>حالت بررسی متریال</label>
+          <select value={materialView} onChange={(e) => setMaterialView(e.target.value as 'lit' | 'albedo' | 'normal' | 'mr' | 'ao' | 'emissive' | 'wireframe')} style={{ width: '100%', background: '#172333', color: '#e5edf7', border: '1px solid #34465c', borderRadius: 8, padding: '10px 8px', marginBottom: 14 }}>
+            <option value="lit">نورپردازی نهایی</option>
+            <option value="albedo">Albedo · رنگ سطح</option>
+            <option value="normal">Normal · جزئیات سطح</option>
+            <option value="mr">Metallic / Roughness</option>
+            <option value="ao">Ambient Occlusion</option>
+            <option value="emissive">Emissive · هسته‌های نورانی</option>
+            <option value="wireframe">Wireframe · توپولوژی</option>
           </select>
 
           <label style={{ display: 'block', fontSize: 12, color: '#8ea0b5', marginBottom: 6 }}>سطح جزئیات مدل (LOD)</label>
