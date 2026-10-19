@@ -42,41 +42,58 @@ function encodePng(width,height,rgba) {
   header[8]=8; header[9]=6; header[10]=0; header[11]=0; header[12]=0;
   return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),pngChunk('IHDR',header),pngChunk('IDAT',zlib.deflateSync(rows,{level:9})),pngChunk('IEND',Buffer.alloc(0))]);
 }
-function makePbrImages(baseColor,accent,style) {
-  const size=128, base=new Uint8Array(size*size*4), normal=new Uint8Array(size*size*4);
+function makePbrImages(baseColor,accent,style,category='enemies') {
+  // Higher-frequency, tileable maps: 256px for the mobile roster, 512px for
+  // hero/boss close-ups. Every map is generated deterministically at build time.
+  const size=category==='heroes'||category==='bosses'?512:256;
+  const base=new Uint8Array(size*size*4), normal=new Uint8Array(size*size*4);
   const mr=new Uint8Array(size*size*4), ao=new Uint8Array(size*size*4), emissive=new Uint8Array(size*size*4);
-  const fract=(v)=>v-Math.floor(v);
-  const noise=(x,y,seed)=>fract(Math.sin((x+seed*13.7)*127.1+(y-seed*7.9)*311.7)*43758.5453);
-  const periodic=(x,y,fx,fy,phase=0)=>Math.sin(x/size*Math.PI*2*fx+phase)*Math.cos(y/size*Math.PI*2*fy-phase*.7);
+  const periodic=(x,y,fx,fy,phase=0)=>
+    Math.sin(x/size*Math.PI*2*fx+phase)*Math.cos(y/size*Math.PI*2*fy-phase*.7);
+  const isMetal=/machine|tank|lord|warrior|hunter|ranger|brute|annihilator/i.test(style);
+  const isStone=/golem|crystal|tank|giant/i.test(style);
+  // Tileable height field; the normal map is derived from this exact field.
+  const heightAt=(x,y)=>{
+    const broad=periodic(x,y,3,4,.7)*.52+periodic(x,y,5,3,1.8)*.28+periodic(x,y,8,7,2.4)*.14;
+    const medium=periodic(x,y,17,13,1.2)*.045+periodic(x,y,23,19,.4)*.028;
+    const micro=periodic(x,y,47,31,.9)*.012+periodic(x,y,61,53,2.1)*.008;
+    const brushed=isMetal?Math.sin(y/size*Math.PI*2*92+Math.sin(x/size*Math.PI*2*7)*.12)*.026:0;
+    const scales=isStone?Math.pow(Math.max(0,Math.cos(x/size*Math.PI*2*11+Math.sin(y/size*Math.PI*2*5)*.42)),18)*.11:0;
+    const weave=/cloth|wraith|mage|spirit/i.test(style)?periodic(x,y,29,37,.3)*.05:0;
+    return broad*.13+medium+micro+brushed+scales+weave;
+  };
+  const color = n => Math.max(0,Math.min(255,Math.round(n)));
   for(let y=0;y<size;y++) for(let x=0;x<size;x++) {
     const i=(y*size+x)*4;
+    const h=heightAt(x,y);
     const broad=periodic(x,y,3,4,.7)*.52+periodic(x,y,5,3,1.8)*.28+periodic(x,y,8,7,2.4)*.14;
-    const grain=(noise(x,y,style.length)-.5)*.12 + (noise(Math.floor(x/3),Math.floor(y/3),style.length+17)-.5)*.055;
-    const brushed=style.toLowerCase().includes('machine')||style.toLowerCase().includes('tank')||style.toLowerCase().includes('lord')
-      ? Math.sin(y/size*Math.PI*2*44+Math.sin(x/size*Math.PI*2*5)*.12)*.035 : 0;
-    const plate=Math.pow(Math.max(0,Math.cos(x/size*Math.PI*2*9+Math.sin(y/size*Math.PI*2*4)*.35)),22)*.075;
-    const shade=Math.max(.68,Math.min(1.16,.93+broad*.12+grain+brushed+plate));
-    for(let c=0;c<3;c++) base[i+c]=Math.max(0,Math.min(255,Math.round(shade*255)));
+    const plate=Math.pow(Math.max(0,Math.cos(x/size*Math.PI*2*11+Math.sin(y/size*Math.PI*2*5)*.42)),18);
+    const shade=Math.max(.70,Math.min(1.15,.94+h*1.4+broad*.025+plate*.035));
+    // The factor remains the character's palette; albedo supplies surface response.
+    for(let c=0;c<3;c++) base[i+c]=color(shade*255);
     base[i+3]=255;
-    const dx=(periodic((x+1)%size,y,3,4,.7)-periodic((x+size-1)%size,y,3,4,.7))*.5;
-    const dy=(periodic(x,(y+1)%size,3,4,.7)-periodic(x,(y+size-1)%size,3,4,.7))*.5;
-    let nx=-dx*2.8, ny=-dy*2.8, nz=1, len=Math.hypot(nx,ny,nz);
-    normal[i]=Math.round((nx/len*.5+.5)*255); normal[i+1]=Math.round((ny/len*.5+.5)*255);
-    normal[i+2]=Math.round((nz/len*.5+.5)*255); normal[i+3]=255;
+    const dx=(heightAt((x+1)%size,y)-heightAt((x+size-1)%size,y))*.5;
+    const dy=(heightAt(x,(y+1)%size)-heightAt(x,(y+size-1)%size))*.5;
+    let nx=-dx*8.0,ny=-dy*8.0,nz=1,len=Math.hypot(nx,ny,nz);
+    normal[i]=color((nx/len*.5+.5)*255);
+    normal[i+1]=color((ny/len*.5+.5)*255);
+    normal[i+2]=color((nz/len*.5+.5)*255);normal[i+3]=255;
     mr[i]=255;
-    mr[i+1]=Math.max(0,Math.min(255,Math.round(228+broad*12+grain*40))); // glTF roughness channel (G)
-    mr[i+2]=Math.max(0,Math.min(255,Math.round(232+broad*10+brushed*70))); // metallic channel (B)
+    // glTF metallic-roughness channels: G=roughness, B=metalness.
+    mr[i+1]=color(Math.max(96,Math.min(248, (isMetal?112:isStone?198:226)+h*120+broad*8)));
+    mr[i+2]=color(Math.max(0,Math.min(255,(isMetal?226:isStone?38:12)+plate*22+h*80)));
     mr[i+3]=255;
     const edge=Math.min(x,y,size-1-x,size-1-y);
-    const occlusion=Math.max(0.72,Math.min(1,.96+Math.min(edge/12,1)*.04+broad*.025));
-    ao[i]=ao[i+1]=ao[i+2]=Math.round(occlusion*255); ao[i+3]=255;
-    const pulse=.88+.12*(.5+.5*Math.sin(x/size*Math.PI*2*4+Math.sin(y/size*Math.PI*2*3)));
-    for(let c=0;c<3;c++) emissive[i+c]=Math.round(255*pulse);
+    const cavity=Math.max(.76,Math.min(1,.97-Math.max(0,.1-h)*.35+Math.min(edge/18,1)*.03));
+    ao[i]=ao[i+1]=ao[i+2]=color(cavity*255);ao[i+3]=255;
+    const pulse=.84+.16*(.5+.5*Math.sin(x/size*Math.PI*2*7+Math.sin(y/size*Math.PI*2*5)));
+    const accentRgb=[(accent>>16)&255,(accent>>8)&255,accent&255];
+    for(let c=0;c<3;c++) emissive[i+c]=color((accentRgb[c]/255)*pulse*255);
     emissive[i+3]=255;
   }
   return [
-    encodePng(size,size,base), encodePng(size,size,normal), encodePng(size,size,mr),
-    encodePng(size,size,ao), encodePng(size,size,emissive)
+    encodePng(size,size,base),encodePng(size,size,normal),encodePng(size,size,mr),
+    encodePng(size,size,ao),encodePng(size,size,emissive)
   ];
 }
 
@@ -418,7 +435,7 @@ function makeCharacter(id, category, baseColor, accent, style) {
     {name:'Aether Core',pbrMetallicRoughness:{baseColorFactor:clampColor(accent),metallicFactor:0.22,roughnessFactor:0.2},emissiveFactor:clampColor(accent).slice(0,3),extensions:{KHR_materials_emissive_strength:{emissiveStrength:1.8}}},
     {name:'Dark Iron',pbrMetallicRoughness:{baseColorFactor:[0.07,0.08,0.12,1],metallicFactor:0.76,roughnessFactor:0.34}},
   ];
-  const pbrPngs = makePbrImages(baseColor,accent,style);
+  const pbrPngs = makePbrImages(baseColor,accent,style,category);
   const imageUris = pbrPngs.map(png => 'data:image/png;base64,'+png.toString('base64'));
   const textures = [
     {sampler:0,source:0},{sampler:0,source:1},{sampler:0,source:2},{sampler:0,source:3},{sampler:0,source:4},
