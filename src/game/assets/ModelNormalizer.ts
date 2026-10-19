@@ -47,7 +47,15 @@ function norm(n: string): string {
 
 /** جستجوی گره VFX داخل مدل بر اساس نام (بدون حساسیت به حالت) */
 function findModelPoint(root: THREE.Object3D, point: string): THREE.Object3D | null {
-  const aliases = NAME_ALIASES[point.toLowerCase()] ?? [point.toLowerCase()];
+  const target = norm(point);
+  const aliases = NAME_ALIASES[point.toLowerCase()] ?? [target];
+  let exact: THREE.Object3D | null = null;
+  // Prefer an explicitly authored attachment node (e.g. HeadPoint) over the
+  // nearby Head bone; otherwise VFX can originate at a joint pivot by accident.
+  root.traverse((o) => {
+    if (!exact && norm(o.name) === target) exact = o;
+  });
+  if (exact) return exact;
   let found: THREE.Object3D | null = null;
   root.traverse((o) => {
     if (found) return;
