@@ -98,6 +98,12 @@ for (const url of refs) {
     const lodGroup = (level) => doc.nodes.find(node => (node.name ?? '').toLowerCase().endsWith('_lod'+level));
     const lod1 = lodGroup(1), lod2 = lodGroup(2);
     if (!lod1 || !lod2 || !lod1.children?.length || !lod2.children?.length) throw new Error('expected populated LOD1 and LOD2 groups');
+    if (Number.isInteger(lod1.mesh) || Number.isInteger(lod2.mesh)) throw new Error('LOD roots must be container nodes, not renderable meshes');
+    const lod1Roots = doc.nodes.filter(node => (node.name ?? '').toLowerCase().endsWith('_lod1'));
+    const lod2Roots = doc.nodes.filter(node => (node.name ?? '').toLowerCase().endsWith('_lod2'));
+    if (lod1Roots.length !== 1 || lod2Roots.length !== 1) throw new Error('each LOD level must have exactly one unambiguous root group');
+    const suffixedMeshNodes = doc.nodes.filter(node => Number.isInteger(node.mesh) && /_LOD[12]$/i.test(node.name ?? ''));
+    if (suffixedMeshNodes.length) throw new Error('renderable LOD child nodes must not carry root suffixes; this duplicates LOD switching targets');
     const lodTriangles = (group) => group.children.reduce((sum,index) => sum + triangleCountForNode(doc.nodes[index]), 0);
     const lod1Triangles = lodTriangles(lod1), lod2Triangles = lodTriangles(lod2);
     if (!(baseTriangles > lod1Triangles && lod1Triangles > lod2Triangles && lod2Triangles > 0)) {
