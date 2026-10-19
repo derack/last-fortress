@@ -402,8 +402,8 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     }
     cone([0,1.73,0.02],[0.14,0.42,0.14],'Head',glow);
     for(let side of [-1,1]) cone([side*0.32,0.99,0.02],[0.12,0.3,0.12],side<0?'Arm_L':'Arm_R',glow,[0,0,side*0.25]);
-  } else if (style==='hunter') {
-    // Ranger's asymmetric hood, quiver and compact crossbow silhouette.
+  } else if (style==='hunter' && id!=='aria' && id!=='radin') {
+    // Ranger's asymmetric hood, quiver and compact crossbow silhouette; Aria and Radin have their own authored loadouts above.
     cone([0,1.72,-0.02],[0.27,0.35,0.26],'Head',cloth,[0.12,0,0]);
     box([0,1.04,-0.29],[0.26,0.46,0.12],'Spine',dark,[0.12,0,0]);
     for(let i=0;i<5;i++) cone([(i-2)*0.045,1.18,-0.36],[0.018,0.36,0.018],'Spine',edge,[0.04,0,0]);
