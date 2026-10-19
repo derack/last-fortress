@@ -51,15 +51,26 @@ export interface PreloadReport {
  * a draw call for every enemy in a wave. Keep weapons separate for procedural
  * prop-swing, and keep tower pivots/VFX meshes separate for gameplay animation.
  */
-let sharedSurfaceMaps: { color: THREE.CanvasTexture; bump: THREE.CanvasTexture; normal: THREE.CanvasTexture; roughness: THREE.CanvasTexture } | null = null;
+type SurfaceMaps = { color: THREE.CanvasTexture; bump: THREE.CanvasTexture; normal: THREE.CanvasTexture; roughness: THREE.CanvasTexture };
+const sharedSurfaceMaps = new Map<'stone' | 'metal', SurfaceMaps>();
 
-function getSharedSurfaceMaps() {
-  if (sharedSurfaceMaps || typeof document === 'undefined') return sharedSurfaceMaps;
+function getSharedSurfaceMaps(profile: 'stone' | 'metal' = 'stone'): SurfaceMaps | null {
+  const cached = sharedSurfaceMaps.get(profile);
+  if (cached) return cached;
+  if (typeof document === 'undefined') return null;
   const size = 128;
-  const waveAt = (x: number, y: number) =>
-    Math.sin((x / size) * Math.PI * 8 + Math.sin((y / size) * Math.PI * 4) * 0.7)
-    + Math.cos((y / size) * Math.PI * 6 + Math.sin((x / size) * Math.PI * 2) * 0.45)
-    + 0.45 * Math.sin(((x + y) / size) * Math.PI * 12);
+  const waveAt = (x: number, y: number) => {
+    const u = x / size, v = y / size;
+    if (profile === 'metal') {
+      // Fine directional brushing with low amplitude, unlike the broad stone grain.
+      return Math.sin(v * Math.PI * 64 + Math.sin(u * Math.PI * 6) * 0.2) * 0.35
+        + Math.sin(v * Math.PI * 24 + u * Math.PI * 3) * 0.3
+        + Math.cos(u * Math.PI * 8) * 0.12;
+    }
+    return Math.sin(u * Math.PI * 8 + Math.sin(v * Math.PI * 4) * 0.7)
+      + Math.cos(v * Math.PI * 6 + Math.sin(u * Math.PI * 2) * 0.45)
+      + 0.45 * Math.sin((u + v) * Math.PI * 12);
+  };
   const makeCanvas = (kind: 'color' | 'bump' | 'normal' | 'roughness') => {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = size;
@@ -74,13 +85,14 @@ function getSharedSurfaceMaps() {
         if (kind === 'normal') {
           const dx = (waveAt((x + 1) % size, y) - waveAt((x + size - 1) % size, y)) * 0.5;
           const dy = (waveAt(x, (y + 1) % size) - waveAt(x, (y + size - 1) % size)) * 0.5;
-          const nx = -dx * 0.34, ny = -dy * 0.34, nz = 1;
+          const normalStrength = profile === 'metal' ? 0.16 : 0.34;
+          const nx = -dx * normalStrength, ny = -dy * normalStrength, nz = 1;
           const length = Math.hypot(nx, ny, nz);
           image.data[i] = Math.round((nx / length * 0.5 + 0.5) * 255);
           image.data[i + 1] = Math.round((ny / length * 0.5 + 0.5) * 255);
           image.data[i + 2] = Math.round((nz / length * 0.5 + 0.5) * 255);
         } else {
-          const value = kind === 'bump' ? 128 + wave * 10 : kind === 'roughness' ? 238 + wave * 3.8 : 238 + wave * 3.8;
+          const value = kind === 'bump' ? 128 + wave * (profile === 'metal' ? 4 : 10) : 238 + wave * (profile === 'metal' ? 4.5 : 3.8);
           image.data[i] = image.data[i + 1] = image.data[i + 2] = Math.max(0, Math.min(255, value));
         }
         image.data[i + 3] = 255;
@@ -110,8 +122,9 @@ function getSharedSurfaceMaps() {
   roughness.colorSpace = THREE.NoColorSpace;
   roughness.wrapS = roughness.wrapT = THREE.RepeatWrapping;
   roughness.anisotropy = 4;
-  sharedSurfaceMaps = { color, bump, normal, roughness };
-  return sharedSurfaceMaps;
+  const maps = { color, bump, normal, roughness };
+  sharedSurfaceMaps.set(profile, maps);
+  return maps;
 }
 
 function ensureProceduralUV(geometry: THREE.BufferGeometry) {
@@ -223,7 +236,6 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
   }
 
   scene.updateMatrixWorld(true);
-  const maps = getSharedSurfaceMaps();
   const tower = category === 'towers';
   const characterRoot = scene.getObjectByName('ModelRoot') ?? scene;
   const keepTowerNodes = new Set(['spincrystal', 'spinring', 'ember']);
@@ -252,19 +264,26 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
       for (const material of materials) {
         const standard = material as THREE.MeshStandardMaterial;
         if (!standard.isMeshStandardMaterial) continue;
-        if (!standard.map) standard.map = maps.color;
-        if (!standard.normalMap) {
-          standard.normalMap = maps.normal;
-          standard.normalScale.set(category === 'bosses' ? 0.22 : 0.14, category === 'bosses' ? 0.22 : 0.14);
-        }
-        if (!standard.roughnessMap) standard.roughnessMap = maps.roughness;
-        if (!standard.bumpMap) {
-          standard.bumpMap = maps.bump;
-          standard.bumpScale = category === 'bosses' ? 0.022 : 0.012;
+        // Emissive cores stay clean; stone and forged metal receive distinct
+        // seamless surface families instead of one generic texture for everything.
+        const emissiveStrength = standard.emissive.r + standard.emissive.g + standard.emissive.b;
+        if (emissiveStrength <= 0.08) {
+          const maps = getSharedSurfaceMaps(standard.metalness > 0.4 ? 'metal' : 'stone');
+          if (maps) {
+            if (!standard.map) standard.map = maps.color;
+            if (!standard.normalMap) {
+              standard.normalMap = maps.normal;
+              standard.normalScale.set(category === 'bosses' ? 0.22 : 0.14, category === 'bosses' ? 0.22 : 0.14);
+            }
+            if (!standard.roughnessMap) standard.roughnessMap = maps.roughness;
+            if (!standard.bumpMap) {
+              standard.bumpMap = maps.bump;
+              standard.bumpScale = category === 'bosses' ? 0.022 : 0.012;
+            }
+          }
         }
         // Give materials physically distinct response instead of making every surface
         // equally dull: metals retain reflections, stone stays matte, emissive cores glow.
-        const emissiveStrength = standard.emissive.r + standard.emissive.g + standard.emissive.b;
         if (emissiveStrength > 0.08) {
           standard.roughness = Math.min(standard.roughness, 0.3);
           standard.metalness = Math.min(standard.metalness, 0.12);
