@@ -9,6 +9,7 @@ const referenced = [...manifest.matchAll(/file:\s*'([^']+\.glb)'/g)].map((m) => 
 const failures = [];
 const warnings = [];
 const checked = new Set();
+const audit = [];
 
 function validate(file) {
   const bytes = fs.readFileSync(file);
@@ -101,8 +102,17 @@ function validate(file) {
       }
     }
   }
+  const triangles = (doc.meshes ?? []).reduce((sum, mesh) => sum + (mesh.primitives ?? []).reduce((inner, primitive) => {
+    const accessor = primitive.indices !== undefined ? doc.accessors[primitive.indices] : doc.accessors[primitive.attributes?.POSITION];
+    return inner + (primitive.indices !== undefined ? accessor.count / 3 : accessor.count / 3);
+  }, 0), 0);
   checked.add(rel);
-  return { rel, bytes: bytes.length, meshes: doc.meshes?.length ?? 0, nodes: doc.nodes.length, materials: doc.materials?.length ?? 0 };
+  return {
+    rel, bytes: bytes.length, meshes: doc.meshes?.length ?? 0, nodes: doc.nodes.length,
+    materials: doc.materials?.length ?? 0, textures: doc.images?.length ?? 0,
+    skins: doc.skins?.length ?? 0, animations: doc.animations?.length ?? 0,
+    triangles: Math.round(triangles),
+  };
 }
 
 for (const url of referenced) {
@@ -111,7 +121,7 @@ for (const url of referenced) {
     failures.push(`Missing manifest asset: public${url}`);
     continue;
   }
-  try { validate(file); } catch (error) { failures.push(`${path.relative(root, file)}: ${error.message}`); }
+  try { audit.push(validate(file)); } catch (error) { failures.push(`${path.relative(root, file)}: ${error.message}`); }
 }
 
 const assetRoot = path.join(root, 'public/assets/3d');
@@ -120,12 +130,18 @@ function walk(dir) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(full);
     else if (entry.isFile() && entry.name.toLowerCase().endsWith('.glb') && !checked.has(path.relative(root, full).replaceAll(path.sep, '/'))) {
-      try { validate(full); } catch (error) { failures.push(`${path.relative(root, full)}: ${error.message}`); }
+      try { audit.push(validate(full)); } catch (error) { failures.push(`${path.relative(root, full)}: ${error.message}`); }
     }
   }
 }
 walk(assetRoot);
 console.log(`GLB validation: ${checked.size} valid files; ${referenced.length} manifest references.`);
+const textureless = audit.filter((item) => item.textures === 0).length;
+const unriggedCombat = audit.filter((item) => /\\/(?:enemies|bosses)\\//.test(item.rel) && item.skins === 0).length;
+const authoredCombatAnimations = audit.filter((item) => /\\/(?:enemies|bosses)\\//.test(item.rel) && item.animations > 0).length;
+const totalTriangles = audit.reduce((sum, item) => sum + item.triangles, 0);
+console.log(`Art audit: ${audit.length} GLBs, ~${totalTriangles.toLocaleString()} source-mesh triangles; ${textureless} without embedded texture images; ${unriggedCombat} enemy/boss files without skeletal skinning; ${authoredCombatAnimations} enemy/boss files with embedded animation clips.`);
+console.log('Note: runtime surface maps and rigid-part clips improve presentation but are not substitutes for authored PBR texture sets and skeletal animation.');
 if (warnings.length) for (const warning of warnings) console.warn('WARN:', warning);
 if (failures.length) {
   for (const failure of failures) console.error('FAIL:', failure);
