@@ -52,7 +52,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'arman',
       category: 'heroes',
-      file: '/assets/3d/rigged/arman.gltf',
+      file: '/assets/3d/rigged/arman.glb',
       displayName: { fa: 'آرمان', en: 'Arman' },
       tier: 'Legendary',
       targetHeight: 1.85,
@@ -66,7 +66,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'aria',
       category: 'heroes',
-      file: '/assets/3d/rigged/aria.gltf',
+      file: '/assets/3d/rigged/aria.glb',
       displayName: { fa: 'آریا', en: 'Aria' },
       tier: 'Epic',
       targetHeight: 1.78,
@@ -80,7 +80,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'radin',
       category: 'heroes',
-      file: '/assets/3d/rigged/radin.gltf',
+      file: '/assets/3d/rigged/radin.glb',
       displayName: { fa: 'رادین', en: 'Radin' },
       tier: 'Epic',
       targetHeight: 1.95,
@@ -94,7 +94,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'nila',
       category: 'heroes',
-      file: '/assets/3d/rigged/nila.gltf',
+      file: '/assets/3d/rigged/nila.glb',
       displayName: { fa: 'نیلا', en: 'Nila' },
       tier: 'Epic',
       targetHeight: 1.75,
@@ -112,7 +112,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'shadow',
       category: 'enemies',
-      file: '/assets/3d/rigged/shadow.gltf',
+      file: '/assets/3d/rigged/shadow.glb',
       displayName: { fa: 'موجود سایه', en: 'Shadow Creature' },
       tier: 'Common',
       targetHeight: 1.45,
@@ -126,7 +126,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'warrior',
       category: 'enemies',
-      file: '/assets/3d/rigged/warrior.gltf',
+      file: '/assets/3d/rigged/warrior.glb',
       displayName: { fa: 'جنگجوی تاریکی', en: 'Dark Warrior' },
       tier: 'Common',
       targetHeight: 1.8,
@@ -140,7 +140,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'golem',
       category: 'enemies',
-      file: '/assets/3d/rigged/golem.gltf',
+      file: '/assets/3d/rigged/golem.glb',
       displayName: { fa: 'غول سنگی', en: 'Stone Golem' },
       tier: 'Elite',
       targetHeight: 2.6,
@@ -154,7 +154,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'spider',
       category: 'enemies',
-      file: '/assets/3d/rigged/spider.gltf',
+      file: '/assets/3d/rigged/spider.glb',
       displayName: { fa: 'عنکبوت سایه', en: 'Dark Spider' },
       tier: 'Common',
       targetHeight: 1.1,
@@ -168,7 +168,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'warlock',
       category: 'enemies',
-      file: '/assets/3d/rigged/warlock.gltf',
+      file: '/assets/3d/rigged/warlock.glb',
       displayName: { fa: 'جادوگر تاریکی', en: 'Dark Mage' },
       tier: 'Elite',
       targetHeight: 1.9,
@@ -182,7 +182,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'flyer',
       category: 'enemies',
-      file: '/assets/3d/rigged/flyer.gltf',
+      file: '/assets/3d/rigged/flyer.glb',
       displayName: { fa: 'پرنده سایه', en: 'Flying Shadow' },
       tier: 'Common',
       targetHeight: 1.5,
@@ -197,7 +197,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'warMachine',
       category: 'enemies',
-      file: '/assets/3d/rigged/warMachine.gltf',
+      file: '/assets/3d/rigged/warMachine.glb',
       displayName: { fa: 'ماشین جنگی', en: 'War Machine' },
       tier: 'Elite',
       targetHeight: 2.2,
@@ -211,7 +211,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'aetherTank',
       category: 'enemies',
-      file: '/assets/3d/rigged/aetherTank.gltf',
+      file: '/assets/3d/rigged/aetherTank.glb',
       displayName: { fa: 'تانک اثری', en: 'Aether Tank' },
       tier: 'Elite',
       targetHeight: 2.4,
@@ -225,7 +225,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'smallDragon',
       category: 'enemies',
-      file: '/assets/3d/rigged/smallDragon.gltf',
+      file: '/assets/3d/rigged/smallDragon.glb',
       displayName: { fa: 'اژدهای کوچک', en: 'Small Dragon' },
       tier: 'Elite',
       targetHeight: 2.8,
@@ -239,7 +239,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'crystalMonster',
       category: 'enemies',
-      file: '/assets/3d/rigged/crystalMonster.gltf',
+      file: '/assets/3d/rigged/crystalMonster.glb',
       displayName: { fa: 'هیولای کریستالی', en: 'Crystal Monster' },
       tier: 'Elite',
       targetHeight: 1.7,
@@ -253,7 +253,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'hunter',
       category: 'enemies',
-      file: '/assets/3d/rigged/hunter.gltf',
+      file: '/assets/3d/rigged/hunter.glb',
       displayName: { fa: 'شکارچی', en: 'Hunter' },
       tier: 'Elite',
       targetHeight: 1.8,
@@ -267,7 +267,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'destroyer',
       category: 'enemies',
-      file: '/assets/3d/rigged/destroyer.gltf',
+      file: '/assets/3d/rigged/destroyer.glb',
       displayName: { fa: 'نابودگر', en: 'Destroyer' },
       tier: 'Legendary',
       targetHeight: 2.3,
@@ -281,7 +281,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'summoner',
       category: 'enemies',
-      file: '/assets/3d/rigged/summoner.gltf',
+      file: '/assets/3d/rigged/summoner.glb',
       displayName: { fa: 'احضارکننده', en: 'Summoner' },
       tier: 'Legendary',
       targetHeight: 1.9,
@@ -295,7 +295,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'spirit',
       category: 'enemies',
-      file: '/assets/3d/rigged/spirit.gltf',
+      file: '/assets/3d/rigged/spirit.glb',
       displayName: { fa: 'روح', en: 'Spirit' },
       tier: 'Common',
       targetHeight: 1.5,
@@ -309,7 +309,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'shadowSoldier',
       category: 'enemies',
-      file: '/assets/3d/rigged/shadowSoldier.gltf',
+      file: '/assets/3d/rigged/shadowSoldier.glb',
       displayName: { fa: 'سرباز سایه', en: 'Shadow Soldier' },
       tier: 'Common',
       targetHeight: 1.75,
@@ -323,7 +323,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'annihilator',
       category: 'enemies',
-      file: '/assets/3d/rigged/annihilator.gltf',
+      file: '/assets/3d/rigged/annihilator.glb',
       displayName: { fa: 'محوکننده', en: 'Annihilator' },
       tier: 'Legendary',
       targetHeight: 2.6,
@@ -341,7 +341,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'golemKing',
       category: 'bosses',
-      file: '/assets/3d/rigged/golemKing.gltf',
+      file: '/assets/3d/rigged/golemKing.glb',
       displayName: { fa: 'پادشاه غول سنگی', en: 'Stone Golem King' },
       tier: 'Boss',
       targetHeight: 2.6, // × data.scale 2.2 → ۵.۷ واحد جهانی
@@ -355,7 +355,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'fireGiant',
       category: 'bosses',
-      file: '/assets/3d/rigged/fireGiant.gltf',
+      file: '/assets/3d/rigged/fireGiant.glb',
       displayName: { fa: 'غول آتش', en: 'Fire Giant' },
       tier: 'Boss',
       targetHeight: 3.6,
@@ -369,7 +369,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'iceGiant',
       category: 'bosses',
-      file: '/assets/3d/rigged/iceGiant.gltf',
+      file: '/assets/3d/rigged/iceGiant.glb',
       displayName: { fa: 'غول یخ', en: 'Ice Giant' },
       tier: 'Boss',
       targetHeight: 3.6,
@@ -383,7 +383,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'blackDragon',
       category: 'bosses',
-      file: '/assets/3d/rigged/blackDragon.gltf',
+      file: '/assets/3d/rigged/blackDragon.glb',
       displayName: { fa: 'اژدهای سیاه', en: 'Black Dragon' },
       tier: 'Boss',
       targetHeight: 4.5,
@@ -397,7 +397,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'darkLord',
       category: 'bosses',
-      file: '/assets/3d/rigged/darkLord.gltf',
+      file: '/assets/3d/rigged/darkLord.glb',
       displayName: { fa: 'ارباب تاریکی', en: 'Dark Lord' },
       tier: 'Final Boss',
       targetHeight: 4.2,
