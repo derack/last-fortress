@@ -20,6 +20,21 @@ for (const url of refs) {
     const binary = Buffer.from(doc.buffers[0].uri.split(',')[1], 'base64');
     if (binary.length !== doc.buffers[0].byteLength) throw new Error('embedded buffer length mismatch');
     totalBytes += fs.statSync(file).size;
+    if (!Array.isArray(doc.images) || doc.images.length < 5) throw new Error('expected embedded albedo, normal, metallic-roughness, AO, and emissive images');
+    if (!Array.isArray(doc.textures) || doc.textures.length < 5) throw new Error('expected five PBR texture bindings');
+    for (const [ii,image] of doc.images.entries()) {
+      if (typeof image.uri !== 'string' || !image.uri.startsWith('data:image/png;base64,')) throw new Error('image '+ii+' is not embedded PNG data');
+      const png = Buffer.from(image.uri.slice(image.uri.indexOf(',')+1), 'base64');
+      if (png.length < 64 || png.readUInt32BE(0) !== 0x89504e47 || png.toString('ascii',1,4) !== 'PNG') throw new Error('image '+ii+' has invalid PNG signature');
+      if (png.readUInt32BE(16) < 32 || png.readUInt32BE(20) < 32) throw new Error('image '+ii+' resolution unexpectedly small');
+    }
+    for (const [ti,texture] of doc.textures.entries()) if (!doc.images[texture.source] || !doc.samplers?.[texture.sampler]) throw new Error('texture '+ti+' has invalid source/sampler');
+    for (const [mi,material] of (doc.materials ?? []).entries()) {
+      const pbr = material.pbrMetallicRoughness ?? {};
+      for (const [label,slot] of [['albedo',pbr.baseColorTexture],['metallic-roughness',pbr.metallicRoughnessTexture],['normal',material.normalTexture],['ambient-occlusion',material.occlusionTexture]]) {
+        if (!Number.isInteger(slot?.index) || !doc.textures[slot.index]) throw new Error('material '+mi+' lacks valid '+label+' texture');
+      }
+    }
     const skin = doc.skins[0];
     if (!skin.joints || skin.joints.length < 8) throw new Error('skeleton has too few joints');
     if (!Number.isInteger(skin.inverseBindMatrices) || !doc.accessors[skin.inverseBindMatrices]) throw new Error('inverse bind matrices missing');
@@ -77,10 +92,10 @@ for (const url of refs) {
     failures.push(url+': '+e.message);
   }
 }
-console.log('Rigged glTF audit: '+refs.length+' manifest assets; '+totalPrimitives+' merged draw primitives; '+Math.round(totalTriangles).toLocaleString()+' triangles; '+(totalBytes/1024).toFixed(1)+' KiB JSON+embedded geometry.');
+console.log('Rigged glTF PBR audit: '+refs.length+' manifest assets; '+totalPrimitives+' merged draw primitives; '+Math.round(totalTriangles).toLocaleString()+' triangles; '+(totalBytes/1024).toFixed(1)+' KiB JSON+embedded geometry+five PNG maps per asset.');
 if (failures.length) {
   for (const failure of failures) console.error('FAIL:', failure);
   process.exitCode = 1;
 } else {
-  console.log('All generated enemy/boss models have valid skin data, embedded geometry, and Idle/Walk/Run/Attack/Hit/Death animation clips.');
+  console.log('All generated enemy/boss models have valid skin data, UVs, embedded PBR PNG maps, and Idle/Walk/Run/Attack/Hit/Death animation clips.');
 }
