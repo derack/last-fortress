@@ -50,13 +50,13 @@ for (const url of refs) {
       for (const child of node.children ?? []) if (!Number.isInteger(child) || child < 0 || child >= doc.nodes.length) throw new Error('node '+ni+' has invalid child');
     }
     for (const joint of skin.joints) if (!Number.isInteger(joint) || joint < 0 || joint >= doc.nodes.length) throw new Error('skin has invalid joint node');
-    // Every model must ship real distance variants because CharacterFactory switches
-    // these groups at 22m and 38m. Reject empty or non-reducing LODs at build time.
+    // Runtime CharacterFactory switches these variants at 22m and 38m.
+    // Enforce populated groups and monotonically decreasing triangle budgets.
     const triangleCountForNode = (node) => (doc.meshes?.[node.mesh]?.primitives ?? []).reduce((sum,p) => {
       const a = doc.accessors[p.indices];
       return sum + (a?.count ?? 0) / 3;
     }, 0);
-    const baseNodes = doc.nodes.filter(node => Number.isInteger(node.mesh) && !/_LOD[12]$/i.test(node.name ?? ''));
+    const baseNodes = doc.nodes.filter(node => Number.isInteger(node.mesh) && !/(?:_LOD1|_LOD2)$/i.test(node.name ?? ''));
     const baseTriangles = baseNodes.reduce((sum,node) => sum + triangleCountForNode(node), 0);
     const lodGroup = (level) => doc.nodes.find(node => (node.name ?? '').toLowerCase().endsWith('_lod'+level));
     const lod1 = lodGroup(1), lod2 = lodGroup(2);
@@ -68,18 +68,6 @@ for (const url of refs) {
     }
     if (lod1Triangles > baseTriangles * 0.92) throw new Error('LOD1 must reduce at least 8% of source triangles');
     if (lod2Triangles > baseTriangles * 0.75) throw new Error('LOD2 must reduce at least 25% of source triangles');
-
-    const lodGroup = (level) => doc.nodes.find(node => (node.name ?? '').toLowerCase().endsWith('_lod'+level));
-    const lod1 = lodGroup(1), lod2 = lodGroup(2);
-    if (!lod1 || !lod2 || !lod1.children?.length || !lod2.children?.length) throw new Error('expected populated LOD1 and LOD2 groups');
-    const lodTriangles = (group) => group.children.reduce((sum,index) => sum + triangleCountForNode(doc.nodes[index]), 0);
-    const lod1Triangles = lodTriangles(lod1), lod2Triangles = lodTriangles(lod2);
-    if (!(baseTriangles > lod1Triangles && lod1Triangles > lod2Triangles && lod2Triangles > 0)) {
-      throw new Error('LOD triangle budgets must decrease monotonically (base '+baseTriangles+', LOD1 '+lod1Triangles+', LOD2 '+lod2Triangles+')');
-    }
-    if (lod1Triangles > baseTriangles * 0.92) throw new Error('LOD1 must reduce at least 8% of source triangles');
-    if (lod2Triangles > baseTriangles * 0.75) throw new Error('LOD2 must reduce at least 25% of source triangles');
-
 
     for (const [ai,a] of doc.accessors.entries()) {
       const bv = doc.bufferViews?.[a.bufferView];
@@ -169,4 +157,11 @@ for (const url of refs) {
   } catch (e) {
     failures.push(url+': '+e.message);
   }
+}
+console.log('Rigged glTF PBR audit: '+refs.length+' manifest assets; '+totalPrimitives+' merged draw primitives; '+Math.round(totalTriangles).toLocaleString()+' triangles; '+(totalBytes/1024).toFixed(1)+' KiB JSON+embedded geometry+five PNG maps per asset.');
+if (failures.length) {
+  for (const failure of failures) console.error('FAIL:', failure);
+  process.exitCode = 1;
+} else {
+  console.log('All generated character models have valid skin data, embedded PBR maps, validated animation clips, and real LOD0/LOD1/LOD2 geometry with enforced triangle budgets.');
 }
