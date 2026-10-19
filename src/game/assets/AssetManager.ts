@@ -51,12 +51,16 @@ export interface PreloadReport {
  * a draw call for every enemy in a wave. Keep weapons separate for procedural
  * prop-swing, and keep tower pivots/VFX meshes separate for gameplay animation.
  */
-let sharedSurfaceMaps: { color: THREE.CanvasTexture; bump: THREE.CanvasTexture } | null = null;
+let sharedSurfaceMaps: { color: THREE.CanvasTexture; bump: THREE.CanvasTexture; normal: THREE.CanvasTexture } | null = null;
 
 function getSharedSurfaceMaps() {
   if (sharedSurfaceMaps || typeof document === 'undefined') return sharedSurfaceMaps;
   const size = 128;
-  const makeCanvas = (bump: boolean) => {
+  const waveAt = (x: number, y: number) =>
+    Math.sin((x / size) * Math.PI * 8 + Math.sin((y / size) * Math.PI * 4) * 0.7)
+    + Math.cos((y / size) * Math.PI * 6 + Math.sin((x / size) * Math.PI * 2) * 0.45)
+    + 0.45 * Math.sin(((x + y) / size) * Math.PI * 12);
+  const makeCanvas = (kind: 'color' | 'bump' | 'normal') => {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = size;
     const ctx = canvas.getContext('2d');
@@ -64,22 +68,31 @@ function getSharedSurfaceMaps() {
     const image = ctx.createImageData(size, size);
     for (let y = 0; y < size; y++) {
       for (let x = 0; x < size; x++) {
-        // Smooth periodic fields tile seamlessly; no high-frequency colored speckles.
-        const wave = Math.sin((x / size) * Math.PI * 8 + Math.sin((y / size) * Math.PI * 4) * 0.7)
-          + Math.cos((y / size) * Math.PI * 6 + Math.sin((x / size) * Math.PI * 2) * 0.45)
-          + 0.45 * Math.sin(((x + y) / size) * Math.PI * 12);
-        const value = bump ? 128 + wave * 13 : 237 + wave * 3.2;
+        // Broad, periodic mineral/forged-surface variation. No colored speckles.
+        const wave = waveAt(x, y);
         const i = (y * size + x) * 4;
-        image.data[i] = image.data[i + 1] = image.data[i + 2] = Math.max(0, Math.min(255, value));
+        if (kind === 'normal') {
+          const dx = (waveAt((x + 1) % size, y) - waveAt((x + size - 1) % size, y)) * 0.5;
+          const dy = (waveAt(x, (y + 1) % size) - waveAt(x, (y + size - 1) % size)) * 0.5;
+          const nx = -dx * 0.34, ny = -dy * 0.34, nz = 1;
+          const length = Math.hypot(nx, ny, nz);
+          image.data[i] = Math.round((nx / length * 0.5 + 0.5) * 255);
+          image.data[i + 1] = Math.round((ny / length * 0.5 + 0.5) * 255);
+          image.data[i + 2] = Math.round((nz / length * 0.5 + 0.5) * 255);
+        } else {
+          const value = kind === 'bump' ? 128 + wave * 10 : 238 + wave * 3.8;
+          image.data[i] = image.data[i + 1] = image.data[i + 2] = Math.max(0, Math.min(255, value));
+        }
         image.data[i + 3] = 255;
       }
     }
     ctx.putImageData(image, 0, 0);
     return canvas;
   };
-  const colorCanvas = makeCanvas(false);
-  const bumpCanvas = makeCanvas(true);
-  if (!colorCanvas || !bumpCanvas) return null;
+  const colorCanvas = makeCanvas('color');
+  const bumpCanvas = makeCanvas('bump');
+  const normalCanvas = makeCanvas('normal');
+  if (!colorCanvas || !bumpCanvas || !normalCanvas) return null;
   const color = new THREE.CanvasTexture(colorCanvas);
   color.colorSpace = THREE.SRGBColorSpace;
   color.wrapS = color.wrapT = THREE.RepeatWrapping;
@@ -88,7 +101,11 @@ function getSharedSurfaceMaps() {
   bump.colorSpace = THREE.NoColorSpace;
   bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
   bump.anisotropy = 4;
-  sharedSurfaceMaps = { color, bump };
+  const normal = new THREE.CanvasTexture(normalCanvas);
+  normal.colorSpace = THREE.NoColorSpace;
+  normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
+  normal.anisotropy = 4;
+  sharedSurfaceMaps = { color, bump, normal };
   return sharedSurfaceMaps;
 }
 
@@ -210,9 +227,26 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
         const standard = material as THREE.MeshStandardMaterial;
         if (!standard.isMeshStandardMaterial) continue;
         if (!standard.map) standard.map = maps.color;
+        if (!standard.normalMap) {
+          standard.normalMap = maps.normal;
+          standard.normalScale.set(category === 'bosses' ? 0.22 : 0.14, category === 'bosses' ? 0.22 : 0.14);
+        }
         if (!standard.bumpMap) {
           standard.bumpMap = maps.bump;
-          standard.bumpScale = category === 'bosses' ? 0.04 : 0.025;
+          standard.bumpScale = category === 'bosses' ? 0.022 : 0.012;
+        }
+        // Give materials physically distinct response instead of making every surface
+        // equally dull: metals retain reflections, stone stays matte, emissive cores glow.
+        const emissiveStrength = standard.emissive.r + standard.emissive.g + standard.emissive.b;
+        if (emissiveStrength > 0.08) {
+          standard.roughness = Math.min(standard.roughness, 0.3);
+          standard.metalness = Math.min(standard.metalness, 0.12);
+        } else if (standard.metalness > 0.4) {
+          standard.metalness = Math.max(standard.metalness, 0.68);
+          standard.roughness = Math.min(standard.roughness, 0.42);
+        } else {
+          standard.metalness = Math.min(standard.metalness, 0.08);
+          standard.roughness = Math.max(standard.roughness, 0.82);
         }
         standard.needsUpdate = true;
       }
