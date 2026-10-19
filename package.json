@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "node scripts/generate-rigged-characters.mjs && next dev -p 3000",
     "build": "node scripts/generate-rigged-characters.mjs && node scripts/validate-rigged-characters.mjs && node scripts/validate-glb-assets.mjs && next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
-    "build:cap": "node scripts/generate-rigged-characters.mjs && node scripts/validate-rigged-characters.mjs && node scripts/validate-glb-assets.mjs && CAP_BUILD=1 next build",
+    "build:cap": "CAP_BUILD=1 node scripts/generate-rigged-characters.mjs && CAP_BUILD=1 node scripts/validate-rigged-characters.mjs && node scripts/validate-glb-assets.mjs && CAP_BUILD=1 next build",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "lint": "eslint .",
     "db:push": "prisma db push --accept-data-loss",
