@@ -89,6 +89,9 @@ export class BattleScene {
   private lastRenderAt = 0;
   private perfAccum = 0;
   private perfFrames = 0;
+  private debugOverlay: HTMLDivElement | null = null;
+  private debugFrames = 0;
+  private debugWindowStart = 0;
   private theme: EnvTheme;
   private level: LevelData;
 
@@ -116,6 +119,15 @@ export class BattleScene {
     const night = level.timeOfDay === 'night';
     this.theme = ENV_THEMES[level.env] ?? ENV_THEMES.plains;
     this.level = level;
+    if (typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('graphicsDebug') === '1') {
+      const overlay = document.createElement('div');
+      overlay.setAttribute('aria-label', 'Graphics performance diagnostics');
+      overlay.style.cssText = 'position:fixed;top:8px;right:8px;z-index:99999;white-space:pre-line;pointer-events:none;padding:9px 11px;border:1px solid rgba(148,184,220,.35);border-radius:8px;background:rgba(5,10,18,.88);color:#d8e7f8;font:11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;backdrop-filter:blur(8px);';
+      overlay.textContent = 'LAST FORTRESS · GRAPHICS QA\\nCollecting frame data…';
+      document.body.appendChild(overlay);
+      this.debugOverlay = overlay;
+      this.debugWindowStart = performance.now();
+    }
 
     // نورپردازی محیطی PBR — متریال‌های واقعی GLB (فلز/سنگ/پارچه) درست دیده شوند
     if (quality !== 'low') {
@@ -925,6 +937,20 @@ export class BattleScene {
     const frameMs = now - this.lastRenderAt;
     this.lastRenderAt = now;
     this.renderer.render(this.scene, camera);
+    if (this.debugOverlay) {
+      this.debugFrames++;
+      const elapsed = now - this.debugWindowStart;
+      if (elapsed >= 1000) {
+        const fps = Math.round(this.debugFrames * 1000 / elapsed);
+        const info = this.renderer.info.render;
+        this.debugOverlay.textContent = `LAST FORTRESS · GRAPHICS QA
+FPS: ${fps}   Frame: ${frameMs.toFixed(1)} ms
+Draw calls: ${info.calls}   Triangles: ${info.triangles.toLocaleString()}
+Quality: ${this.quality}   Pixel ratio: ${this.currentRatio.toFixed(2)}`;
+        this.debugFrames = 0;
+        this.debugWindowStart = now;
+      }
+    }
     // نمونه‌گیری هر ~۱ ثانیه — بالا/پایین کردن تدریجی رزولوشن
     if (frameMs > 0 && frameMs < 1000) {
       this.perfAccum += frameMs;
@@ -961,6 +987,8 @@ export class BattleScene {
       }
     });
     this.scene.environment?.dispose();
+    this.debugOverlay?.remove();
+    this.debugOverlay = null;
     this.renderer.dispose();
   }
 }
