@@ -18,26 +18,29 @@ type EnvironmentSurfaceMaps = {
 };
 const environmentSurfaceCache = new Map<EnvironmentSurfaceProfile, EnvironmentSurfaceMaps>();
 
+/** Authored seamless PBR texture families for environment and tower materials. */
 function getEnvironmentSurfaceMaps(profile: EnvironmentSurfaceProfile): EnvironmentSurfaceMaps | null {
   const cached = environmentSurfaceCache.get(profile);
   if (cached) return cached;
   if (typeof document === 'undefined') return null;
-  const size = 128;
-  const waveAt = (x: number, y: number) => {
-    const u = x / size, v = y / size;
+  const size = 192;
+  const periodic = (x: number, y: number, fx: number, fy: number, phase = 0) =>
+    Math.sin((x / size) * Math.PI * 2 * fx + phase) *
+    Math.cos((y / size) * Math.PI * 2 * fy - phase * 0.7);
+  const field = (x: number, y: number) => {
+    const broad = periodic(x, y, 3, 4, 0.7) * 0.52
+      + periodic(x, y, 5, 3, 1.8) * 0.28
+      + periodic(x, y, 8, 7, 2.4) * 0.14
+      + periodic(x, y, 13, 11, 0.4) * 0.06;
     if (profile === 'metal') {
-      return Math.sin(v * Math.PI * 64 + Math.sin(u * Math.PI * 6) * 0.18) * 0.34
-        + Math.sin(v * Math.PI * 24 + u * Math.PI * 3) * 0.24
-        + Math.cos(u * Math.PI * 8) * 0.12;
+      return broad * 0.12 + Math.sin((y / size) * Math.PI * 2 * 72 + Math.sin((x / size) * Math.PI * 2 * 5) * 0.16) * 0.055
+        + periodic(x, y, 2, 19, 0.6) * 0.025;
     }
     if (profile === 'foliage') {
-      return Math.sin(u * Math.PI * 6 + Math.sin(v * Math.PI * 4) * 0.9)
-        + Math.cos(v * Math.PI * 8 + Math.sin(u * Math.PI * 3) * 0.7) * 0.65
-        + Math.sin((u + v) * Math.PI * 10) * 0.28;
+      const vein = Math.pow(Math.max(0, Math.cos((x / size) * Math.PI * 2 * 7 + Math.sin((y / size) * Math.PI * 2 * 3) * 1.15)), 10);
+      return broad * 0.62 + vein * 0.16 + periodic(x, y, 11, 5, 1.2) * 0.1;
     }
-    return Math.sin(u * Math.PI * 8 + Math.sin(v * Math.PI * 4) * 0.7)
-      + Math.cos(v * Math.PI * 6 + Math.sin(u * Math.PI * 2) * 0.45)
-      + Math.sin((u + v) * Math.PI * 12) * 0.45;
+    return broad;
   };
   const makeCanvas = (kind: 'color' | 'bump' | 'normal' | 'roughness') => {
     const canvas = document.createElement('canvas');
@@ -46,20 +49,23 @@ function getEnvironmentSurfaceMaps(profile: EnvironmentSurfaceProfile): Environm
     if (!ctx) return null;
     const image = ctx.createImageData(size, size);
     for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
-      const wave = waveAt(x, y), i = (y * size + x) * 4;
+      const f = field(x, y);
+      const dx = (field((x + 1) % size, y) - field((x + size - 1) % size, y)) * 0.5;
+      const dy = (field(x, (y + 1) % size) - field(x, (y + size - 1) % size)) * 0.5;
+      const i = (y * size + x) * 4;
       if (kind === 'normal') {
-        const dx = (waveAt((x + 1) % size, y) - waveAt((x + size - 1) % size, y)) * 0.5;
-        const dy = (waveAt(x, (y + 1) % size) - waveAt(x, (y + size - 1) % size)) * 0.5;
-        const strength = profile === 'metal' ? 0.14 : profile === 'foliage' ? 0.22 : 0.3;
-        const nx = -dx * strength, ny = -dy * strength, nz = 1, length = Math.hypot(nx, ny, nz);
-        image.data[i] = Math.round((nx / length * 0.5 + 0.5) * 255);
-        image.data[i + 1] = Math.round((ny / length * 0.5 + 0.5) * 255);
-        image.data[i + 2] = Math.round((nz / length * 0.5 + 0.5) * 255);
+        const strength = profile === 'metal' ? 0.75 : profile === 'foliage' ? 1.45 : 1.2;
+        const nx = -dx * strength, ny = -dy * strength, nz = 1, len = Math.hypot(nx, ny, nz);
+        image.data[i] = Math.round((nx / len * 0.5 + 0.5) * 255);
+        image.data[i + 1] = Math.round((ny / len * 0.5 + 0.5) * 255);
+        image.data[i + 2] = Math.round((nz / len * 0.5 + 0.5) * 255);
       } else {
         const value = kind === 'bump'
-          ? 128 + wave * (profile === 'metal' ? 3 : profile === 'foliage' ? 7 : 9)
-          : 238 + wave * (profile === 'metal' ? 4 : 3.5);
-        image.data[i] = image.data[i + 1] = image.data[i + 2] = Math.max(0, Math.min(255, value));
+          ? 128 + f * (profile === 'metal' ? 28 : profile === 'foliage' ? 30 : 38)
+          : kind === 'roughness'
+            ? (profile === 'metal' ? 105 : profile === 'foliage' ? 190 : 218) + f * 18
+            : 226 + f * (profile === 'metal' ? 16 : profile === 'foliage' ? 22 : 24);
+        image.data[i] = image.data[i + 1] = image.data[i + 2] = Math.max(0, Math.min(255, Math.round(value)));
       }
       image.data[i + 3] = 255;
     }
