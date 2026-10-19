@@ -123,7 +123,7 @@ export class BattleScene {
       const overlay = document.createElement('div');
       overlay.setAttribute('aria-label', 'Graphics performance diagnostics');
       overlay.style.cssText = 'position:fixed;top:8px;right:8px;z-index:99999;white-space:pre-line;pointer-events:none;padding:9px 11px;border:1px solid rgba(148,184,220,.35);border-radius:8px;background:rgba(5,10,18,.88);color:#d8e7f8;font:11px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;backdrop-filter:blur(8px);';
-      overlay.textContent = 'LAST FORTRESS · GRAPHICS QA\\nCollecting frame data…';
+      overlay.textContent = 'LAST FORTRESS · GRAPHICS QA\nCollecting frame data…';
       document.body.appendChild(overlay);
       this.debugOverlay = overlay;
       this.debugWindowStart = performance.now();
