@@ -9,18 +9,18 @@ export class CameraController {
   camera: THREE.PerspectiveCamera;
   private target = new THREE.Vector3(0, 0, 0);
   desiredTarget = new THREE.Vector3(0, 0, 0);
-  private radius = 42;
-  private desiredRadius = 42;
+  private radius = 36;
+  private desiredRadius = 36;
   private yaw = Math.PI * 0.25;
   private pitch = 0.95; // رادیان — نمای تاکتیکی
-  private minRadius = 16;
-  private maxRadius = 62;
+  private minRadius = 12;
+  private maxRadius = 56;
   private shakeAmount = 0;
   private shakeTime = 0;
   private bounds = 34;
 
   constructor(aspect: number) {
-    this.camera = new THREE.PerspectiveCamera(48, aspect, 1, 300);
+    this.camera = new THREE.PerspectiveCamera(44, aspect, 0.1, 300);
     this.updatePosition();
   }
 
@@ -49,7 +49,7 @@ export class CameraController {
 
   reset() {
     this.desiredTarget.set(6, 0, 0);
-    this.desiredRadius = 42;
+    this.desiredRadius = 36;
     this.shakeAmount = 0;
   }
 
