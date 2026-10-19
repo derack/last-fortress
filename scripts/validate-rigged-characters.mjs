@@ -15,6 +15,8 @@ for (const url of refs) {
   try {
     if (!fs.existsSync(file)) throw new Error('asset file is missing (run generate-rigged-characters.mjs first)');
     const doc = JSON.parse(fs.readFileSync(file, 'utf8'));
+    const assetId = path.basename(url, '.gltf');
+    const isLargeAsset = ['arman','aria','radin','nila','golemKing','fireGiant','iceGiant','blackDragon','darkLord'].includes(assetId);
     if (doc.asset?.version !== '2.0') throw new Error('asset.version must be 2.0');
     if (!doc.nodes?.length || !doc.scenes?.length || !doc.skins?.length) throw new Error('scene, nodes, and a skin are required');
     if (!doc.buffers?.[0]?.uri?.startsWith('data:application/octet-stream;base64,')) throw new Error('expected self-contained base64 buffer');
@@ -28,6 +30,12 @@ for (const url of refs) {
       const png = Buffer.from(image.uri.slice(image.uri.indexOf(',')+1), 'base64');
       if (png.length < 64 || png.readUInt32BE(0) !== 0x89504e47 || png.toString('ascii',1,4) !== 'PNG') throw new Error('image '+ii+' has invalid PNG signature');
       if (png.readUInt32BE(16) < 32 || png.readUInt32BE(20) < 32) throw new Error('image '+ii+' resolution unexpectedly small');
+      if (process.env.CAP_BUILD === '1') {
+        const mobileMax = isLargeAsset ? 256 : 128;
+        if (png.readUInt32BE(16) > mobileMax || png.readUInt32BE(20) > mobileMax) {
+          throw new Error('mobile texture budget exceeded by image '+ii+' ('+png.readUInt32BE(16)+'x'+png.readUInt32BE(20)+', max '+mobileMax+')');
+        }
+      }
     }
     for (const [ti,texture] of doc.textures.entries()) if (!doc.images[texture.source] || !doc.samplers?.[texture.sampler]) throw new Error('texture '+ti+' has invalid source/sampler');
     const albedoHashes = doc.images.slice(0, 5).map((image) =>
@@ -51,7 +59,6 @@ for (const url of refs) {
       if (!jointNames.has(required)) throw new Error('skeleton missing articulated joint '+required);
     }
     const animationNames = new Set((doc.animations ?? []).map(a => a.name));
-    const assetId = path.basename(url, '.gltf');
     if (assetId === 'spider') {
       for (const joint of ['SpiderLegL0','SpiderLegR0','SpiderLegL1','SpiderLegR1','SpiderLegL2','SpiderLegR2','SpiderLegL3','SpiderLegR3']) {
         if (!jointNames.has(joint)) throw new Error('spider rig missing independent leg joint '+joint);
