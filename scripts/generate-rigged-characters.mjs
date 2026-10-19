@@ -319,13 +319,15 @@ function makeCharacter(id, category, baseColor, accent, style) {
     }
     // Distinct weapon silhouette weighted to the right arm joint.
     if(style==='mage') {
-      cyl([0.55,1.0,0.03],[0.045,1.05,0.045],'Arm_R',dark);
-      sphere([0.55,1.57,0.03],[0.15,0.15,0.15],'Arm_R',glow);
-      for(let i=0;i<3;i++) cone([0.55+Math.cos(i*2.094)*0.19,1.57+Math.sin(i*2.094)*0.19,0.03],[0.035,0.14,0.035],'Arm_R',edge,[0,0,i*0.7]);
+      // The staff is bound to the hand, not the upper arm, so wrist motion
+      // follows the attack clip and the grip remains visually coherent.
+      cyl([0.55,1.0,0.03],[0.045,1.05,0.045],'Hand_R',dark);
+      sphere([0.55,1.57,0.03],[0.15,0.15,0.15],'Hand_R',glow);
+      for(let i=0;i<3;i++) cone([0.55+Math.cos(i*2.094)*0.19,1.57+Math.sin(i*2.094)*0.19,0.03],[0.035,0.14,0.035],'Hand_R',edge,[0,0,i*0.7]);
     } else {
-      cyl([0.58,0.92,0.05],[0.055,0.85,0.055],'Arm_R',dark,[0,0,-0.18]);
-      box([0.68,1.22,0.05],[0.28,0.36,0.09],'Arm_R',edge,[0,0,-0.18]);
-      cone([0.68,1.43,0.05],[0.07,0.18,0.07],'Arm_R',glow);
+      cyl([0.58,0.92,0.05],[0.055,0.85,0.055],'Hand_R',dark,[0,0,-0.18]);
+      box([0.68,1.22,0.05],[0.28,0.36,0.09],'Hand_R',edge,[0,0,-0.18]);
+      cone([0.68,1.43,0.05],[0.07,0.18,0.07],'Hand_R',glow);
     }
   }
   // Boss crowns, back spines and multi-layer plates.
@@ -470,8 +472,13 @@ function makeCharacter(id, category, baseColor, accent, style) {
       const ab=b.map((v,i)=>v-a[i]), ac=c.map((v,i)=>v-a[i]);
       let n=[ab[1]*ac[2]-ab[2]*ac[1],ab[2]*ac[0]-ab[0]*ac[2],ab[0]*ac[1]-ab[1]*ac[0]];
       const l=Math.hypot(...n)||1; n=n.map(v=>v/l);
+      // Dominant-axis planar UV projection: top surfaces use XZ, side faces use
+      // XY/YZ. This avoids the stretched horizontal stripes caused by applying
+      // XZ UVs to every vertical armor plate, weapon, and limb.
+      const ax=Math.abs(n[0]), ay=Math.abs(n[1]), az=Math.abs(n[2]);
+      const project=(p)=> ay>=ax&&ay>=az ? [p[0],p[2]] : ax>=az ? [p[2],p[1]] : [p[0],p[1]];
       const base=pos.length/3;
-      for(const p of [a,b,c]) {pos.push(...p);norm.push(...n);uv.push(p[0]*0.72,p[2]*0.72);}
+      for(const p of [a,b,c]) {const tex=project(p);pos.push(...p);norm.push(...n);uv.push(tex[0]*0.72,tex[1]*0.72);}
       indices.push(base,base+1,base+2);
     };
     if(piece.kind==='box') {
@@ -630,15 +637,15 @@ function makeCharacter(id, category, baseColor, accent, style) {
     : crawler
       ? [rot('Head','x',[0,-0.24,0.12,0,0]),rot('Leg_L','z',[0,0.3,-0.6,0.15,0]),rot('Leg_R','z',[0,-0.3,0.6,-0.15,0])]
       : mage
-        ? [rot('Arm_R','x',[0,-0.55,-0.25,0.55,0]),rot('Head','x',[0,-0.12,-0.2,0,0]),rot('Spine','y',[0,-0.08,0.16,0,0])]
-        : [rot('Arm_R','x',[-0.15,-0.95,0.85,0.3,-0.15]),rot('Spine','y',[0,-0.1,0.12,0,0]),...(heavy?[rot('Arm_L','x',[0,-0.35,0.55,0,0]),rot('Hips','x',[0,-0.05,0.08,0,0])]:[])];
+        ? [rot('Arm_R','x',[0,-0.55,-0.25,0.55,0]),rot('Hand_R','x',[0,-0.22,0.38,0.12,0]),rot('Head','x',[0,-0.12,-0.2,0,0]),rot('Spine','y',[0,-0.08,0.16,0,0])]
+        : [rot('Arm_R','x',[-0.15,-0.95,0.85,0.3,-0.15]),rot('Hand_R','x',[0,-0.28,0.5,0.16,0]),rot('Spine','y',[0,-0.1,0.12,0,0]),...(heavy?[rot('Arm_L','x',[0,-0.35,0.55,0,0]),rot('Hips','x',[0,-0.05,0.08,0,0])]:[])];
   addAnim('Attack',attackTracks);
   addAnim('Attack1',attackTracks);
   const attack2Tracks = beast
     ? [rot('Head','x',[0,-0.15,0.42,0.1,0]),rot('Jaw','x',[0,0.28,0.52,0.08,0]),rot('Tail','y',[0,-0.3,0.38,-0.1,0]),rot('Wing_L','z',[0,-0.75,-1.0,-0.15,0]),rot('Wing_R','z',[0,0.75,1.0,0.15,0])]
     : crawler
       ? [rot('Head','x',[0,-0.4,0.24,0,0]),rot('Leg_L','z',[0,0.55,-0.8,0.2,0]),rot('Leg_R','z',[0,-0.55,0.8,-0.2,0])]
-      : [rot('Arm_L','x',[0,-0.7,0.95,0.2,0]),rot('Arm_R','x',[0,-0.4,0.65,0.1,0]),rot('Spine','y',[0,0.2,-0.24,0,0]),rot('Hips','x',[0,-0.08,0.1,0,0])];
+      : [rot('Arm_L','x',[0,-0.7,0.95,0.2,0]),rot('Arm_R','x',[0,-0.4,0.65,0.1,0]),rot('Hand_R','x',[0,-0.2,0.42,0.1,0]),rot('Spine','y',[0,0.2,-0.24,0,0]),rot('Hips','x',[0,-0.08,0.1,0,0])];
   addAnim('Attack2',attack2Tracks);
   const specialTracks = beast
     ? [rot('Spine','x',[0,-0.18,-0.36,0.08,0]),rot('Head','x',[0,-0.2,-0.38,-0.05,0]),rot('Wing_L','z',[0,-0.75,-1.05,-0.25,0]),rot('Wing_R','z',[0,0.75,1.05,0.25,0]),rot('Tail','y',[0,0.38,-0.42,0.12,0])]
