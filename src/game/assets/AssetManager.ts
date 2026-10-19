@@ -68,7 +68,7 @@ function getSharedSurfaceMaps(profile: SurfaceProfile = 'stone'): SurfaceMaps | 
   const cached = sharedSurfaceMaps.get(profile);
   if (cached) return cached;
   if (typeof document === 'undefined') return null;
-  const size = MOBILE_ASSET_BUDGET ? 128 : 192;
+  const size = MOBILE_ASSET_BUDGET ? 256 : 512;
   const periodic = (x: number, y: number, fx: number, fy: number, phase = 0) =>
     Math.sin((x / size) * Math.PI * 2 * fx + phase) *
     Math.cos((y / size) * Math.PI * 2 * fy - phase * 0.7);
@@ -129,7 +129,7 @@ function getSharedSurfaceMaps(profile: SurfaceProfile = 'stone'): SurfaceMaps | 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = colorSpace;
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.anisotropy = MOBILE_ASSET_BUDGET ? 2 : 4;
+    texture.anisotropy = MOBILE_ASSET_BUDGET ? 4 : 8;
     texture.userData.sharedAssetResource = true;
     return texture;
   };
