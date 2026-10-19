@@ -152,11 +152,17 @@ const jointNames = [
   'Root','Hips','Spine','Chest','Neck','Head',
   'Arm_L','ForeArm_L','Hand_L','Arm_R','ForeArm_R','Hand_R',
   'Leg_L','Knee_L','Foot_L','Leg_R','Knee_R','Foot_R',
-  'Tail','Wing_L','WingTip_L','Wing_R','WingTip_R','Jaw'
+  'Tail','Wing_L','WingTip_L','Wing_R','WingTip_R','Jaw',
+  // Dedicated articulated limbs: eight independently animated spider legs.
+  'SpiderLegL0','SpiderLegR0','SpiderLegL1','SpiderLegR1',
+  'SpiderLegL2','SpiderLegR2','SpiderLegL3','SpiderLegR3',
+  // Secondary tail pivots let dragon silhouettes flex rather than rotate as one rigid piece.
+  'TailMid','TailTip'
 ];
 const jointIndex = Object.fromEntries(jointNames.map((n,i)=>[n,i]));
 const boneParents = [
-  -1,0,1,2,3,4, 3,6,7,3,9,10, 1,12,13,1,15,16, 1,3,19,3,21,5
+  -1,0,1,2,3,4, 3,6,7,3,9,10, 1,12,13,1,15,16, 1,3,19,3,21,5,
+  1,1,1,1,1,1,1,1,18,28
 ];
 const boneLocal = [
   [0,0,0],[0,0.72,0],[0,0.34,0],[0,0.2,0],[0,0.23,0],[0,0.24,0],
@@ -166,6 +172,12 @@ const boneLocal = [
   [0.16,-0.23,0],[0,-0.22,0],[0,-0.22,0.08],
   [0,-0.12,-0.25],[-0.31,0.28,-0.08],[-0.34,0,-0.12],
   [0.31,0.28,-0.08],[0.34,0,-0.12],[0,-0.14,0.12],
+  // Each spider leg pivot is placed at the upper-leg joint in model space.
+  [-0.50,-0.19,0.22],[0.50,-0.19,0.22],
+  [-0.62,-0.19,0.00],[0.62,-0.19,0.00],
+  [-0.73,-0.19,-0.22],[0.73,-0.19,-0.22],
+  [-0.85,-0.19,-0.44],[0.85,-0.19,-0.44],
+  [0,-0.08,-0.20],[0,-0.07,-0.22],
 ];
 const boneWorld = [];
 for (let i = 0; i < boneLocal.length; i++) {
@@ -200,8 +212,9 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     sphere([0,1.08,0.28],[0.34,0.3,0.34],'Head',dark);
     for(let i=0;i<4;i++) for(const side of [-1,1]) {
       const x=side*(0.32+i*0.075), z=0.22-i*0.22;
-      cyl([x*1.55,0.53,z],[0.075,0.48,0.075],'Leg_'+(side<0?'L':'R'),edge,[0,0,side*(0.42+i*0.14)]);
-      cone([x*1.8,0.29,z+0.08],[0.075,0.3,0.075],'Leg_'+(side<0?'L':'R'),armor,[0,0,side*0.3]);
+      const spiderJoint='SpiderLeg'+(side<0?'L':'R')+i;
+      cyl([x*1.55,0.53,z],[0.075,0.48,0.075],spiderJoint,edge,[0,0,side*(0.42+i*0.14)]);
+      cone([x*1.8,0.29,z+0.08],[0.075,0.3,0.075],spiderJoint,armor,[0,0,side*0.3]);
     }
     for(const side of [-1,1]) sphere([side*0.13,1.12,0.55],[0.07,0.08,0.04],'Head',glow);
   } else if (style==='dragon'||style==='dragonBoss'||style==='flyer') {
@@ -216,7 +229,7 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
       cyl([side*0.34,0.48,0.12],[0.16,0.48,0.16],side<0?'Leg_L':'Leg_R',armor,[0,0,side*0.12]);
       cone([side*0.34,0.25,0.26],[0.11,0.22,0.14],side<0?'Leg_L':'Leg_R',edge);
     }
-    for(let i=0;i<5;i++) cone([0,1.08-i*0.13,-0.25-i*0.17],[0.09,0.22,0.1],'Tail',edge,[0.22,0,0]);
+    for(let i=0;i<5;i++) cone([0,1.08-i*0.13,-0.25-i*0.17],[0.09,0.22,0.1],i<2?'Tail':i<4?'TailMid':'TailTip',edge,[0.22,0,0]);
     for(const side of [-1,1]) cone([side*0.14,1.15,0.83],[0.07,0.22,0.07],'Jaw',glow,[0,0,side*0.24]);
   } else if (style==='golem'||style==='bossGolem'||style==='iceBoss'||style==='fireBoss') {
     const boss=style==='bossGolem'||style==='iceBoss'||style==='fireBoss';
@@ -514,7 +527,7 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
   }
   // Tail joint has a visible articulated chain for beast/boss motion.
   if(['dragon','dragonBoss','spider','wraith'].includes(style)) {
-    for(let i=0;i<4;i++) sphere([0,0.46-i*0.1,-0.42-i*0.16],[0.12-i*0.015,0.12-i*0.015,0.16],'Tail',i%2?armor:edge);
+    for(let i=0;i<4;i++) sphere([0,0.46-i*0.1,-0.42-i*0.16],[0.12-i*0.015,0.12-i*0.015,0.16],i<2?'Tail':i===2?'TailMid':'TailTip',i%2?armor:edge);
   }
 
   // Final identity pass: silhouettes and readable equipment are deliberately
