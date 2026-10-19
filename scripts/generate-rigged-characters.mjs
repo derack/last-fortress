@@ -163,11 +163,18 @@ function makeCharacter(id, category, baseColor, accent, style) {
       cone([side*0.68,1.18,-0.18],[0.1,0.32,0.1],side<0?'Wing_L':'Wing_R',edge,[0,0,side*0.4]);
     }
   }
-  // Color-coded eye lenses, vents, and small rivets are emissive/material details, not particle noise.
-  sphere([-0.09,1.51,0.23],[0.045,0.035,0.025],'Head',glow);
-  sphere([0.09,1.51,0.23],[0.045,0.035,0.025],'Head',glow);
-  for(let side of [-1,1]) for(let i=0;i<3;i++)
-    sphere([side*(0.2+i*0.11),1.25-i*0.05,0.24],[0.025,0.025,0.025],side<0?'Arm_L':'Arm_R',glow);
+  // Eye lenses are placed against each archetype's actual head silhouette (not a shared floating coordinate).
+  const eye = style==='spider' ? {y:1.12,z:0.55,x:0.13,r:0.055}
+    : ['dragon','dragonBoss','flyer'].includes(style) ? {y:1.16,z:0.86,x:0.12,r:0.045}
+    : style==='wraith' ? {y:1.04,z:0.27,x:0.105,r:0.045}
+    : {y:1.51,z:0.23,x:0.09,r:0.045};
+  sphere([-eye.x,eye.y,eye.z],[eye.r,eye.r*0.78,0.025],'Head',glow);
+  sphere([eye.x,eye.y,eye.z],[eye.r,eye.r*0.78,0.025],'Head',glow);
+  // Vent/rivet details only belong to bipedal armor silhouettes.
+  if(!['spider','dragon','dragonBoss','flyer','wraith'].includes(style)) {
+    for(let side of [-1,1]) for(let i=0;i<3;i++)
+      sphere([side*(0.2+i*0.11),1.25-i*0.05,0.24],[0.025,0.025,0.025],side<0?'Arm_L':'Arm_R',glow);
+  }
   // Tail joint has a visible articulated chain for beast/boss motion.
   if(['dragon','dragonBoss','spider','wraith'].includes(style)) {
     for(let i=0;i<4;i++) sphere([0,0.46-i*0.1,-0.42-i*0.16],[0.12-i*0.015,0.12-i*0.015,0.16],'Tail',i%2?armor:edge);
@@ -306,12 +313,34 @@ function makeCharacter(id, category, baseColor, accent, style) {
   const rot=(joint,axis,angles)=>({joint,path:'rotation',values:angles.map(a=>quat(axis,a))});
   const tr=(joint,values)=>({joint,path:'translation',values});
   addAnim('Idle',[rot('Spine','x',[0,0.018,0,-0.012,0]),rot('Head','y',[0,-0.035,0,0.035,0])]);
-  addAnim('Walk',[rot('Leg_L','x',[0,0.42,0,-0.42,0]),rot('Leg_R','x',[0,-0.42,0,0.42,0]),rot('Arm_L','x',[0,-0.3,0,0.3,0]),rot('Arm_R','x',[0,0.3,0,-0.3,0]),tr('Hips',[[0,0.72,0],[0,0.76,0],[0,0.72,0],[0,0.76,0],[0,0.72,0]])]);
-  addAnim('Run',[rot('Leg_L','x',[0,0.72,0,-0.72,0]),rot('Leg_R','x',[0,-0.72,0,0.72,0]),rot('Arm_L','x',[0,-0.48,0,0.48,0]),rot('Arm_R','x',[0,0.48,0,-0.48,0]),rot('Spine','x',[0,0.08,0,0.08,0])]);
-  addAnim('Attack',[rot('Arm_R','x',[-0.15,-0.95,0.85,0.3,-0.15]),rot('Spine','y',[0,-0.1,0.12,0,0])]);
+  const beast=['dragon','dragonBoss','flyer'].includes(style);
+  const crawler=style==='spider';
+  const heavy=['golem','bossGolem','fireBoss','iceBoss','machine','tank','brute','darkBoss'].includes(style);
+  const walkTracks = beast
+    ? [rot('Leg_L','x',[0,0.16,0,-0.16,0]),rot('Leg_R','x',[0,-0.16,0,0.16,0]),rot('Wing_L','z',[0,-0.28,0,0.28,0]),rot('Wing_R','z',[0,0.28,0,-0.28,0]),rot('Tail','x',[0,0.12,0,-0.12,0])]
+    : crawler
+      ? [rot('Leg_L','z',[0,0.48,0,-0.48,0]),rot('Leg_R','z',[0,-0.48,0,0.48,0]),rot('Spine','x',[0,0.04,0,-0.04,0])]
+      : [rot('Leg_L','x',[0,0.42,0,-0.42,0]),rot('Leg_R','x',[0,-0.42,0,0.42,0]),rot('Arm_L','x',[0,-0.3,0,0.3,0]),rot('Arm_R','x',[0,0.3,0,-0.3,0]),tr('Hips',[[0,0.72,0],[0,0.76,0],[0,0.72,0],[0,0.76,0],[0,0.72,0]])];
+  addAnim('Walk',walkTracks);
+  const runTracks = beast
+    ? [rot('Leg_L','x',[0,0.3,0,-0.3,0]),rot('Leg_R','x',[0,-0.3,0,0.3,0]),rot('Wing_L','z',[0,-0.62,0,0.62,0]),rot('Wing_R','z',[0,0.62,0,-0.62,0]),rot('Tail','x',[0,0.2,0,-0.2,0])]
+    : crawler
+      ? [rot('Leg_L','z',[0,0.75,0,-0.75,0]),rot('Leg_R','z',[0,-0.75,0,0.75,0])]
+      : [rot('Leg_L','x',[0,0.72,0,-0.72,0]),rot('Leg_R','x',[0,-0.72,0,0.72,0]),rot('Arm_L','x',[0,-0.48,0,0.48,0]),rot('Arm_R','x',[0,0.48,0,-0.48,0]),rot('Spine','x',[0,0.08,0,0.08,0])];
+  addAnim('Run',runTracks);
+  const attackTracks = beast
+    ? [rot('Head','x',[-0.05,-0.35,0.24,0.08,-0.05]),rot('Jaw','x',[0,0.18,0.38,0.12,0]),rot('Tail','y',[0,0.22,-0.25,0.08,0]),rot('Wing_L','z',[0,-0.5,-0.9,-0.2,0]),rot('Wing_R','z',[0,0.5,0.9,0.2,0])]
+    : crawler
+      ? [rot('Head','x',[0,-0.24,0.12,0,0]),rot('Leg_L','z',[0,0.3,-0.6,0.15,0]),rot('Leg_R','z',[0,-0.3,0.6,-0.15,0])]
+      : [rot('Arm_R','x',[-0.15,-0.95,0.85,0.3,-0.15]),rot('Spine','y',[0,-0.1,0.12,0,0]),...(heavy?[rot('Arm_L','x',[0,-0.35,0.55,0,0])]:[])];
+  addAnim('Attack',attackTracks);
+  addAnim('Attack1',attackTracks);
+  addAnim('Attack2',heavy?[rot('Arm_L','x',[0,-0.7,0.95,0.2,0]),rot('Spine','y',[0,0.2,-0.24,0,0])]:attackTracks);
+  addAnim('SpecialAttack',[rot('Spine','x',[0,-0.18,-0.36,0.08,0]),rot('Head','x',[0,-0.2,-0.38,-0.05,0]),rot('Wing_L','z',[0,-0.45,-0.85,-0.25,0]),rot('Wing_R','z',[0,0.45,0.85,0.25,0]),rot('Tail','y',[0,0.28,-0.3,0.1,0])]);
   addAnim('Hit',[rot('Spine','x',[0,-0.2,-0.05,0,0]),rot('Head','z',[0,0.12,-0.05,0,0])]);
   addAnim('Death',[rot('Hips','z',[0,0.35,1.25,1.48,1.48]),rot('Spine','x',[0,-0.15,-0.32,-0.38,-0.38])]);
   addAnim('Roar',[rot('Head','x',[0,-0.3,-0.55,-0.25,0]),rot('Spine','x',[0,-0.12,-0.2,-0.08,0]),rot('Wing_L','z',[0,-0.4,-0.75,-0.35,0]),rot('Wing_R','z',[0,0.4,0.75,0.35,0])]);
+  addAnim('PhaseChange',[rot('Spine','x',[0,-0.12,-0.28,-0.12,0]),rot('Arm_L','z',[0,-0.55,-0.9,-0.35,0]),rot('Arm_R','z',[0,0.55,0.9,0.35,0]),rot('Head','y',[0,-0.25,0.25,-0.1,0])]);
 
   const bin=Buffer.concat(chunks);
   const gltf={
