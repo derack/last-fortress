@@ -7,7 +7,7 @@ const manifest = fs.readFileSync(path.join(root, 'src/game/assets/AssetManifest.
 const refs = [...manifest.matchAll(/file:\s*'([^']+\.gltf)'/g)].map(m => m[1]);
 const failures = [];
 let totalTriangles = 0, totalBytes = 0, totalPrimitives = 0;
-const requiredClips = ['Idle','Walk','Run','Attack','Attack1','Attack2','SpecialAttack','Hit','Death','Roar','PhaseChange'];
+const requiredClips = ['Idle','Walk','Run','Attack','Attack1','Attack2','SpecialAttack','Skill','Hit','Death','Roar','PhaseChange','Victory'];
 if (!refs.length) failures.push('No generated rigged glTF references found in AssetManifest.ts');
 for (const url of refs) {
   const file = path.join(root, 'public', url.replace(/^\//, ''));
