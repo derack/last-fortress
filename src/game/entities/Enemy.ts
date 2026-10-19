@@ -48,6 +48,9 @@ export class Enemy implements DamageableEnemy {
   private phase2Cfg: BossPhase2Config | null = null;
   private phase2RegenBonus = 0;
   private phaseAbilityTimer = 0;
+  /** Short readable wind-up before boss phase abilities resolve. */
+  private phaseAbilityWindup = 0;
+  private phaseAbilityQueued = false;
   private phaseDamageReduction = 0;
   private slowImmune = false;
   private walkPhase = Math.random() * 10;
@@ -388,9 +391,27 @@ export class Enemy implements DamageableEnemy {
   private updatePhase2Abilities(dt: number) {
     const cfg = this.phase2Cfg;
     if (!cfg?.periodic) return;
-    this.phaseAbilityTimer -= dt;
-    if (this.phaseAbilityTimer > 0) return;
-    this.phaseAbilityTimer = cfg.periodic.interval;
+
+    // Telegraph every phase ability before it resolves, giving players a fair
+    // reaction window and making boss behavior readable rather than instant.
+    if (this.phaseAbilityQueued) {
+      this.phaseAbilityWindup = Math.max(0, this.phaseAbilityWindup - dt);
+      if (this.phaseAbilityWindup > 0) return;
+      this.phaseAbilityQueued = false;
+    } else {
+      this.phaseAbilityTimer -= dt;
+      if (this.phaseAbilityTimer > 0) return;
+      this.phaseAbilityTimer = cfg.periodic.interval;
+      this.phaseAbilityQueued = true;
+      this.phaseAbilityWindup = 0.85;
+      const telegraphRadius = cfg.periodic.radius
+        ?? (cfg.periodic.kind === 'towerStun' ? 4.5 : 5);
+      this.ctx.vfx.ring(this.mesh.position.clone(), cfg.color, telegraphRadius, 0.85);
+      if (!this.handle.animation?.playOneShot('specialattack', { fade: 0.12 })) {
+        this.handle.animation?.playOneShot('attack', { fade: 0.12 });
+      }
+      return;
+    }
 
     const pos = this.mesh.position.clone();
     const fx = cfg.color;
@@ -406,17 +427,7 @@ export class Enemy implements DamageableEnemy {
           this.ctx.vfx.bolt(pos, t.position.clone().add(new THREE.Vector3(0, 2, 0)), fx, true);
           this.ctx.disableTower(t.id, cfg.periodic.duration ?? 3, fx);
         }
-        if (targets.length) {
-          this.ctx.cameraShake(0.45);
-          const anim = this.handle.animation;
-          if (anim) {
-            if (!anim.playOneShot('attack2', { fade: 0.15 })) {
-              if (!anim.playOneShot('attack1', { fade: 0.15 })) {
-                anim.playOneShot('attack', { fade: 0.15 });
-              }
-            }
-          }
-        }
+        if (targets.length) this.ctx.cameraShake(0.45);
         break;
       }
       case 'frostAura': {
@@ -451,7 +462,7 @@ export class Enemy implements DamageableEnemy {
         }
         if (any) this.ctx.audio.play('explosion');
         this.ctx.cameraShake(0.55);
-        this.handle.animation?.playOneShot('specialattack', { fade: 0.15 });
+        // The special-attack animation began during the telegraph window.
         break;
       }
       case 'summon': {
@@ -460,7 +471,7 @@ export class Enemy implements DamageableEnemy {
           this.ctx.summonAt(pos, cfg.periodic.enemy ?? 'shadowSoldier');
         }
         this.ctx.vfx.ring(pos, fx, 5, 0.6);
-        this.handle.animation?.playOneShot('attack', { fade: 0.15, returnToLocomotion: true });
+        // The special-attack animation began during the telegraph window.
         break;
       }
     }
