@@ -52,7 +52,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'arman',
       category: 'heroes',
-      file: '/assets/3d/heroes/arman.glb',
+      file: '/assets/3d/rigged/arman.gltf',
       displayName: { fa: 'آرمان', en: 'Arman' },
       tier: 'Legendary',
       targetHeight: 1.85,
@@ -66,7 +66,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'aria',
       category: 'heroes',
-      file: '/assets/3d/heroes/aria.glb',
+      file: '/assets/3d/rigged/aria.gltf',
       displayName: { fa: 'آریا', en: 'Aria' },
       tier: 'Epic',
       targetHeight: 1.78,
@@ -80,7 +80,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'radin',
       category: 'heroes',
-      file: '/assets/3d/heroes/radin.glb',
+      file: '/assets/3d/rigged/radin.gltf',
       displayName: { fa: 'رادین', en: 'Radin' },
       tier: 'Epic',
       targetHeight: 1.95,
@@ -94,7 +94,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     {
       id: 'nila',
       category: 'heroes',
-      file: '/assets/3d/heroes/nila.glb',
+      file: '/assets/3d/rigged/nila.gltf',
       displayName: { fa: 'نیلا', en: 'Nila' },
       tier: 'Epic',
       targetHeight: 1.75,
