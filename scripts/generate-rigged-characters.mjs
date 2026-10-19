@@ -242,7 +242,7 @@ function makeCharacter(id, category, baseColor, accent, style) {
   // Merge all same-joint/material geometry: only a handful of skinned draw calls per character.
   const merged=new Map();
   for(const piece of pieces) {
-    const g=buildPrimitive(piece),key=g.joint+':'+g.mat;
+    const g=buildPrimitive(piece),key=String(g.mat);
     if(!merged.has(key))merged.set(key,{pos:[],norm:[],uv:[],joints:[],weights:[],indices:[],joint:g.joint,mat:g.mat});
     const m=merged.get(key),offset=m.pos.length/3;
     m.pos.push(...g.pos);m.norm.push(...g.norm);m.uv.push(...g.uv);
@@ -278,8 +278,8 @@ function makeCharacter(id, category, baseColor, accent, style) {
     const w=accessor(weights,'VEC4',5126,weights.length/4,34962);
     const idxType=g.indices.length>65535?Uint32Array:Uint16Array;
     const ix=accessor(new idxType(g.indices),'SCALAR',idxType===Uint32Array?5125:5123,g.indices.length,34963);
-    meshDefs.push({name:jointNames[g.joint]+'_'+materials[g.mat].name,primitives:[{attributes:{POSITION:p,NORMAL:n,TEXCOORD_0:tex,JOINTS_0:j,WEIGHTS_0:w},indices:ix,material:g.mat,mode:4}]});
-    meshNodes.push({name:jointNames[g.joint]+'_'+materials[g.mat].name,mesh:meshDefs.length-1,skin:0});
+    meshDefs.push({name:id+'_'+materials[g.mat].name,primitives:[{attributes:{POSITION:p,NORMAL:n,TEXCOORD_0:tex,JOINTS_0:j,WEIGHTS_0:w},indices:ix,material:g.mat,mode:4}]});
+    meshNodes.push({name:id+'_'+materials[g.mat].name,mesh:meshDefs.length-1,skin:0});
   }
 
   const nodes=jointNames.map((name,i)=>({name,translation:boneLocal[i],children:[]}));
