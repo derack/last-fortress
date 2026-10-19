@@ -124,6 +124,7 @@ export class BattleScene {
       this.scene.environment = pmrem.fromScene(envScene, 0.06).texture;
       // Keep metal and stone readable without flattening the scene with excessive fill.
       this.scene.environmentIntensity = night ? 0.24 : 0.48;
+      envScene.dispose();
       pmrem.dispose();
     }
 
