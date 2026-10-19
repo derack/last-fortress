@@ -151,7 +151,11 @@ for (const url of refs) {
     const animationMotion = new Map();
     for (const [ai,anim] of (doc.animations ?? []).entries()) {
       if (!anim.channels?.length || !anim.samplers?.length) throw new Error('animation '+anim.name+' has no channels');
+      const animatedProperties = new Set();
       for (const channel of anim.channels) {
+        const propertyKey = channel.target?.node + ':' + channel.target?.path;
+        if (animatedProperties.has(propertyKey)) throw new Error('animation '+anim.name+' has duplicate channels for node/path '+propertyKey+'; combine axis rotations into one quaternion track');
+        animatedProperties.add(propertyKey);
         if (!doc.nodes[channel.target?.node]) throw new Error('animation '+anim.name+' targets invalid node');
         if (!jointSet.has(channel.target.node)) throw new Error('animation '+anim.name+' targets a node outside the skin');
         if (!['translation','rotation','scale','weights'].includes(channel.target.path)) throw new Error('animation '+anim.name+' has invalid target path');
