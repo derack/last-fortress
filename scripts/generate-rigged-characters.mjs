@@ -998,7 +998,7 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
       ? [rot('Spine','x',[0,0.045,0,-0.025,0]),rot('Head','y',[0,-0.08,0,0.08,0]),
         ...['SpiderLegL0','SpiderLegL1','SpiderLegL2','SpiderLegL3'].map((j,i)=>rot(j,'z',[0,0.035+i*0.012,0,-0.035-i*0.012,0])),
         ...['SpiderLegR0','SpiderLegR1','SpiderLegR2','SpiderLegR3'].map((j,i)=>rot(j,'z',[0,-0.035-i*0.012,0,0.035+i*0.012,0]))]
-      : [rot('Spine','x',[0,0.018,0,-0.012,0]),rot('Head','y',[0,-0.035,0,0.035,0]),...(spectral?[rot('Head','z',[0,-0.025,0,0.025,0])]:[])];
+      : [rot('Spine','x',[0,0.018,0,-0.012,0]),rot('Head','y',[0,-0.035,0,0.035,0]),...(spectral?[rot('Chest','z',[0,-0.025,0,0.025,0])]:[])];
   addAnim('Idle',idleTracks);
   const walkTracks = beast
     ? [rot('Leg_L','x',[0,0.16,0,-0.16,0]),rot('Leg_R','x',[0,-0.16,0,0.16,0]),rot('Wing_L','z',[0,-0.28,0,0.28,0]),rot('Wing_R','z',[0,0.28,0,-0.28,0]),rot('Tail','x',[0,0.12,0,-0.12,0]),rot('TailMid','x',[0,0.08,0,-0.08,0]),rot('TailTip','x',[0,0.12,0,-0.12,0])]
