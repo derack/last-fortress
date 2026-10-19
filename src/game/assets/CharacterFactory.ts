@@ -438,7 +438,7 @@ export class CharacterHandle {
           }
           return false;
         });
-      this.lodBase = norm.inner.children.filter((c) => !isAncestorOfLod(c));
+      this.lodBase = model.children.filter((c) => !isAncestorOfLod(c));
     } else {
       this.lodBase = [];
     }
