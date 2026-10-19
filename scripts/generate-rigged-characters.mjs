@@ -613,6 +613,63 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     sphere([0,1.04,0.32],[0.12,0.16,0.06],'Chest',glow);
   }
 
+  // Boss signature kits: silhouette-first, identity-specific geometry.
+  // Every attachment is weighted to its animated joint and merged by material,
+  // so the added silhouette detail does not create one draw call per ornament.
+  if (id === 'golemKing') {
+    for (const side of [-1,1]) {
+      box([side*0.62,1.42,-0.03],[0.36,0.48,0.44],side<0?'Arm_L':'Arm_R',armor,[0,0,side*0.14]);
+      for(let i=0;i<3;i++) cone([side*(0.52+i*0.14),1.68-i*0.06,-0.08],[0.13,0.34,0.13],side<0?'Arm_L':'Arm_R',edge,[0,0,side*(0.32+i*0.12)]);
+      box([side*0.19,0.88,0.25],[0.18,0.24,0.07],'Spine',edge,[0,0,side*0.12]);
+    }
+    // Ancient crown and a broad rune-carved chest plate.
+    box([0,1.67,0.18],[0.46,0.19,0.13],'Head',dark);
+    for(let i=-2;i<=2;i++) cone([i*0.16,1.82,0.04],[0.09,0.31,0.09],'Head',edge,[0,0,-i*0.12]);
+    sphere([0,1.08,0.31],[0.18,0.22,0.06],'Chest',glow);
+    for(let i=-1;i<=1;i++) box([i*0.11,1.08,0.36],[0.035,0.12,0.025],'Chest',edge,[0,0,i*0.12]);
+  } else if (id === 'fireGiant') {
+    // Volcanic shoulder mantle, swept horns, and layered ember vents.
+    for(const side of [-1,1]) {
+      sphere([side*0.64,1.48,-0.02],[0.34,0.28,0.36],side<0?'Arm_L':'Arm_R',dark);
+      for(let i=0;i<4;i++) cone([side*(0.48+i*0.13),1.66-i*0.07,-0.02],[0.11,0.34-i*0.025,0.11],side<0?'Arm_L':'Arm_R',glow,[0,0,side*(0.36+i*0.08)]);
+      cone([side*0.17,1.78,0.02],[0.12,0.35,0.12],'Head',edge,[0,0,side*0.48]);
+    }
+    box([0,1.08,0.29],[0.4,0.38,0.12],'Chest',dark);
+    for(let i=-1;i<=1;i++) box([i*0.13,1.08,0.37],[0.065,0.24,0.045],'Chest',glow,[0,0,i*0.08]);
+    for(let i=0;i<4;i++) cone([(i-1.5)*0.13,0.82,-0.29],[0.085,0.26,0.09],'Tail',glow,[0.24,0,0]);
+  } else if (id === 'iceGiant') {
+    // Faceted frost pauldrons and long ice crown create a crystalline outline.
+    for(const side of [-1,1]) {
+      box([side*0.62,1.45,-0.02],[0.38,0.36,0.42],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.1]);
+      for(let i=0;i<4;i++) cone([side*(0.47+i*0.13),1.66-i*0.05,-0.04],[0.08,0.42-i*0.04,0.08],side<0?'Arm_L':'Arm_R',glow,[0,0,side*(0.25+i*0.09)]);
+      cone([side*0.15,1.78,0.06],[0.09,0.38,0.09],'Head',glow,[0,0,side*0.32]);
+    }
+    for(let i=-2;i<=2;i++) cone([i*0.15,1.84,0.0],[0.07,0.4,0.07],'Head',edge,[0,0,-i*0.09]);
+    sphere([0,1.08,0.31],[0.2,0.25,0.06],'Chest',glow);
+    for(let i=-1;i<=1;i++) cone([i*0.14,0.91,0.28],[0.055,0.21,0.055],'Chest',edge,[0.15,0,0]);
+  } else if (id === 'blackDragon') {
+    // Additional articulated dorsal scutes, jaw armor, and wing claws.
+    for(let i=0;i<7;i++) cone([0,1.12-i*0.07,-0.22-i*0.16],[0.12-i*0.006,0.28,0.12-i*0.006],'Tail',edge,[0.24,0,0]);
+    for(const side of [-1,1]) {
+      cone([side*0.28,1.15,0.82],[0.11,0.32,0.1],'Head',dark,[0,0,side*0.3]);
+      for(let i=0;i<3;i++) cone([side*(0.48+i*0.12),0.98-i*0.08,-0.12],[0.07,0.27,0.055],side<0?'Wing_L':'Wing_R',edge,[0,0,side*(0.2+i*0.1)]);
+      sphere([side*0.14,1.18,0.88],[0.055,0.045,0.03],'Head',glow);
+    }
+    cone([0,0.83,0.72],[0.12,0.25,0.12],'Jaw',dark,[0.18,0,0]);
+  } else if (id === 'darkLord') {
+    // Asymmetric crown, back-mounted void blades, and layered chest sigil.
+    for(let i=-2;i<=2;i++) {
+      cone([i*0.13,1.85,0.02],[0.065,0.3+(i===0?0.12:0),0.065],'Head',edge,[0,0,-i*0.16]);
+    }
+    for(const side of [-1,1]) {
+      cone([side*0.56,1.18,-0.26],[0.13,0.66,0.08],side<0?'Wing_L':'Wing_R',[0,0,side*0.24].includes(999)?edge:armor,[0,0,side*0.28]);
+      cone([side*0.62,1.48,-0.22],[0.09,0.36,0.07],side<0?'Wing_L':'Wing_R',glow,[0,0,side*0.34]);
+    }
+    sphere([0,1.08,0.31],[0.2,0.24,0.07],'Chest',glow);
+    box([0,1.08,0.36],[0.32,0.06,0.035],'Chest',edge);
+    for(let i=0;i<3;i++) sphere([0,0.98-i*0.1,0.34],[0.035,0.035,0.025],'Chest',glow);
+  }
+
   const materials = [
     {name:'Obsidian Armor',pbrMetallicRoughness:{baseColorFactor:clampColor(baseColor),metallicFactor:0.62,roughnessFactor:0.38}},
     {name:'Forged Edge',pbrMetallicRoughness:{baseColorFactor:[0.63,0.7,0.8,1],metallicFactor:0.88,roughnessFactor:0.24}},
