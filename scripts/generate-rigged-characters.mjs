@@ -206,11 +206,25 @@ function makeCharacter(id, category, baseColor, accent, style) {
       const faces=[[0,2,1,0,3,2],[4,5,6,4,6,7],[0,1,5,0,5,4],[3,7,6,3,6,2],[0,4,7,0,7,3],[1,2,6,1,6,5]];
       for(const f of faces) for(let i=0;i<6;i+=3) pushTri(v[f[i]],v[f[i+1]],v[f[i+2]]);
     } else if(piece.kind==='sphere') {
-      const lat=8,lon=12;
+      // Indexed smooth sphere: reuse vertices instead of duplicating every triangle corner.
+      const lat=6,lon=8, base=pos.length/3, points=[];
+      const rotateDir=(p)=>{
+        let [x,y,z]=p; const [rx,ry,rz]=rot;
+        let yy=y*Math.cos(rx)-z*Math.sin(rx), zz=y*Math.sin(rx)+z*Math.cos(rx); y=yy;z=zz;
+        let xx=x*Math.cos(ry)+z*Math.sin(ry); zz=-x*Math.sin(ry)+z*Math.cos(ry); x=xx;z=zz;
+        xx=x*Math.cos(rz)-y*Math.sin(rz); yy=x*Math.sin(rz)+y*Math.cos(rz); x=xx;y=yy;
+        const l=Math.hypot(x,y,z)||1; return [x/l,y/l,z/l];
+      };
+      for(let y=0;y<=lat;y++) for(let x=0;x<=lon;x++) {
+        const phi=y/lat*Math.PI, th=x/lon*Math.PI*2;
+        const local=[Math.sin(phi)*Math.cos(th)*sx,Math.cos(phi)*sy,Math.sin(phi)*Math.sin(th)*sz];
+        const world=rotate(local);
+        const normal=rotateDir([Math.sin(phi)*Math.cos(th)/Math.max(sx,1e-5),Math.cos(phi)/Math.max(sy,1e-5),Math.sin(phi)*Math.sin(th)/Math.max(sz,1e-5)]);
+        pos.push(...world); norm.push(...normal); points.push(base+y*(lon+1)+x);
+      }
       for(let y=0;y<lat;y++) for(let x=0;x<lon;x++) {
-        const point=(yy,xx)=>{const phi=yy/lat*Math.PI, th=xx/lon*Math.PI*2;return rotate([Math.sin(phi)*Math.cos(th)*sx,Math.cos(phi)*sy,Math.sin(phi)*Math.sin(th)*sz]);};
-        const a=point(y,x),b=point(y+1,x),c=point(y+1,x+1),d=point(y,x+1);
-        pushTri(a,b,d);pushTri(b,c,d);
+        const a=points[y*(lon+1)+x],b=points[(y+1)*(lon+1)+x],c=points[(y+1)*(lon+1)+x+1],d=points[y*(lon+1)+x+1];
+        indices.push(a,b,d,b,c,d);
       }
     } else {
       const segments=piece.kind==='cone'?8:10, topR=piece.kind==='cone'?0:0.5, botR=0.5;
