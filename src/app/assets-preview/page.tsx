@@ -20,12 +20,14 @@ type AssetInfo = {
   skeletonJointCount: number;
   uvMeshCount: number;
   pbrTextureCount: number;
+  lodTriangleCounts: { full: number; lod1: number; lod2: number };
 };
 
 export default function AssetPreviewPage() {
   const entries = useMemo(() => allAssetEntries(), []);
   const [selectedId, setSelectedId] = useState(entries[0]?.id ?? '');
   const [animationName, setAnimationName] = useState('Idle');
+  const [lodMode, setLodMode] = useState<'full' | 'lod1' | 'lod2'>('full');
   const [animationOptions, setAnimationOptions] = useState<string[]>([]);
   const [info, setInfo] = useState<AssetInfo | null>(null);
   const [error, setError] = useState('');
@@ -208,14 +210,30 @@ export default function AssetPreviewPage() {
           ? { turret: getNode('turret'), crystal: getNode('spinCrystal'), ring: getNode('spinRing') }
           : null;
         let meshCount = 0, vertexCount = 0, triangleCount = 0, skinnedMeshCount = 0, skeletonJointCount = 0, uvMeshCount = 0;
+        const lodTriangleCounts = { full: 0, lod1: 0, lod2: 0 };
         const materials = new Set<THREE.Material>();
         const pbrTextures = new Set<THREE.Texture>();
+        const lodLevelOf = (object: THREE.Object3D): 'full' | 'lod1' | 'lod2' => {
+          let parent = object.parent;
+          while (parent) {
+            if (/_LOD2$/i.test(parent.name)) return 'lod2';
+            if (/_LOD1$/i.test(parent.name)) return 'lod1';
+            parent = parent.parent;
+          }
+          return 'full';
+        };
         normalized.inner.traverse((object) => {
           const mesh = object as THREE.Mesh;
           if (!mesh.isMesh || !mesh.geometry) return;
+          const level = lodLevelOf(mesh);
+          const triangles = (mesh.geometry.index?.count ?? mesh.geometry.getAttribute('position')?.count ?? 0) / 3;
+          lodTriangleCounts[level] += triangles;
+          // The headline mesh/vertex/triangle stats describe the full-quality
+          // representation only; LOD variants are reported separately below.
+          if (level !== 'full') return;
           meshCount++;
           vertexCount += mesh.geometry.getAttribute('position')?.count ?? 0;
-          triangleCount += (mesh.geometry.index?.count ?? mesh.geometry.getAttribute('position')?.count ?? 0) / 3;
+          triangleCount += triangles;
           if (mesh.geometry.getAttribute('uv')) uvMeshCount++;
           if ((mesh as THREE.SkinnedMesh).isSkinnedMesh) {
             skinnedMeshCount++;
@@ -234,6 +252,7 @@ export default function AssetPreviewPage() {
           entry, animationNames: names, animationSource: record?.animationSource ?? 'none',
           meshCount, vertexCount, triangleCount: Math.round(triangleCount), materialCount: materials.size,
           skinnedMeshCount, skeletonJointCount, uvMeshCount, pbrTextureCount: pbrTextures.size,
+          lodTriangleCounts: Object.fromEntries(Object.entries(lodTriangleCounts).map(([key, value]) => [key, Math.round(value)])) as { full: number; lod1: number; lod2: number },
         });
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : String(e));
@@ -249,6 +268,27 @@ export default function AssetPreviewPage() {
     const clip = clipsRef.current.find((item) => item.name === animationName);
     if (clip) mixer.clipAction(clip).reset().setLoop(THREE.LoopRepeat, Infinity).play();
   }, [animationName, info]);
+
+  // ART QA only: manually compare the same rigged asset at each generated LOD.
+  // Gameplay uses distance-driven switching; this control makes each budget inspectable.
+  useEffect(() => {
+    const root = modelRootRef.current;
+    if (!root) return;
+    const lodLevelOf = (object: THREE.Object3D): 'full' | 'lod1' | 'lod2' => {
+      let parent = object.parent;
+      while (parent) {
+        if (/_LOD2$/i.test(parent.name)) return 'lod2';
+        if (/_LOD1$/i.test(parent.name)) return 'lod1';
+        parent = parent.parent;
+      }
+      return 'full';
+    };
+    root.traverse((object) => {
+      if ((object as THREE.Mesh).isMesh) object.visible = lodLevelOf(object) === lodMode;
+      if (/_LOD1$/i.test(object.name)) object.visible = lodMode === 'lod1';
+      else if (/_LOD2$/i.test(object.name)) object.visible = lodMode === 'lod2';
+    });
+  }, [lodMode, info, selectedId]);
 
   const categoryLabel: Record<string, string> = { heroes: 'قهرمانان', enemies: 'دشمنان', bosses: 'باس‌ها', towers: 'برج‌ها' };
   const sourceLabel = info?.animationSource === 'glb'
@@ -291,6 +331,13 @@ export default function AssetPreviewPage() {
             ))}
           </select>
 
+          <label style={{ display: 'block', fontSize: 12, color: '#8ea0b5', marginBottom: 6 }}>سطح جزئیات مدل (LOD)</label>
+          <select value={lodMode} onChange={(e) => setLodMode(e.target.value as 'full' | 'lod1' | 'lod2')} disabled={!info || (info.lodTriangleCounts.lod1 === 0 && info.lodTriangleCounts.lod2 === 0)} style={{ width: '100%', background: '#172333', color: '#e5edf7', border: '1px solid #34465c', borderRadius: 8, padding: '10px 8px', marginBottom: 14 }}>
+            <option value="full">جزئیات کامل</option>
+            <option value="lod1">LOD 1 · فاصله متوسط</option>
+            <option value="lod2">LOD 2 · فاصله دور</option>
+          </select>
+
           <label style={{ display: 'block', fontSize: 12, color: '#8ea0b5', marginBottom: 6 }}>انیمیشن</label>
           <select value={animationName} onChange={(e) => setAnimationName(e.target.value)} disabled={!animationOptions.length} style={{ width: '100%', background: '#172333', color: '#e5edf7', border: '1px solid #34465c', borderRadius: 8, padding: '10px 8px', marginBottom: 14 }}>
             {animationOptions.length ? animationOptions.map((name) => <option key={name} value={name}>{name}</option>) : <option value="">بدون کلیپ</option>}
@@ -302,6 +349,7 @@ export default function AssetPreviewPage() {
             <div><span style={{ color: '#7f91a6' }}>تعداد Mesh: </span>{info?.meshCount.toLocaleString() ?? '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>تعداد رأس: </span>{info?.vertexCount.toLocaleString() ?? '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>تعداد مثلث: </span>{info?.triangleCount.toLocaleString() ?? '—'}</div>
+            <div><span style={{ color: '#7f91a6' }}>بودجهٔ مثلث LOD کامل / ۱ / ۲: </span>{info ? `${info.lodTriangleCounts.full.toLocaleString()} / ${info.lodTriangleCounts.lod1.toLocaleString()} / ${info.lodTriangleCounts.lod2.toLocaleString()}` : '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>متریال‌ها: </span>{info?.materialCount ?? '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>تکسچرهای PBR بارگذاری‌شده: </span>{info?.pbrTextureCount ?? '—'}</div>
             <div><span style={{ color: '#7f91a6' }}>Mesh دارای UV: </span>{info?.uvMeshCount ?? '—'}{info ? ` / ${info.meshCount}` : ''}</div>
