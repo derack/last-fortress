@@ -51,7 +51,7 @@ export interface PreloadReport {
  * a draw call for every enemy in a wave. Keep weapons separate for procedural
  * prop-swing, and keep tower pivots/VFX meshes separate for gameplay animation.
  */
-let sharedSurfaceMaps: { color: THREE.CanvasTexture; bump: THREE.CanvasTexture; normal: THREE.CanvasTexture } | null = null;
+let sharedSurfaceMaps: { color: THREE.CanvasTexture; bump: THREE.CanvasTexture; normal: THREE.CanvasTexture; roughness: THREE.CanvasTexture } | null = null;
 
 function getSharedSurfaceMaps() {
   if (sharedSurfaceMaps || typeof document === 'undefined') return sharedSurfaceMaps;
@@ -60,7 +60,7 @@ function getSharedSurfaceMaps() {
     Math.sin((x / size) * Math.PI * 8 + Math.sin((y / size) * Math.PI * 4) * 0.7)
     + Math.cos((y / size) * Math.PI * 6 + Math.sin((x / size) * Math.PI * 2) * 0.45)
     + 0.45 * Math.sin(((x + y) / size) * Math.PI * 12);
-  const makeCanvas = (kind: 'color' | 'bump' | 'normal') => {
+  const makeCanvas = (kind: 'color' | 'bump' | 'normal' | 'roughness') => {
     const canvas = document.createElement('canvas');
     canvas.width = canvas.height = size;
     const ctx = canvas.getContext('2d');
@@ -80,7 +80,7 @@ function getSharedSurfaceMaps() {
           image.data[i + 1] = Math.round((ny / length * 0.5 + 0.5) * 255);
           image.data[i + 2] = Math.round((nz / length * 0.5 + 0.5) * 255);
         } else {
-          const value = kind === 'bump' ? 128 + wave * 10 : 238 + wave * 3.8;
+          const value = kind === 'bump' ? 128 + wave * 10 : kind === 'roughness' ? 238 + wave * 3.8 : 238 + wave * 3.8;
           image.data[i] = image.data[i + 1] = image.data[i + 2] = Math.max(0, Math.min(255, value));
         }
         image.data[i + 3] = 255;
@@ -92,7 +92,8 @@ function getSharedSurfaceMaps() {
   const colorCanvas = makeCanvas('color');
   const bumpCanvas = makeCanvas('bump');
   const normalCanvas = makeCanvas('normal');
-  if (!colorCanvas || !bumpCanvas || !normalCanvas) return null;
+  const roughnessCanvas = makeCanvas('roughness');
+  if (!colorCanvas || !bumpCanvas || !normalCanvas || !roughnessCanvas) return null;
   const color = new THREE.CanvasTexture(colorCanvas);
   color.colorSpace = THREE.SRGBColorSpace;
   color.wrapS = color.wrapT = THREE.RepeatWrapping;
@@ -105,7 +106,11 @@ function getSharedSurfaceMaps() {
   normal.colorSpace = THREE.NoColorSpace;
   normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
   normal.anisotropy = 4;
-  sharedSurfaceMaps = { color, bump, normal };
+  const roughness = new THREE.CanvasTexture(roughnessCanvas);
+  roughness.colorSpace = THREE.NoColorSpace;
+  roughness.wrapS = roughness.wrapT = THREE.RepeatWrapping;
+  roughness.anisotropy = 4;
+  sharedSurfaceMaps = { color, bump, normal, roughness };
   return sharedSurfaceMaps;
 }
 
@@ -231,6 +236,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
           standard.normalMap = maps.normal;
           standard.normalScale.set(category === 'bosses' ? 0.22 : 0.14, category === 'bosses' ? 0.22 : 0.14);
         }
+        if (!standard.roughnessMap) standard.roughnessMap = maps.roughness;
         if (!standard.bumpMap) {
           standard.bumpMap = maps.bump;
           standard.bumpScale = category === 'bosses' ? 0.022 : 0.012;
