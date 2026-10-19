@@ -367,6 +367,36 @@ export class BattleScene {
     bump.repeat.copy(map.repeat);
     bump.colorSpace = THREE.NoColorSpace;
 
+    // Convert the broad height field into a seamless tangent-space normal map.
+    // This gives rocks/soil readable grazing-light detail without adding particles.
+    const normalCanvas = document.createElement('canvas');
+    normalCanvas.width = normalCanvas.height = 256;
+    const nctx = normalCanvas.getContext('2d');
+    if (nctx && bctx) {
+      const source = bctx.getImageData(0, 0, 256, 256).data;
+      const image = nctx.createImageData(256, 256);
+      const heightAt = (x: number, y: number) => source[((y + 256) % 256 * 256 + (x + 256) % 256) * 4] / 255;
+      for (let y = 0; y < 256; y++) {
+        for (let x = 0; x < 256; x++) {
+          const dx = (heightAt(x + 1, y) - heightAt(x - 1, y)) * 1.8;
+          const dy = (heightAt(x, y + 1) - heightAt(x, y - 1)) * 1.8;
+          const nx = -dx, ny = -dy, nz = 1;
+          const len = Math.hypot(nx, ny, nz);
+          const i = (y * 256 + x) * 4;
+          image.data[i] = Math.round((nx / len * 0.5 + 0.5) * 255);
+          image.data[i + 1] = Math.round((ny / len * 0.5 + 0.5) * 255);
+          image.data[i + 2] = Math.round((nz / len * 0.5 + 0.5) * 255);
+          image.data[i + 3] = 255;
+        }
+      }
+      nctx.putImageData(image, 0, 0);
+    }
+    const normal = new THREE.CanvasTexture(normalCanvas);
+    normal.wrapS = normal.wrapT = THREE.RepeatWrapping;
+    normal.repeat.copy(map.repeat);
+    normal.colorSpace = THREE.NoColorSpace;
+    normal.anisotropy = Math.min(4, this.renderer.capabilities.getMaxAnisotropy());
+
     // A modestly subdivided mesh gives the terrain a real silhouette; the road
     // corridor is flattened against all active paths to prevent floating roads.
     const segments = this.quality === 'low' ? 48 : 80;
@@ -400,7 +430,9 @@ export class BattleScene {
     const groundMaterial = new THREE.MeshStandardMaterial({
       map,
       bumpMap: bump,
-      bumpScale: env === 'tundra' ? 0.045 : 0.075,
+      bumpScale: env === 'tundra' ? 0.035 : 0.05,
+      normalMap: normal,
+      normalScale: new THREE.Vector2(0.22, 0.22),
       roughness: 0.96,
       metalness: env === 'citadel' || env === 'volcano' ? 0.08 : 0.015,
     });
