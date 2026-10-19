@@ -40,6 +40,10 @@ export class Enemy implements DamageableEnemy {
   private dodgeCd = 0;
   private slamTimer = 10;
   private phase2 = false;
+  /** Time since the boss entered its second phase; drives a restrained transformation pulse. */
+  private phaseVisualElapsed = 0;
+  private phaseBaseScale = new THREE.Vector3(1, 1, 1);
+  private phaseTint = new THREE.Color(0xffffff);
   /** پیکربندی فاز ۲ اختصاصی این Boss (null برای دشمن عادی) */
   private phase2Cfg: BossPhase2Config | null = null;
   private phase2RegenBonus = 0;
@@ -86,6 +90,7 @@ export class Enemy implements DamageableEnemy {
     this.mesh = this.handle.root;
     scene.add(this.mesh);
     this.setupFlashMaterials();
+    this.phaseBaseScale.copy(this.mesh.scale);
     this.updateMeshPos();
     const myPts = this.myPath.points;
     this.mesh.rotation.y = Math.atan2(
@@ -119,9 +124,24 @@ export class Enemy implements DamageableEnemy {
       const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       for (const m of mats) {
         const sm = m as THREE.MeshStandardMaterial;
-        if (sm.emissive) {
-          this.flashMats.push({ mat: sm, hex: sm.emissive.getHex(), intensity: sm.emissiveIntensity });
+        if (!sm.isMeshStandardMaterial || !sm.color || !sm.emissive) continue;
+        // Persist the original per-handle PBR values so pooled bosses never inherit a previous phase tint.
+        if (!sm.userData.phaseBase) {
+          sm.userData.phaseBase = {
+            color: sm.color.getHex(),
+            emissive: sm.emissive.getHex(),
+            emissiveIntensity: sm.emissiveIntensity,
+            roughness: sm.roughness,
+            metalness: sm.metalness,
+          };
         }
+        const base = sm.userData.phaseBase as { color: number; emissive: number; emissiveIntensity: number; roughness: number; metalness: number };
+        sm.color.setHex(base.color);
+        sm.emissive.setHex(base.emissive);
+        sm.emissiveIntensity = base.emissiveIntensity;
+        sm.roughness = base.roughness;
+        sm.metalness = base.metalness;
+        this.flashMats.push({ mat: sm, hex: base.emissive, intensity: base.emissiveIntensity });
       }
     });
   }
@@ -266,14 +286,56 @@ export class Enemy implements DamageableEnemy {
     return false;
   }
 
+  /**
+   * Phase-two visual treatment: a restrained PBR tint on the existing authored materials,
+   * brighter emissive accents, and a short scale pulse. Original values are kept per
+   * pooled material, so a reused enemy never inherits a boss transformation.
+   */
+  private applyPhaseMaterialTint(hex: number) {
+    this.phaseTint.setHex(hex);
+    this.mesh.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.material) return;
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const material of materials) {
+        const sm = material as THREE.MeshStandardMaterial;
+        const base = sm.userData.phaseBase as { color: number; emissive: number; emissiveIntensity: number } | undefined;
+        if (!sm.isMeshStandardMaterial || !base) continue;
+        const sourceColor = new THREE.Color(base.color);
+        const accentAmount = /edge|armor|metal|stone|obsidian/i.test(sm.name) ? 0.17 : 0.09;
+        sm.color.copy(sourceColor).lerp(this.phaseTint, accentAmount);
+        const isGlow = base.emissiveIntensity > 0.02 || base.emissive !== 0;
+        if (isGlow) {
+          sm.emissive.setHex(base.emissive).lerp(this.phaseTint, 0.68);
+          sm.emissiveIntensity = Math.max(base.emissiveIntensity, 0.32);
+        }
+      }
+    });
+    // Hit-flash restoration must preserve the new phase emissive values.
+    for (const f of this.flashMats) {
+      f.hex = f.mat.emissive.getHex();
+      f.intensity = f.mat.emissiveIntensity;
+    }
+  }
+
+  private updatePhaseVisual(dt: number) {
+    if (!this.phase2) return;
+    this.phaseVisualElapsed = Math.min(1.1, this.phaseVisualElapsed + dt);
+    const t = this.phaseVisualElapsed / 1.1;
+    const pulse = 1.035 + Math.sin(Math.PI * t) * 0.055;
+    this.mesh.scale.copy(this.phaseBaseScale).multiplyScalar(t >= 1 ? 1.035 : pulse);
+  }
+
   /** ورود به فاز دوم — جلوه‌ها و توانایی‌های اختصاصی هر Boss */
   private enterPhase2() {
     this.phase2 = true;
+    this.phaseVisualElapsed = 0;
     const cfg = this.data.boss ? getBossPhase2(this.data.id) : null;
     this.phase2Cfg = cfg;
 
     // جلوه ورود — رنگ اختصاصی Boss
     const fx = cfg?.color ?? 0xf59e0b;
+    this.applyPhaseMaterialTint(fx);
     this.ctx.vfx.ring(this.mesh.position, fx, 8, 0.7);
     this.ctx.vfx.ring(this.mesh.position, fx, 5, 0.9);
     this.ctx.vfx.explosion(this.mesh.position.clone().add(new THREE.Vector3(0, 1.5, 0)), fx, true);
@@ -412,6 +474,7 @@ export class Enemy implements DamageableEnemy {
     this.hitAnimCd = Math.max(0, this.hitAnimCd - dt);
     this.hitSfxCd = Math.max(0, this.hitSfxCd - dt);
     this.applyFlash(dt);
+    this.updatePhaseVisual(dt);
 
     if (!this.alive) {
       // انیمیشن مرگ — GLB (افتادن +) فرورفتن کند | Placeholder: فرورفتن سریع
