@@ -591,6 +591,8 @@ export class CharacterFactory {
       // ریست کامل برای reuse
       handle.root.rotation.set(0, 0, 0);
       handle.root.position.set(0, 0, 0);
+      // Restore transform after a boss phase-two visual pulse before pooling.
+      handle.root.scale.set(1, 1, 1);
       handle.root.visible = false;
       const aura = handle.root.getObjectByName('shieldAura');
       if (aura) (aura as THREE.Mesh).visible = false;
