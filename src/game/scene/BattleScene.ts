@@ -758,6 +758,122 @@ export class BattleScene {
     landmarks.receiveShadow = true;
     this.scene.add(landmarks);
 
+    // Biome-specific silhouette kit: a pair of instanced meshes adds recognizable
+    // landmarks without turning the scene into a high-draw-call prop collection.
+    // Each family has a distinct profile/material response, not only a color swap.
+    const biome = this.level.env;
+    const biomeKit = (() => {
+      if (biome === 'tundra') return {
+        primary: new THREE.OctahedronGeometry(0.78, 0),
+        secondary: new THREE.ConeGeometry(0.3, 1.05, 5, 1),
+        primaryColor: 0x6f9cae, secondaryColor: 0xb5e6f4,
+        primaryScale: [0.9, 2.7, 0.9] as [number, number, number],
+        secondaryScale: [0.7, 1.8, 0.7] as [number, number, number],
+        count: 5,
+      };
+      if (biome === 'volcano') return {
+        primary: new THREE.CylinderGeometry(0.48, 0.86, 2.7, 6, 1),
+        secondary: new THREE.IcosahedronGeometry(0.62, 0),
+        primaryColor: 0x342522, secondaryColor: 0x6b3328,
+        primaryScale: [1.0, 1.0, 1.0] as [number, number, number],
+        secondaryScale: [1.2, 0.55, 0.9] as [number, number, number],
+        count: 5,
+      };
+      if (biome === 'citadel') return {
+        primary: new THREE.BoxGeometry(0.82, 2.85, 0.82),
+        secondary: new THREE.TorusGeometry(0.62, 0.12, 6, 14, Math.PI * 1.25),
+        primaryColor: 0x45404f, secondaryColor: 0x74618a,
+        primaryScale: [1.0, 1.0, 1.0] as [number, number, number],
+        secondaryScale: [1.1, 1.1, 1.1] as [number, number, number],
+        count: 4,
+      };
+      if (biome === 'forest') return {
+        primary: new THREE.DodecahedronGeometry(0.92, 0),
+        secondary: new THREE.CylinderGeometry(0.24, 0.42, 1.65, 6, 1),
+        primaryColor: 0x3c4a35, secondaryColor: 0x554337,
+        primaryScale: [1.4, 1.7, 1.0] as [number, number, number],
+        secondaryScale: [1.0, 1.0, 1.0] as [number, number, number],
+        count: 5,
+      };
+      if (biome === 'wastes') return {
+        primary: new THREE.CylinderGeometry(0.28, 0.92, 2.5, 5, 1),
+        secondary: new THREE.BoxGeometry(1.35, 0.22, 0.52),
+        primaryColor: 0x78634a, secondaryColor: 0x514537,
+        primaryScale: [1.2, 1.0, 1.0] as [number, number, number],
+        secondaryScale: [1.0, 1.0, 1.0] as [number, number, number],
+        count: 5,
+      };
+      return {
+        primary: new THREE.DodecahedronGeometry(0.9, 1),
+        secondary: new THREE.ConeGeometry(0.28, 1.1, 5, 1),
+        primaryColor: 0x59664a, secondaryColor: 0x73785a,
+        primaryScale: [1.35, 1.0, 1.0] as [number, number, number],
+        secondaryScale: [0.8, 1.2, 0.8] as [number, number, number],
+        count: 4,
+      };
+    })();
+    const biomeKitCount = this.quality === 'low' ? Math.max(2, biomeKit.count - 2)
+      : this.quality === 'medium' ? biomeKit.count : biomeKit.count + 2;
+    const biomePrimary = new THREE.InstancedMesh(
+      biomeKit.primary,
+      new THREE.MeshStandardMaterial({
+        color: biomeKit.primaryColor,
+        roughness: biome === 'tundra' ? 0.38 : 0.9,
+        metalness: biome === 'citadel' ? 0.24 : 0.025,
+        flatShading: biome !== 'forest',
+      }),
+      biomeKitCount,
+    );
+    const biomeSecondary = new THREE.InstancedMesh(
+      biomeKit.secondary,
+      new THREE.MeshStandardMaterial({
+        color: biomeKit.secondaryColor,
+        roughness: biome === 'tundra' ? 0.32 : 0.88,
+        metalness: biome === 'citadel' ? 0.3 : 0.025,
+      }),
+      biomeKitCount,
+    );
+    let kitPlaced = 0;
+    let kitAttempts = 0;
+    while (kitPlaced < biomeKitCount && kitAttempts < biomeKitCount * 16) {
+      kitAttempts++;
+      const x = (r() - 0.5) * 58;
+      const z = (r() - 0.5) * 58;
+      if (nearPath(x, z, 8.0) || Math.hypot(x - this.corePos.x, z - this.corePos.z) < 12) continue;
+      if (Math.hypot(x, z) < 11) continue;
+      const scale = 0.72 + r() * 0.72;
+      dummy.position.set(x, biomeKit.primaryScale[1] * scale * 0.5, z);
+      dummy.rotation.set((r() - 0.5) * 0.12, r() * Math.PI * 2, (r() - 0.5) * 0.12);
+      dummy.scale.set(
+        biomeKit.primaryScale[0] * scale,
+        biomeKit.primaryScale[1] * scale,
+        biomeKit.primaryScale[2] * scale,
+      );
+      dummy.updateMatrix();
+      biomePrimary.setMatrixAt(kitPlaced, dummy.matrix);
+
+      const accentScale = 0.75 + r() * 0.6;
+      dummy.position.set(x + (r() - 0.5) * 0.55, biomeKit.secondaryScale[1] * accentScale * 0.5, z + (r() - 0.5) * 0.55);
+      dummy.rotation.set((r() - 0.5) * 0.2, r() * Math.PI * 2, (r() - 0.5) * 0.2);
+      dummy.scale.set(
+        biomeKit.secondaryScale[0] * accentScale,
+        biomeKit.secondaryScale[1] * accentScale,
+        biomeKit.secondaryScale[2] * accentScale,
+      );
+      dummy.updateMatrix();
+      biomeSecondary.setMatrixAt(kitPlaced, dummy.matrix);
+      kitPlaced++;
+    }
+    biomePrimary.count = kitPlaced;
+    biomeSecondary.count = kitPlaced;
+    biomePrimary.castShadow = false;
+    biomePrimary.receiveShadow = true;
+    biomeSecondary.castShadow = false;
+    biomeSecondary.receiveShadow = false;
+    biomePrimary.frustumCulled = true;
+    biomeSecondary.frustumCulled = true;
+    this.scene.add(biomePrimary, biomeSecondary);
+
     // Warm ember lighting / cool ice bounce makes each biome read differently.
     if (this.level.env === 'tundra' || this.level.env === 'volcano' || this.level.env === 'citadel') {
       const fillColor = this.level.env === 'tundra' ? 0x72cfff : this.level.env === 'volcano' ? 0xff4b24 : 0x9c63ff;
