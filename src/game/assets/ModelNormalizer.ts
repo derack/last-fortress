@@ -95,10 +95,13 @@ export function normalizeModel(model: THREE.Group, entry: CharacterAssetEntry, h
     Number.isFinite(size.z) && size.z > 0;
 
   let appliedScale = 1;
-  let height = entry.targetHeight * heightScale;
+  let height = entry.targetHeight * heightScale * (entry.category === 'bosses' ? 1.12 : ['shadow', 'spider', 'flyer', 'spirit'].includes(entry.id) ? 1.28 : 1.16);
 
   if (valid) {
-    const targetH = entry.targetHeight * heightScale;
+    // Visual-only readability boost; gameplay health, damage and pathing remain unchanged.
+    const visualScale = entry.category === 'bosses' ? 1.12
+      : ['shadow', 'spider', 'flyer', 'spirit'].includes(entry.id) ? 1.28 : 1.16;
+    const targetH = entry.targetHeight * heightScale * visualScale;
     appliedScale = targetH / size.y;
     // پاها روی زمین: جابجایی عمودی در فضای محلی مدل
     model.position.y -= bbox.min.y;
