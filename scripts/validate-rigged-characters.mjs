@@ -36,8 +36,12 @@ for (const url of refs) {
       }
     }
     const skin = doc.skins[0];
-    if (!skin.joints || skin.joints.length < 8) throw new Error('skeleton has too few joints');
+    if (!skin.joints || skin.joints.length < 24) throw new Error('skeleton must contain the articulated 24-joint character rig');
     if (!Number.isInteger(skin.inverseBindMatrices) || !doc.accessors[skin.inverseBindMatrices]) throw new Error('inverse bind matrices missing');
+    const jointNames = new Set(skin.joints.map(index => doc.nodes[index]?.name));
+    for (const required of ['Hips','Spine','Chest','Neck','Head','Arm_L','ForeArm_L','Hand_L','Arm_R','ForeArm_R','Hand_R','Leg_L','Knee_L','Foot_L','Leg_R','Knee_R','Foot_R','Tail','Wing_L','WingTip_L','Wing_R','WingTip_R','Jaw']) {
+      if (!jointNames.has(required)) throw new Error('skeleton missing articulated joint '+required);
+    }
     const animationNames = new Set((doc.animations ?? []).map(a => a.name));
     for (const clip of requiredClips) if (!animationNames.has(clip)) throw new Error('missing animation clip '+clip);
     if ((doc.animations ?? []).length < 6) throw new Error('expected at least six embedded animation clips');
