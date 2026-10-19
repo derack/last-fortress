@@ -457,7 +457,7 @@ function makeCharacter(id, category, baseColor, accent, style) {
   materials[3].emissiveTexture={index:4};
   const materialIndex={armor:0,edge:1,cloth:2,glow:3,dark:4};
   // Build low-poly primitives in character/model space.
-  const buildPrimitive=(piece)=>{
+  const buildPrimitive=(piece,lodLevel=0)=>{
     const pos=[],norm=[],uv=[],indices=[];
     const [cx,cy,cz]=piece.center,[sx,sy,sz]=piece.size;
     const rot=piece.rotation||[0,0,0];
@@ -487,8 +487,10 @@ function makeCharacter(id, category, baseColor, accent, style) {
       for(const f of faces) for(let i=0;i<6;i+=3) pushTri(v[f[i]],v[f[i+1]],v[f[i+2]]);
     } else if(piece.kind==='sphere') {
       // Indexed smooth sphere: reuse vertices instead of duplicating every triangle corner.
-      const lat=(category==='heroes'||category==='bosses')?12:8;
-      const lon=(category==='heroes'||category==='bosses')?16:12;
+      const baseLat=(category==='heroes'||category==='bosses')?12:8;
+      const baseLon=(category==='heroes'||category==='bosses')?16:12;
+      const lat=Math.max(4,baseLat-lodLevel*2);
+      const lon=Math.max(6,baseLon-lodLevel*4);
       const base=pos.length/3, points=[];
       const rotateDir=(p)=>{
         let [x,y,z]=p; const [rx,ry,rz]=rot;
@@ -509,7 +511,8 @@ function makeCharacter(id, category, baseColor, accent, style) {
         indices.push(a,b,d,b,c,d);
       }
     } else {
-      const segments=(category==='heroes'||category==='bosses')?(piece.kind==='cone'?12:16):(piece.kind==='cone'?10:12);
+      const baseSegments=(category==='heroes'||category==='bosses')?(piece.kind==='cone'?12:16):(piece.kind==='cone'?10:12);
+      const segments=Math.max(piece.kind==='cone'?6:8,baseSegments-lodLevel*3);
       const topR=piece.kind==='cone'?0:0.5, botR=0.5;
       for(let i=0;i<segments;i++) {
         const a=i/segments*Math.PI*2,b=(i+1)/segments*Math.PI*2;
@@ -522,16 +525,24 @@ function makeCharacter(id, category, baseColor, accent, style) {
     }
     return {pos,norm,uv,indices,joint:jointIndex[piece.joint]??jointIndex.Spine,mat:materialIndex[piece.material]??0};
   };
-  // Merge all same-joint/material geometry: only a handful of skinned draw calls per character.
-  const merged=new Map();
-  for(const piece of pieces) {
-    const g=buildPrimitive(piece),key=String(g.mat);
-    if(!merged.has(key))merged.set(key,{pos:[],norm:[],uv:[],joints:[],weights:[],indices:[],joint:g.joint,mat:g.mat});
-    const m=merged.get(key),offset=m.pos.length/3;
-    m.pos.push(...g.pos);m.norm.push(...g.norm);m.uv.push(...g.uv);
-    for(let i=0;i<g.pos.length/3;i++){m.joints.push(g.joint,0,0,0);m.weights.push(1,0,0,0);}
-    m.indices.push(...g.indices.map(i=>i+offset));
-  }
+  // Build three independently simplified skinned variants. LOD geometry keeps the same
+  // authored silhouette/material palette while reducing sphere/cylinder tessellation and
+  // dropping tiny non-emissive trim at distance.
+  const mergePieces=(lodLevel=0)=>{
+    const merged=new Map();
+    for(const piece of pieces) {
+      const maxDim=Math.max(...piece.size);
+      if(lodLevel===1 && maxDim<0.045 && piece.material!=='glow') continue;
+      if(lodLevel===2 && maxDim<0.095 && piece.material!=='glow') continue;
+      const g=buildPrimitive(piece,lodLevel),key=String(g.mat);
+      if(!merged.has(key))merged.set(key,{pos:[],norm:[],uv:[],joints:[],weights:[],indices:[],joint:g.joint,mat:g.mat});
+      const m=merged.get(key),offset=m.pos.length/3;
+      m.pos.push(...g.pos);m.norm.push(...g.norm);m.uv.push(...g.uv);
+      for(let i=0;i<g.pos.length/3;i++){m.joints.push(g.joint,0,0,0);m.weights.push(1,0,0,0);}
+      m.indices.push(...g.indices.map(i=>i+offset));
+    }
+    return merged;
+  };
 
   // glTF binary packer (aligned bufferViews + accessor bounds).
   const chunks=[];let byteLength=0;const bufferViews=[],accessors=[];
@@ -548,22 +559,30 @@ function makeCharacter(id, category, baseColor, accent, style) {
     if(min)a.min=min;if(max)a.max=max;
     accessors.push(a);return accessors.length-1;
   };
-  const meshDefs=[],meshNodes=[];
-  for(const g of merged.values()) {
-    const pos=new Float32Array(g.pos),norm=new Float32Array(g.norm),uv=new Float32Array(g.uv);
-    const joints=new Uint16Array(g.joints),weights=new Float32Array(g.weights);
-    const max=[-Infinity,-Infinity,-Infinity],min=[Infinity,Infinity,Infinity];
-    for(let i=0;i<pos.length;i+=3)for(let k=0;k<3;k++){min[k]=Math.min(min[k],pos[i+k]);max[k]=Math.max(max[k],pos[i+k]);}
-    const p=accessor(pos,'VEC3',5126,pos.length/3,34962,min,max);
-    const n=accessor(norm,'VEC3',5126,norm.length/3,34962);
-    const tex=accessor(uv,'VEC2',5126,uv.length/2,34962);
-    const j=accessor(joints,'VEC4',5123,joints.length/4,34962);
-    const w=accessor(weights,'VEC4',5126,weights.length/4,34962);
-    const idxType=g.indices.length>65535?Uint32Array:Uint16Array;
-    const ix=accessor(new idxType(g.indices),'SCALAR',idxType===Uint32Array?5125:5123,g.indices.length,34963);
-    meshDefs.push({name:id+'_'+materials[g.mat].name,primitives:[{attributes:{POSITION:p,NORMAL:n,TEXCOORD_0:tex,JOINTS_0:j,WEIGHTS_0:w},indices:ix,material:g.mat,mode:4}]});
-    meshNodes.push({name:id+'_'+materials[g.mat].name,mesh:meshDefs.length-1,skin:0});
-  }
+  const meshDefs=[];
+  const appendMeshes=(merged,suffix='')=>{
+    const meshNodes=[];
+    for(const g of merged.values()) {
+      const pos=new Float32Array(g.pos),norm=new Float32Array(g.norm),uv=new Float32Array(g.uv);
+      const joints=new Uint16Array(g.joints),weights=new Float32Array(g.weights);
+      const max=[-Infinity,-Infinity,-Infinity],min=[Infinity,Infinity,Infinity];
+      for(let i=0;i<pos.length;i+=3)for(let k=0;k<3;k++){min[k]=Math.min(min[k],pos[i+k]);max[k]=Math.max(max[k],pos[i+k]);}
+      const p=accessor(pos,'VEC3',5126,pos.length/3,34962,min,max);
+      const n=accessor(norm,'VEC3',5126,norm.length/3,34962);
+      const tex=accessor(uv,'VEC2',5126,uv.length/2,34962);
+      const j=accessor(joints,'VEC4',5123,joints.length/4,34962);
+      const w=accessor(weights,'VEC4',5126,weights.length/4,34962);
+      const idxType=g.indices.length>65535?Uint32Array:Uint16Array;
+      const ix=accessor(new idxType(g.indices),'SCALAR',idxType===Uint32Array?5125:5123,g.indices.length,34963);
+      const meshName=id+'_'+materials[g.mat].name+suffix;
+      meshDefs.push({name:meshName,primitives:[{attributes:{POSITION:p,NORMAL:n,TEXCOORD_0:tex,JOINTS_0:j,WEIGHTS_0:w},indices:ix,material:g.mat,mode:4}]});
+      meshNodes.push({name:meshName,mesh:meshDefs.length-1,skin:0});
+    }
+    return meshNodes;
+  };
+  const baseMeshNodes=appendMeshes(mergePieces(0));
+  const lod1MeshNodes=appendMeshes(mergePieces(1),'_LOD1');
+  const lod2MeshNodes=appendMeshes(mergePieces(2),'_LOD2');
 
   const nodes=jointNames.map((name,i)=>({name,translation:boneLocal[i],children:[]}));
   for(let i=1;i<jointNames.length;i++)nodes[boneParents[i]].children.push(i);
@@ -588,8 +607,17 @@ function makeCharacter(id, category, baseColor, accent, style) {
   attach('MouthPoint',style==='spider'?'Head':(['dragon','dragonBoss','flyer'].includes(style)?'Head':'Jaw'),
     style==='spider'?[0,1.08,0.62]:['dragon','dragonBoss','flyer'].includes(style)?[0,1.08,0.98]:[0,1.3,0.2]);
   const meshNodeStart=nodes.length;
-  nodes.push(...meshNodes);
-  const roots=[0,...meshNodes.map((_,i)=>meshNodeStart+i)];
+  nodes.push(...baseMeshNodes);
+  const roots=[0,...baseMeshNodes.map((_,i)=>meshNodeStart+i)];
+  const appendLodGroup=(name,meshNodes)=>{
+    const groupIndex=nodes.length;
+    const childStart=groupIndex+1;
+    nodes.push({name,children:meshNodes.map((_,i)=>childStart+i)});
+    nodes.push(...meshNodes);
+    roots.push(groupIndex);
+  };
+  appendLodGroup(id+'_LOD1',lod1MeshNodes);
+  appendLodGroup(id+'_LOD2',lod2MeshNodes);
   const invBind=[];
   for(const p of boneWorld) invBind.push(1,0,0,0,0,1,0,0,0,0,1,0,-p[0],-p[1],-p[2],1);
   const ibm=accessor(new Float32Array(invBind),'MAT4',5126,jointNames.length);
@@ -694,4 +722,4 @@ for(const [id,category,color,accent,style] of roster) {
   const file=path.join(OUT,id+'.gltf');
   fs.writeFileSync(file,JSON.stringify(makeCharacter(id,category,color,accent,style)));
 }
-console.log('Rigged character forge: generated '+roster.length+' skinned, animated glTF assets.');
+console.log('Rigged character forge: generated '+roster.length+' skinned, animated PBR glTF assets with 3 distance LODs per model.');
