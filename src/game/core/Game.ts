@@ -263,8 +263,8 @@ export class Game {
     const camPos = this.cameraCtrl.camera.position;
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       const e = this.enemies[i];
-      e.update(dt, this.time);
       e.updateLod(camPos);
+      e.update(dt, this.time);
       if (!e.alive && e.getPos().y < -2.4) {
         e.remove();
         this.enemies.splice(i, 1);
@@ -299,8 +299,8 @@ export class Game {
     }
 
     // قهرمان
-    this.hero.update(dt, this.time);
     this.hero.updateLod(this.cameraCtrl.camera.position);
+    this.hero.update(dt, this.time);
     // حلقه پالس حالت جابجایی — زیر قهرمان تا کاربر بداند کجا تپ کند
     if (this.heroSelectMode && this.hero.alive) {
       this.heroMovePulse -= dt;
