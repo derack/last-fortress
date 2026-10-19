@@ -183,7 +183,7 @@ function makeCharacter(id, category, baseColor, accent, style) {
   const materialIndex={armor:0,edge:1,cloth:2,glow:3,dark:4};
   // Build low-poly primitives in character/model space.
   const buildPrimitive=(piece)=>{
-    const pos=[],norm=[],indices=[];
+    const pos=[],norm=[],uv=[],indices=[];
     const [cx,cy,cz]=piece.center,[sx,sy,sz]=piece.size;
     const rot=piece.rotation||[0,0,0];
     const rotate=(p)=>{
@@ -198,7 +198,7 @@ function makeCharacter(id, category, baseColor, accent, style) {
       let n=[ab[1]*ac[2]-ab[2]*ac[1],ab[2]*ac[0]-ab[0]*ac[2],ab[0]*ac[1]-ab[1]*ac[0]];
       const l=Math.hypot(...n)||1; n=n.map(v=>v/l);
       const base=pos.length/3;
-      for(const p of [a,b,c]) {pos.push(...p);norm.push(...n);}
+      for(const p of [a,b,c]) {pos.push(...p);norm.push(...n);uv.push(p[0]*0.72,p[2]*0.72);}
       indices.push(base,base+1,base+2);
     };
     if(piece.kind==='box') {
@@ -220,7 +220,7 @@ function makeCharacter(id, category, baseColor, accent, style) {
         const local=[Math.sin(phi)*Math.cos(th)*sx,Math.cos(phi)*sy,Math.sin(phi)*Math.sin(th)*sz];
         const world=rotate(local);
         const normal=rotateDir([Math.sin(phi)*Math.cos(th)/Math.max(sx,1e-5),Math.cos(phi)/Math.max(sy,1e-5),Math.sin(phi)*Math.sin(th)/Math.max(sz,1e-5)]);
-        pos.push(...world); norm.push(...normal); points.push(base+y*(lon+1)+x);
+        pos.push(...world); norm.push(...normal); uv.push(world[0]*0.72,world[2]*0.72); points.push(base+y*(lon+1)+x);
       }
       for(let y=0;y<lat;y++) for(let x=0;x<lon;x++) {
         const a=points[y*(lon+1)+x],b=points[(y+1)*(lon+1)+x],c=points[(y+1)*(lon+1)+x+1],d=points[y*(lon+1)+x+1];
@@ -237,15 +237,15 @@ function makeCharacter(id, category, baseColor, accent, style) {
         pushTri(c0,b0,a0);if(topR>0)pushTri(c1,a1,b1);
       }
     }
-    return {pos,norm,indices,joint:jointIndex[piece.joint]??jointIndex.Spine,mat:materialIndex[piece.material]??0};
+    return {pos,norm,uv,indices,joint:jointIndex[piece.joint]??jointIndex.Spine,mat:materialIndex[piece.material]??0};
   };
   // Merge all same-joint/material geometry: only a handful of skinned draw calls per character.
   const merged=new Map();
   for(const piece of pieces) {
     const g=buildPrimitive(piece),key=g.joint+':'+g.mat;
-    if(!merged.has(key))merged.set(key,{pos:[],norm:[],joints:[],weights:[],indices:[],joint:g.joint,mat:g.mat});
+    if(!merged.has(key))merged.set(key,{pos:[],norm:[],uv:[],joints:[],weights:[],indices:[],joint:g.joint,mat:g.mat});
     const m=merged.get(key),offset=m.pos.length/3;
-    m.pos.push(...g.pos);m.norm.push(...g.norm);
+    m.pos.push(...g.pos);m.norm.push(...g.norm);m.uv.push(...g.uv);
     for(let i=0;i<g.pos.length/3;i++){m.joints.push(g.joint,0,0,0);m.weights.push(1,0,0,0);}
     m.indices.push(...g.indices.map(i=>i+offset));
   }
@@ -267,17 +267,18 @@ function makeCharacter(id, category, baseColor, accent, style) {
   };
   const meshDefs=[],meshNodes=[];
   for(const g of merged.values()) {
-    const pos=new Float32Array(g.pos),norm=new Float32Array(g.norm);
+    const pos=new Float32Array(g.pos),norm=new Float32Array(g.norm),uv=new Float32Array(g.uv);
     const joints=new Uint16Array(g.joints),weights=new Float32Array(g.weights);
     const max=[-Infinity,-Infinity,-Infinity],min=[Infinity,Infinity,Infinity];
     for(let i=0;i<pos.length;i+=3)for(let k=0;k<3;k++){min[k]=Math.min(min[k],pos[i+k]);max[k]=Math.max(max[k],pos[i+k]);}
     const p=accessor(pos,'VEC3',5126,pos.length/3,34962,min,max);
     const n=accessor(norm,'VEC3',5126,norm.length/3,34962);
+    const tex=accessor(uv,'VEC2',5126,uv.length/2,34962);
     const j=accessor(joints,'VEC4',5123,joints.length/4,34962);
     const w=accessor(weights,'VEC4',5126,weights.length/4,34962);
     const idxType=g.indices.length>65535?Uint32Array:Uint16Array;
     const ix=accessor(new idxType(g.indices),'SCALAR',idxType===Uint32Array?5125:5123,g.indices.length,34963);
-    meshDefs.push({name:jointNames[g.joint]+'_'+materials[g.mat].name,primitives:[{attributes:{POSITION:p,NORMAL:n,JOINTS_0:j,WEIGHTS_0:w},indices:ix,material:g.mat,mode:4}]});
+    meshDefs.push({name:jointNames[g.joint]+'_'+materials[g.mat].name,primitives:[{attributes:{POSITION:p,NORMAL:n,TEXCOORD_0:tex,JOINTS_0:j,WEIGHTS_0:w},indices:ix,material:g.mat,mode:4}]});
     meshNodes.push({name:jointNames[g.joint]+'_'+materials[g.mat].name,mesh:meshDefs.length-1,skin:0});
   }
 
