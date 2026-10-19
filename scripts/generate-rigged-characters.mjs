@@ -43,7 +43,7 @@ function encodePng(width,height,rgba) {
   return Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),pngChunk('IHDR',header),pngChunk('IDAT',zlib.deflateSync(rows,{level:9})),pngChunk('IEND',Buffer.alloc(0))]);
 }
 function makePbrImages(baseColor,accent,style) {
-  const size=96, base=new Uint8Array(size*size*4), normal=new Uint8Array(size*size*4);
+  const size=128, base=new Uint8Array(size*size*4), normal=new Uint8Array(size*size*4);
   const mr=new Uint8Array(size*size*4), ao=new Uint8Array(size*size*4), emissive=new Uint8Array(size*size*4);
   const fract=(v)=>v-Math.floor(v);
   const noise=(x,y,seed)=>fract(Math.sin((x+seed*13.7)*127.1+(y-seed*7.9)*311.7)*43758.5453);
@@ -51,11 +51,11 @@ function makePbrImages(baseColor,accent,style) {
   for(let y=0;y<size;y++) for(let x=0;x<size;x++) {
     const i=(y*size+x)*4;
     const broad=periodic(x,y,3,4,.7)*.52+periodic(x,y,5,3,1.8)*.28+periodic(x,y,8,7,2.4)*.14;
-    const grain=(noise(x,y,style.length)-.5)*.10;
+    const grain=(noise(x,y,style.length)-.5)*.12 + (noise(Math.floor(x/3),Math.floor(y/3),style.length+17)-.5)*.055;
     const brushed=style.toLowerCase().includes('machine')||style.toLowerCase().includes('tank')||style.toLowerCase().includes('lord')
       ? Math.sin(y/size*Math.PI*2*44+Math.sin(x/size*Math.PI*2*5)*.12)*.035 : 0;
-    const plate=Math.pow(Math.max(0,Math.cos(x/size*Math.PI*2*6+Math.sin(y/size*Math.PI*2*3)*.35)),18)*.055;
-    const shade=Math.max(.72,Math.min(1.12,.94+broad*.11+grain+brushed+plate));
+    const plate=Math.pow(Math.max(0,Math.cos(x/size*Math.PI*2*9+Math.sin(y/size*Math.PI*2*4)*.35)),22)*.075;
+    const shade=Math.max(.68,Math.min(1.16,.93+broad*.12+grain+brushed+plate));
     for(let c=0;c<3;c++) base[i+c]=Math.max(0,Math.min(255,Math.round(shade*255)));
     base[i+3]=255;
     const dx=(periodic((x+1)%size,y,3,4,.7)-periodic((x+size-1)%size,y,3,4,.7))*.5;
@@ -200,6 +200,69 @@ function makeCharacter(id, category, baseColor, accent, style) {
       }
     }
   }
+  // Distinctive silhouette pass: authored per-archetype features, not just palette swaps.
+  if (style==='crystal') {
+    // Faceted geode growths around a visible core.
+    for(let i=0;i<7;i++) {
+      const a=i*Math.PI*2/7, x=Math.cos(a)*0.34, z=Math.sin(a)*0.28;
+      cone([x,1.08+(i%3)*0.12,z],[0.13,0.42+(i%2)*0.12,0.13],'Spine',i%2?glow:edge,[0,0,-a]);
+    }
+    cone([0,1.7,0.02],[0.16,0.34,0.16],'Head',glow,[0.08,0,0]);
+    for(const side of [-1,1]) cone([side*0.43,0.84,-0.08],[0.12,0.32,0.12],side<0?'Arm_L':'Arm_R',glow,[0,0,side*0.38]);
+  }
+  if (style==='ranger') {
+    // Hood, asymmetric shoulder mantle, quiver and paired blade fittings.
+    cone([0,1.68,-0.03],[0.28,0.35,0.28],'Head',cloth,[0.08,0,0]);
+    box([-0.26,1.32,-0.18],[0.25,0.42,0.18],'Arm_L',cloth,[0,0,-0.12]);
+    cyl([-0.19,1.38,-0.28],[0.11,0.44,0.11],'Spine',dark,[0.18,0,0]);
+    for(let i=0;i<5;i++) cone([-0.19,1.26+i*0.065,-0.28],[0.018,0.17,0.018],'Spine',edge,[0,0,0.06]);
+    box([0.25,0.96,-0.21],[0.17,0.34,0.1],'Spine',dark,[0.12,0,0.1]);
+  }
+  if (style==='machine'||style==='tank') {
+    // Mechanical shoulder housings, vent stacks, front plating and reactor rings.
+    for(const side of [-1,1]) {
+      box([side*0.39,1.45,-0.02],[0.32,0.24,0.42],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.08]);
+      for(let v=0;v<4;v++) box([side*0.39,1.46+v*0.045,0.205],[0.22,0.018,0.025],side<0?'Arm_L':'Arm_R',dark);
+      cyl([side*0.42,1.28,0.04],[0.14,0.34,0.14],side<0?'Arm_L':'Arm_R',dark,[Math.PI/2,0,0]);
+    }
+    box([0,1.02,0.24],[0.48,0.36,0.09],'Spine',edge);
+    for(let i=0;i<3;i++) box([(i-1)*0.13,1.02,0.295],[0.045,0.23,0.018],'Spine',glow);
+    if(style==='tank') for(const side of [-1,1]) {
+      box([side*0.39,0.35,-0.02],[0.2,0.48,0.55],side<0?'Leg_L':'Leg_R',dark);
+      for(let i=0;i<4;i++) cyl([side*0.4,0.18+i*0.105,0.27],[0.065,0.065,0.065],side<0?'Leg_L':'Leg_R',edge,[Math.PI/2,0,0]);
+    }
+  }
+  if (style==='brute') {
+    // Heavy cleaver blades, layered rib plates and oversized gauntlets.
+    for(const side of [-1,1]) {
+      box([side*0.5,1.0,0.08],[0.3,0.34,0.32],side<0?'Arm_L':'Arm_R',dark,[0,0,side*0.12]);
+      cone([side*0.62,0.95,0.2],[0.16,0.52,0.09],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.2]);
+    }
+    for(let i=0;i<4;i++) box([0,0.83+i*0.105,0.235],[0.32-i*0.025,0.035,0.04],'Spine',edge);
+  }
+  if (style==='humanoid'||style==='darkBoss') {
+    // Overlapping faulds and segmented shoulder/forearm plates.
+    for(let i=0;i<3;i++) box([0,0.55-i*0.09,0.12],[0.52-i*0.07,0.075,0.28],'Hips',i===1?dark:edge,[0.04,0,0]);
+    for(const side of [-1,1]) {
+      cone([side*0.43,1.44,-0.02],[0.16,0.31,0.18],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.28]);
+      box([side*0.43,0.91,0.16],[0.19,0.23,0.2],side<0?'Arm_L':'Arm_R',edge);
+    }
+  }
+  if (style==='fireBoss'||style==='iceBoss'||style==='bossGolem') {
+    // Distinct boss crown, layered mantle and oversized shoulder silhouettes.
+    for(const side of [-1,1]) {
+      sphere([side*0.64,1.4,-0.04],[0.34,0.28,0.32],side<0?'Arm_L':'Arm_R',edge);
+      cone([side*0.72,1.63,-0.06],[0.15,0.44,0.15],side<0?'Arm_L':'Arm_R',glow,[0,0,side*0.22]);
+    }
+    for(let i=0;i<4;i++) box([(i-1.5)*0.17,0.9,0.27],[0.13,0.12,0.05],'Spine',i%2?edge:glow);
+  }
+  if (style==='darkBoss') {
+    // Layered mantle and long ceremonial blade.
+    cone([0,1.96,-0.04],[0.32,0.44,0.3],'Head',edge);
+    for(let side of [-1,1]) cone([side*0.42,1.16,-0.2],[0.2,0.62,0.13],side<0?'Wing_L':'Wing_R',cloth,[0,0,side*0.14]);
+    cone([0.69,1.4,0.05],[0.12,0.68,0.06],'Arm_R',edge,[0,0,-0.12]);
+  }
+
   // Signature armor silhouette: layered shoulder plates, chest crest, bracers and boots.
   const boss=category==='bosses';
   if(!['spider','dragon','dragonBoss','flyer','wraith'].includes(style)) {
