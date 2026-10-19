@@ -45,8 +45,12 @@ function encodePng(width,height,rgba) {
 function makePbrImages(baseColor,accent,style,category='enemies') {
   // Build-specific, seamless material atlases: each surface gets its own
   // albedo; normal/MR/AO maps are shared per character to keep memory bounded.
-  const size=category==='heroes'||category==='bosses'?384:192;
-  const emissiveSize=128;
+  // Desktop keeps richer textures; Android builds use a deliberately smaller
+  // texture tier to reduce decoded/GPU texture memory by roughly 4x.
+  const mobileProfile = process.env.CAP_BUILD === '1' || process.env.ASSET_TEXTURE_PROFILE === 'mobile';
+  const isLargeAsset = category === 'heroes' || category === 'bosses';
+  const size = mobileProfile ? (isLargeAsset ? 256 : 128) : (isLargeAsset ? 384 : 192);
+  const emissiveSize = mobileProfile ? 64 : 128;
   const albedos=Array.from({length:5},()=>new Uint8Array(size*size*4));
   const normal=new Uint8Array(size*size*4), mr=new Uint8Array(size*size*4);
   const ao=new Uint8Array(size*size*4), emissive=new Uint8Array(emissiveSize*emissiveSize*4);
