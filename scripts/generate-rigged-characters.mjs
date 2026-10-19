@@ -291,6 +291,26 @@ function makeCharacter(id, category, baseColor, accent, style) {
 
   const nodes=jointNames.map((name,i)=>({name,translation:boneLocal[i],children:[]}));
   for(let i=1;i<jointNames.length;i++)nodes[boneParents[i]].children.push(i);
+  // Authored attachment transforms follow the relevant animated joint and provide
+  // stable VFX origins for hits, breath, staff, weapon swings, and chest effects.
+  const attach=(name,parent,worldPosition)=>{
+    const p=boneWorld[jointIndex[parent]];
+    const index=nodes.length;
+    nodes.push({name,translation:worldPosition.map((v,k)=>v-p[k]),children:[]});
+    nodes[jointIndex[parent]].children.push(index);
+  };
+  const headPos = style==='spider'?[0,1.08,0.32]
+    : ['dragon','dragonBoss','flyer'].includes(style)?[0,1.12,0.55]
+    : style==='wraith'?[0,1.0,0]
+    : [0,1.49,0.02];
+  attach('HeadPoint','Head',headPos);
+  attach('ChestPoint','Spine',[0,1.0,0.24]);
+  attach('HitPoint','Hips',[0,0.82,0]);
+  attach('WeaponPoint','Arm_R',style==='mage'?[0.55,1.82,0.03]:[0.68,1.42,0.05]);
+  attach('StaffPoint','Arm_R',[0.55,1.78,0.03]);
+  attach('MuzzlePoint','Spine',[0.32,1.25,0.42]);
+  attach('MouthPoint',style==='spider'?'Head':(['dragon','dragonBoss','flyer'].includes(style)?'Head':'Jaw'),
+    style==='spider'?[0,1.08,0.62]:['dragon','dragonBoss','flyer'].includes(style)?[0,1.08,0.98]:[0,1.3,0.2]);
   const meshNodeStart=nodes.length;
   nodes.push(...meshNodes);
   const roots=[0,...meshNodes.map((_,i)=>meshNodeStart+i)];
