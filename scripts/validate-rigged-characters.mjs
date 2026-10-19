@@ -7,7 +7,7 @@ const manifest = fs.readFileSync(path.join(root, 'src/game/assets/AssetManifest.
 const refs = [...manifest.matchAll(/file:\s*'([^']+\.gltf)'/g)].map(m => m[1]);
 const failures = [];
 let totalTriangles = 0, totalBytes = 0, totalPrimitives = 0;
-const requiredClips = ['Idle','Walk','Run','Attack','Hit','Death'];
+const requiredClips = ['Idle','Walk','Run','Attack','Attack1','Attack2','SpecialAttack','Hit','Death','Roar','PhaseChange'];
 if (!refs.length) failures.push('No generated rigged glTF references found in AssetManifest.ts');
 for (const url of refs) {
   const file = path.join(root, 'public', url.replace(/^\//, ''));
@@ -81,11 +81,42 @@ for (const url of refs) {
       }
       totalPrimitives++;
     }
+    // Skin weights must be finite, non-negative, and sum to one for every vertex.
+    for (const [mi,mesh] of (doc.meshes ?? []).entries()) for (const [pi,p] of (mesh.primitives ?? []).entries()) {
+      const wa=doc.accessors[p.attributes.WEIGHTS_0], wv=doc.bufferViews[wa.bufferView];
+      const off=(wv.byteOffset??0)+(wa.byteOffset??0);
+      const view=new DataView(binary.buffer,binary.byteOffset,binary.byteLength);
+      for(let v=0;v<wa.count;v++) {
+        let sum=0;
+        for(let c=0;c<4;c++) {
+          const weight=view.getFloat32(off+(v*4+c)*4,true);
+          if(!Number.isFinite(weight)||weight<0) throw new Error('mesh '+mi+' primitive '+pi+' has invalid skin weight');
+          sum+=weight;
+        }
+        if(Math.abs(sum-1)>0.001) throw new Error('mesh '+mi+' primitive '+pi+' has non-normalized skin weights');
+      }
+    }
+    const jointSet=new Set(skin.joints);
     for (const [ai,anim] of (doc.animations ?? []).entries()) {
       if (!anim.channels?.length || !anim.samplers?.length) throw new Error('animation '+anim.name+' has no channels');
       for (const channel of anim.channels) {
         if (!doc.nodes[channel.target?.node]) throw new Error('animation '+anim.name+' targets invalid node');
-        if (!anim.samplers[channel.sampler]) throw new Error('animation '+anim.name+' targets invalid sampler');
+        if (!jointSet.has(channel.target.node)) throw new Error('animation '+anim.name+' targets a node outside the skin');
+        if (!['translation','rotation','scale','weights'].includes(channel.target.path)) throw new Error('animation '+anim.name+' has invalid target path');
+        const sampler=anim.samplers[channel.sampler];
+        if (!sampler) throw new Error('animation '+anim.name+' targets invalid sampler');
+        const input=doc.accessors[sampler.input], output=doc.accessors[sampler.output];
+        if(!input||!output||input.type!=='SCALAR'||input.componentType!==5126) throw new Error('animation '+anim.name+' has invalid time accessor');
+        if(input.count<2||output.count<input.count) throw new Error('animation '+anim.name+' has insufficient keyframes');
+        if(channel.target.path==='rotation'&&output.type!=='VEC4') throw new Error('animation '+anim.name+' rotation output must be VEC4');
+        if(['translation','scale'].includes(channel.target.path)&&output.type!=='VEC3') throw new Error('animation '+anim.name+' vector output must be VEC3');
+        const iv=doc.bufferViews[input.bufferView], io=(iv.byteOffset??0)+(input.byteOffset??0);
+        let previous=-Infinity;
+        for(let k=0;k<input.count;k++) {
+          const t=binary.readFloatLE(io+k*4);
+          if(!Number.isFinite(t)||t<previous) throw new Error('animation '+anim.name+' keyframe times are not finite/ordered');
+          previous=t;
+        }
       }
     }
   } catch (e) {
