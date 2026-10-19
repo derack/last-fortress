@@ -458,6 +458,11 @@ class AssetManagerImpl {
       .loadAsync(entry.file)
       .then((gltf) => {
         const scene = gltf.scene;
+        // glTF has no core per-node visibility flag. Keep distance variants hidden
+        // until CharacterHandle.updateLod selects exactly one representation.
+        scene.traverse((node) => {
+          if (/_LOD[12]$/i.test(node.name)) node.visible = false;
+        });
         optimizeStaticAsset(scene, entry.category);
         const runtimeClips = (gltf.animations ?? []).length > 0 ? gltf.animations : createStaticCharacterClips(scene, entry.category);
         scene.visible = true;
