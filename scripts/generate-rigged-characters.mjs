@@ -1036,7 +1036,16 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
             ? [rot('Leg_L','x',[0,0.26,0,-0.26,0]),rot('Leg_R','x',[0,-0.26,0,0.26,0]),rot('Spine','z',[0,-0.11,0,0.11,0]),rot('Chest','x',[0,0.08,0,-0.06,0]),rot('Arm_L','z',[0,-0.2,0,0.2,0]),rot('Arm_R','z',[0,0.2,0,-0.2,0]),rot('Head','y',[0,-0.1,0,0.1,0]),tr('Hips',[[0,0.72,0],[0,0.78,0],[0,0.72,0],[0,0.78,0],[0,0.72,0]])]
             : [rot('Leg_L','x',[0,0.72,0,-0.72,0]),rot('Leg_R','x',[0,-0.72,0,0.72,0]),rot('Knee_L','x',[0,0.42,0,0.18,0]),rot('Knee_R','x',[0,0.18,0,0.42,0]),rot('Foot_L','x',[0,-0.2,0,0.12,0]),rot('Foot_R','x',[0,0.12,0,-0.2,0]),rot('Arm_L','x',[0,-0.48,0,0.48,0]),rot('Arm_R','x',[0,0.48,0,-0.48,0]),rot('ForeArm_L','x',[0,-0.14,0.08,0.14,0]),rot('ForeArm_R','x',[0,0.14,0.08,-0.14,0]),rot('Spine','x',[0,0.08,0,0.08,0]),rot('Chest','x',[0,-0.06,0.02,-0.06,0])];
   addAnim('Run',runTracks);
-  const attackTracks = beast
+  const heroAttackTracks = id === 'arman'
+    ? [rot('Arm_R','x',[-0.18,-0.92,0.78,0.16,-0.18]),rot('Hand_R','z',[0,-0.32,0.62,0.08,0]),rot('Arm_L','x',[0,-0.16,0.22,0,0]),rot('Spine','y',[0,-0.16,0.22,0,0])]
+    : id === 'aria'
+      ? [rot('Arm_L','z',[0,-0.48,-0.72,-0.2,0]),rot('Arm_R','x',[0,-0.32,-0.62,0.18,0]),rot('ForeArm_R','z',[0,0.22,0.48,0.08,0]),rot('Hand_R','x',[0,-0.12,0.24,0,0]),rot('Spine','y',[0,-0.12,0.16,0,0])]
+      : id === 'radin'
+        ? [rot('Arm_R','x',[0,-0.42,-0.16,0.2,0]),rot('Arm_L','x',[0,-0.28,-0.1,0.14,0]),rot('Hand_R','z',[0,-0.12,0.18,0,0]),rot('Spine','x',[0,0.06,-0.12,0,0]),rot('Head','y',[0,-0.04,0.08,0,0])]
+        : id === 'nila'
+          ? [rot('Arm_R','z',[0,-0.42,-0.78,-0.18,0]),rot('Hand_R','x',[0,-0.24,0.48,0.12,0]),rot('Arm_L','z',[0,0.18,0.42,0.08,0]),rot('Head','y',[0,-0.1,0.16,0,0]),rot('Spine','x',[0,-0.08,-0.16,0,0])]
+          : null;
+  const attackTracks = heroAttackTracks ?? (beast
     ? [rot('Head','x',[-0.05,-0.35,0.24,0.08,-0.05]),rot('Jaw','x',[0,0.18,0.38,0.12,0]),rot('Tail','y',[0,0.22,-0.25,0.08,0]),rot('TailMid','y',[0,0.3,-0.32,0.1,0]),rot('TailTip','y',[0,0.42,-0.45,0.12,0]),rot('Wing_L','z',[0,-0.5,-0.9,-0.2,0]),rot('Wing_R','z',[0,0.5,0.9,0.2,0])]
     : crawler
       ? [rot('Head','x',[0,-0.24,0.12,0,0]),
@@ -1044,16 +1053,25 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
           ...['SpiderLegR0','SpiderLegR2','SpiderLegL1','SpiderLegL3'].map(j=>rot(j,'z',[0,-0.3,0.6,-0.15,0]))]
       : mage
         ? [rot('Arm_R','x',[0,-0.55,-0.25,0.55,0]),rot('Hand_R','x',[0,-0.22,0.38,0.12,0]),rot('Head','x',[0,-0.12,-0.2,0,0]),rot('Spine','y',[0,-0.08,0.16,0,0])]
-        : [rot('Arm_R','x',[-0.15,-0.95,0.85,0.3,-0.15]),rot('Hand_R','x',[0,-0.28,0.5,0.16,0]),rot('Spine','y',[0,-0.1,0.12,0,0]),...(heavy?[rot('Arm_L','x',[0,-0.35,0.55,0,0]),rot('Hips','x',[0,-0.05,0.08,0,0])]:[])];
+        : [rot('Arm_R','x',[-0.15,-0.95,0.85,0.3,-0.15]),rot('Hand_R','x',[0,-0.28,0.5,0.16,0]),rot('Spine','y',[0,-0.1,0.12,0,0]),...(heavy?[rot('Arm_L','x',[0,-0.35,0.55,0,0]),rot('Hips','x',[0,-0.05,0.08,0,0])]:[])]);
   addAnim('Attack',attackTracks);
   addAnim('Attack1',attackTracks);
-  const attack2Tracks = beast
+  const heroAttack2Tracks = id === 'arman'
+    ? [rot('Arm_R','x',[-0.1,-1.05,1.08,0.2,-0.1]),rot('Hand_R','z',[0,-0.48,0.78,0.12,0]),rot('Arm_L','x',[0,-0.24,0.38,0,0]),rot('Spine','y',[0,-0.28,0.34,0,0]),rot('Hips','y',[0,-0.08,0.1,0,0])]
+    : id === 'aria'
+      ? [rot('Arm_L','z',[0,-0.72,-1.0,-0.18,0]),rot('Arm_R','x',[0,-0.52,-0.86,0.22,0]),rot('ForeArm_R','z',[0,0.35,0.68,0.1,0]),rot('Spine','y',[0,-0.2,0.28,0,0])]
+      : id === 'radin'
+        ? [rot('Arm_R','x',[0,-0.58,-0.28,0.3,0]),rot('Arm_L','x',[0,-0.4,-0.2,0.2,0]),rot('Hand_R','z',[0,-0.22,0.28,0,0]),rot('Spine','x',[0,0.12,-0.22,0,0]),rot('Hips','y',[0,-0.08,0.12,0,0])]
+        : id === 'nila'
+          ? [rot('Arm_R','z',[0,-0.62,-1.02,-0.2,0]),rot('Hand_R','x',[0,-0.4,0.72,0.16,0]),rot('Arm_L','z',[0,0.28,0.62,0.1,0]),rot('Spine','x',[0,-0.14,-0.3,0,0]),rot('Head','y',[0,-0.16,0.24,0,0])]
+          : null;
+  const attack2Tracks = heroAttack2Tracks ?? (beast
     ? [rot('Head','x',[0,-0.15,0.42,0.1,0]),rot('Jaw','x',[0,0.28,0.52,0.08,0]),rot('Tail','y',[0,-0.3,0.38,-0.1,0]),rot('TailMid','y',[0,-0.4,0.48,-0.12,0]),rot('TailTip','y',[0,-0.5,0.6,-0.15,0]),rot('Wing_L','z',[0,-0.75,-1.0,-0.15,0]),rot('Wing_R','z',[0,0.75,1.0,0.15,0])]
     : crawler
       ? [rot('Head','x',[0,-0.4,0.24,0,0]),
           ...['SpiderLegL0','SpiderLegL2','SpiderLegR1','SpiderLegR3'].map(j=>rot(j,'z',[0,0.55,-0.8,0.2,0])),
           ...['SpiderLegR0','SpiderLegR2','SpiderLegL1','SpiderLegL3'].map(j=>rot(j,'z',[0,-0.55,0.8,-0.2,0]))]
-      : [rot('Arm_L','x',[0,-0.7,0.95,0.2,0]),rot('Arm_R','x',[0,-0.4,0.65,0.1,0]),rot('Hand_R','x',[0,-0.2,0.42,0.1,0]),rot('Spine','y',[0,0.2,-0.24,0,0]),rot('Hips','x',[0,-0.08,0.1,0,0])];
+      : [rot('Arm_L','x',[0,-0.7,0.95,0.2,0]),rot('Arm_R','x',[0,-0.4,0.65,0.1,0]),rot('Hand_R','x',[0,-0.2,0.42,0.1,0]),rot('Spine','y',[0,0.2,-0.24,0,0]),rot('Hips','x',[0,-0.08,0.1,0,0])]);
   addAnim('Attack2',attack2Tracks);
   const specialTracks = beast
     ? [rot('Spine','x',[0,-0.18,-0.36,0.08,0]),rot('Head','x',[0,-0.2,-0.38,-0.05,0]),rot('Wing_L','z',[0,-0.75,-1.05,-0.25,0]),rot('Wing_R','z',[0,0.75,1.05,0.25,0]),rot('Tail','y',[0,0.38,-0.42,0.12,0]),rot('TailMid','y',[0,0.45,-0.5,0.14,0]),rot('TailTip','y',[0,0.58,-0.62,0.18,0])]
