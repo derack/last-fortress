@@ -473,6 +473,87 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     for(let i=0;i<4;i++) sphere([0,0.46-i*0.1,-0.42-i*0.16],[0.12-i*0.015,0.12-i*0.015,0.16],'Tail',i%2?armor:edge);
   }
 
+  // Final identity pass: silhouettes and readable equipment are deliberately
+  // authored per named unit, even when two units share the same rig archetype.
+  // Every piece is attached to a real joint so its movement stays coherent.
+  if (id==='shadow') {
+    // Dual void daggers and asymmetric shoulder blades.
+    for (const side of [-1,1]) {
+      cyl([side*0.47,0.91,0.12],[0.035,0.34,0.035],'Hand_'+(side<0?'L':'R'),dark,[0,0,side*0.22]);
+      cone([side*0.5,1.13,0.14],[0.07,0.28,0.045],'Hand_'+(side<0?'L':'R'),glow,[0,0,side*0.22]);
+      cone([side*0.42,1.39,-0.05],[0.1,0.28,0.1],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.45]);
+    }
+  } else if (id==='warrior') {
+    // Guard shield with a metal rim and central aether boss.
+    box([-0.54,1.0,0.18],[0.12,0.58,0.4],'Arm_L',dark,[0,0,-0.08]);
+    box([-0.56,1.0,0.205],[0.055,0.49,0.32],'Arm_L',edge,[0,0,-0.08]);
+    sphere([-0.6,1.0,0.25],[0.045,0.11,0.11],'Arm_L',glow);
+  } else if (id==='golem') {
+    // Stone seams and heavy knuckle plates, distinct from the crowned king.
+    for (let i=0;i<4;i++) box([(i-1.5)*0.105,1.0,0.251],[0.025,0.34,0.025],'Spine',glow,[0,0,(i%2?1:-1)*0.16]);
+    for (const side of [-1,1]) box([side*0.58,0.72,0.08],[0.28,0.2,0.3],side<0?'Arm_L':'Arm_R',dark);
+  } else if (id==='spider') {
+    // Toxic dorsal shell, segmented abdomen and a forward venom sac.
+    sphere([0,0.73,-0.3],[0.37,0.25,0.38],'Hips',dark);
+    for(let i=0;i<5;i++) cone([(i-2)*0.13,0.98,-0.35],[0.065,0.24,0.07],'Hips',edge,[0.18,0,(i-2)*0.1]);
+    sphere([0,0.91,0.48],[0.13,0.12,0.12],'Head',glow);
+  } else if (id==='warlock') {
+    // Arcane collar and a multi-ring focus at the staff hand.
+    for(let i=0;i<3;i++) cone([0,1.65-i*0.09,-0.05],[0.29-i*0.035,0.06,0.25-i*0.025],'Chest',edge);
+    sphere([0.5,1.55,0.09],[0.18,0.18,0.18],'Hand_L',glow);
+    for(let i=0;i<4;i++) cone([0.5+Math.cos(i*Math.PI/2)*0.2,1.55+Math.sin(i*Math.PI/2)*0.2,0.09],[0.035,0.13,0.035],'Hand_L',edge,[0,0,i*Math.PI/2]);
+  } else if (id==='flyer') {
+    // Feathered wing tips and a forked tail vane make the aerial silhouette legible.
+    for(const side of [-1,1]) for(let i=0;i<4;i++)
+      cone([side*(0.48+i*0.12),0.99-i*0.035,-0.16-i*0.06],[0.07,0.24,0.035],side<0?'Wing_L':'Wing_R',i%2?edge:armor,[0,0,side*(0.45+i*0.08)]);
+    cone([-0.1,0.42,-0.95],[0.12,0.28,0.07],'Tail',edge,[0,0,-0.25]);
+    cone([0.1,0.42,-0.95],[0.12,0.28,0.07],'Tail',edge,[0,0,0.25]);
+  } else if (id==='smallDragon') {
+    // Short dragon gets a broad jaw, cheek horns and a visible dorsal crest.
+    for(const side of [-1,1]) {
+      cone([side*0.25,1.2,0.64],[0.09,0.28,0.09],'Head',edge,[0,0,side*0.55]);
+      cone([side*0.24,1.03,0.78],[0.06,0.2,0.07],'Jaw',glow,[0,0,side*0.35]);
+    }
+    for(let i=0;i<6;i++) cone([0,1.22-i*0.13,-0.16-i*0.12],[0.07,0.2,0.07],'Tail',edge,[0.2,0,0]);
+  } else if (id==='hunter') {
+    // Recurve bow with a bright string channel and a quiver cap.
+    for(const side of [-1,1]) cone([0.61+side*0.17,1.12,0.12],[0.04,0.28,0.04],'Hand_R',[0,1].includes(side)?edge:dark,[0,0,side*0.65]);
+    cyl([0.61,1.12,0.12],[0.018,0.4,0.018],'Hand_R',glow,[0,0,-0.08]);
+    box([0,1.26,-0.37],[0.22,0.08,0.12],'Spine',edge);
+  } else if (id==='spirit') {
+    // Floating spectral ribbons and a halo-like broken crown.
+    for(let i=0;i<5;i++) cone([(i-2)*0.13,0.56,-0.2],[0.06,0.52+(i%2)*0.16,0.07],'Tail',i%2?glow:cloth,[0,0,(i-2)*0.16]);
+    for(let i=0;i<3;i++) cone([(i-1)*0.16,1.52,0.02],[0.055,0.22,0.055],'Head',edge,[0,0,(i-1)*0.28]);
+  } else if (id==='shadowSoldier') {
+    // Twin forearm blades and a segmented stealth pauldron.
+    for(const side of [-1,1]) {
+      box([side*0.45,1.34,-0.02],[0.3,0.13,0.29],side<0?'Arm_L':'Arm_R',dark,[0,0,side*0.18]);
+      cone([side*0.48,0.9,0.19],[0.06,0.35,0.05],side<0?'Hand_L':'Hand_R',glow,[0,0,side*0.1]);
+    }
+  } else if (id==='golemKing') {
+    // Regal basalt crown, mantle medallion and oversized rune pauldrons.
+    for(let i=-2;i<=2;i++) cone([i*0.15,1.98,0.02],[0.08,0.4,0.08],'Head',glow,[0,0,-i*0.14]);
+    sphere([0,1.02,0.3],[0.26,0.28,0.08],'Chest',glow);
+    for(const side of [-1,1]) box([side*0.67,1.37,-0.04],[0.25,0.35,0.3],side<0?'Arm_L':'Arm_R',dark,[0,0,side*0.14]);
+  } else if (id==='fireGiant') {
+    // Volcanic horns and layered ember vents.
+    for(const side of [-1,1]) {
+      cone([side*0.24,1.94,0.02],[0.13,0.42,0.12],'Head',glow,[0,0,side*0.42]);
+      for(let i=0;i<3;i++) box([side*(0.18+i*0.08),1.05-i*0.08,0.27],[0.035,0.12,0.035],'Chest',glow);
+    }
+  } else if (id==='iceGiant') {
+    // Faceted ice crown and crystalline shoulder growths.
+    for(let i=0;i<7;i++) cone([(i-3)*0.11,1.94,0.02],[0.06,0.34+(i%3)*0.08,0.06],'Head',i%2?edge:glow,[0,0,(i-3)*0.12]);
+    for(const side of [-1,1]) cone([side*0.65,1.36,-0.05],[0.13,0.42,0.13],side<0?'Arm_L':'Arm_R',glow,[0,0,side*0.28]);
+  } else if (id==='blackDragon') {
+    // Abyssal skull horns, segmented tail armor and wing talons.
+    for(const side of [-1,1]) {
+      cone([side*0.25,1.3,0.72],[0.12,0.38,0.1],'Head',edge,[0,0,side*0.48]);
+      cone([side*0.52,0.94,-0.12],[0.08,0.34,0.06],side<0?'Wing_L':'Wing_R',glow,[0,0,side*0.3]);
+    }
+    for(let i=0;i<7;i++) cone([0,1.12-i*0.12,-0.24-i*0.13],[0.075,0.24,0.075],'Tail',edge,[0.22,0,0]);
+  }
+
   const materials = [
     {name:'Obsidian Armor',pbrMetallicRoughness:{baseColorFactor:clampColor(baseColor),metallicFactor:0.62,roughnessFactor:0.38}},
     {name:'Forged Edge',pbrMetallicRoughness:{baseColorFactor:[0.63,0.7,0.8,1],metallicFactor:0.88,roughnessFactor:0.24}},
