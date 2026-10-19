@@ -91,7 +91,7 @@ const mat = (color: number, opts?: Partial<THREE.MeshStandardMaterialParameters>
   const material = new THREE.MeshStandardMaterial({ color, roughness: 0.52, metalness: 0.3, ...opts });
   if (typeof document === 'undefined' || (material.map && material.normalMap)) return material;
   const hue = { h: 0, s: 0, l: 0 };
-  new THREE.Color(color).getHSL(hue);
+  material.color.getHSL(hue);
   const profile: EnvironmentSurfaceProfile = material.metalness > 0.45
     ? 'metal'
     : hue.h > 0.19 && hue.h < 0.46 && hue.s > 0.18 ? 'foliage' : 'stone';
