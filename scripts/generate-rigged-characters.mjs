@@ -296,6 +296,86 @@ function makeCharacter(id, category, baseColor, accent, style) {
       cone([side*0.68,1.18,-0.18],[0.1,0.32,0.1],side<0?'Wing_L':'Wing_R',edge,[0,0,side*0.4]);
     }
   }
+  // Signature silhouettes: authored per-archetype equipment, not one generic weapon
+  // reused across the roster. Pieces are assigned to their animated joints.
+  if (style==='warMachine') {
+    // Arm-mounted siege cannon with muzzle rings, cooling vents and a glowing chamber.
+    cyl([0.52,1.05,0.32],[0.19,0.68,0.19],'Arm_R',dark,[Math.PI/2,0,-0.08]);
+    cyl([0.52,1.05,0.62],[0.235,0.14,0.235],'Arm_R',edge,[Math.PI/2,0,-0.08]);
+    cyl([0.52,1.05,0.71],[0.15,0.08,0.15],'Arm_R',glow,[Math.PI/2,0,-0.08]);
+    for(let i=0;i<4;i++) box([0.52+(i-1.5)*0.09,1.24,0.3],[0.035,0.18,0.12],'Arm_R',edge);
+    box([0,1.08,-0.24],[0.5,0.22,0.12],'Spine',dark);
+  } else if (style==='aetherTank') {
+    // Heavy reactor pack, segmented shoulder guards and forward twin vents.
+    box([0,1.16,-0.34],[0.62,0.74,0.22],'Spine',dark);
+    for(let side of [-1,1]) {
+      cyl([side*0.19,1.19,-0.47],[0.095,0.48,0.095],'Spine',glow);
+      box([side*0.42,1.38,0.02],[0.2,0.3,0.32],side<0?'Arm_L':'Arm_R',edge);
+      for(let i=0;i<3;i++) box([side*0.43,1.3-i*0.09,0.19],[0.13,0.025,0.035],side<0?'Arm_L':'Arm_R',dark);
+    }
+    sphere([0,1.06,0.29],[0.19,0.2,0.09],'Spine',glow);
+  } else if (style==='crystal') {
+    // Uneven crystal growths create an unmistakable jagged silhouette.
+    for(let i=0;i<7;i++) {
+      const side=i%2===0?-1:1, y=0.78+(i%3)*0.18, z=-0.2-(i%2)*0.08;
+      cone([side*(0.18+(i%3)*0.12),y,z],[0.12+(i%2)*0.035,0.36+(i%3)*0.1,0.12],'Spine',i%3===0?glow:edge,[0,0,side*(0.18+(i%2)*0.12)]);
+    }
+    cone([0,1.73,0.02],[0.14,0.42,0.14],'Head',glow);
+    for(let side of [-1,1]) cone([side*0.32,0.99,0.02],[0.12,0.3,0.12],side<0?'Arm_L':'Arm_R',glow,[0,0,side*0.25]);
+  } else if (style==='hunter') {
+    // Ranger's asymmetric hood, quiver and compact crossbow silhouette.
+    cone([0,1.72,-0.02],[0.27,0.35,0.26],'Head',cloth,[0.12,0,0]);
+    box([0,1.04,-0.29],[0.26,0.46,0.12],'Spine',dark,[0.12,0,0]);
+    for(let i=0;i<5;i++) cone([(i-2)*0.045,1.18,-0.36],[0.018,0.36,0.018],'Spine',edge,[0.04,0,0]);
+    box([0.58,1.12,0.08],[0.42,0.08,0.12],'Arm_R',edge,[0,0,-0.12]);
+    for(let side of [-1,1]) cone([0.58+side*0.18,1.12,0.08],[0.035,0.22,0.04],'Arm_R',dark,[0,0,side*0.9]);
+  } else if (style==='destroyer'||style==='annihilator') {
+    // Oversized brutalist cleaver with a serrated counter-edge.
+    box([0.64,1.05,0.12],[0.1,0.72,0.1],'Arm_R',dark,[0,0,-0.14]);
+    box([0.78,1.31,0.1],[0.34,0.38,0.12],'Arm_R',edge,[0,0,-0.18]);
+    for(let i=0;i<4;i++) cone([0.78+(i-1.5)*0.09,1.08,0.12],[0.055,0.16,0.07],'Arm_R',glow,[0,0,Math.PI]);
+    if(style==='annihilator') for(let side of [-1,1]) cone([side*0.2,1.79,0.04],[0.09,0.42,0.09],'Head',edge,[0,0,side*0.34]);
+  } else if (style==='summoner') {
+    // Three rune rings and floating-looking focus stones orbit the staff head.
+    cyl([0.57,1.12,0.02],[0.035,1.12,0.035],'Arm_R',dark);
+    for(let i=0;i<3;i++) {
+      const a=i*Math.PI*2/3;
+      sphere([0.57+Math.cos(a)*0.2,1.62+Math.sin(a)*0.16,0.02],[0.075,0.075,0.075],'Arm_R',glow);
+      cone([0.57+Math.cos(a)*0.25,1.62+Math.sin(a)*0.16,0.02],[0.035,0.13,0.035],'Arm_R',edge,[0,0,a]);
+    }
+    cone([0,1.88,0.02],[0.2,0.2,0.2],'Head',glow);
+  } else if (style==='darkBoss') {
+    // Layered mantle and crown spikes distinguish the final dark-lord silhouette.
+    for(let side of [-1,1]) {
+      box([side*0.25,0.92,-0.27],[0.34,0.88,0.14],'Spine',cloth,[0,0,side*0.12]);
+      cone([side*0.18,1.92,-0.02],[0.075,0.42,0.075],'Head',glow,[0,0,side*0.22]);
+      box([side*0.44,1.38,-0.08],[0.26,0.42,0.22],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.18]);
+    }
+    sphere([0,1.06,0.31],[0.22,0.28,0.07],'Spine',glow);
+  } else if (style==='warrior'||style==='humanoid') {
+    // Soldier-specific crest, cheek guards and layered chest insignia.
+    box([0,1.77,0.015],[0.08,0.22,0.09],'Head',edge);
+    for(let side of [-1,1]) {
+      box([side*0.19,1.48,0.16],[0.09,0.18,0.1],'Head',dark,[0,0,side*0.12]);
+      box([side*0.12,1.02,0.29],[0.065,0.26,0.045],'Spine',glow,[0,0,side*0.12]);
+    }
+  } else if (style==='spider') {
+    // Carapace bands and forward mandibles add a readable arachnid face.
+    for(let i=0;i<3;i++) box([0,0.74+i*0.12,-0.28],[0.46-i*0.07,0.035,0.08],'Hips',edge);
+    for(let side of [-1,1]) cone([side*0.16,0.92,0.53],[0.075,0.22,0.08],'Head',edge,[0,0,side*0.48]);
+  } else if (style==='dragon'||style==='dragonBoss'||style==='flyer') {
+    // Wing spars and layered dorsal plates read as anatomy, not flat paddles.
+    for(let side of [-1,1]) {
+      for(let i=0;i<3;i++) cone([side*(0.28+i*0.14),1.04,-0.08-i*0.12],[0.055,0.23,0.055],side<0?'Wing_L':'Wing_R',edge,[0,0,side*(0.25+i*0.08)]);
+      for(let i=0;i<4;i++) cone([side*0.16,1.08-i*0.12,-0.23-i*0.12],[0.065,0.18,0.07],'Spine',edge,[0.2,0,0]);
+    }
+  } else if (style==='wraith') {
+    // Ragged layered spectral shroud and elongated crown.
+    for(let i=0;i<5;i++) cone([(i-2)*0.13,0.68,-0.13],[0.075,0.55+(i%2)*0.18,0.08],'Tail',cloth,[0,0,(i-2)*0.12]);
+    cone([0,1.43,0.02],[0.16,0.42,0.16],'Head',edge);
+    sphere([0,0.92,0.24],[0.24,0.3,0.07],'Spine',glow);
+  }
+
   // Eye lenses are placed against each archetype's actual head silhouette (not a shared floating coordinate).
   const eye = style==='spider' ? {y:1.12,z:0.55,x:0.13,r:0.055}
     : ['dragon','dragonBoss','flyer'].includes(style) ? {y:1.16,z:0.86,x:0.12,r:0.045}
