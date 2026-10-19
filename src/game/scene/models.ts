@@ -9,8 +9,108 @@ import { finishEnemyModel, finishHeroModel } from './character-finish';
 // هر مدل: Group با userData برای انیمیشن
 // ============================================================
 
-const mat = (color: number, opts?: Partial<THREE.MeshStandardMaterialParameters>) =>
-  new THREE.MeshStandardMaterial({ color, roughness: 0.52, metalness: 0.3, ...opts });
+type EnvironmentSurfaceProfile = 'stone' | 'metal' | 'foliage';
+type EnvironmentSurfaceMaps = {
+  map: THREE.CanvasTexture;
+  bump: THREE.CanvasTexture;
+  normal: THREE.CanvasTexture;
+  roughness: THREE.CanvasTexture;
+};
+const environmentSurfaceCache = new Map<EnvironmentSurfaceProfile, EnvironmentSurfaceMaps>();
+
+function getEnvironmentSurfaceMaps(profile: EnvironmentSurfaceProfile): EnvironmentSurfaceMaps | null {
+  const cached = environmentSurfaceCache.get(profile);
+  if (cached) return cached;
+  if (typeof document === 'undefined') return null;
+  const size = 128;
+  const waveAt = (x: number, y: number) => {
+    const u = x / size, v = y / size;
+    if (profile === 'metal') {
+      return Math.sin(v * Math.PI * 64 + Math.sin(u * Math.PI * 6) * 0.18) * 0.34
+        + Math.sin(v * Math.PI * 24 + u * Math.PI * 3) * 0.24
+        + Math.cos(u * Math.PI * 8) * 0.12;
+    }
+    if (profile === 'foliage') {
+      return Math.sin(u * Math.PI * 6 + Math.sin(v * Math.PI * 4) * 0.9)
+        + Math.cos(v * Math.PI * 8 + Math.sin(u * Math.PI * 3) * 0.7) * 0.65
+        + Math.sin((u + v) * Math.PI * 10) * 0.28;
+    }
+    return Math.sin(u * Math.PI * 8 + Math.sin(v * Math.PI * 4) * 0.7)
+      + Math.cos(v * Math.PI * 6 + Math.sin(u * Math.PI * 2) * 0.45)
+      + Math.sin((u + v) * Math.PI * 12) * 0.45;
+  };
+  const makeCanvas = (kind: 'color' | 'bump' | 'normal' | 'roughness') => {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const image = ctx.createImageData(size, size);
+    for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+      const wave = waveAt(x, y), i = (y * size + x) * 4;
+      if (kind === 'normal') {
+        const dx = (waveAt((x + 1) % size, y) - waveAt((x + size - 1) % size, y)) * 0.5;
+        const dy = (waveAt(x, (y + 1) % size) - waveAt(x, (y + size - 1) % size)) * 0.5;
+        const strength = profile === 'metal' ? 0.14 : profile === 'foliage' ? 0.22 : 0.3;
+        const nx = -dx * strength, ny = -dy * strength, nz = 1, length = Math.hypot(nx, ny, nz);
+        image.data[i] = Math.round((nx / length * 0.5 + 0.5) * 255);
+        image.data[i + 1] = Math.round((ny / length * 0.5 + 0.5) * 255);
+        image.data[i + 2] = Math.round((nz / length * 0.5 + 0.5) * 255);
+      } else {
+        const value = kind === 'bump'
+          ? 128 + wave * (profile === 'metal' ? 3 : profile === 'foliage' ? 7 : 9)
+          : 238 + wave * (profile === 'metal' ? 4 : 3.5);
+        image.data[i] = image.data[i + 1] = image.data[i + 2] = Math.max(0, Math.min(255, value));
+      }
+      image.data[i + 3] = 255;
+    }
+    ctx.putImageData(image, 0, 0);
+    return canvas;
+  };
+  const mapCanvas = makeCanvas('color'), bumpCanvas = makeCanvas('bump');
+  const normalCanvas = makeCanvas('normal'), roughnessCanvas = makeCanvas('roughness');
+  if (!mapCanvas || !bumpCanvas || !normalCanvas || !roughnessCanvas) return null;
+  const makeTexture = (canvas: HTMLCanvasElement, colorSpace: THREE.ColorSpace) => {
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = colorSpace;
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+    texture.anisotropy = 4;
+    texture.userData.sharedAssetResource = true;
+    return texture;
+  };
+  const maps = {
+    map: makeTexture(mapCanvas, THREE.SRGBColorSpace),
+    bump: makeTexture(bumpCanvas, THREE.NoColorSpace),
+    normal: makeTexture(normalCanvas, THREE.NoColorSpace),
+    roughness: makeTexture(roughnessCanvas, THREE.NoColorSpace),
+  };
+  environmentSurfaceCache.set(profile, maps);
+  return maps;
+}
+
+const mat = (color: number, opts?: Partial<THREE.MeshStandardMaterialParameters>) => {
+  const material = new THREE.MeshStandardMaterial({ color, roughness: 0.52, metalness: 0.3, ...opts });
+  if (typeof document === 'undefined' || (material.map && material.normalMap)) return material;
+  const hue = { h: 0, s: 0, l: 0 };
+  new THREE.Color(color).getHSL(hue);
+  const profile: EnvironmentSurfaceProfile = material.metalness > 0.45
+    ? 'metal'
+    : hue.h > 0.19 && hue.h < 0.46 && hue.s > 0.18 ? 'foliage' : 'stone';
+  const maps = getEnvironmentSurfaceMaps(profile);
+  if (maps) {
+    if (!material.map) material.map = maps.map;
+    if (!material.bumpMap) {
+      material.bumpMap = maps.bump;
+      material.bumpScale = profile === 'metal' ? 0.008 : profile === 'foliage' ? 0.018 : 0.028;
+    }
+    if (!material.normalMap) {
+      material.normalMap = maps.normal;
+      const strength = profile === 'metal' ? 0.1 : profile === 'foliage' ? 0.14 : 0.2;
+      material.normalScale.set(strength, strength);
+    }
+    if (!material.roughnessMap) material.roughnessMap = maps.roughness;
+  }
+  return material;
+};
 
 const glow = (color: number) =>
   new THREE.MeshPhysicalMaterial({
