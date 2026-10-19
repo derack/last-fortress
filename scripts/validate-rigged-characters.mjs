@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 
 const root = process.cwd();
 const manifest = fs.readFileSync(path.join(root, 'src/game/assets/AssetManifest.ts'), 'utf8');
@@ -29,6 +30,10 @@ for (const url of refs) {
       if (png.readUInt32BE(16) < 32 || png.readUInt32BE(20) < 32) throw new Error('image '+ii+' resolution unexpectedly small');
     }
     for (const [ti,texture] of doc.textures.entries()) if (!doc.images[texture.source] || !doc.samplers?.[texture.sampler]) throw new Error('texture '+ti+' has invalid source/sampler');
+    const albedoHashes = doc.images.slice(0, 5).map((image) =>
+      crypto.createHash('sha256').update(Buffer.from(image.uri.slice(image.uri.indexOf(',') + 1), 'base64')).digest('hex')
+    );
+    if (new Set(albedoHashes).size < 5) throw new Error('material albedo PNGs must contain five genuinely distinct surface maps');
     const albedoSlots = (doc.materials ?? []).map(m => m.pbrMetallicRoughness?.baseColorTexture?.index);
     if (new Set(albedoSlots).size < 5) throw new Error('armor, edge, cloth, glow, and dark iron must use distinct albedo maps');
     if (albedoSlots.some(index => !Number.isInteger(index) || !doc.textures[index])) throw new Error('material albedo texture reference is invalid');
