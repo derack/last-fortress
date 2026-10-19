@@ -1103,9 +1103,18 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
   addAnim('PhaseChange',[rot('Spine','x',[0,-0.12,-0.28,-0.12,0]),rot('Arm_L','z',[0,-0.55,-0.9,-0.35,0]),rot('Arm_R','z',[0,0.55,0.9,0.35,0]),rot('Head','y',[0,-0.25,0.25,-0.1,0])]);
   // Hero-specific actions are embedded too; controllers can request Skill/Victory
   // without silently falling back to a generic attack or static pose.
-  addAnim('Skill', beast
+  const heroSkillTracks = id === 'arman'
+    ? [rot('Spine','y',[0,-0.24,0.38,-0.12,0]),rot('Arm_R','x',[0,-1.08,0.82,0.14,0]),rot('Hand_R','z',[0,-0.5,0.76,0.08,0]),rot('Arm_L','z',[0,-0.32,-0.62,-0.12,0])]
+    : id === 'aria'
+      ? [rot('Arm_L','z',[0,-0.72,-1.08,-0.24,0]),rot('Arm_R','x',[0,-0.55,-0.9,0.18,0]),rot('ForeArm_R','z',[0,0.42,0.76,0.1,0]),rot('Spine','y',[0,-0.22,0.32,0,0]),rot('Head','y',[0,0.08,-0.12,0,0])]
+      : id === 'radin'
+        ? [rot('Arm_R','x',[0,-0.72,-0.36,0.22,0]),rot('Arm_L','x',[0,-0.5,-0.28,0.18,0]),rot('Spine','x',[0,0.16,-0.24,0,0]),rot('Head','y',[0,-0.1,0.16,0,0]),rot('Hips','y',[0,-0.1,0.12,0,0])]
+        : id === 'nila'
+          ? [rot('Arm_R','z',[0,-0.7,-1.15,-0.25,0]),rot('Hand_R','x',[0,-0.5,0.82,0.12,0]),rot('Arm_L','z',[0,0.38,0.72,0.12,0]),rot('Spine','x',[0,-0.18,-0.36,-0.08,0]),rot('Head','y',[0,-0.22,0.3,0,0])]
+          : null;
+  addAnim('Skill', heroSkillTracks ?? (beast
     ? [rot('Head','x',[0,-0.22,-0.45,-0.15,0]),rot('Wing_L','z',[0,-0.65,-1.0,-0.3,0]),rot('Wing_R','z',[0,0.65,1.0,0.3,0]),rot('Tail','y',[0,0.32,-0.36,0.12,0])]
-    : [rot('Spine','x',[0,-0.1,-0.28,-0.08,0]),rot('Arm_L','z',[0,-0.45,-0.8,-0.2,0]),rot('Arm_R','z',[0,0.45,0.8,0.2,0]),rot('Head','y',[0,-0.18,0.2,-0.08,0])]);
+    : [rot('Spine','x',[0,-0.1,-0.28,-0.08,0]),rot('Arm_L','z',[0,-0.45,-0.8,-0.2,0]),rot('Arm_R','z',[0,0.45,0.8,0.2,0]),rot('Head','y',[0,-0.18,0.2,-0.08,0])]));
   addAnim('Victory', beast
     ? [rot('Head','x',[0,-0.1,-0.2,0,0]),rot('Wing_L','z',[0,-0.25,-0.7,-0.2,0]),rot('Wing_R','z',[0,0.25,0.7,0.2,0]),rot('Tail','y',[0,0.1,-0.1,0,0]),rot('TailMid','y',[0,0.06,-0.06,0,0]),rot('TailTip','y',[0,0.08,-0.08,0,0])]
     : [rot('Spine','x',[0,-0.06,-0.12,-0.03,0]),rot('Arm_L','z',[0,-0.2,-0.6,-0.25,0]),rot('Arm_R','z',[0,0.2,0.6,0.25,0]),rot('Head','y',[0,-0.08,0.08,0,0])]);
