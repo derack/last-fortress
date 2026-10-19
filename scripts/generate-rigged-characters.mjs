@@ -179,7 +179,11 @@ function quat(axis, angle) {
   return axis==='x'?[s,0,0,c]:axis==='y'?[0,s,0,c]:[0,0,s,c];
 }
 function clampColor(c){return [((c>>16)&255)/255,((c>>8)&255)/255,(c&255)/255,1];}
-function makeCharacter(id, category, baseColor, accent, style) {
+function makeCharacter(id, category, baseColor, accent, styleInput) {
+  // Normalize roster labels to the shared anatomy/animation archetypes. Keep `id`
+  // separate so every named unit can still author signature equipment.
+  const styleAliases = { warMachine: 'machine', aetherTank: 'tank', smallDragon: 'dragon', crystalMonster: 'crystal', destroyer: 'brute', annihilator: 'brute', spirit: 'wraith', shadowSoldier: 'humanoid', ranger: 'hunter', summoner: 'mage' };
+  const style = styleAliases[styleInput] ?? styleInput;
   const pieces=[];
   const add=(kind, center, size, joint='Spine', material='armor', rotation=[0,0,0])=>
     pieces.push({kind,center,size,joint,material,rotation});
@@ -331,12 +335,32 @@ function makeCharacter(id, category, baseColor, accent, style) {
       for(let i=0;i<3;i++) sphere([side*(0.13+i*0.08),0.75,0.18],[0.025,0.025,0.018],'Spine',edge);
     }
     // Distinct weapon silhouette weighted to the right arm joint.
-    if(style==='mage') {
+    if(style==='mage' && id!=='summoner') {
       // The staff is bound to the hand, not the upper arm, so wrist motion
       // follows the attack clip and the grip remains visually coherent.
       cyl([0.55,1.0,0.03],[0.045,1.05,0.045],'Hand_R',dark);
       sphere([0.55,1.57,0.03],[0.15,0.15,0.15],'Hand_R',glow);
       for(let i=0;i<3;i++) cone([0.55+Math.cos(i*2.094)*0.19,1.57+Math.sin(i*2.094)*0.19,0.03],[0.035,0.14,0.035],'Hand_R',edge,[0,0,i*0.7]);
+    } else if(id==='arman') {
+      // Arman: oversized two-handed relic blade, gold fuller and crossguard.
+      cyl([0.58,0.91,0.05],[0.055,0.48,0.055],'Hand_R',dark,[0,0,-0.12]);
+      box([0.62,1.22,0.07],[0.13,0.48,0.065],'Hand_R',edge,[0,0,-0.12]);
+      box([0.62,1.43,0.07],[0.22,0.045,0.075],'Hand_R',glow,[0,0,-0.12]);
+      cone([0.62,1.49,0.07],[0.075,0.17,0.07],'Hand_R',edge,[0,0,-0.12]);
+    } else if(id==='aria') {
+      // Aria: recurved aether bow with luminous grip and twin limb tips.
+      cyl([0.62,1.14,0.05],[0.035,0.52,0.035],'Hand_R',edge,[0,0,-0.18]);
+      cyl([0.56,1.38,0.05],[0.028,0.25,0.028],'Hand_R',dark,[0,0,-0.45]);
+      cyl([0.68,0.91,0.05],[0.028,0.25,0.028],'Hand_R',dark,[0,0,0.45]);
+      cyl([0.62,1.14,0.075],[0.012,0.46,0.012],'Hand_R',glow);
+      sphere([0.62,1.14,0.09],[0.055,0.065,0.045],'Hand_R',glow);
+    } else if(id==='radin') {
+      // Radin: compact arc-rifle, vented receiver and cyan energy barrel.
+      box([0.65,1.08,0.12],[0.42,0.13,0.17],'Hand_R',dark,[0,0,-0.04]);
+      cyl([0.75,1.08,0.27],[0.045,0.38,0.045],'Hand_R',edge,[Math.PI/2,0,0]);
+      cyl([0.75,1.08,0.43],[0.065,0.1,0.065],'Hand_R',glow,[Math.PI/2,0,0]);
+      box([0.56,0.96,0.1],[0.12,0.2,0.13],'Hand_R',edge,[0,0,-0.08]);
+      for(let i=0;i<3;i++) box([0.57+i*0.07,1.16,0.15],[0.025,0.025,0.1],'Hand_R',glow);
     } else {
       cyl([0.58,0.92,0.05],[0.055,0.85,0.055],'Hand_R',dark,[0,0,-0.18]);
       box([0.68,1.22,0.05],[0.28,0.36,0.09],'Hand_R',edge,[0,0,-0.18]);
@@ -354,14 +378,14 @@ function makeCharacter(id, category, baseColor, accent, style) {
   }
   // Signature silhouettes: authored per-archetype equipment, not one generic weapon
   // reused across the roster. Pieces are assigned to their animated joints.
-  if (style==='warMachine') {
+  if (id==='warMachine') {
     // Arm-mounted siege cannon with muzzle rings, cooling vents and a glowing chamber.
     cyl([0.52,1.05,0.32],[0.19,0.68,0.19],'Arm_R',dark,[Math.PI/2,0,-0.08]);
     cyl([0.52,1.05,0.62],[0.235,0.14,0.235],'Arm_R',edge,[Math.PI/2,0,-0.08]);
     cyl([0.52,1.05,0.71],[0.15,0.08,0.15],'Arm_R',glow,[Math.PI/2,0,-0.08]);
     for(let i=0;i<4;i++) box([0.52+(i-1.5)*0.09,1.24,0.3],[0.035,0.18,0.12],'Arm_R',edge);
     box([0,1.08,-0.24],[0.5,0.22,0.12],'Spine',dark);
-  } else if (style==='aetherTank') {
+  } else if (id==='aetherTank') {
     // Heavy reactor pack, segmented shoulder guards and forward twin vents.
     box([0,1.16,-0.34],[0.62,0.74,0.22],'Spine',dark);
     for(let side of [-1,1]) {
@@ -385,13 +409,13 @@ function makeCharacter(id, category, baseColor, accent, style) {
     for(let i=0;i<5;i++) cone([(i-2)*0.045,1.18,-0.36],[0.018,0.36,0.018],'Spine',edge,[0.04,0,0]);
     box([0.58,1.12,0.08],[0.42,0.08,0.12],'Arm_R',edge,[0,0,-0.12]);
     for(let side of [-1,1]) cone([0.58+side*0.18,1.12,0.08],[0.035,0.22,0.04],'Arm_R',dark,[0,0,side*0.9]);
-  } else if (style==='destroyer'||style==='annihilator') {
+  } else if (id==='destroyer'||id==='annihilator') {
     // Oversized brutalist cleaver with a serrated counter-edge.
     box([0.64,1.05,0.12],[0.1,0.72,0.1],'Arm_R',dark,[0,0,-0.14]);
     box([0.78,1.31,0.1],[0.34,0.38,0.12],'Arm_R',edge,[0,0,-0.18]);
     for(let i=0;i<4;i++) cone([0.78+(i-1.5)*0.09,1.08,0.12],[0.055,0.16,0.07],'Arm_R',glow,[0,0,Math.PI]);
-    if(style==='annihilator') for(let side of [-1,1]) cone([side*0.2,1.79,0.04],[0.09,0.42,0.09],'Head',edge,[0,0,side*0.34]);
-  } else if (style==='summoner') {
+    if(id==='annihilator') for(let side of [-1,1]) cone([side*0.2,1.79,0.04],[0.09,0.42,0.09],'Head',edge,[0,0,side*0.34]);
+  } else if (id==='summoner') {
     // Three rune rings and floating-looking focus stones orbit the staff head.
     cyl([0.57,1.12,0.02],[0.035,1.12,0.035],'Arm_R',dark);
     for(let i=0;i<3;i++) {
