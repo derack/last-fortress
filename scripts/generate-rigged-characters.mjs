@@ -567,6 +567,7 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     box([0.68,1.13,0.05],[0.3,0.055,0.075],'Hand_R',glow,[0,0,-0.14]);
     cone([0.68,1.74,0.04],[0.09,0.2,0.07],'Hand_R',glow,[0,0,-0.14]);
     sphere([0,1.04,0.32],[0.12,0.16,0.06],'Chest',glow);
+  }
 
   const materials = [
     {name:'Obsidian Armor',pbrMetallicRoughness:{baseColorFactor:clampColor(baseColor),metallicFactor:0.62,roughnessFactor:0.38}},
