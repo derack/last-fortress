@@ -243,6 +243,52 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
   let hasSkin = false;
   scene.traverse((o) => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) hasSkin = true; });
   if (hasSkin) {
+    // Rigged models must retain their hierarchy and weights, but still receive
+    // the same seamless PBR maps and UV preparation as static assets.
+    scene.traverse((o) => {
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh || !mesh.geometry || !mesh.material) return;
+      mesh.castShadow = category === 'bosses';
+      mesh.receiveShadow = true;
+      ensureProceduralUV(mesh.geometry);
+      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      for (const material of materials) {
+        const standard = material as THREE.MeshStandardMaterial;
+        if (!standard.isMeshStandardMaterial) continue;
+        const emissiveStrength = standard.emissive.r + standard.emissive.g + standard.emissive.b;
+        if (emissiveStrength <= 0.08) {
+          const hue = { h: 0, s: 0, l: 0 };
+          standard.color.getHSL(hue);
+          const profile: SurfaceProfile = standard.metalness > 0.4
+            ? 'metal'
+            : hue.h > 0.19 && hue.h < 0.46 && hue.s > 0.18 ? 'foliage' : 'stone';
+          const maps = getSharedSurfaceMaps(profile);
+          if (maps) {
+            if (!standard.map) standard.map = maps.color;
+            if (!standard.normalMap) {
+              standard.normalMap = maps.normal;
+              standard.normalScale.set(category === 'bosses' ? 0.22 : 0.14, category === 'bosses' ? 0.22 : 0.14);
+            }
+            if (!standard.roughnessMap) standard.roughnessMap = maps.roughness;
+            if (!standard.bumpMap) {
+              standard.bumpMap = maps.bump;
+              standard.bumpScale = category === 'bosses' ? 0.022 : 0.012;
+            }
+          }
+        }
+        if (emissiveStrength > 0.08) {
+          standard.roughness = Math.min(standard.roughness, 0.3);
+          standard.metalness = Math.min(standard.metalness, 0.12);
+        } else if (standard.metalness > 0.4) {
+          standard.metalness = Math.max(standard.metalness, 0.68);
+          standard.roughness = Math.min(standard.roughness, 0.42);
+        } else {
+          standard.metalness = Math.min(standard.metalness, 0.08);
+          standard.roughness = Math.max(standard.roughness, 0.82);
+        }
+        standard.needsUpdate = true;
+      }
+    });
     markSharedAssetResources(scene);
     return;
   }
