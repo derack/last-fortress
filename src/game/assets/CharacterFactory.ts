@@ -303,6 +303,10 @@ export class CharacterHandle {
   private lodNodes: { node: THREE.Object3D; level: 1 | 2 }[] = [];
   /** گره‌های مدل پایه (خارج از سلسله‌مراتب LOD) */
   private lodBase: THREE.Object3D[] = [];
+  /** فاصله‌محور کردن هزینهٔ AnimationMixer برای دستگاه‌های موبایل */
+  private animationStep = 1;
+  private animationFrame = 0;
+  private animationDelta = 0;
   disposed = false;
   private pooled = false;
   /** کلید Pool (assetId|tier) — هنگام acquire تنظیم می‌شود */
@@ -344,14 +348,28 @@ export class CharacterHandle {
    * برای Placeholderها بدون گره LOD هیچ‌کاری نمی‌کند (هزینه صفر).
    */
   updateLod(camPos: THREE.Vector3) {
-    if (this.lodNodes.length === 0) return;
     const d = camPos.distanceTo(this.root.position);
+    // Close actors update every frame, mid-range every 2nd, distant every 3rd.
+    // Accumulated delta is passed to the mixer so animation time never gets lost.
+    this.animationStep = d >= 38 ? 3 : d >= 22 ? 2 : 1;
+    if (this.lodNodes.length === 0) return;
     const base = d < 22;
     const mid = d >= 22 && d < 38;
     for (const n of this.lodBase) n.visible = base;
     for (const { node, level } of this.lodNodes) {
       node.visible = level === 1 ? mid : d >= 38;
     }
+  }
+
+  /** Distance-adaptive animation tick with delta accumulation for mobile performance. */
+  updateAnimation(dt: number) {
+    if (!this.animation) return;
+    this.animationDelta += Math.min(Math.max(dt, 0), 0.1);
+    this.animationFrame++;
+    if (this.animationFrame % this.animationStep !== 0) return;
+    const accumulated = this.animationDelta;
+    this.animationDelta = 0;
+    this.animation?.update(accumulated);
   }
 
   /** تنظیم نقاط VFX اولیه (Placeholder) */
@@ -402,6 +420,9 @@ export class CharacterHandle {
     this.animation = clips.length > 0
       ? new CharacterAnimationController(this.root, clips)
       : new ProceduralAnimationController(norm.inner, norm.height);
+    this.animationFrame = 0;
+    this.animationDelta = 0;
+    this.animationStep = 1;
     this.proceduralAnimParts = [];
     this.vfxPoints.clear();
     for (const [k, o] of Object.entries(norm.vfx)) this.vfxPoints.set(k, o);
