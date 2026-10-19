@@ -105,6 +105,12 @@ const roster = [
   ['iceGiant','bosses',0x29445a,0x8cecff,'iceBoss'],
   ['blackDragon','bosses',0x252334,0xc084fc,'dragonBoss'],
   ['darkLord','bosses',0x241f37,0xc17bff,'darkBoss'],
+  // Playable heroes use the same validated skeleton contract but distinct silhouettes,
+  // palette and signature gear. They are generated at build time with embedded PBR maps.
+  ['arman','heroes',0x242b37,0xd7ad61,'warrior'],
+  ['aria','heroes',0x26344b,0x69d9ff,'ranger'],
+  ['radin','heroes',0x3c2928,0xff985b,'hunter'],
+  ['nila','heroes',0x302447,0xe4a0ff,'mage'],
 ];
 const jointNames = [
   'Root','Hips','Spine','Chest','Neck','Head',
@@ -628,6 +634,14 @@ function makeCharacter(id, category, baseColor, accent, style) {
     ? [rot('Head','x',[0,-0.3,-0.55,-0.25,0]),rot('Spine','x',[0,-0.12,-0.2,-0.08,0]),rot('Wing_L','z',[0,-0.4,-0.75,-0.35,0]),rot('Wing_R','z',[0,0.4,0.75,0.35,0])]
     : [rot('Head','x',[0,-0.3,-0.55,-0.25,0]),rot('Spine','x',[0,-0.12,-0.2,-0.08,0]),...(winged?[rot('Wing_L','z',[0,-0.4,-0.75,-0.35,0]),rot('Wing_R','z',[0,0.4,0.75,0.35,0])]:[])]);
   addAnim('PhaseChange',[rot('Spine','x',[0,-0.12,-0.28,-0.12,0]),rot('Arm_L','z',[0,-0.55,-0.9,-0.35,0]),rot('Arm_R','z',[0,0.55,0.9,0.35,0]),rot('Head','y',[0,-0.25,0.25,-0.1,0])]);
+  // Hero-specific actions are embedded too; controllers can request Skill/Victory
+  // without silently falling back to a generic attack or static pose.
+  addAnim('Skill', beast
+    ? [rot('Head','x',[0,-0.22,-0.45,-0.15,0]),rot('Wing_L','z',[0,-0.65,-1.0,-0.3,0]),rot('Wing_R','z',[0,0.65,1.0,0.3,0]),rot('Tail','y',[0,0.32,-0.36,0.12,0])]
+    : [rot('Spine','x',[0,-0.1,-0.28,-0.08,0]),rot('Arm_L','z',[0,-0.45,-0.8,-0.2,0]),rot('Arm_R','z',[0,0.45,0.8,0.2,0]),rot('Head','y',[0,-0.18,0.2,-0.08,0])]);
+  addAnim('Victory', beast
+    ? [rot('Head','x',[0,-0.1,-0.2,0,0]),rot('Wing_L','z',[0,-0.25,-0.7,-0.2,0]),rot('Wing_R','z',[0,0.25,0.7,0.2,0]),rot('Tail','y',[0,0.1,-0.1,0,0])]
+    : [rot('Spine','x',[0,-0.06,-0.12,-0.03,0]),rot('Arm_L','z',[0,-0.2,-0.6,-0.25,0]),rot('Arm_R','z',[0,0.2,0.6,0.25,0]),rot('Head','y',[0,-0.08,0.08,0,0])]);
 
   const bin=Buffer.concat(chunks);
   const gltf={
