@@ -1138,13 +1138,11 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
 function packGlb(gltf) {
   const binaryChunks = [Buffer.from(gltf.buffers[0].uri.split(',')[1], 'base64')];
   let binaryLength = binaryChunks[0].length;
-  const imageViews = [];
   for (const image of gltf.images ?? []) {
     while (binaryLength % 4) { binaryChunks.push(Buffer.from([0])); binaryLength++; }
     const png = Buffer.from(image.uri.slice(image.uri.indexOf(',') + 1), 'base64');
     const viewIndex = gltf.bufferViews.length;
     gltf.bufferViews.push({ buffer: 0, byteOffset: binaryLength, byteLength: png.length });
-    imageViews.push(viewIndex);
     binaryChunks.push(png);
     binaryLength += png.length;
     image.bufferView = viewIndex;
@@ -1152,7 +1150,6 @@ function packGlb(gltf) {
   }
   gltf.buffers = [{ byteLength: binaryLength }];
   const binary = Buffer.concat(binaryChunks);
-  while (binary.length % 4) binaryChunks.push(Buffer.from([0]));
   const paddedBinary = binary.length % 4 ? Buffer.concat([binary, Buffer.alloc(4 - binary.length % 4)]) : binary;
   const jsonBytes = Buffer.from(JSON.stringify(gltf), 'utf8');
   const paddedJsonLength = Math.ceil(jsonBytes.length / 4) * 4;
