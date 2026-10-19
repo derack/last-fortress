@@ -100,10 +100,14 @@ export class BattleScene {
     this.scene = new THREE.Scene();
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: quality === 'ultra',
+      antialias: quality === 'high' || quality === 'ultra',
       powerPreference: 'high-performance',
     });
-    const pixelRatio = quality === 'low' ? 1 : Math.min(1.35, window.devicePixelRatio || 1);
+    // Supersample the scene to preserve crisp armor edges when the player zooms in.
+    // Adaptive resolution below can still step down on slower GPUs.
+    const pixelRatio = quality === 'low' ? 1
+      : quality === 'medium' ? 1.3
+      : quality === 'high' ? 1.55 : 1.75;
     this.renderer.setPixelRatio(pixelRatio);
     this.targetRatio = pixelRatio;
     this.currentRatio = pixelRatio;
@@ -158,7 +162,7 @@ export class BattleScene {
     sun.position.set(-30, 45, -20);
     if (this.renderer.shadowMap.enabled) {
       sun.castShadow = true;
-      const shadowSize = quality === 'ultra' ? 1024 : 768;
+      const shadowSize = quality === 'ultra' ? 2048 : quality === 'high' ? 1536 : 1024;
       sun.shadow.mapSize.set(shadowSize, shadowSize);
       sun.shadow.camera.left = -55;
       sun.shadow.camera.right = 55;
@@ -1076,11 +1080,11 @@ Quality: ${this.quality}   Pixel ratio: ${this.currentRatio.toFixed(2)}`;
       const avg = this.perfAccum / this.perfFrames;
       this.perfAccum = 0;
       this.perfFrames = 0;
-      if (avg > 23 && this.currentRatio > 0.8) {
-        this.currentRatio = Math.max(0.8, this.currentRatio - 0.25);
+      if (avg > 24 && this.currentRatio > 0.95) {
+        this.currentRatio = Math.max(0.95, this.currentRatio - 0.15);
         this.renderer.setPixelRatio(this.currentRatio);
-      } else if (avg < 15 && this.currentRatio < this.targetRatio) {
-        this.currentRatio = Math.min(this.targetRatio, this.currentRatio + 0.25);
+      } else if (avg < 14.5 && this.currentRatio < this.targetRatio) {
+        this.currentRatio = Math.min(this.targetRatio, this.currentRatio + 0.15);
         this.renderer.setPixelRatio(this.currentRatio);
       }
     }
