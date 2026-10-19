@@ -593,6 +593,7 @@ export class CharacterFactory {
 
     const root = new THREE.Group();
     root.name = `tower_${entry.id}_l${level}`;
+    addCharacterContactShadow(root, entry);
     root.add(fb.group);
     root.userData.characterSource = 'procedural';
     root.userData.selectable = true;
