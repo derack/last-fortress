@@ -137,8 +137,8 @@ function walk(dir) {
 walk(assetRoot);
 console.log(`GLB validation: ${checked.size} valid files; ${referenced.length} manifest references.`);
 const textureless = audit.filter((item) => item.textures === 0).length;
-const unriggedCombat = audit.filter((item) => /\\/(?:enemies|bosses)\\//.test(item.rel) && item.skins === 0).length;
-const authoredCombatAnimations = audit.filter((item) => /\\/(?:enemies|bosses)\\//.test(item.rel) && item.animations > 0).length;
+const unriggedCombat = audit.filter((item) => /\/(?:enemies|bosses)\//.test(item.rel) && item.skins === 0).length;
+const authoredCombatAnimations = audit.filter((item) => /\/(?:enemies|bosses)\//.test(item.rel) && item.animations > 0).length;
 const totalTriangles = audit.reduce((sum, item) => sum + item.triangles, 0);
 console.log(`Art audit: ${audit.length} GLBs, ~${totalTriangles.toLocaleString()} source-mesh triangles; ${textureless} without embedded texture images; ${unriggedCombat} enemy/boss files without skeletal skinning; ${authoredCombatAnimations} enemy/boss files with embedded animation clips.`);
 console.log('Note: runtime surface maps and rigid-part clips improve presentation but are not substitutes for authored PBR texture sets and skeletal animation.');
