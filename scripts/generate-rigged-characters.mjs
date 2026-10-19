@@ -45,9 +45,10 @@ function encodePng(width,height,rgba) {
 function makePbrImages(baseColor,accent,style,category='enemies') {
   // Higher-frequency, tileable maps: 256px for the mobile roster, 512px for
   // hero/boss close-ups. Every map is generated deterministically at build time.
-  const size=category==='heroes'||category==='bosses'?512:256;
+  const size=category==='heroes'||category==='bosses'?384:192;
+  const emissiveSize=128;
   const base=new Uint8Array(size*size*4), normal=new Uint8Array(size*size*4);
-  const mr=new Uint8Array(size*size*4), ao=new Uint8Array(size*size*4), emissive=new Uint8Array(size*size*4);
+  const mr=new Uint8Array(size*size*4), ao=new Uint8Array(size*size*4), emissive=new Uint8Array(emissiveSize*emissiveSize*4);
   const periodic=(x,y,fx,fy,phase=0)=>
     Math.sin(x/size*Math.PI*2*fx+phase)*Math.cos(y/size*Math.PI*2*fy-phase*.7);
   const isMetal=/machine|tank|lord|warrior|hunter|ranger|brute|annihilator/i.test(style);
@@ -86,14 +87,19 @@ function makePbrImages(baseColor,accent,style,category='enemies') {
     const edge=Math.min(x,y,size-1-x,size-1-y);
     const cavity=Math.max(.76,Math.min(1,.97-Math.max(0,.1-h)*.35+Math.min(edge/18,1)*.03));
     ao[i]=ao[i+1]=ao[i+2]=color(cavity*255);ao[i+3]=255;
-    const pulse=.84+.16*(.5+.5*Math.sin(x/size*Math.PI*2*7+Math.sin(y/size*Math.PI*2*5)));
-    const accentRgb=[(accent>>16)&255,(accent>>8)&255,accent&255];
+
+
+  }
+  const accentRgb=[(accent>>16)&255,(accent>>8)&255,accent&255];
+  for(let y=0;y<emissiveSize;y++) for(let x=0;x<emissiveSize;x++) {
+    const i=(y*emissiveSize+x)*4;
+    const pulse=.84+.16*(.5+.5*Math.sin(x/emissiveSize*Math.PI*2*7+Math.sin(y/emissiveSize*Math.PI*2*5)));
     for(let c=0;c<3;c++) emissive[i+c]=color((accentRgb[c]/255)*pulse*255);
     emissive[i+3]=255;
   }
   return [
     encodePng(size,size,base),encodePng(size,size,normal),encodePng(size,size,mr),
-    encodePng(size,size,ao),encodePng(size,size,emissive)
+    encodePng(size,size,ao),encodePng(emissiveSize,emissiveSize,emissive)
   ];
 }
 
@@ -474,7 +480,9 @@ function makeCharacter(id, category, baseColor, accent, style) {
       for(const f of faces) for(let i=0;i<6;i+=3) pushTri(v[f[i]],v[f[i+1]],v[f[i+2]]);
     } else if(piece.kind==='sphere') {
       // Indexed smooth sphere: reuse vertices instead of duplicating every triangle corner.
-      const lat=6,lon=8, base=pos.length/3, points=[];
+      const lat=(category==='heroes'||category==='bosses')?12:8;
+      const lon=(category==='heroes'||category==='bosses')?16:12;
+      const base=pos.length/3, points=[];
       const rotateDir=(p)=>{
         let [x,y,z]=p; const [rx,ry,rz]=rot;
         let yy=y*Math.cos(rx)-z*Math.sin(rx), zz=y*Math.sin(rx)+z*Math.cos(rx); y=yy;z=zz;
@@ -494,7 +502,8 @@ function makeCharacter(id, category, baseColor, accent, style) {
         indices.push(a,b,d,b,c,d);
       }
     } else {
-      const segments=piece.kind==='cone'?8:10, topR=piece.kind==='cone'?0:0.5, botR=0.5;
+      const segments=(category==='heroes'||category==='bosses')?(piece.kind==='cone'?12:16):(piece.kind==='cone'?10:12);
+      const topR=piece.kind==='cone'?0:0.5, botR=0.5;
       for(let i=0;i<segments;i++) {
         const a=i/segments*Math.PI*2,b=(i+1)/segments*Math.PI*2;
         const point=(ang,y,rad)=>rotate([Math.cos(ang)*sx*rad,(y-.5)*sy,Math.sin(ang)*sz*rad]);
