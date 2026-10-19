@@ -277,7 +277,7 @@ export class Hero {
       // جسد — ادامه انیمیشن افتادن تا پنهان شدن
       if (this.deathHideTimer > 0) {
         this.deathHideTimer -= dt;
-        this.handle.animation?.update(dt);
+        this.handle.updateAnimation(dt);
         if (this.deathHideTimer <= 0) this.mesh.visible = false;
       }
       this.respawnTimer -= dt;
@@ -353,7 +353,7 @@ export class Hero {
     // انیمیشن حرکتی — اسکلتی (GLB انیمیشن‌دار) یا پروسیجرال بدنه‌صلب (GLB استاتیک)
     // Placeholderها animation=null دارند و با پاهای پروسیجرال قدیمی کار می‌کنند
     this.handle.animation?.playLocomotion(moving ? 'walk' : 'idle');
-    this.handle.animation?.update(dt);
+    this.handle.updateAnimation(dt);
 
     this.mesh.position.copy(this.position);
     this.muzzleFlash = Math.max(0, this.muzzleFlash - dt);
