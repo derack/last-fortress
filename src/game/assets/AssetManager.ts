@@ -195,11 +195,32 @@ function createStaticCharacterClips(scene: THREE.Group, category: CharacterAsset
   ];
 }
 
+function markSharedAssetResources(scene: THREE.Object3D) {
+  scene.traverse((object) => {
+    const mesh = object as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    mesh.geometry.userData.sharedAssetResource = true;
+    const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    for (const material of materials) {
+      material.userData.sharedAssetResource = true;
+      for (const value of Object.values(material)) {
+        if (value instanceof THREE.Texture) value.userData.sharedAssetResource = true;
+      }
+    }
+  });
+}
+
 function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['category']) {
-  if (category === 'heroes') return; // preserve existing authored hero hierarchy/rigs
+  if (category === 'heroes') {
+    markSharedAssetResources(scene);
+    return; // preserve existing authored hero hierarchy/rigs
+  }
   let hasSkin = false;
   scene.traverse((o) => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) hasSkin = true; });
-  if (hasSkin) return;
+  if (hasSkin) {
+    markSharedAssetResources(scene);
+    return;
+  }
 
   scene.updateMatrixWorld(true);
   const maps = getSharedSurfaceMaps();
@@ -292,6 +313,9 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
     for (const source of bucket.sources) source.removeFromParent();
   }
   scene.updateMatrixWorld(true);
+  // GLB resources are cached and cloned across battles; scene teardown must not
+  // dispose their shared GPU buffers, materials or texture maps.
+  markSharedAssetResources(scene);
 }
 
 class AssetManagerImpl {
