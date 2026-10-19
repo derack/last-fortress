@@ -670,6 +670,110 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     for(let i=0;i<3;i++) sphere([0,0.98-i*0.1,0.34],[0.035,0.035,0.025],'Chest',glow);
   }
 
+  // Named-unit silhouette pass: readable signature gear and anatomy.
+  // Every unit receives authored-from-code identifying forms, not only a palette swap.
+  if (id==='warMachine') {
+    for(let i=-1;i<=1;i++) {
+      cyl([i*0.18,1.12,0.36],[0.065,0.48,0.065],'Arm_R',dark);
+      cyl([i*0.18,1.32,0.36],[0.085,0.09,0.085],'Arm_R',edge);
+    }
+    box([0,1.0,-0.25],[0.68,0.28,0.16],'Spine',dark);
+    for(let side of [-1,1]) box([side*0.36,0.38,0],[0.2,0.5,0.42],'Leg_'+(side<0?'L':'R'),dark);
+  } else if (id==='aetherTank') {
+    box([0,1.16,-0.18],[0.78,0.38,0.62],'Spine',edge);
+    cyl([0,1.27,0.34],[0.13,0.56,0.13],'Arm_R',dark,[Math.PI/2,0,0]);
+    sphere([0,1.27,0.62],[0.2,0.2,0.2],'Arm_R',glow);
+    for(let side of [-1,1]) {
+      box([side*0.43,0.38,0],[0.18,0.52,0.55],'Leg_'+(side<0?'L':'R'),dark);
+      for(let n=0;n<4;n++) cyl([side*0.44,0.2+n*0.12,0.16],[0.045,0.08,0.045],'Leg_'+(side<0?'L':'R'),edge,[0,0,Math.PI/2]);
+    }
+  } else if (id==='crystalMonster') {
+    for(let i=0;i<7;i++) {
+      const a=i/7*Math.PI*2;
+      cone([Math.cos(a)*0.36,1.1+Math.sin(i*1.7)*0.16,Math.sin(a)*0.32],[0.13,0.48+(i%3)*0.12,0.13],'Spine',i%2?glow:edge,[Math.sin(a)*0.2,0,Math.cos(a)*0.2]);
+    }
+    cone([0,1.72,0.02],[0.13,0.35,0.13],'Head',glow);
+  } else if (id==='hunter' || id==='radin') {
+    // Ranger shoulder mantle and split bow limbs.
+    box([0,1.42,-0.12],[0.66,0.2,0.18],'Chest',cloth,[0.08,0,0]);
+    for(let side of [-1,1]) {
+      cone([side*0.16,1.13,0.34],[0.045,0.26,0.045],'Spine',glow,[0,0,side*0.12]);
+      cyl([0.64,1.03,0.05],[0.035,0.72,0.035],'Hand_R',edge,[0,0,-0.2]);
+    }
+  } else if (id==='warlock' || id==='summoner' || id==='nila') {
+    // Arcane staff head with three independently readable crystal prongs.
+    cyl([0.62,0.91,-0.02],[0.035,0.9,0.035],'Hand_R',dark,[0,0,-0.08]);
+    sphere([0.62,1.43,-0.02],[0.13,0.16,0.13],'Hand_R',glow);
+    for(let n=0;n<3;n++) {
+      const a=n*Math.PI*2/3;
+      cone([0.62+Math.cos(a)*0.16,1.43+Math.sin(a)*0.16,-0.02],[0.04,0.16,0.04],'Hand_R',edge,[0,0,a]);
+    }
+  } else if (id==='spider') {
+    // Eight visibly separated articulated leg tips and a segmented abdomen.
+    sphere([0,0.68,-0.32],[0.38,0.27,0.4],'Hips',edge);
+    for(let side of [-1,1]) for(let n=0;n<4;n++) {
+      const x=side*(0.42+n*0.035), z=0.28-n*0.2;
+      sphere([x*1.65,0.42,z],[0.065,0.07,0.07],'Leg_'+(side<0?'L':'R'),glow);
+    }
+  } else if (id==='golemKing') {
+    for(let side of [-1,1]) {
+      cone([side*0.56,1.75,0.04],[0.18,0.55,0.17],'Head',edge,[0,0,side*0.28]);
+      box([side*0.58,1.12,-0.12],[0.25,0.48,0.3],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.2]);
+    }
+    sphere([0,1.1,0.29],[0.3,0.29,0.12],'Chest',glow);
+  } else if (id==='fireGiant') {
+    for(let side of [-1,1]) {
+      cone([side*0.23,1.72,0.03],[0.13,0.42,0.12],'Head',glow,[0,0,side*0.35]);
+      cone([side*0.55,1.18,-0.08],[0.13,0.44,0.13],side<0?'Arm_L':'Arm_R',glow,[0,0,side*0.42]);
+    }
+    for(let n=0;n<5;n++) sphere([(n-2)*0.12,0.95,0.28],[0.055,0.12,0.045],'Chest',glow);
+  } else if (id==='iceGiant') {
+    for(let n=0;n<7;n++) {
+      const x=(n-3)*0.18;
+      cone([x,1.65+(n%2)*0.1,-0.13],[0.08,0.42+(n%3)*0.08,0.08],'Head',n%2?glow:edge,[0,0,-x*0.7]);
+    }
+    for(let side of [-1,1]) cone([side*0.48,1.16,-0.08],[0.12,0.42,0.12],side<0?'Arm_L':'Arm_R',glow,[0,0,side*0.3]);
+  } else if (id==='blackDragon' || id==='smallDragon') {
+    for(let side of [-1,1]) {
+      cone([side*0.23,1.34,0.72],[0.1,0.38,0.1],'Head',edge,[0,0,side*0.45]);
+      for(let n=0;n<4;n++) cone([side*(0.28+n*0.09),0.98-n*0.1,-0.18-n*0.11],[0.07,0.24,0.07],'Tail',edge,[0.2,0,side*0.18]);
+    }
+  } else if (id==='darkLord') {
+    for(let side of [-1,1]) {
+      cone([side*0.18,1.82,0.02],[0.075,0.42,0.075],'Head',glow,[0,0,side*0.28]);
+      box([side*0.52,1.34,-0.04],[0.28,0.36,0.16],side<0?'Wing_L':'Wing_R',edge,[0,0,side*0.22]);
+    }
+    box([0,0.96,0.27],[0.34,0.4,0.08],'Spine',glow);
+  } else if (id==='arman') {
+    // Hero crest, layered pauldrons and sword guard.
+    box([0,1.45,0.2],[0.18,0.22,0.08],'Chest',glow);
+    for(let side of [-1,1]) {
+      cone([side*0.43,1.38,0.02],[0.16,0.3,0.18],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.2]);
+      sphere([side*0.18,0.8,0.2],[0.07,0.09,0.035],'Spine',glow);
+    }
+  } else if (id==='aria') {
+    box([0,1.45,-0.1],[0.52,0.24,0.2],'Chest',edge,[0.08,0,0]);
+    for(let side of [-1,1]) cone([side*0.24,1.55,-0.08],[0.09,0.32,0.09],'Chest',glow,[0,0,side*0.2]);
+  } else if (id==='nila') {
+    for(let n=0;n<4;n++) sphere([(n-1.5)*0.12,1.0,0.27],[0.035,0.035,0.025],'Chest',glow);
+  } else if (id==='destroyer' || id==='annihilator') {
+    for(let side of [-1,1]) {
+      box([side*0.48,1.34,-0.04],[0.32,0.27,0.28],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.16]);
+      cone([side*0.5,1.5,-0.03],[0.13,0.32,0.13],side<0?'Arm_L':'Arm_R',glow,[0,0,side*0.4]);
+    }
+    box([0,1.04,0.26],[0.3,0.32,0.07],'Spine',glow);
+  } else if (id==='shadow' || id==='spirit') {
+    for(let side of [-1,1]) cone([side*0.28,1.18,-0.1],[0.08,0.42,0.08],'Spine',glow,[0,0,side*0.4]);
+    for(let n=0;n<3;n++) cone([(n-1)*0.16,0.25,-0.05],[0.06,0.3,0.06],'Tail',edge,[0,0,(n-1)*0.18]);
+  } else if (id==='flyer') {
+    for(let side of [-1,1]) {
+      sphere([side*0.5,0.92,-0.05],[0.32,0.08,0.42],side<0?'Wing_L':'Wing_R',edge,[0,0,side*0.3]);
+      cone([side*0.64,0.92,-0.1],[0.1,0.42,0.1],side<0?'Wing_L':'Wing_R',glow,[0,0,side*0.5]);
+    }
+  } else if (id==='shadowSoldier') {
+    box([0,1.03,0.24],[0.33,0.38,0.08],'Spine',edge);
+    for(let side of [-1,1]) cone([side*0.44,1.37,0.02],[0.12,0.32,0.12],side<0?'Arm_L':'Arm_R',glow,[0,0,side*0.3]);
+  }
   const materials = [
     {name:'Obsidian Armor',pbrMetallicRoughness:{baseColorFactor:clampColor(baseColor),metallicFactor:0.62,roughnessFactor:0.38}},
     {name:'Forged Edge',pbrMetallicRoughness:{baseColorFactor:[0.63,0.7,0.8,1],metallicFactor:0.88,roughnessFactor:0.24}},
