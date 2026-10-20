@@ -8,7 +8,7 @@ const manifest = fs.readFileSync(path.join(root, 'src/game/assets/AssetManifest.
 const refs = [...manifest.matchAll(/file:\s*'([^']+\.glb)'/g)].map(m => m[1]).filter((url) => url.includes('/assets/3d/rigged/'));
 const failures = [];
 let totalTriangles = 0, totalBytes = 0, totalPrimitives = 0;
-const requiredClips = ['Idle','Walk','Run','Attack','Attack1','Attack2','SpecialAttack','Skill','Hit','Death','Roar','PhaseChange','Victory'];
+const requiredClips = ['Idle','Walk','Run','Attack','Attack1','Attack2','SpecialAttack','Skill','Hit','Death','Roar','PhaseChange','Victory','Dodge','Block','Stagger','Spawn','Taunt'];
 if (!refs.length) failures.push('No generated rigged GLB references found in AssetManifest.ts');
 for (const url of refs) {
   const file = path.join(root, 'public', url.replace(/^\//, ''));
