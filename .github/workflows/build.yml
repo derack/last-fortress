@@ -35,7 +35,7 @@ jobs:
         run: bun run build
 
       - name: Generate art readiness report
-        run: ASSET_AUDIT_JSON=1 bunx --bun node scripts/validate-rigged-characters.mjs
+        run: ASSET_AUDIT_JSON=1 bun scripts/validate-rigged-characters.mjs
 
       - name: Upload art readiness report
         uses: actions/upload-artifact@v4
