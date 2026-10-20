@@ -97,7 +97,7 @@ export class InputController {
       const [a, b] = [...this.pointers.values()];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
       if (this.pinchStartDist > 0 && Math.abs(dist - this.pinchStartDist) > 4) {
-        this.cameraCtrl.zoom(this.pinchStartDist / dist);
+        if (dist > 0) this.cameraCtrl.zoom(this.pinchStartDist / dist);
         this.pinchStartDist = dist;
         this.pinchMoved = true;
       }
@@ -109,6 +109,8 @@ export class InputController {
   };
 
   private onUp = (e: PointerEvent) => {
+    // Ignore stale pointerup events after cancellation; they must not trigger a gameplay tap.
+    if (!this.pointers.has(e.pointerId)) return;
     const wasTwo = this.pointers.size === 2;
     this.pointers.delete(e.pointerId);
     if (wasTwo) {
@@ -128,6 +130,7 @@ export class InputController {
   /** فقط نقطه زمین — بدون برخورد با اشیاء (سبک، برای hover هر حرکت) */
   private pickGround(clientX: number, clientY: number): THREE.Vector3 | null {
     const rect = this.dom.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
     const ndc = new THREE.Vector2(
       ((clientX - rect.left) / rect.width) * 2 - 1,
       -((clientY - rect.top) / rect.height) * 2 + 1
