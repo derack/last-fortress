@@ -247,4 +247,7 @@ export interface SaveData {
   selectedHero: string;
   /** کوره اثیر — سطح هر مسیر ارتقای دائمی (۰ تا ۲۰) */
   forge: Record<string, number>;
+  /** ارتقاهای دائمی نسخه‌های قبلی؛ برای حفظ پیشرفت ذخیره‌های قدیمی */
+  heroUpgrades: Record<string, number>;
+  towerUpgrades: Record<string, number>;
 }
