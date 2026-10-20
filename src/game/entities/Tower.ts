@@ -77,7 +77,13 @@ export class Tower implements TowerLike {
 
   /** دریافت هاله تقویت از آذرگاه؛ expiry is measured in simulation seconds. */
   applyLocalBuff(pct: number, duration: number, now = this.simTime) {
-    if (!Number.isFinite(pct) || !Number.isFinite(duration) || duration <= 0) return;
+    if (!Number.isFinite(pct) || pct <= 0 || !Number.isFinite(duration) || duration <= 0 || !Number.isFinite(now)) return;
+    // A new buff after expiry must not inherit the previous buff's stronger percentage.
+    if (this.localBuffUntil <= now) {
+      this.localBuffPct = pct;
+      this.localBuffUntil = now + duration;
+      return;
+    }
     this.localBuffPct = Math.max(this.localBuffPct, pct);
     this.localBuffUntil = Math.max(this.localBuffUntil, now + duration);
   }
