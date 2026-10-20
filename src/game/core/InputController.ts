@@ -54,7 +54,8 @@ export class InputController {
   };
 
   private onDown = (e: PointerEvent) => {
-    this.dom.setPointerCapture(e.pointerId);
+    // Pointer capture can fail if the canvas is detached during a route transition.
+    try { this.dom.setPointerCapture(e.pointerId); } catch { /* transient DOM teardown */ }
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (this.pointers.size === 1) {
       this.startX = this.lastX = e.clientX;
@@ -105,7 +106,12 @@ export class InputController {
   };
 
   private onCancel = (e: PointerEvent) => {
+    if (!this.pointers.has(e.pointerId)) return;
     this.pointers.delete(e.pointerId);
+    // A cancelled touch/gesture must never degrade into a tap on the remaining finger.
+    this.moved = true;
+    this.pinchMoved = true;
+    if (this.pointers.size === 0) this.pinchStartDist = 0;
   };
 
   private onUp = (e: PointerEvent) => {
