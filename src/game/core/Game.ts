@@ -113,6 +113,26 @@ export class Game {
   private lastFrame = 0;
   private uiTimer = 0;
   private disposed = false;
+  private started = false;
+  private autoPausedForVisibility = false;
+  private wasPausedBeforeVisibilityChange = false;
+  private readonly onVisibilityChange = () => {
+    if (typeof document === 'undefined' || this.disposed) return;
+    if (document.visibilityState === 'hidden') {
+      if (!this.autoPausedForVisibility) {
+        this.wasPausedBeforeVisibilityChange = this.paused;
+        this.autoPausedForVisibility = true;
+        this.setPaused(true);
+      }
+      return;
+    }
+    if (this.autoPausedForVisibility) {
+      this.autoPausedForVisibility = false;
+      this.setPaused(this.wasPausedBeforeVisibilityChange);
+      // Avoid a large simulation step when a mobile app resumes from background.
+      this.lastFrame = performance.now();
+    }
+  };
   private save: SaveData;
   private totalWavesSurvivedAtStart: number;
 
@@ -185,6 +205,9 @@ export class Game {
     this.input.onGroundHover = (pt) => this.updateGhost(pt);
 
     this.audio.setVolumes(save.settings.music, save.settings.sfx);
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', this.onVisibilityChange);
+    }
   }
 
   resize() {
@@ -197,6 +220,9 @@ export class Game {
   // ===================== چرخه اصلی =====================
 
   start() {
+    // Prevent accidental duplicate RAF loops when React effects remount or retry.
+    if (this.started || this.disposed) return;
+    this.started = true;
     this.lastFrame = performance.now();
     const loop = (t: number) => {
       if (this.disposed) return;
@@ -1115,7 +1141,12 @@ export class Game {
   }
 
   dispose() {
+    if (this.disposed) return;
     this.disposed = true;
+    this.started = false;
+    if (typeof document !== 'undefined') {
+      document.removeEventListener('visibilitychange', this.onVisibilityChange);
+    }
     cancelAnimationFrame(this.raf);
     this.input.dispose();
     // فاز ۶ — صدا مشترک است؛ dispose نمی‌شود، فقط حالت نبرد پاک می‌شود
