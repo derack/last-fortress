@@ -8,6 +8,9 @@ const manifest = fs.readFileSync(path.join(root, 'src/game/assets/AssetManifest.
 const refs = [...manifest.matchAll(/file:\s*'([^']+\.glb)'/g)].map(m => m[1]).filter((url) => url.includes('/assets/3d/rigged/'));
 const failures = [];
 let totalTriangles = 0, totalBytes = 0, totalPrimitives = 0;
+let pbrReady = 0, rigReady = 0, animationReady = 0, lodReady = 0;
+const globalAlbedoHashes = new Set();
+const qualityMetrics = [];
 const requiredClips = ['Idle','Walk','Run','Attack','Attack1','Attack2','SpecialAttack','Skill','Hit','Death','Roar','PhaseChange','Victory','Dodge','Block','Stagger','Spawn','Taunt'];
 if (!refs.length) failures.push('No generated rigged GLB references found in AssetManifest.ts');
 for (const url of refs) {
@@ -65,6 +68,7 @@ for (const url of refs) {
       crypto.createHash('sha256').update(getImageBytes(image)).digest('hex')
     );
     if (new Set(albedoHashes).size < 5) throw new Error('material albedo PNGs must contain five genuinely distinct surface maps');
+    for (const hash of albedoHashes) globalAlbedoHashes.add(hash);
     const albedoSlots = (doc.materials ?? []).map(m => m.pbrMetallicRoughness?.baseColorTexture?.index);
     if (new Set(albedoSlots).size < 5) throw new Error('armor, edge, cloth, glow, and dark iron must use distinct albedo maps');
     if (albedoSlots.some(index => !Number.isInteger(index) || !doc.textures[index])) throw new Error('material albedo texture reference is invalid');
@@ -251,11 +255,50 @@ for (const url of refs) {
       }
     }
     for(const clip of requiredClips) if(!animationMotion.get(clip)) throw new Error('animation '+clip+' has no measurable skeletal motion');
+    // Aggregate only assets that passed every structural, PBR, rig, clip and LOD check.
+    pbrReady++;
+    rigReady++;
+    animationReady++;
+    lodReady++;
+    qualityMetrics.push({
+      id: assetId,
+      bytes: glbBytes.length,
+      triangles: Math.round(baseTriangles),
+      lod1Reduction: Math.round((1 - lod1Triangles / baseTriangles) * 100),
+      lod2Reduction: Math.round((1 - lod2Triangles / baseTriangles) * 100),
+      clips: animationNames.size,
+      textures: doc.images.length,
+    });
   } catch (e) {
     failures.push(url+': '+e.message);
   }
 }
-console.log('Rigged binary GLB PBR audit: '+refs.length+' manifest assets; '+totalPrimitives+' merged draw primitives; '+Math.round(totalTriangles).toLocaleString()+' triangles; '+(totalBytes/1024).toFixed(1)+' KiB JSON+embedded geometry+nine PBR PNG maps per asset (five material albedos, normal, MR, AO, emissive).');
+console.log('Rigged binary GLB PBR audit: '+refs.length+' manifest assets; '+totalPrimitives+' merged draw primitives; '+Math.round(totalTriangles).toLocaleString()+' triangles across all LODs; '+(totalBytes/1024).toFixed(1)+' KiB JSON+embedded geometry+PBR maps.');
+console.log('Readiness coverage: '+JSON.stringify({
+  manifestCoverage: refs.length ? Math.round(qualityMetrics.length / refs.length * 100) : 0,
+  pbrTextureSets: Math.round(pbrReady / Math.max(1, refs.length) * 100),
+  articulatedRigs: Math.round(rigReady / Math.max(1, refs.length) * 100),
+  animationClipSets: Math.round(animationReady / Math.max(1, refs.length) * 100),
+  threeTierLod: Math.round(lodReady / Math.max(1, refs.length) * 100),
+  uniqueAlbedoMaps: globalAlbedoHashes.size,
+  assets: qualityMetrics.length,
+}, null, 2));
+if (process.env.ASSET_AUDIT_JSON === '1') {
+  fs.writeFileSync(path.join(root, 'asset-art-readiness.json'), JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    assets: qualityMetrics,
+    summary: {
+      assets: qualityMetrics.length,
+      pbrTextureSets: pbrReady,
+      articulatedRigs: rigReady,
+      animationClipSets: animationReady,
+      threeTierLod: lodReady,
+      uniqueAlbedoMaps: globalAlbedoHashes.size,
+      totalTrianglesAcrossLods: Math.round(totalTriangles),
+      totalBytes,
+    },
+  }, null, 2)+'\\n');
+}
 if (failures.length) {
   for (const failure of failures) console.error('FAIL:', failure);
   process.exitCode = 1;
