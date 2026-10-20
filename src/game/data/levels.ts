@@ -1,4 +1,4 @@
-import type { LevelData, RegionDef, WaveData, SpawnGroup } from './types';
+import type { LegacyLevelData, RegionDef, WaveData, SpawnGroup } from './types';
 import { LEVEL_1 } from './level1';
 
 // ============================================================
@@ -23,7 +23,7 @@ const wave = (coinBonus: number, groups: SpawnGroup[], extra?: Partial<WaveData>
 
 // ---------------------------- منطقه ۲ — جنگل سایه ----------------------------
 
-const LEVEL_2: LevelData = {
+const LEVEL_2: LegacyLevelData = {
   id: 'l2',
   region: 2,
   nameKey: 'region2',
@@ -55,7 +55,7 @@ const LEVEL_2: LevelData = {
 
 // ---------------------------- منطقه ۳ — یخچال‌های اثری ----------------------------
 
-const LEVEL_3: LevelData = {
+const LEVEL_3: LegacyLevelData = {
   id: 'l3',
   region: 3,
   nameKey: 'region3',
@@ -87,7 +87,7 @@ const LEVEL_3: LevelData = {
 
 // ---------------------------- منطقه ۴ — ژرفای آتشفشان ----------------------------
 
-const LEVEL_4: LevelData = {
+const LEVEL_4: LegacyLevelData = {
   id: 'l4',
   region: 4,
   nameKey: 'region4',
@@ -119,7 +119,7 @@ const LEVEL_4: LevelData = {
 
 // ---------------------------- منطقه ۵ — ویرانه‌های ماشین ----------------------------
 
-const LEVEL_5: LevelData = {
+const LEVEL_5: LegacyLevelData = {
   id: 'l5',
   region: 5,
   nameKey: 'region5',
@@ -151,7 +151,7 @@ const LEVEL_5: LevelData = {
 
 // ---------------------------- منطقه ۶ — دژ ارباب تاریکی ----------------------------
 
-const LEVEL_6: LevelData = {
+const LEVEL_6: LegacyLevelData = {
   id: 'l6',
   region: 6,
   nameKey: 'region6',
@@ -188,7 +188,7 @@ const LEVEL_6: LevelData = {
 
 // ---------------------------- ثبت و فراداده ----------------------------
 
-export const LEVELS: Record<string, LevelData> = {
+export const LEVELS: Record<string, LegacyLevelData> = {
   l1: LEVEL_1,
   l2: LEVEL_2,
   l3: LEVEL_3,
