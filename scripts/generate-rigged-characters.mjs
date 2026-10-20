@@ -1124,6 +1124,28 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
   addAnim('Skill', heroSkillTracks ?? (beast
     ? [rot('Head','x',[0,-0.22,-0.45,-0.15,0]),rot('Wing_L','z',[0,-0.65,-1.0,-0.3,0]),rot('Wing_R','z',[0,0.65,1.0,0.3,0]),rot('Tail','y',[0,0.32,-0.36,0.12,0])]
     : [rot('Spine','x',[0,-0.1,-0.28,-0.08,0]),rot('Arm_L','z',[0,-0.45,-0.8,-0.2,0]),rot('Arm_R','z',[0,0.45,0.8,0.2,0]),rot('Head','y',[0,-0.18,0.2,-0.08,0])]));
+  // Expanded combat library: these clips are available to gameplay and the QA gallery.
+  // All rotations target the shared articulated rig; creature-specific tracks add motion
+  // to segmented tails, wings, or independent spider legs where applicable.
+  addAnim('Dodge', beast
+    ? [rot('Hips','z',[0,-0.18,0.12,0.08,0]),rot('Spine','y',[0,-0.22,0.18,0.06,0]),rot('TailMid','y',[0,-0.28,0.24,0.08,0]),rot('TailTip','y',[0,-0.42,0.34,0.1,0])]
+    : crawler
+      ? [rot('Spine','z',[0,-0.16,0.12,0.04,0]),...['SpiderLegL0','SpiderLegL1','SpiderLegL2','SpiderLegL3'].map(j=>rot(j,'z',[0,0.3,-0.22,-0.08,0])),...['SpiderLegR0','SpiderLegR1','SpiderLegR2','SpiderLegR3'].map(j=>rot(j,'z',[0,-0.3,0.22,0.08,0]))]
+      : [rot('Hips','z',[0,-0.3,0.24,0.08,0]),rot('Spine','y',[0,-0.22,0.18,0.04,0]),rot('Leg_L','x',[0,0.42,-0.18,-0.04,0]),rot('Leg_R','x',[0,-0.28,0.16,0.04,0]),rot('Arm_L','z',[0,0.35,-0.2,0,0]),rot('Arm_R','z',[0,-0.35,0.2,0,0])]);
+  addAnim('Block',[rot('Arm_L','x',[0,-0.48,-0.58,-0.48,0]),rot('Arm_R','x',[0,-0.48,-0.58,-0.48,0]),rot('Arm_L','z',[0,-0.28,-0.22,-0.28,0]),rot('Arm_R','z',[0,0.28,0.22,0.28,0]),rot('Spine','x',[0,-0.08,-0.12,-0.06,0]),rot('Head','x',[0,0.06,0.02,0,0])]);
+  addAnim('Stagger', beast
+    ? [rot('Head','x',[0,0.18,-0.14,0.08,0]),rot('Spine','z',[0,0.18,-0.16,0.06,0]),rot('TailMid','y',[0,0.24,-0.2,0.08,0]),rot('TailTip','y',[0,0.34,-0.28,0.1,0])]
+    : crawler
+      ? [rot('Spine','z',[0,0.2,-0.18,0.06,0]),rot('Head','x',[0,0.12,-0.1,0.03,0]),...['SpiderLegL0','SpiderLegR1','SpiderLegL2','SpiderLegR3'].map(j=>rot(j,'z',[0,0.28,-0.16,0.04,0]))]
+      : [rot('Hips','z',[0,0.18,-0.14,0.05,0]),rot('Spine','x',[0,0.2,-0.16,0.04,0]),rot('Head','z',[0,0.16,-0.12,0.03,0]),rot('Arm_L','x',[0,0.18,-0.12,0.03,0]),rot('Arm_R','x',[0,-0.18,0.12,-0.03,0])]);
+  addAnim('Spawn', beast
+    ? [rot('Spine','x',[0,0.42,-0.16,0.08,0]),rot('Head','x',[0,0.35,-0.12,0.04,0]),rot('Wing_L','z',[0,-0.9,-0.35,-0.1,0]),rot('Wing_R','z',[0,0.9,0.35,0.1,0]),rot('TailMid','y',[0,-0.3,0.18,0.04,0]),rot('TailTip','y',[0,-0.48,0.24,0.06,0])]
+    : [rot('Hips','x',[0,0.35,-0.12,0.04,0]),rot('Spine','x',[0,-0.28,0.12,-0.03,0]),rot('Head','x',[0,0.24,-0.08,0.02,0]),rot('Arm_L','z',[0,-0.55,-0.22,-0.06,0]),rot('Arm_R','z',[0,0.55,0.22,0.06,0])]);
+  addAnim('Taunt', beast
+    ? [rot('Head','x',[0,-0.22,-0.42,-0.12,0]),rot('Spine','y',[0,-0.18,0.18,0,0]),rot('Wing_L','z',[0,-0.35,-0.7,-0.25,0]),rot('Wing_R','z',[0,0.35,0.7,0.25,0]),rot('TailTip','y',[0,0.25,-0.2,0.08,0])]
+    : crawler
+      ? [rot('Head','y',[0,-0.25,0.28,-0.12,0]),...['SpiderLegL0','SpiderLegR1','SpiderLegL2','SpiderLegR3'].map(j=>rot(j,'z',[0,0.45,-0.25,0.12,0]))]
+      : [rot('Head','y',[0,-0.32,0.36,-0.14,0]),rot('Spine','y',[0,-0.2,0.22,-0.06,0]),rot('Arm_L','z',[0,-0.38,-0.72,-0.24,0]),rot('Arm_R','z',[0,0.38,0.72,0.24,0]),rot('Hips','y',[0,-0.08,0.08,0,0])]);
   addAnim('Victory', beast
     ? [rot('Head','x',[0,-0.1,-0.2,0,0]),rot('Wing_L','z',[0,-0.25,-0.7,-0.2,0]),rot('Wing_R','z',[0,0.25,0.7,0.2,0]),rot('Tail','y',[0,0.1,-0.1,0,0]),rot('TailMid','y',[0,0.06,-0.06,0,0]),rot('TailTip','y',[0,0.08,-0.08,0,0])]
     : [rot('Spine','x',[0,-0.06,-0.12,-0.03,0]),rot('Arm_L','z',[0,-0.2,-0.6,-0.25,0]),rot('Arm_R','z',[0,0.2,0.6,0.25,0]),rot('Head','y',[0,-0.08,0.08,0,0])]);
