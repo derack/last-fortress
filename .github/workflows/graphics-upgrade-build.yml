@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: bunx prisma generate
+
       # The manifest references generated rigged GLBs. Generate them before
       # validating the full asset pack, matching the production build order.
       - name: Generate rigged character assets
