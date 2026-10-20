@@ -159,7 +159,7 @@ export class Tower implements TowerLike {
 
     switch (this.towerId) {
       case 'sentinel': {
-        // باران گلوله — سه برابر سرعت شلیک
+        // باران گلوله — افزایش متعادل سرعت شلیک برای پنجره کوتاه
         this.rateBuffTime = 5;
         this.ctx.vfx.ring(pos, this.data.color, this.range, 0.5);
         this.ctx.audio.play('upgrade');
@@ -184,10 +184,10 @@ export class Tower implements TowerLike {
         break;
       }
       case 'ice': {
-        // زمستان ابدی — کندی شدید همه
+        // زمستان ابدی — کندی شدید و آسیب متناسب با سطح ارتقای برج
         for (const e of inRange) {
           e.applySlow(0.22, 5);
-          e.takeDamage(30, 'ice');
+          e.takeDamage(this.damage * 0.8, 'ice');
         }
         this.ctx.vfx.ring(pos, this.data.color, this.range + 2, 0.8);
         this.ctx.vfx.burst(pos.clone().add(new THREE.Vector3(0, 1, 0)), 0x7dd3fc, 40, { speed: 9, life: 0.9, size: 0.6, gravity: 2, up: 0.9 });
@@ -281,10 +281,12 @@ export class Tower implements TowerLike {
       case 'void': {
         // دهانه تهی — بلع دشمنان ضعیف
         const threshold = this.data.executeThreshold ?? 0.35;
+        const executeMultiplier = this.data.executeMultiplier ?? 2.2;
         let devoured = 0;
         for (const e of inRange) {
-          if (e.hpRatio <= threshold + 0.15 && !e.data.boss) {
-            e.takeDamage(this.damage * 5, 'shadow');
+          // Respect the authored threshold/multiplier; do not silently execute at 50% HP for 5x damage.
+          if (e.hpRatio <= threshold && !e.data.boss) {
+            e.takeDamage(this.damage * executeMultiplier, 'shadow');
             devoured++;
           } else {
             e.takeDamage(this.damage * 1.5, 'shadow');
