@@ -183,14 +183,23 @@ sec('۳. لول‌ها — برج‌ها (۵ سطح × ۱۰ برج)');
     c1s3: { stars: 3, bestHealthPct: 100, completed: true },
     c1s4: { stars: 3, bestHealthPct: 100, completed: true },
   } } as unknown as SaveData;
+  const s18 = { levels: {
+    c1s1: { stars: 3, bestHealthPct: 100, completed: true },
+    c1s2: { stars: 3, bestHealthPct: 100, completed: true },
+    c1s3: { stars: 3, bestHealthPct: 100, completed: true },
+    c1s4: { stars: 3, bestHealthPct: 100, completed: true },
+    c1s5: { stars: 3, bestHealthPct: 100, completed: true },
+    c1s6: { stars: 3, bestHealthPct: 100, completed: true },
+  } } as unknown as SaveData;
   const stagedLocks = isTowerUnlocked(s0, 'sentinel')
     && tids.filter((id) => isTowerUnlocked(s0, id)).length === 1
     && !isTowerUnlocked(s3, 'ice')
     && !isTowerUnlocked(s3, 'fire')
     && isTowerUnlocked(s12, 'ice')
-    && isTowerUnlocked(s12, 'fire')
-    && !isTowerUnlocked(s12, 'lightning');
-  if (stagedLocks) ok('قفل تدریجی برج‌ها: شروع فقط نگهبان؛ یخ/آتش پس از ۱۲⭐؛ صاعقه دیرتر'); else bad('قفل تدریجی برج‌ها زودهنگام یا ناسازگار');
+    && !isTowerUnlocked(s12, 'fire')
+    && isTowerUnlocked(s18, 'fire')
+    && !isTowerUnlocked(s18, 'lightning');
+  if (stagedLocks) ok('قفل تدریجی برج‌ها: شروع فقط نگهبان؛ یخ با ۹⭐، آتش با ۱۸⭐، صاعقه با ۳۰⭐'); else bad('قفل تدریجی برج‌ها زودهنگام یا ناسازگار');
 }
 
 // ---------- ۴) دشمنان ----------
