@@ -133,6 +133,35 @@ for (const url of refs) {
     if (lod1Triangles > baseTriangles * 0.92) throw new Error('LOD1 must reduce at least 8% of source triangles');
     if (lod2Triangles > baseTriangles * 0.75) throw new Error('LOD2 must reduce at least 25% of source triangles');
 
+    // Ensure the new segmented limb geometry is actually weighted to its
+    // elbow/wrist/knee/ankle joints; a skeleton with unused joints can pass
+    // structural checks while still producing stiff, unconvincing animation.
+    const articulatedHumanoids = !['smallDragon','blackDragon','flyer','spider','shadow','spirit'].includes(assetId);
+    if (articulatedHumanoids) {
+      const requiredSegments = ['ForeArm_L','ForeArm_R','Hand_L','Hand_R','Knee_L','Knee_R','Foot_L','Foot_R'];
+      const influences = new Map(requiredSegments.map(name => [name, 0]));
+      for (const node of baseNodes) {
+        const mesh = doc.meshes[node.mesh];
+        for (const primitive of mesh.primitives ?? []) {
+          const ja = doc.accessors[primitive.attributes.JOINTS_0];
+          const wa = doc.accessors[primitive.attributes.WEIGHTS_0];
+          const jv = doc.bufferViews[ja.bufferView], wv = doc.bufferViews[wa.bufferView];
+          const jo = (jv.byteOffset ?? 0) + (ja.byteOffset ?? 0);
+          const wo = (wv.byteOffset ?? 0) + (wa.byteOffset ?? 0);
+          const view = new DataView(binary.buffer, binary.byteOffset, binary.byteLength);
+          for (let vertex = 0; vertex < ja.count; vertex++) {
+            for (let component = 0; component < 4; component++) {
+              const joint = view.getUint16(jo + (vertex * 4 + component) * 2, true);
+              const weight = view.getFloat32(wo + (vertex * 4 + component) * 4, true);
+              const jointName = doc.nodes[skin.joints[joint]]?.name;
+              if (weight > 0.001 && influences.has(jointName)) influences.set(jointName, influences.get(jointName) + 1);
+            }
+          }
+        }
+      }
+      for (const [joint, count] of influences) if (count === 0) throw new Error('segmented rig joint '+joint+' has no weighted base-mesh vertices');
+    }
+
     for (const [ai,a] of doc.accessors.entries()) {
       const bv = doc.bufferViews?.[a.bufferView];
       if (!bv) throw new Error('accessor '+ai+' has invalid bufferView');
