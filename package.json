@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
     "assets:rigged": "node scripts/generate-rigged-characters.mjs && node scripts/validate-rigged-characters.mjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "audit:logic": "bun scripts/logic-audit.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
