@@ -267,6 +267,7 @@ sec('۷. i18n — ۳۹۲+ کلید، توازن fa/en');
   const keyRefs: string[] = [];
   for (const c of CHAPTERS) keyRefs.push(c.nameKey, c.descKey, c.tagKey);
   for (const h of Object.values(HEROES)) keyRefs.push(h.nameKey, h.titleKey, h.descKey, h.abilityNameKey, h.abilityDescKey);
+  for (const t of Object.values(TOWERS)) keyRefs.push(t.nameKey, t.descKey, t.abilityNameKey, t.abilityDescKey);
   for (const a of ACHIEVEMENTS) keyRefs.push(a.nameKey, a.descKey);
   const missingK = keyRefs.filter((k) => !(k in dictionaries.fa));
   if (!missingK.length) ok(`تمام ${keyRefs.length} کلید ارجاعی داده‌ها در i18n موجود`); else bad(`کلید گم‌شده: ${missingK.slice(0, 8).join('،')}`);
