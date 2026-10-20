@@ -37,6 +37,9 @@ jobs:
       - name: Strict TypeScript check
         run: bun run typecheck
 
+      - name: Audit campaign and game data invariants
+        run: bun run audit:logic
+
       - name: Build web
         run: bun run build
 
