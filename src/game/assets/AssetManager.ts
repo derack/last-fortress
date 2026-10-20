@@ -321,7 +321,7 @@ function optimizeStaticAsset(scene: THREE.Group, category: CharacterAssetEntry['
     mesh.castShadow = category === 'bosses' || category === 'towers';
     mesh.receiveShadow = category !== 'enemies';
     ensureProceduralUV(mesh.geometry);
-    if (maps) {
+    {
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       for (const material of materials) {
         const standard = material as THREE.MeshStandardMaterial;
