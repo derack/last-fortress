@@ -346,12 +346,43 @@ export class VFXSystem {
 
   clearAll() {
     this.particles.length = 0;
-    [...this.bolts].forEach((b) => {
-      b.line.visible = false;
-      this.boltPool.push(b);
-    });
+    this.pointsMesh.geometry.setDrawRange(0, 0);
+
+    // Return pooled effects to their pools so a scene reset cannot leave
+    // stale flashes/rings/bolts visible or grow the live arrays indefinitely.
+    for (const bolt of this.bolts) {
+      bolt.line.visible = false;
+      bolt.life = 0;
+      this.boltPool.push(bolt);
+    }
     this.bolts.length = 0;
-    [...this.circles].forEach((c) => this.scene.remove(c.mesh));
+
+    for (const ring of this.rings) {
+      ring.mesh.visible = false;
+      ring.life = 0;
+      this.ringPool.push(ring);
+    }
+    this.rings.length = 0;
+
+    for (const flash of this.flashes) {
+      flash.light.intensity = 0;
+      flash.life = 0;
+      this.flashPool.push(flash.light);
+    }
+    this.flashes.length = 0;
+
+    // Rune textures are unique per circle. Dispose them immediately on reset
+    // rather than waiting for their normal lifetime to expire.
+    for (const circle of this.circles) {
+      const plane = circle.mesh.children[0] as THREE.Mesh | undefined;
+      if (plane) {
+        const material = plane.material as THREE.MeshBasicMaterial;
+        material.map?.dispose();
+        material.dispose();
+        plane.geometry.dispose();
+      }
+      this.scene.remove(circle.mesh);
+    }
     this.circles.length = 0;
   }
 }
