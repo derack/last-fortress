@@ -297,7 +297,7 @@ if (process.env.ASSET_AUDIT_JSON === '1') {
       totalTrianglesAcrossLods: Math.round(totalTriangles),
       totalBytes,
     },
-  }, null, 2)+'\\n');
+  }, null, 2));
 }
 if (failures.length) {
   for (const failure of failures) console.error('FAIL:', failure);
