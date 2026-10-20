@@ -661,3 +661,27 @@ Stage Summary:
 - download/Last-Fortress-v1.5-final.apk — نسخه نهایی ریگ‌شده برای تست کاربر
 - لینک: https://uploadkon.ir/uploads/19d219_26LF-v1-5-final.zip
 - restore-toolchain.sh در گیت ذخیره شد → بازیابی محیط دیگر دستی نیست
+
+---
+Task ID: 30
+Agent: main
+Task: آنالیز آخرین بیلد + اصلاح خطاها/قفل/تعادل/سختی/وضوح + بیلد v1.6
+
+Work Log:
+- تایپ‌اسکریپت: next build از قبل خطاها را skip می‌کرد (ignoreBuildErrors) → ۲۰ خطای واقعی src/ کشف و رفع شد:
+  • SaveData فاقد heroUpgrades/towerUpgrades بود → پنل آهنگری در سیوهای قدیمی crash می‌کرد؛ فیلدها + مهاجرت SaveSystem اضافه شد
+  • AssetManager متغیر معلق `maps` → ReferenceError بالقوه در اعمال مپ‌های PBR سطوح (بخشی از ظاهر تخت/تار!)
+  • Enemy.enterPhase2 → playSequence روی ProceduralAnimationController وجود نداشت → crash فاز ۲ باس روی مدل procedural؛ متد اضافه شد
+  • types legacy (region/path/RegionDef) + ۶ خطای آبشاری optionalها + اسکریپت‌های audit
+  • tsconfig: examples/skills exclude شد؛ ignoreBuildErrors=false → از این به بعد بیلد با خطای تایپ fail می‌شود
+- قفل‌ها: سیو تازه = فقط آرمان + sentinel ✓؛ گاردهای UI (HeroesPanel/BattleUI/CampaignMap) تایید ✓؛ نردبان ستاره برج‌ها نزولی بود (۳،۲،۱) → صعودی 0,1,2,4..16؛ منحنی هزینه کوره فلات ceil داشت → +level اکیداً صعودی
+- تعادل: logic-audit کاربر حالا 31✅/0❌؛ ۱۰ برج×۵ سطح صعودی؛ DPS/cost متناسب با نقش (یخ/زهر/معبد = ساپورت عمدی)؛ balance-audit: R=78.6%→295.8% نرم، بدون جهش/افت/Boss ضعیف
+- وضوح: علت تاری = سقف DPR 1.35 (+ نسخه remote حداکثر 1.75!) → DPR واقعی دستگاه با سقف کیفیتی 1.5/2.0/2.5/3.0، antialias برای همه غیر-low، کف تطبیقی 0.8→1.25، anisotropy×2
+- push اول رد شد (fast-forward) بعد GH013 Push Protection: توکن داخل restore-toolchain.sh بود (که توضیح «دسترسی ندارم» AI دیگر هم می‌تواند باشد!) → اسکریپت ضدعفونی (توکن فقط از env/فایل محلی)، تاریخچه local بازنویسی، push موفق d3d021d
+- تعارض BattleScene با remote (texture tier) حل شد؛ APK از سورس merge نهایی ساخته شد — 37.7MB، 60 GLB، 22 mp3، همان امضا
+- CI: بیلد اصلی remote (bun) + validate — پوش رفت، CI خودش می‌گیرد
+
+Stage Summary:
+- download/Last-Fortress-v1.6-release.apk (37.7MB) — رفع کامل خطاها + وضوح آینه‌ای + قفل/تعادل سالم
+- لینک: https://uploadkon.ir/uploads/763320_26LF-v1-6.zip
+- نکته برای AI دیگر: اگر باز push گرفت Push Protection را چک کند — هیچ secret نباید commit شود
