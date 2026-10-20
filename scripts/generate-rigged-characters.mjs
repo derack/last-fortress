@@ -1132,7 +1132,8 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     : crawler
       ? [rot('Spine','z',[0,-0.16,0.12,0.04,0]),...['SpiderLegL0','SpiderLegL1','SpiderLegL2','SpiderLegL3'].map(j=>rot(j,'z',[0,0.3,-0.22,-0.08,0])),...['SpiderLegR0','SpiderLegR1','SpiderLegR2','SpiderLegR3'].map(j=>rot(j,'z',[0,-0.3,0.22,0.08,0]))]
       : [rot('Hips','z',[0,-0.3,0.24,0.08,0]),rot('Spine','y',[0,-0.22,0.18,0.04,0]),rot('Leg_L','x',[0,0.42,-0.18,-0.04,0]),rot('Leg_R','x',[0,-0.28,0.16,0.04,0]),rot('Arm_L','z',[0,0.35,-0.2,0,0]),rot('Arm_R','z',[0,-0.35,0.2,0,0])]);
-  addAnim('Block',[rot('Arm_L','x',[0,-0.48,-0.58,-0.48,0]),rot('Arm_R','x',[0,-0.48,-0.58,-0.48,0]),rot('Arm_L','z',[0,-0.28,-0.22,-0.28,0]),rot('Arm_R','z',[0,0.28,0.22,0.28,0]),rot('Spine','x',[0,-0.08,-0.12,-0.06,0]),rot('Head','x',[0,0.06,0.02,0,0])]);
+  // One channel per node/path is required by glTF; keep the guard pose in the X plane.
+  addAnim('Block',[rot('Arm_L','x',[0,-0.48,-0.58,-0.48,0]),rot('Arm_R','x',[0,-0.48,-0.58,-0.48,0]),rot('Spine','x',[0,-0.08,-0.12,-0.06,0]),rot('Head','x',[0,0.06,0.02,0,0])]);
   addAnim('Stagger', beast
     ? [rot('Head','x',[0,0.18,-0.14,0.08,0]),rot('Spine','z',[0,0.18,-0.16,0.06,0]),rot('TailMid','y',[0,0.24,-0.2,0.08,0]),rot('TailTip','y',[0,0.34,-0.28,0.1,0])]
     : crawler
