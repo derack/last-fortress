@@ -170,8 +170,20 @@ sec('۳. لول‌ها — برج‌ها (۵ سطح × ۱۰ برج)');
   // قفل با سیو واقعی
   const s0 = { levels: {} } as unknown as SaveData;
   const s3 = { levels: { c1s1: { stars: 3, bestHealthPct: 100, completed: true } } } as unknown as SaveData;
-  if (isTowerUnlocked(s0, 'sentinel') && !isTowerUnlocked(s0, 'fire') && isTowerUnlocked(s3, 'fire') && isTowerUnlocked(s3, 'ice'))
-    ok('قفل عملی: فقط sentinel در شروع؛ آتش با ۲⭐؛ یخ با ۳⭐ نه'); else bad('قفل عملی برج‌ها خلاف انتظار');
+  const s12 = { levels: {
+    c1s1: { stars: 3, bestHealthPct: 100, completed: true },
+    c1s2: { stars: 3, bestHealthPct: 100, completed: true },
+    c1s3: { stars: 3, bestHealthPct: 100, completed: true },
+    c1s4: { stars: 3, bestHealthPct: 100, completed: true },
+  } } as unknown as SaveData;
+  const stagedLocks = isTowerUnlocked(s0, 'sentinel')
+    && tids.filter((id) => isTowerUnlocked(s0, id)).length === 1
+    && !isTowerUnlocked(s3, 'ice')
+    && !isTowerUnlocked(s3, 'fire')
+    && isTowerUnlocked(s12, 'ice')
+    && isTowerUnlocked(s12, 'fire')
+    && !isTowerUnlocked(s12, 'lightning');
+  if (stagedLocks) ok('قفل تدریجی برج‌ها: شروع فقط نگهبان؛ یخ/آتش پس از ۱۲⭐؛ صاعقه دیرتر'); else bad('قفل تدریجی برج‌ها زودهنگام یا ناسازگار');
 }
 
 // ---------- ۴) دشمنان ----------
