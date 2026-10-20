@@ -29,6 +29,8 @@ export class Tower implements TowerLike {
   /** هاله تقویت محلی (از آذرگاه) */
   private localBuffPct = 0;
   private localBuffUntil = 0;
+  /** Clock follows the simulation (including pause/speed semantics), never wall-clock time. */
+  private simTime = 0;
   private auraPulse = 0;
   private scene: THREE.Scene;
   private ctx: GameContext;
@@ -70,13 +72,14 @@ export class Tower implements TowerLike {
   }
 
   private timeNow() {
-    return performance.now() / 1000;
+    return this.simTime;
   }
 
-  /** دریافت هاله تقویت از آذرگاه */
-  applyLocalBuff(pct: number, duration: number) {
+  /** دریافت هاله تقویت از آذرگاه؛ expiry is measured in simulation seconds. */
+  applyLocalBuff(pct: number, duration: number, now = this.simTime) {
+    if (!Number.isFinite(pct) || !Number.isFinite(duration) || duration <= 0) return;
     this.localBuffPct = Math.max(this.localBuffPct, pct);
-    this.localBuffUntil = Math.max(this.localBuffUntil, this.timeNow() + duration);
+    this.localBuffUntil = Math.max(this.localBuffUntil, now + duration);
   }
 
   /** از کار انداختن موقت برج توسط Boss (فاز ۲) */
@@ -310,6 +313,7 @@ export class Tower implements TowerLike {
   }
 
   update(dt: number, time: number, enemies: DamageableEnemy[]) {
+    this.simTime = time;
     this.abilityCd = Math.max(0, this.abilityCd - dt);
     this.rateBuffTime = Math.max(0, this.rateBuffTime - dt);
     this.cooldown -= dt;
@@ -337,7 +341,7 @@ export class Tower implements TowerLike {
         for (const t of this.ctx.towers) {
           if (t.id === this.id) continue;
           if (t.position.distanceTo(this.position) <= radius) {
-            (t as Tower).applyLocalBuff(this.data.buffRatePct, 0.7);
+            (t as Tower).applyLocalBuff(this.data.buffRatePct, 0.7, time);
           }
         }
       }
