@@ -47,10 +47,16 @@ for (const url of refs) {
       const png = getImageBytes(image);
       if (png.length < 64 || png.readUInt32BE(0) !== 0x89504e47 || png.toString('ascii',1,4) !== 'PNG') throw new Error('image '+ii+' has invalid PNG signature');
       if (png.readUInt32BE(16) < 32 || png.readUInt32BE(20) < 32) throw new Error('image '+ii+' resolution unexpectedly small');
+      const width = png.readUInt32BE(16), height = png.readUInt32BE(20);
       if (process.env.CAP_BUILD === '1') {
         const mobileMax = isLargeAsset ? 256 : 128;
-        if (png.readUInt32BE(16) > mobileMax || png.readUInt32BE(20) > mobileMax) {
-          throw new Error('mobile texture budget exceeded by image '+ii+' ('+png.readUInt32BE(16)+'x'+png.readUInt32BE(20)+', max '+mobileMax+')');
+        if (width > mobileMax || height > mobileMax) {
+          throw new Error('mobile texture budget exceeded by image '+ii+' ('+width+'x'+height+', max '+mobileMax+')');
+        }
+      } else {
+        const expected = ii === 8 ? 192 : (isLargeAsset ? 512 : 256);
+        if (width !== expected || height !== expected) {
+          throw new Error('desktop PBR tier mismatch for image '+ii+' ('+width+'x'+height+', expected '+expected+'x'+expected+')');
         }
       }
     }
