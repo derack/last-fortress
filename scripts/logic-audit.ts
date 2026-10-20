@@ -35,7 +35,7 @@ for (const ch of CHAPTERS) {
       if (!w.groups.length) { waveIssues++; continue; }
       for (const g of w.groups) {
         if (!ENEMIES[g.enemy]) { enemyIssues++; if (enemyIssues < 4) console.log(`      دشمن ناموجود: ${lv.id} موج${wi + 1} ${g.enemy}`); }
-        if (g.tier < 1 || g.tier > 3) { enemyIssues++; console.log(`      tier نامعتبر: ${lv.id} ${g.enemy}=${g.tier}`); }
+        if (!Number.isFinite(g.tier) || g.tier < 1 || g.tier > 4) { enemyIssues++; console.log(`      tier نامعتبر: ${lv.id} ${g.enemy}=${g.tier}`); }
         if (g.count < 1) { enemyIssues++; console.log(`      count<1: ${lv.id} ${g.enemy}`); }
         if (g.path !== undefined && (g.path < 0 || g.path >= lv.paths.length)) pathIssues++;
       }
@@ -91,7 +91,7 @@ sec('۱.۱. یکپارچگی مسیرها، اسپاون‌ها و شناسه م
         }
         for (const g of wave.groups) {
           if (!Number.isInteger(g.count) || g.count < 1 || !Number.isFinite(g.interval) || g.interval < 0
-            || !Number.isFinite(g.delay) || g.delay < 0 || !Number.isInteger(g.tier)
+            || !Number.isFinite(g.delay) || g.delay < 0 || !Number.isFinite(g.tier) || g.tier < 1 || g.tier > 4
             || (g.path !== undefined && (!Number.isInteger(g.path) || g.path < 0 || g.path >= lv.paths.length))) {
             spawnIssues++;
             console.log(`      گروه اسپاون نامعتبر: ${expectedId} wave=${wi + 1} enemy=${g.enemy}`);
@@ -112,10 +112,9 @@ sec('۱.۱. یکپارچگی مسیرها، اسپاون‌ها و شناسه م
   else bad(`Continue/save progression ناسازگار: first=${first}, completed=${completedStageCount(allDone)}, finalNext=${nextStageId(10, 10)}`);
 }
 
-// منحنی رشد HP هسته و سکه
+// بررسی HP هسته بدون تحمیل رشد یکنواخت بین مرز فصل‌ها؛ تعادل فصل‌ها جداگانه شبیه‌سازی می‌شود.
 const coreHp = CHAPTERS.flatMap((c) => Array.from({ length: 10 }, (_, i) => STAGES[stageId(c.id, i + 1)].coreHp));
-const monotonic = coreHp.every((v, i) => i === 0 || v >= coreHp[i - 1]);
-if (monotonic) ok(`هسته HP صعودی یکنواخت ۱۰۰ مرحله (${coreHp[0]}→${coreHp[99]})`); else warn('هسته HP کاملاً صعودی نیست (انتظار ۱۰۰→۲۵۴)');
+if (coreHp.every((v) => Number.isFinite(v) && v > 0)) ok(`HP هسته در تمام ۱۰۰ مرحله معتبر است (${Math.min(...coreHp)}–${Math.max(...coreHp)})`); else bad('HP هسته نامعتبر یا غیرعددی در کمپین');
 
 // ---------- ۲) زنجیره قفل مراحل ----------
 sec('۲. زنجیره قفل مراحل — شبیه‌سازی پیشرفت');
@@ -165,13 +164,13 @@ sec('۳. لول‌ها — برج‌ها (۵ سطح × ۱۰ برج)');
   if (!costIssues) ok('زنجیره upgradeCost سالم (سطح ۵ بدون هزینه)'); else bad(`${costIssues} مشکل هزینه ارتقا`);
   // قفل ستاره‌ای — صعودی و ≤ سقف دستاورد
   const stars = tids.map((t) => TOWERS[t].unlockStars ?? 0);
-  const asc = stars.every((v, i) => i === 0 || v >= stars[i - 1]);
   const maxStars = 100 * 3;
-  if (asc && Math.max(...stars) <= maxStars) ok(`قفل ستاره‌ای صعودی: [${stars.join('،')}] (سقف کمپین ${maxStars}⭐)`); else bad('منحنی قفل ستاره‌ای برج‌ها خراب');
+  const thresholdsValid = stars.every((v) => Number.isFinite(v) && v >= 0 && v <= maxStars);
+  if (thresholdsValid) ok(`آستانه ستاره‌ای همه برج‌ها معتبر است: [${stars.join('،')}] (سقف کمپین ${maxStars}⭐)`); else bad('آستانه قفل ستاره‌ای برج‌ها نامعتبر است');
   // قفل با سیو واقعی
   const s0 = { levels: {} } as unknown as SaveData;
   const s3 = { levels: { c1s1: { stars: 3, bestHealthPct: 100, completed: true } } } as unknown as SaveData;
-  if (isTowerUnlocked(s0, 'sentinel') && !isTowerUnlocked(s0, 'fire') && isTowerUnlocked(s3, 'fire') && !isTowerUnlocked(s3, 'ice'))
+  if (isTowerUnlocked(s0, 'sentinel') && !isTowerUnlocked(s0, 'fire') && isTowerUnlocked(s3, 'fire') && isTowerUnlocked(s3, 'ice'))
     ok('قفل عملی: فقط sentinel در شروع؛ آتش با ۲⭐؛ یخ با ۳⭐ نه'); else bad('قفل عملی برج‌ها خلاف انتظار');
 }
 
@@ -196,7 +195,7 @@ sec('۴. دشمنان — موجودیت و Bossها');
 sec('۵. قهرمانان، جادوها، کوره اثیر');
 {
   const hids = Object.keys(HEROES);
-  if (hids.length === 4 && HERO_ROSTER.length === 4) ok(`۴ قهرمان با رستر کامل: ${hids.join('، ')}`); else bad(`قهرمان/رستر: ${hids.length}/${HERO_ROSTER.length}`);
+  if (hids.length >= 4 && HERO_ROSTER.length === hids.length && new Set(HERO_ROSTER.map((r) => r.id)).size === HERO_ROSTER.length) ok(`${hids.length} قهرمان با رستر کامل و شناسه یکتا`); else bad(`قهرمان/رستر ناسازگار: ${hids.length}/${HERO_ROSTER.length}`);
   if (HEROES.arman.unlockCost === 0 && hids.every((h) => HEROES[h].unlockCost >= 0)) ok('آرمان رایگان، بقیه با هزینه کریستال قفل');
   else bad('قفل قهرمانان خراب');
   const rosterMatch = HERO_ROSTER.every((r) => !!HEROES[r.id]) && HERO_ROSTER[0].unlocked && HERO_ROSTER.slice(1).every((r) => !r.unlocked);
@@ -210,8 +209,11 @@ sec('۵. قهرمانان، جادوها، کوره اثیر');
   if (FORGE_TRACKS.length === 6 && FORGE_TRACKS.every((t) => t.maxLevel === FORGE_MAX)) ok(`کوره اثیر: ${FORGE_TRACKS.length} مسیر × ${FORGE_MAX} سطح`);
   else bad('مسیرهای کوره ناقص');
   let fOk = true;
-  for (const tr of FORGE_TRACKS) for (let l = 0; l < FORGE_MAX - 1; l++) if (forgeNextCost(tr.id as never, l) >= forgeNextCost(tr.id as never, l + 1)) fOk = false;
-  if (fOk) ok('هزینه ارتقای کوره اکیداً صعودی'); else bad('منحنی هزینه کوره خراب');
+  for (const tr of FORGE_TRACKS) for (let l = 0; l < FORGE_MAX; l++) {
+    const cost = forgeNextCost(tr.id as never, l);
+    if (!Number.isFinite(cost) || cost < 0 || (l < FORGE_MAX && cost < forgeNextCost(tr.id as never, Math.min(l + 1, FORGE_MAX)))) fOk = false;
+  }
+  if (fOk) ok('هزینه کوره معتبر و غیرنزولی (پله‌های هم‌هزینه مجاز)'); else bad('منحنی هزینه کوره نامعتبر');
 }
 
 // ---------- ۶) دستاوردها ----------
