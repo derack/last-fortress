@@ -12,7 +12,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset",
-    "assets:rigged": "node scripts/generate-rigged-characters.mjs && node scripts/validate-rigged-characters.mjs"
+    "assets:rigged": "node scripts/generate-rigged-characters.mjs && node scripts/validate-rigged-characters.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
