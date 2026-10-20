@@ -985,13 +985,43 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
   for(const p of boneWorld) invBind.push(1,0,0,0,0,1,0,0,0,0,1,0,-p[0],-p[1],-p[2],1);
   const ibm=accessor(new Float32Array(invBind),'MAT4',5126,jointNames.length);
   const animations=[];
+  // Preserve each authored pose while sampling a smooth Catmull-Rom curve between
+  // key poses. Dense baked keys remain glTF/Three.js native and avoid runtime CPU
+  // interpolation. Quaternions are normalized after cubic interpolation.
+  const clipDuration=(name)=>({
+    Idle:3.2,Walk:0.82,Run:0.58,Attack:0.72,Attack1:0.72,Attack2:0.86,
+    SpecialAttack:1.12,Skill:0.96,Hit:0.38,Death:1.28,Roar:1.62,
+    PhaseChange:1.48,Dodge:0.48,Block:0.56,Stagger:0.64,Spawn:1.14,
+    Taunt:1.82,Victory:2.18
+  }[name] ?? 1);
+  const catmull=(p0,p1,p2,p3,t)=>{
+    const t2=t*t,t3=t2*t;
+    return 0.5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t2+(-p0+3*p1-3*p2+p3)*t3);
+  };
   const addAnim=(name,tracks)=>{
     const samplers=[],channels=[];
-    const times=new Float32Array([0,0.25,0.5,0.75,1]);
+    const sourceCount=5, samplesPerSegment=4, sampleCount=(sourceCount-1)*samplesPerSegment+1;
+    const duration=clipDuration(name);
+    const times=Float32Array.from({length:sampleCount},(_,i)=>duration*i/(sampleCount-1));
     const ti=accessor(times,'SCALAR',5126,times.length);
     for(const track of tracks) {
-      const vals=track.values.flat();
-      const oi=accessor(new Float32Array(vals),track.path==='rotation'?'VEC4':'VEC3',5126,track.values.length);
+      const source=track.values;
+      const width=track.path==='rotation'?4:3;
+      const sampled=[];
+      for(let i=0;i<sampleCount;i++) {
+        const position=i/samplesPerSegment;
+        const segment=Math.min(sourceCount-2,Math.floor(position));
+        const t=position-segment;
+        const p0=source[Math.max(0,segment-1)],p1=source[segment];
+        const p2=source[segment+1],p3=source[Math.min(sourceCount-1,segment+2)];
+        let value=Array.from({length:width},(_,c)=>catmull(p0[c],p1[c],p2[c],p3[c],t));
+        if(track.path==='rotation') {
+          const length=Math.hypot(...value)||1;
+          value=value.map(v=>v/length);
+        }
+        sampled.push(...value);
+      }
+      const oi=accessor(new Float32Array(sampled),track.path==='rotation'?'VEC4':'VEC3',5126,sampleCount);
       const si=samplers.length;samplers.push({input:ti,output:oi,interpolation:'LINEAR'});
       channels.push({sampler:si,target:{node:jointIndex[track.joint],path:track.path}});
     }
