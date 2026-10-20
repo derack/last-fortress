@@ -34,6 +34,9 @@ jobs:
           # --accept-data-loss: schema changes should fail visibly, not hide destructive drift.
           bunx prisma db push --skip-generate
 
+      - name: Strict TypeScript check
+        run: bun run typecheck
+
       - name: Build web
         run: bun run build
 
