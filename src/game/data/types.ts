@@ -161,8 +161,8 @@ export type RegionEnv = 'plains' | 'forest' | 'tundra' | 'volcano' | 'wastes' | 
 
 export interface LevelData {
   id: string; // قالب c{فصل}s{مرحله} — مثال c3s7
-  chapter: number; // فصل ۱..۱۰
-  stage: number; // مرحله ۱..۱۰ در فصل
+  chapter?: number; // فصل ۱..۱۰ — در کمپین قدیمی ۶ منطقه‌ای وجود ندارد
+  stage?: number; // مرحله ۱..۱۰ در فصل — در کمپین قدیمی وجود ندارد
   nameKey: string;
   descKey: string;
   coreHp: number;
@@ -172,7 +172,11 @@ export interface LevelData {
   timeOfDay: 'day' | 'night';
   env: RegionEnv;
   /** یک تا سه مسیر حمله — همه دقیقاً به هسته آذر ختم می‌شوند */
-  paths: Vec2[][];
+  paths?: Vec2[][];
+  /** قدیمی — شمارهٔ منطقه در کمپین ۶ منطقه‌ای (legacy levels.ts) */
+  region?: number;
+  /** قدیمی — مسیر تکی کمپین ۶ منطقه‌ای (legacy levels.ts) */
+  path?: Vec2[];
   star2HealthPct: number; // حداقل درصد سلامت برای ستاره دوم
   star3ChallengeKey: string;
 }
@@ -247,4 +251,8 @@ export interface SaveData {
   selectedHero: string;
   /** کوره اثیر — سطح هر مسیر ارتقای دائمی (۰ تا ۲۰) */
   forge: Record<string, number>;
+  /** آهنگری — سطح ارتقای دائمی هر قهرمان (۰ تا ۲۰) */
+  heroUpgrades: Record<string, number>;
+  /** آهنگری — سطح ارتقای دائمی هر برج (۰ تا ۲۰) */
+  towerUpgrades: Record<string, number>;
 }

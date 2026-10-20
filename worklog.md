@@ -643,3 +643,21 @@ Stage Summary:
 - download/Last-Fortress-v1.4-release.apk (7.5MB)
 - لینک: https://uploadkon.ir/uploads/8e2318_26LF-v1-4.zip
 - بازیابی محیط حالا رویه‌ای است: دانلود + استخراج + keystore از تاریخچه گیت
+
+---
+Task ID: 29
+Agent: main
+Task: «بررسی آخرین تغییرات + بیلد نهایی کامل» — ادغام ۱۰۱ کامیت main + بیلد v1.5
+
+Work Log:
+- fetch: کاربر مستقیماً ۱۰۱ کامیت روی main داد: ریگ‌گذاری کامل (پای عنکبوت/دم اژدها)، فاز ۲ باس با PBR، سلاح امضایی قهرمان‌ها، انیمیشن‌های سینمایی، LOD hysteresis، گالری QA با مود PBR/wireframe
+- build:cap جدید کاربر: generate-rigged-characters.mjs (۲۵ کاراکتر skinned با ۳ LOD) → validate → next build؛ بدون وابستگی جدید
+- fast-forward merge؛ نسخه 1.5 (versionCode 7)
+- sandbox بار سوم android-tools را پاک کرد → scripts/restore-toolchain.sh نوشته شد (دانلود+SDK+keystore از تاریخچه+credentials در یک دستور)؛ آینده ≤۵ دقیقه
+- gradle ✓ (2m31s) → APK 27,141,852 bytes (25.9MB!)، 35 GLB + 22 mp3، همان امضا
+- push (e62c754) → CI؛ آپلود uploadkon تایید (content-length دقیق)
+
+Stage Summary:
+- download/Last-Fortress-v1.5-final.apk — نسخه نهایی ریگ‌شده برای تست کاربر
+- لینک: https://uploadkon.ir/uploads/19d219_26LF-v1-5-final.zip
+- restore-toolchain.sh در گیت ذخیره شد → بازیابی محیط دیگر دستی نیست

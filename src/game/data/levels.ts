@@ -1,5 +1,14 @@
-import type { LevelData, RegionDef, WaveData, SpawnGroup } from './types';
+import type { LevelData, WaveData, SpawnGroup } from './types';
 import { LEVEL_1 } from './level1';
+
+/** تعریف منطقه در کمپین قدیمی ۶ منطقه‌ای — فقط همین فایل */
+interface RegionDef {
+  id: number;
+  levelId: string;
+  nameKey: string;
+  env: string;
+  tagKey: string;
+}
 
 // ============================================================
 // کمپین ۶ منطقه‌ای — هر منطقه: مسیر، تم محیطی، موج‌ها و Boss خودش

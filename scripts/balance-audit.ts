@@ -68,7 +68,7 @@ function stageRow(cIdx: number, s: number): Row {
   for (let i = 0; i < peakIdx; i++) incomeBeforePeak += lv.waves[i].coinBonus ?? 0;
 
   return {
-    id: lv.id, D: (ch.id - 1) * 10 + s, paths: lv.paths.length,
+    id: lv.id, D: (ch.id - 1) * 10 + s, paths: (lv.paths?.length ?? 1),
     startCoins: lv.startCoins, coreHp: lv.coreHp,
     waveHp, bossWaveHp, bossHp,
     peakWave: peakIdx + 1, peakHp,

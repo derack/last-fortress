@@ -154,7 +154,7 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
                         const sid = stageId(ch.id, st);
                         const record = save.levels[sid];
                         const stUnlocked = isStageUnlocked(ch.id, st, completedIds);
-                        const paths = STAGES[sid]?.paths.length ?? 1;
+                        const paths = STAGES[sid]?.paths?.length ?? 1;
                         const isBossStage = st === 10;
                         return (
                           <button key={sid}
@@ -200,7 +200,7 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
             onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 text-xs font-black text-amber-300/80">
               <MapPin className="h-3.5 w-3.5" />
-              {t('chapterShort')} {faNum(briefing.chapter)} — {t('stageShort')} {faNum(briefing.stage)}
+              {t('chapterShort')} {faNum(briefing.chapter ?? 1)} — {t('stageShort')} {faNum(briefing.stage ?? 1)}
               {briefing.stage === 10 && (
                 <span className="flex items-center gap-1 rounded-md bg-rose-950/70 px-2 py-0.5 text-rose-300">
                   <Trophy className="h-3 w-3" />
@@ -214,14 +214,14 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
             <div className="mt-4 grid grid-cols-3 gap-3">
               <StatCard icon={Heart} label={t('coreHealth')} value={faNum(briefing.coreHp)} color="text-rose-400" />
               <StatCard icon={Swords} label={t('enemyWaves')} value={faNum(briefing.waves.length)} color="text-amber-400" />
-              <StatCard icon={Route} label={t('attackPaths')} value={faNum(briefing.paths.length)} color="text-cyan-400" />
+              <StatCard icon={Route} label={t('attackPaths')} value={faNum(briefing.paths?.length ?? 1)} color="text-cyan-400" />
             </div>
 
             {/* هشدار چندمسیره */}
-            {briefing.paths.length > 1 && (
+            {(briefing.paths?.length ?? 1) > 1 && (
               <div className="mt-3 flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-950/30 px-3 py-2.5 text-xs font-bold text-cyan-200">
                 <Route className="h-4 w-4 shrink-0" />
-                {t('multiPathWarning', faNum(briefing.paths.length))}
+                {t('multiPathWarning', faNum(briefing.paths?.length ?? 1))}
               </div>
             )}
 

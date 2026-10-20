@@ -43,7 +43,7 @@ export const TOWERS: Record<string, TowerData> = {
     projectile: 'none', // زنجیره لحظه‌ای
     chainCount: 2,
     color: 0x8b5cf6,
-    unlockStars: 3,
+    unlockStars: 1,
     levels: [
       { damage: 26, range: 10, fireRate: 0.9, upgradeCost: 150 },
       { damage: 36, range: 10.5, fireRate: 1.0, upgradeCost: 120 },
@@ -89,7 +89,7 @@ export const TOWERS: Record<string, TowerData> = {
     slowFactor: 0.55,
     slowDuration: 2.0,
     color: 0x22d3ee,
-    unlockStars: 1,
+    unlockStars: 4,
     levels: [
       { damage: 8, range: 8, fireRate: 1.4, upgradeCost: 90 },
       { damage: 12, range: 8.5, fireRate: 1.5, upgradeCost: 75 },
@@ -112,7 +112,7 @@ export const TOWERS: Record<string, TowerData> = {
     splashRadius: 3.4,
     towerHeight: 2.6,
     color: 0xf59e0b,
-    unlockStars: 5,
+    unlockStars: 6,
     levels: [
       { damage: 46, range: 7.5, fireRate: 0.5, upgradeCost: 160 },
       { damage: 64, range: 8, fireRate: 0.55, upgradeCost: 130 },
@@ -137,7 +137,7 @@ export const TOWERS: Record<string, TowerData> = {
     armorShred: 2,
     towerHeight: 2.5,
     color: 0x84cc16,
-    unlockStars: 7,
+    unlockStars: 8,
     levels: [
       { damage: 10, range: 8.5, fireRate: 1.1, upgradeCost: 120 },
       { damage: 14, range: 9, fireRate: 1.2, upgradeCost: 95 },
@@ -160,7 +160,7 @@ export const TOWERS: Record<string, TowerData> = {
     pierceArmor: true,
     towerHeight: 3.0,
     color: 0xd97706,
-    unlockStars: 9,
+    unlockStars: 10,
     levels: [
       { damage: 70, range: 14, fireRate: 0.45, upgradeCost: 180 },
       { damage: 98, range: 15, fireRate: 0.5, upgradeCost: 145 },
@@ -182,7 +182,7 @@ export const TOWERS: Record<string, TowerData> = {
     projectile: 'prism',
     towerHeight: 3.2,
     color: 0x38bdf8,
-    unlockStars: 11,
+    unlockStars: 12,
     levels: [
       { damage: 34, range: 9.5, fireRate: 1.0, upgradeCost: 140 },
       { damage: 48, range: 10, fireRate: 1.1, upgradeCost: 110 },
@@ -206,7 +206,7 @@ export const TOWERS: Record<string, TowerData> = {
     buffRatePct: 0.25,
     towerHeight: 3.0,
     color: 0xfbbf24,
-    unlockStars: 13,
+    unlockStars: 14,
     levels: [
       { damage: 18, range: 9, fireRate: 1.2, upgradeCost: 170 },
       { damage: 26, range: 9.5, fireRate: 1.3, upgradeCost: 135 },
@@ -230,7 +230,7 @@ export const TOWERS: Record<string, TowerData> = {
     executeMultiplier: 2.2,
     towerHeight: 3.4,
     color: 0x8b5cf6,
-    unlockStars: 15,
+    unlockStars: 16,
     levels: [
       { damage: 40, range: 9, fireRate: 0.9, upgradeCost: 200 },
       { damage: 56, range: 9.5, fireRate: 0.95, upgradeCost: 160 },

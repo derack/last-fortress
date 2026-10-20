@@ -361,7 +361,7 @@ export class Game {
     this.waveActive = true;
     this.waveTime = 0;
     this.spawnQueue = [];
-    const pathCount = this.level.paths.length;
+    const pathCount = this.level.paths?.length ?? 1;
     for (const g of wave.groups) {
       for (let i = 0; i < g.count; i++) {
         // مسیر اسپاون — گروه مسیر مشخص دارد یا پخش متوازن روی همه مسیرها
@@ -1038,7 +1038,7 @@ export class Game {
 
     // پاداش‌ها — کریستال + ذرات اثیر (بر اساس فصل و ستاره؛ Boss دوبرابر)
     const rewardCrystals = 10 + stars * 5;
-    let rewardShards = 5 + stars * 2 + this.level.chapter;
+    let rewardShards = 5 + stars * 2 + (this.level.chapter ?? 1);
     if (this.level.stage === 10) rewardShards *= 2;
     this.crystals += rewardCrystals;
     this.save.crystals = this.crystals;

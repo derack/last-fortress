@@ -95,7 +95,7 @@ export function forgeNextCost(trackId: ForgeTrackId, level: number): number {
   if (level >= FORGE_MAX) return 0;
   const base = trackId === 'towerRange' ? 3 : 2;
   const step = Math.floor(level / 5);
-  return Math.ceil(base * Math.pow(1.22, level)) + step;
+  return Math.ceil(base * Math.pow(1.22, level)) + step + level; // +level → اکیداً صعودی (بدون فلات ceil)
 }
 
 /** سطح فعلی یک مسیر از ذخیره — پیش‌فرض ۰ */

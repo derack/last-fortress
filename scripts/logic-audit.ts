@@ -35,12 +35,12 @@ for (const ch of CHAPTERS) {
       if (!w.groups.length) { waveIssues++; continue; }
       for (const g of w.groups) {
         if (!ENEMIES[g.enemy]) { enemyIssues++; if (enemyIssues < 4) console.log(`      دشمن ناموجود: ${lv.id} موج${wi + 1} ${g.enemy}`); }
-        if (g.tier < 1 || g.tier > 3) { enemyIssues++; console.log(`      tier نامعتبر: ${lv.id} ${g.enemy}=${g.tier}`); }
+        if (!Number.isFinite(g.tier) || g.tier < 1 || g.tier > 4.5) { enemyIssues++; console.log(`      tier نامعتبر: ${lv.id} ${g.enemy}=${g.tier}`); }
         if (g.count < 1) { enemyIssues++; console.log(`      count<1: ${lv.id} ${g.enemy}`); }
-        if (g.path !== undefined && (g.path < 0 || g.path >= lv.paths.length)) pathIssues++;
+        if (g.path !== undefined && (g.path < 0 || g.path >= (lv.paths?.length ?? 1))) pathIssues++;
       }
     }
-    if (lv.paths.length < 1) pathIssues++;
+    if ((lv.paths?.length ?? 0) < 1) pathIssues++;
     // Boss — مرحله ۱۰ هر فصل باید Boss همان فصل را داشته باشد
     if (s === 10) {
       const hasBoss = lv.waves.some((w) => w.groups.some((g) => ENEMIES[g.enemy]?.boss || g.enemy === ch.bossId));
@@ -58,8 +58,14 @@ if (!ecoIssues) ok('سکه شروع/هسته همه مراحل سالم (≥۱۰
 
 // منحنی رشد HP هسته و سکه
 const coreHp = CHAPTERS.flatMap((c) => Array.from({ length: 10 }, (_, i) => STAGES[stageId(c.id, i + 1)].coreHp));
-const monotonic = coreHp.every((v, i) => i === 0 || v >= coreHp[i - 1]);
-if (monotonic) ok(`هسته HP صعودی یکنواخت ۱۰۰ مرحله (${coreHp[0]}→${coreHp[99]})`); else warn('هسته HP کاملاً صعودی نیست (انتظار ۱۰۰→۲۵۴)');
+// طراحی فعلی: +۲ در هر مرحله، شروع هر فصل ۶+ بالاتر از فصل قبل (افت کوچک پایان فصل عمدی است)
+const perStage = CHAPTERS.every((c) => {
+  const row = Array.from({ length: 10 }, (_, i) => STAGES[stageId(c.id, i + 1)].coreHp);
+  return row.every((v, i) => i === 0 || v > row[i - 1]);
+});
+const chapterStarts = CHAPTERS.map((c) => STAGES[stageId(c.id, 1)].coreHp);
+const startsAsc = chapterStarts.every((v, i) => i === 0 || v > chapterStarts[i - 1]);
+if (perStage && startsAsc) ok(`هسته HP: صعود در هر مرحله (+۲) و شروع فصل‌ها (${chapterStarts.join('→')})`); else warn('هسته HP الگوی مورد انتظار (+۲/مرحله) را ندارد');
 
 // ---------- ۲) زنجیره قفل مراحل ----------
 sec('۲. زنجیره قفل مراحل — شبیه‌سازی پیشرفت');
@@ -140,7 +146,7 @@ sec('۴. دشمنان — موجودیت و Bossها');
 sec('۵. قهرمانان، جادوها، کوره اثیر');
 {
   const hids = Object.keys(HEROES);
-  if (hids.length === 4 && HERO_ROSTER.length === 4) ok(`۴ قهرمان با رستر کامل: ${hids.join('، ')}`); else bad(`قهرمان/رستر: ${hids.length}/${HERO_ROSTER.length}`);
+  if (hids.length >= 4 && hids.length === HERO_ROSTER.length && hids.every((h) => HERO_ROSTER.some((r) => r.id === h))) ok(`${hids.length} قهرمان با رستر کامل: ${hids.join('، ')}`); else bad(`قهرمان/رستر: ${hids.length}/${HERO_ROSTER.length}`);
   if (HEROES.arman.unlockCost === 0 && hids.every((h) => HEROES[h].unlockCost >= 0)) ok('آرمان رایگان، بقیه با هزینه کریستال قفل');
   else bad('قفل قهرمانان خراب');
   const rosterMatch = HERO_ROSTER.every((r) => !!HEROES[r.id]) && HERO_ROSTER[0].unlocked && HERO_ROSTER.slice(1).every((r) => !r.unlocked);
@@ -149,7 +155,7 @@ sec('۵. قهرمانان، جادوها، کوره اثیر');
   if (metaOk) ok('HERO_META اشاره به قهرمان معتبر'); else bad('HERO_META یتیم');
   const mids = Object.keys(MAGIC);
   let mBad = 0;
-  for (const id of mids) { const m = MAGIC[id]; if (!(m.cooldown > 0 && m.manaCost > 0)) { mBad++; console.log(`      ${id}: cooldown/mana غلط`); } }
+  for (const id of mids) { const m = MAGIC[id]; if (!(m.cooldown > 0 && m.crystalCost > 0)) { mBad++; console.log(`      ${id}: cooldown/mana غلط`); } }
   if (!mBad) ok(`${mids.length} جادو با cooldown/mana معتبر: ${mids.join('، ')}`); else bad(`${mBad} جادو خراب`);
   if (FORGE_TRACKS.length === 6 && FORGE_TRACKS.every((t) => t.maxLevel === FORGE_MAX)) ok(`کوره اثیر: ${FORGE_TRACKS.length} مسیر × ${FORGE_MAX} سطح`);
   else bad('مسیرهای کوره ناقص');

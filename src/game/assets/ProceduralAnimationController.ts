@@ -263,6 +263,16 @@ export class ProceduralAnimationController {
     return true;
   }
 
+  /** دنبالهٔ شات‌ها — هم‌امضای CharacterAnimationController؛
+   *  کنترلر پروسیجرال پروفایل‌های نام‌گذاری‌شده دارد، پس اولین نام پشتیبانی‌شده
+   *  پخش می‌شود (مثلاً phasechange→roar روی مدل بدون ریگ = roar) */
+  playSequence(names: string[], opts: ProceduralOneShotOptions = {}): boolean {
+    for (const name of names) {
+      if (this.playOneShot(name, opts)) return true;
+    }
+    return false;
+  }
+
   /** مرگ — افتادن به عقب با شتاب گرانش + فریز (همیشه true — خودش مسئول است) */
   playDeath(): boolean {
     if (this.dead) return true;

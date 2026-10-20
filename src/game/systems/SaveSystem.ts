@@ -71,6 +71,8 @@ export function defaultSave(): SaveData {
     unlockedHeroes: ['arman'],
     selectedHero: 'arman',
     forge: {},
+    heroUpgrades: {},
+    towerUpgrades: {},
   };
 }
 
@@ -93,6 +95,9 @@ export function loadSave(): SaveData {
       selectedHero: data.selectedHero ?? 'arman',
       // کوره اثیر — مقادیر نامعتبر پاک می‌شوند
       forge: { ...(data.forge ?? {}) },
+      // آهنگری — ارتقاهای دائمی قهرمان/برج (مهاجرت ذخیره‌های قدیمی)
+      heroUpgrades: { ...(data.heroUpgrades ?? {}) },
+      towerUpgrades: { ...(data.towerUpgrades ?? {}) },
     };
     // مهاجرت نسخه ۱ → ۲ — کمپین ۱۰۰ مرحله‌ای
     if (!data.version || data.version < 2) {

@@ -100,14 +100,16 @@ export class BattleScene {
     this.scene = new THREE.Scene();
     this.renderer = new THREE.WebGLRenderer({
       canvas,
-      antialias: quality === 'high' || quality === 'ultra',
+      antialias: quality !== 'low',
       powerPreference: 'high-performance',
     });
-    // Supersample the scene to preserve crisp armor edges when the player zooms in.
-    // Adaptive resolution below can still step down on slower GPUs.
-    const pixelRatio = quality === 'low' ? 1
-      : quality === 'medium' ? 1.3
-      : quality === 'high' ? 1.55 : 1.75;
+    // وضوح آینه‌ای — رندر با DPR واقعی دستگاه + سقف supersample برای لبه‌های زره؛
+    // رزولوشن تطبیقی روی GPUهای کند فقط تا کف ۱.۲۵ پایین می‌آید
+    const dpr = window.devicePixelRatio || 1;
+    const dprCap = quality === 'low' ? 1.5
+      : quality === 'medium' ? 2.0
+      : quality === 'high' ? 2.5 : 3.0;
+    const pixelRatio = Math.min(dprCap, dpr);
     this.renderer.setPixelRatio(pixelRatio);
     this.targetRatio = pixelRatio;
     this.currentRatio = pixelRatio;
@@ -1080,8 +1082,8 @@ Quality: ${this.quality}   Pixel ratio: ${this.currentRatio.toFixed(2)}`;
       const avg = this.perfAccum / this.perfFrames;
       this.perfAccum = 0;
       this.perfFrames = 0;
-      if (avg > 24 && this.currentRatio > 0.95) {
-        this.currentRatio = Math.max(0.95, this.currentRatio - 0.15);
+      if (avg > 24 && this.currentRatio > 1.25) {
+        this.currentRatio = Math.max(1.25, this.currentRatio - 0.15);
         this.renderer.setPixelRatio(this.currentRatio);
       } else if (avg < 14.5 && this.currentRatio < this.targetRatio) {
         this.currentRatio = Math.min(this.targetRatio, this.currentRatio + 0.15);

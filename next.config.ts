@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     ? { output: "export" as const, trailingSlash: true }
     : { output: "standalone" as const }),
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   reactStrictMode: false,
 };
