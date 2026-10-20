@@ -251,11 +251,16 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     box([0,1.48,0.02],[w*0.76,h*0.72,0.44],'Head',armor);
     box([0,0.58,0],[w*0.88,0.22,0.43],'Hips',dark);
     for(const side of [-1,1]) {
-      sphere([side*w*0.72,1.28,0],[boss?0.29:0.2,0.25,0.27],side<0?'Arm_L':'Arm_R',armor);
-      box([side*w*0.78,0.91,0.02],[0.22,boss?0.62:0.45,0.25],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.06]);
-      box([side*0.2,0.31,0],[0.25,0.47,0.28],side<0?'Leg_L':'Leg_R',armor);
-      box([side*0.2,0.12,0.12],[0.32,0.16,0.42],side<0?'Leg_L':'Leg_R',dark);
-      for(let i=0;i<3;i++) cone([side*(w*0.65+i*0.1),1.48+i*0.08,-0.08],[0.1,0.25,0.1],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.4]);
+      const arm=side<0?'Arm_L':'Arm_R', fore=side<0?'ForeArm_L':'ForeArm_R', hand=side<0?'Hand_L':'Hand_R';
+      const leg=side<0?'Leg_L':'Leg_R', knee=side<0?'Knee_L':'Knee_R', foot=side<0?'Foot_L':'Foot_R';
+      sphere([side*w*0.72,1.28,0],[boss?0.29:0.2,0.25,0.27],arm,armor);
+      box([side*w*0.78,1.02,0.02],[0.22,0.32,0.25],arm,edge,[0,0,side*0.06]);
+      box([side*w*0.79,0.76,0.04],[0.24,0.27,0.26],fore,armor,[0,0,side*0.04]);
+      box([side*w*0.80,0.57,0.11],[0.27,0.18,0.29],hand,dark);
+      box([side*0.2,0.39,0],[0.25,0.27,0.28],leg,armor);
+      box([side*0.2,0.20,0.02],[0.22,0.20,0.25],knee,edge);
+      box([side*0.2,0.10,0.12],[0.32,0.13,0.42],foot,dark);
+      for(let i=0;i<3;i++) cone([side*(w*0.65+i*0.1),1.48+i*0.08,-0.08],[0.1,0.25,0.1],arm,edge,[0,0,side*0.4]);
     }
     for(let i=0;i<(boss?5:3);i++) cone([0,1.58-i*0.13,0.29],[0.065,0.18,0.065],'Head',edge,[0.15,0,0]);
   } else {
@@ -275,12 +280,16 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
         cone([0.13,1.69,0.02],[0.07,0.25,0.07],'Head',edge,[0,0,0.24]);
       }
       for(const side of [-1,1]) {
-        const arm=side<0?'Arm_L':'Arm_R', leg=side<0?'Leg_L':'Leg_R';
-        sphere([side*(heavy?0.47:0.36),1.31,0],[heavy?0.25:0.18,0.22,0.22],arm,edge);
-        cyl([side*(heavy?0.48:0.38),1.03,0.01],[heavy?0.19:0.13,0.43,0.15],arm,armor,[0,0,side*0.04]);
-        box([side*(heavy?0.48:0.38),0.81,0.12],[0.22,0.17,0.23],arm,dark);
-        box([side*0.16,0.36,0],[0.22,0.38,0.24],leg,armor,[0,0,side*0.035]);
-        box([side*0.16,0.14,0.1],[0.28,0.16,0.38],leg,dark);
+        const arm=side<0?'Arm_L':'Arm_R', fore=side<0?'ForeArm_L':'ForeArm_R', hand=side<0?'Hand_L':'Hand_R';
+        const leg=side<0?'Leg_L':'Leg_R', knee=side<0?'Knee_L':'Knee_R', foot=side<0?'Foot_L':'Foot_R';
+        const ax=side*(heavy?0.47:0.36), fx=side*(heavy?0.48:0.38);
+        sphere([ax,1.31,0],[heavy?0.25:0.18,0.22,0.22],arm,edge);
+        cyl([fx,1.13,0.01],[heavy?0.19:0.13,0.29,0.15],arm,armor,[0,0,side*0.04]);
+        cyl([fx,0.91,0.03],[heavy?0.17:0.12,0.24,0.14],fore,edge,[0,0,side*0.035]);
+        box([fx,0.76,0.12],[0.22,0.14,0.23],hand,dark);
+        box([side*0.16,0.42,0],[0.22,0.29,0.24],leg,armor,[0,0,side*0.035]);
+        box([side*0.16,0.22,0.01],[0.19,0.22,0.22],knee,edge,[0,0,side*0.02]);
+        box([side*0.16,0.10,0.1],[0.28,0.13,0.38],foot,dark);
       }
     }
   }
@@ -999,6 +1008,29 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     return 0.5*((2*p1)+(-p0+p2)*t+(2*p0-5*p1+4*p2-p3)*t2+(-p0+3*p1-3*p2+p3)*t3);
   };
   const addAnim=(name,tracks)=>{
+    // Secondary articulation for segmented humanoid/heavy limbs.
+    // Only add a track when the authored clip does not already animate that joint.
+    if (!beast && !crawler) {
+      const secondary = name === 'Idle'
+        ? [rot('ForeArm_L','x',[0,-0.025,0,0.02,0]),rot('ForeArm_R','x',[0,0.02,0,-0.025,0])]
+        : name === 'Walk'
+          ? [rot('ForeArm_L','x',[0,-0.22,0,0.22,0]),rot('ForeArm_R','x',[0,0.22,0,-0.22,0]),rot('Knee_L','x',[0,0.38,0,-0.18,0]),rot('Knee_R','x',[0,-0.18,0,0.38,0]),rot('Hand_L','x',[0,-0.08,0,0.08,0]),rot('Hand_R','x',[0,0.08,0,-0.08,0])]
+          : name === 'Run'
+            ? [rot('ForeArm_L','x',[0,-0.38,0,0.38,0]),rot('ForeArm_R','x',[0,0.38,0,-0.38,0]),rot('Knee_L','x',[0,0.62,0,-0.28,0]),rot('Knee_R','x',[0,-0.28,0,0.62,0]),rot('Hand_L','x',[0,-0.12,0,0.12,0]),rot('Hand_R','x',[0,0.12,0,-0.12,0])]
+            : ['Attack','Attack1'].includes(name)
+              ? [rot('ForeArm_R','x',[0,-0.24,-0.72,0.18,0]),rot('Hand_R','z',[0,-0.08,0.3,0.06,0]),rot('ForeArm_L','x',[0,-0.1,-0.22,0,0]),rot('Knee_L','x',[0,0.08,0.18,0.04,0]),rot('Knee_R','x',[0,-0.06,-0.12,0,0])]
+              : ['Attack2','SpecialAttack','Skill'].includes(name)
+                ? [rot('ForeArm_L','x',[0,-0.2,-0.45,-0.08,0]),rot('ForeArm_R','x',[0,-0.25,-0.58,-0.08,0]),rot('Hand_L','z',[0,0.1,0.22,0.04,0]),rot('Hand_R','z',[0,-0.12,-0.28,-0.04,0]),rot('Knee_L','x',[0,0.12,0.22,0.06,0]),rot('Knee_R','x',[0,0.12,0.22,0.06,0])]
+                : ['Hit','Stagger'].includes(name)
+                  ? [rot('ForeArm_L','x',[0,0.18,-0.12,0.03,0]),rot('ForeArm_R','x',[0,-0.18,0.12,-0.03,0]),rot('Knee_L','x',[0,0.1,0.18,0.04,0]),rot('Knee_R','x',[0,0.1,0.18,0.04,0])]
+                  : name === 'Death'
+                    ? [rot('ForeArm_L','z',[0,-0.15,-0.45,-0.62,-0.62]),rot('ForeArm_R','z',[0,0.15,0.45,0.62,0.62]),rot('Knee_L','x',[0,0.18,0.4,0.4,0.4]),rot('Knee_R','x',[0,0.18,0.4,0.4,0.4])]
+                    : ['Roar','Taunt','Victory','PhaseChange','Spawn','Block','Dodge'].includes(name)
+                      ? [rot('ForeArm_L','z',[0,-0.18,-0.38,-0.12,0]),rot('ForeArm_R','z',[0,0.18,0.38,0.12,0]),rot('Hand_L','x',[0,-0.08,0.12,0,0]),rot('Hand_R','x',[0,-0.08,0.12,0,0])]
+                      : [];
+      const existing = new Set(tracks.map((track) => track.joint + ':' + track.path));
+      tracks = [...tracks, ...secondary.filter((track) => !existing.has(track.joint + ':' + track.path))];
+    }
     const samplers=[],channels=[];
     const sourceCount=5, samplesPerSegment=4, sampleCount=(sourceCount-1)*samplesPerSegment+1;
     const duration=clipDuration(name);
