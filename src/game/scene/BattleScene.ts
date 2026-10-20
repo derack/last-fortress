@@ -86,6 +86,7 @@ export class BattleScene {
   // تفکیک‌پذیری تطبیقی — روی دستگاه ضعیف خودکار پایین می‌آید تا لگ حذف شود
   private targetRatio = 1;
   private currentRatio = 1;
+  private minRatio = 0.8;
   private lastRenderAt = 0;
   private perfAccum = 0;
   private perfFrames = 0;
@@ -103,11 +104,15 @@ export class BattleScene {
       antialias: quality === 'high' || quality === 'ultra',
       powerPreference: 'high-performance',
     });
-    // Supersample the scene to preserve crisp armor edges when the player zooms in.
-    // Adaptive resolution below can still step down on slower GPUs.
-    const pixelRatio = quality === 'low' ? 1
-      : quality === 'medium' ? 1.3
-      : quality === 'high' ? 1.55 : 1.75;
+    // Keep desktop image quality high while preventing mobile WebViews from
+    // allocating oversized render targets. Mobile GPU memory grows quadratically
+    // with pixel ratio, so a conservative ceiling is safer than a fixed desktop DPR.
+    const isMobile = typeof navigator !== 'undefined'
+      && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const pixelRatio = isMobile
+      ? (quality === 'low' ? 1 : quality === 'medium' ? 1.1 : quality === 'high' ? 1.25 : 1.4)
+      : (quality === 'low' ? 1 : quality === 'medium' ? 1.3 : quality === 'high' ? 1.55 : 1.75);
+    this.minRatio = isMobile ? 0.8 : 0.95;
     this.renderer.setPixelRatio(pixelRatio);
     this.targetRatio = pixelRatio;
     this.currentRatio = pixelRatio;
@@ -1080,8 +1085,8 @@ Quality: ${this.quality}   Pixel ratio: ${this.currentRatio.toFixed(2)}`;
       const avg = this.perfAccum / this.perfFrames;
       this.perfAccum = 0;
       this.perfFrames = 0;
-      if (avg > 24 && this.currentRatio > 0.95) {
-        this.currentRatio = Math.max(0.95, this.currentRatio - 0.15);
+      if (avg > 24 && this.currentRatio > this.minRatio) {
+        this.currentRatio = Math.max(this.minRatio, this.currentRatio - 0.1);
         this.renderer.setPixelRatio(this.currentRatio);
       } else if (avg < 14.5 && this.currentRatio < this.targetRatio) {
         this.currentRatio = Math.min(this.targetRatio, this.currentRatio + 0.15);
