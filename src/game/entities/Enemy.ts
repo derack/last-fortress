@@ -348,9 +348,11 @@ export class Enemy implements DamageableEnemy {
     this.ctx.haptic(90); // فاز ۶ — لرزش فاز دوم Boss
     // Play the authored transformation, then the roar; the old isBusy check
     // always skipped roar because phasechange itself immediately marked the controller busy.
-    if (!this.handle.animation?.playSequence(['phasechange', 'roar'], { fade: 0.2 })) {
-      this.handle.animation?.playOneShot('roar', { fade: 0.2 });
-    }
+    const animation = this.handle.animation;
+    const sequenceStarted = animation && 'playSequence' in animation
+      ? animation.playSequence(['phasechange', 'roar'], { fade: 0.2 })
+      : false;
+    if (!sequenceStarted) animation?.playOneShot('roar', { fade: 0.2 });
 
     if (!cfg) {
       // Boss بدون پیکربندی — رفتار عمومی قدیمی
