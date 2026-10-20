@@ -143,6 +143,7 @@ export class InputController {
   /** پرتاب پرتو: نقطه زمین + برخورد با اشیاء قابل انتخاب */
   private pick(clientX: number, clientY: number): TapHit | null {
     const rect = this.dom.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
     const ndc = new THREE.Vector2(
       ((clientX - rect.left) / rect.width) * 2 - 1,
       -((clientY - rect.top) / rect.height) * 2 + 1
