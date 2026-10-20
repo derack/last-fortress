@@ -57,7 +57,7 @@ for (const url of refs) {
           throw new Error('mobile texture budget exceeded by image '+ii+' ('+width+'x'+height+', max '+mobileMax+')');
         }
       } else {
-        const expected = ii === 8 ? 192 : (isLargeAsset ? 512 : 256);
+        const expected = ii === 8 ? 256 : (isLargeAsset ? 640 : 256);
         if (width !== expected || height !== expected) {
           throw new Error('desktop PBR tier mismatch for image '+ii+' ('+width+'x'+height+', expected '+expected+'x'+expected+')');
         }
