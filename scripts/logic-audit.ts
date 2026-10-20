@@ -3,7 +3,7 @@
 // اجرا: bun scripts/logic-audit.ts   (exit 1 = مشکل FIND)
 // ============================================================
 import { STAGES, CHAPTERS, isStageUnlocked, stageId, ACHIEVEMENTS, firstPlayableStageId, nextStageId, completedStageCount } from '../src/game/data/campaign';
-import { TOWERS, isTowerUnlocked } from '../src/game/data/towers';
+import { TOWERS, TOWER_BUILD_ORDER, isTowerUnlocked } from '../src/game/data/towers';
 import { ENEMIES, tiered } from '../src/game/data/enemies';
 import { HEROES, HERO_ROSTER, HERO_META, MAGIC } from '../src/game/data/magic';
 import { FORGE_TRACKS, FORGE_MAX, forgeNextCost } from '../src/game/data/forge';
@@ -154,15 +154,22 @@ sec('۳. لول‌ها — برج‌ها (۵ سطح × ۱۰ برج)');
       const L = tw.levels[i];
       if (!(L.damage > 0 && L.range > 0 && L.fireRate > 0)) { progIssues++; console.log(`      ${tid} سطح${i + 1}: آمار نامعتبر`); }
       if (i > 0 && L.damage <= tw.levels[i - 1].damage) { progIssues++; console.log(`      ${tid}: damage سطح${i + 1} ≤ سطح${i}`); }
-      if (i < 4 && !(L.upgradeCost > 0)) { costIssues++; console.log(`      ${tid} سطح${i + 1}: upgradeCost=${L.upgradeCost}`); }
+      if (i < 4 && (!(L.upgradeCost > 0) || (i > 0 && L.upgradeCost <= tw.levels[i - 1].upgradeCost))) { costIssues++; console.log(`      ${tid} سطح${i + 1}: upgradeCost=${L.upgradeCost} (باید با سطح بالاتر افزایش یابد)`); }
     }
     if (tw.levels[4].upgradeCost !== 0 && tw.levels[4].upgradeCost !== undefined) warn(`${tid} سطح۵ upgradeCost=${tw.levels[4].upgradeCost} (باید ۰ باشد)`);
-    if (!(tw.cost > 0 && tw.cost <= tw.levels[0].upgradeCost + tw.cost)) costIssues++;
+    if (!(Number.isFinite(tw.cost) && tw.cost > 0)) { costIssues++; console.log(`      ${tid}: هزینه ساخت نامعتبر`); }
   }
   if (!lvIssues) ok('همه برج‌ها ۵ سطح کامل'); else bad(`${lvIssues} برج با سطح ناقص`);
   if (!progIssues) ok('آمار damage/range/fireRate صعودی و معتبر'); else bad(`${progIssues} مشکل آمار برج`);
   if (!costIssues) ok('زنجیره upgradeCost سالم (سطح ۵ بدون هزینه)'); else bad(`${costIssues} مشکل هزینه ارتقا`);
-  // قفل ستاره‌ای — صعودی و ≤ سقف دستاورد
+  // منحنی قفل باید در ترتیب پیشنهادی ساخت برج‌ها به‌تدریج جلو برود.
+  const orderedUnlocks = TOWER_BUILD_ORDER.map((id) => TOWERS[id]?.unlockStars ?? -1);
+  const unlockOrderValid = orderedUnlocks.length === tids.length
+    && orderedUnlocks[0] === 0
+    && orderedUnlocks.every((value, i) => Number.isFinite(value) && value >= 0 && (i === 0 || value > orderedUnlocks[i - 1]));
+  if (unlockOrderValid) ok(`آستانه آزادسازی برج‌ها مرحله‌ای و صعودی است: [${orderedUnlocks.join('،')}]`);
+  else bad(`آستانه آزادسازی برج‌ها نامرتب/تکراری است: [${orderedUnlocks.join('،')}]`);
+  // قفل ستاره‌ای — آستانه‌ها باید در محدوده سقف دستاورد باشند.
   const stars = tids.map((t) => TOWERS[t].unlockStars ?? 0);
   const maxStars = 100 * 3;
   const thresholdsValid = stars.every((v) => Number.isFinite(v) && v >= 0 && v <= maxStars);
@@ -208,7 +215,7 @@ sec('۵. قهرمانان، جادوها، کوره اثیر');
 {
   const hids = Object.keys(HEROES);
   if (hids.length >= 4 && HERO_ROSTER.length === hids.length && new Set(HERO_ROSTER.map((r) => r.id)).size === HERO_ROSTER.length) ok(`${hids.length} قهرمان با رستر کامل و شناسه یکتا`); else bad(`قهرمان/رستر ناسازگار: ${hids.length}/${HERO_ROSTER.length}`);
-  if (HEROES.arman.unlockCost === 0 && hids.every((h) => HEROES[h].unlockCost >= 0)) ok('آرمان رایگان، بقیه با هزینه کریستال قفل');
+  if (HEROES.arman.unlockCost === 0 && hids.every((h) => HEROES[h].unlockCost >= 0) && hids.filter((h) => h !== 'arman').every((h) => HEROES[h].unlockCost >= 300)) ok('آرمان رایگان؛ قهرمانان دیگر با هزینه‌ای که در مراحل اول قابل خرید نیست');
   else bad('قفل قهرمانان خراب');
   const rosterMatch = HERO_ROSTER.every((r) => !!HEROES[r.id]) && HERO_ROSTER[0].unlocked && HERO_ROSTER.slice(1).every((r) => !r.unlocked);
   if (rosterMatch) ok('HERO_ROSTER با HEROES سازگار (فقط آرمان باز)'); else bad('HERO_ROSTER ناسازگار');
