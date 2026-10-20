@@ -92,6 +92,7 @@ export class BattleScene {
   private debugOverlay: HTMLDivElement | null = null;
   private debugFrames = 0;
   private debugWindowStart = 0;
+  private lastLodUpdateAt = 0;
   private theme: EnvTheme;
   private level: LevelData;
 
@@ -1056,6 +1057,15 @@ export class BattleScene {
     const now = performance.now();
     const frameMs = now - this.lastRenderAt;
     this.lastRenderAt = now;
+    // LOD visibility is updated at 5 Hz rather than traversing every character
+    // on every frame. This keeps dense waves cheap while still reacting to zoom.
+    if (now - this.lastLodUpdateAt >= 200) {
+      this.lastLodUpdateAt = now;
+      this.scene.traverse((object) => {
+        const lod = object as THREE.LOD;
+        if (lod.isLOD && lod.userData.isCharacterLOD) lod.update(camera);
+      });
+    }
     this.renderer.render(this.scene, camera);
     if (this.debugOverlay) {
       this.debugFrames++;
