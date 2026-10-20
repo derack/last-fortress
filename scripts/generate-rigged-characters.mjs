@@ -49,11 +49,12 @@ function makePbrImages(baseColor,accent,style,category='enemies') {
   // texture tier to reduce decoded/GPU texture memory by roughly 4x.
   const mobileProfile = process.env.CAP_BUILD === '1' || process.env.ASSET_TEXTURE_PROFILE === 'mobile';
   const isLargeAsset = category === 'heroes' || category === 'bosses';
-  // High-quality desktop/web tier: 384px hero/boss atlases and 192px standard units.
-  // Android remains capped at 192px/96px to protect GPU memory and avoid mobile stalls.
-  // All tiers are deterministic and validated by validate-rigged-characters.mjs.
-  const size = mobileProfile ? (isLargeAsset ? 192 : 96) : (isLargeAsset ? 384 : 192);
-  const emissiveSize = mobileProfile ? 64 : 128;
+  // Ultra desktop/web tier: 512px hero/boss atlases and 256px standard units.
+  // This adds 78% more texels per map than the previous desktop tier. Android stays
+  // at 192px/96px to keep decoded GPU memory and frame-time budgets under control.
+  // The emissive atlas is increased only on desktop; all dimensions are CI-validated.
+  const size = mobileProfile ? (isLargeAsset ? 192 : 96) : (isLargeAsset ? 512 : 256);
+  const emissiveSize = mobileProfile ? 64 : 192;
   const albedos=Array.from({length:5},()=>new Uint8Array(size*size*4));
   const normal=new Uint8Array(size*size*4), mr=new Uint8Array(size*size*4);
   const ao=new Uint8Array(size*size*4), emissive=new Uint8Array(emissiveSize*emissiveSize*4);
