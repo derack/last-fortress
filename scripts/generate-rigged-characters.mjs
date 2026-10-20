@@ -49,9 +49,10 @@ function makePbrImages(baseColor,accent,style,category='enemies') {
   // texture tier to reduce decoded/GPU texture memory by roughly 4x.
   const mobileProfile = process.env.CAP_BUILD === '1' || process.env.ASSET_TEXTURE_PROFILE === 'mobile';
   const isLargeAsset = category === 'heroes' || category === 'bosses';
-  // Balanced texture tiers: preserve readable PBR detail while keeping the 25-model roster practical to ship.
-  // Large hero/boss atlases use 256px on web and 192px on mobile; standard units use 128px/96px.
-  const size = mobileProfile ? (isLargeAsset ? 192 : 96) : (isLargeAsset ? 256 : 128);
+  // High-quality desktop/web tier: 384px hero/boss atlases and 192px standard units.
+  // Android remains capped at 192px/96px to protect GPU memory and avoid mobile stalls.
+  // All tiers are deterministic and validated by validate-rigged-characters.mjs.
+  const size = mobileProfile ? (isLargeAsset ? 192 : 96) : (isLargeAsset ? 384 : 192);
   const emissiveSize = mobileProfile ? 64 : 128;
   const albedos=Array.from({length:5},()=>new Uint8Array(size*size*4));
   const normal=new Uint8Array(size*size*4), mr=new Uint8Array(size*size*4);
@@ -65,23 +66,28 @@ function makePbrImages(baseColor,accent,style,category='enemies') {
   const heightAt=(x,y)=>{
     const broad=periodic(x,y,3,4,.7)*.52+periodic(x,y,5,3,1.8)*.28+periodic(x,y,8,7,2.4)*.14;
     const medium=periodic(x,y,17,13,1.2)*.045+periodic(x,y,23,19,.4)*.028;
-    const micro=periodic(x,y,47,31,.9)*.012+periodic(x,y,61,53,2.1)*.008;
-    const brushed=isMetal?Math.sin(y/size*tau*92+Math.sin(x/size*tau*7)*.12)*.026:0;
-    const scales=isStone?Math.pow(Math.max(0,Math.cos(x/size*tau*11+Math.sin(y/size*tau*5)*.42)),18)*.11:0;
-    const weave=isCloth?periodic(x,y,29,37,.3)*.05:0;
+    const micro=periodic(x,y,47,31,.9)*.012+periodic(x,y,61,53,2.1)*.008
+      +periodic(x,y,83,71,1.1)*.004+periodic(x,y,97,89,2.7)*.003;
+    const brushed=isMetal?Math.sin(y/size*tau*92+Math.sin(x/size*tau*7)*.12)*.026
+      +Math.sin(y/size*tau*147+Math.sin(x/size*tau*11)*.08)*.009:0;
+    const scales=isStone?Math.pow(Math.max(0,Math.cos(x/size*tau*11+Math.sin(y/size*tau*5)*.42)),18)*.11
+      +Math.pow(Math.max(0,Math.cos(x/size*tau*19+Math.sin(y/size*tau*9)*.28)),22)*.035:0;
+    const weave=isCloth?periodic(x,y,29,37,.3)*.05+periodic(x,y,59,53,1.4)*.018:0;
     return broad*.13+medium+micro+brushed+scales+weave;
   };
   const color=n=>Math.max(0,Math.min(255,Math.round(n)));
   const profileShade=(profile,x,y,h,broad,plate)=>{
     const scratch=Math.pow(Math.max(0,Math.sin(x/size*tau*37+Math.sin(y/size*tau*9)*.3)),18)
       *(.5+.5*Math.cos(y/size*tau*5));
+    const fineScratch=Math.pow(Math.max(0,Math.sin(x/size*tau*113+Math.sin(y/size*tau*17)*.22)),22)
+      *(.5+.5*Math.cos(y/size*tau*13));
     const brushed=.5+.5*Math.sin(y/size*tau*88+Math.sin(x/size*tau*5)*.12);
     const weave=(.5+.5*Math.sin(x/size*tau*36))*(.5+.5*Math.sin(y/size*tau*44));
     const seam=Math.pow(Math.max(0,Math.cos(x/size*tau*8+Math.sin(y/size*tau*3)*.25)),48);
     const cracks=Math.pow(Math.max(0,Math.sin((x+y)/size*tau*13+periodic(x,y,3,4,.2))),12);
-    if(profile===0) return Math.max(.70,Math.min(1.14,.91+h*1.5+broad*.025+plate*.055-seam*.085+scratch*.045));
-    if(profile===1) return Math.max(.74,Math.min(1.18,.96+h*1.2+brushed*.055+scratch*.07));
-    if(profile===2) return Math.max(.70,Math.min(1.12,.88+h*1.4+weave*.045+periodic(x,y,23,29,.4)*.025));
+    if(profile===0) return Math.max(.68,Math.min(1.16,.91+h*1.5+broad*.025+plate*.055-seam*.085+scratch*.045+fineScratch*.018));
+    if(profile===1) return Math.max(.72,Math.min(1.2,.96+h*1.2+brushed*.055+scratch*.07+fineScratch*.025));
+    if(profile===2) return Math.max(.68,Math.min(1.14,.88+h*1.4+weave*.045+periodic(x,y,23,29,.4)*.025+fineScratch*.012));
     if(profile===3) return Math.max(.78,Math.min(1.2,.96+h*.9+cracks*.09+periodic(x,y,5,7,.7)*.025));
     return Math.max(.68,Math.min(1.08,.83+h*1.6+scratch*.035-seam*.025));
   };
