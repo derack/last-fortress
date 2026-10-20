@@ -254,9 +254,9 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
       const arm=side<0?'Arm_L':'Arm_R', fore=side<0?'ForeArm_L':'ForeArm_R', hand=side<0?'Hand_L':'Hand_R';
       const leg=side<0?'Leg_L':'Leg_R', knee=side<0?'Knee_L':'Knee_R', foot=side<0?'Foot_L':'Foot_R';
       sphere([side*w*0.72,1.28,0],[boss?0.29:0.2,0.25,0.27],arm,armor);
-      box([side*w*0.78,1.02,0.02],[0.22,0.32,0.25],arm,edge,[0,0,side*0.06]);
-      box([side*w*0.79,0.76,0.04],[0.24,0.27,0.26],fore,armor,[0,0,side*0.04]);
-      box([side*w*0.80,0.57,0.11],[0.27,0.18,0.29],hand,dark);
+      box([side*w*0.78,1.12,0.02],[0.22,0.32,0.25],arm,edge,[0,0,side*0.06]);
+      box([side*w*0.79,0.96,0.04],[0.24,0.27,0.26],fore,armor,[0,0,side*0.04]);
+      box([side*w*0.80,0.75,0.11],[0.27,0.18,0.29],hand,dark);
       box([side*0.2,0.39,0],[0.25,0.27,0.28],leg,armor);
       box([side*0.2,0.20,0.02],[0.22,0.20,0.25],knee,edge);
       box([side*0.2,0.10,0.12],[0.32,0.13,0.42],foot,dark);
