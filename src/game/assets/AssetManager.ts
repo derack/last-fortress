@@ -549,37 +549,6 @@ class AssetManagerImpl {
     inst.userData.forwardAxis = '+Z';
     inst.userData.isGlbClone = true; // علامت: منابع مشترک — هنگام Remove نه Geometry نه Material باید Dispose شود
 
-    // Generated GLBs contain three complete skinned mesh tiers. They must never
-    // all render at once: that doubles/triples draw calls and causes z-fighting.
-    // Re-parent the tiers under THREE.LOD; all tiers share the same cloned rig.
-    if (entry.category === 'enemies' || entry.category === 'bosses' || entry.category === 'heroes') {
-      const rootMeshes: THREE.Object3D[] = [];
-      const lodGroups = new Map<number, THREE.Group>();
-      for (const child of [...inst.children]) {
-        if (child instanceof THREE.Group && /_LOD([12])$/.test(child.name)) {
-          const match = child.name.match(/_LOD([12])$/);
-          if (match) lodGroups.set(Number(match[1]), child);
-        } else if ((child as THREE.Mesh).isMesh && !/_LOD[12]$/.test(child.name)) {
-          rootMeshes.push(child);
-        }
-      }
-      if (rootMeshes.length && lodGroups.size === 2) {
-        const lod = new THREE.LOD();
-        lod.name = entry.id + '_RuntimeLOD';
-        lod.userData.isCharacterLOD = true;
-        const base = new THREE.Group();
-        base.name = entry.id + '_LOD0';
-        for (const mesh of rootMeshes) base.add(mesh);
-        lod.addLevel(base, 0);
-        const tier1 = lodGroups.get(1)!;
-        const tier2 = lodGroups.get(2)!;
-        inst.remove(tier1, tier2);
-        lod.addLevel(tier1, 18);
-        lod.addLevel(tier2, 36);
-        inst.add(lod);
-        lod.updateMatrixWorld(true);
-      }
-    }
     return { scene: inst, animations: rec.animations };
   }
 
