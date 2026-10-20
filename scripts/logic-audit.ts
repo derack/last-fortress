@@ -211,7 +211,7 @@ sec('۵. قهرمانان، جادوها، کوره اثیر');
   let fOk = true;
   for (const tr of FORGE_TRACKS) for (let l = 0; l < FORGE_MAX; l++) {
     const cost = forgeNextCost(tr.id as never, l);
-    if (!Number.isFinite(cost) || cost < 0 || (l < FORGE_MAX && cost < forgeNextCost(tr.id as never, Math.min(l + 1, FORGE_MAX)))) fOk = false;
+    if (!Number.isFinite(cost) || cost < 0 || (l < FORGE_MAX - 1 && forgeNextCost(tr.id as never, l + 1) < cost)) fOk = false;
   }
   if (fOk) ok('هزینه کوره معتبر و غیرنزولی (پله‌های هم‌هزینه مجاز)'); else bad('منحنی هزینه کوره نامعتبر');
 }
