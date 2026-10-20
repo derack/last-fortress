@@ -809,6 +809,139 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
     box([0,1.03,0.24],[0.33,0.38,0.08],'Spine',edge);
     for(let side of [-1,1]) cone([side*0.44,1.37,0.02],[0.12,0.32,0.12],side<0?'Arm_L':'Arm_R',glow,[0,0,side*0.3]);
   }
+  // Unit-specific signature pass: silhouettes, armor motifs and weapon profiles
+  // are authored per roster ID, so units with a shared rig/archetype are not
+  // reduced to palette swaps. All pieces are weighted to articulated joints.
+  if (id==='shadow') {
+    for (const side of [-1,1]) {
+      cone([side*0.32,1.08,-0.12],[0.13,0.52,0.08],side<0?'Arm_L':'Arm_R',cloth,[0,0,side*0.34]);
+      sphere([side*0.11,1.11,0.31],[0.055,0.045,0.035],'Head',glow);
+    }
+    for(let i=0;i<3;i++) cone([0,0.52-i*0.13,-0.42-i*0.09],[0.1-i*0.015,0.22,0.12],'Tail',edge,[0.18,0,0]);
+  }
+  if (id==='warrior'||id==='shadowSoldier') {
+    const gold=id==='warrior'?glow:edge;
+    for(const side of [-1,1]) {
+      box([side*0.43,1.4,-0.02],[0.32,0.24,0.35],side<0?'Arm_L':'Arm_R',gold,[0,0,side*0.08]);
+      box([side*0.42,1.12,0.16],[0.19,0.22,0.1],side<0?'ForeArm_L':'ForeArm_R',dark,[0,0,side*0.04]);
+      cone([side*0.46,1.52,-0.05],[0.09,0.29,0.09],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.35]);
+    }
+    for(let i=0;i<3;i++) box([0,1.06-i*0.11,0.25],[0.34-i*0.035,0.035,0.045], 'Spine', i===1?glow:edge);
+    if(id==='shadowSoldier') {
+      cone([0,1.85,-0.02],[0.19,0.36,0.18],'Head',dark,[0.06,0,0]);
+      for(let side of [-1,1]) cone([side*0.16,1.76,0.05],[0.055,0.2,0.055],'Head',glow,[0,0,side*0.22]);
+    }
+  }
+  if (id==='golem') {
+    for(let i=0;i<5;i++) {
+      const side=i%2===0?-1:1;
+      box([side*(0.2+(i%3)*0.1),1.05+(i%3)*0.13,0.24],[0.16,0.22,0.09], 'Spine',i%2?edge:armor,[0,0,side*0.2]);
+    }
+    for(const side of [-1,1]) {
+      cone([side*0.28,1.55,0.05],[0.09,0.26,0.09],'Head',edge,[0,0,side*0.18]);
+      sphere([side*0.12,1.5,0.24],[0.045,0.04,0.03],'Head',glow);
+    }
+  }
+  if (id==='warlock'||id==='summoner') {
+    for(let i=0;i<4;i++) {
+      const a=i*Math.PI/2;
+      cone([0.55+Math.cos(a)*0.2,1.64+Math.sin(a)*0.2,0.02],[0.045,0.19,0.045],'Hand_R',i%2?glow:edge,[0,0,a]);
+    }
+    box([0,1.13,0.2],[0.36,0.12,0.09],'Spine',glow);
+    for(let side of [-1,1]) cone([side*0.18,1.78,-0.02],[0.055,0.22,0.055],'Head',edge,[0,0,side*0.32]);
+    if(id==='summoner') {
+      for(let i=0;i<3;i++) sphere([(i-1)*0.14,0.74,-0.27],[0.07,0.07,0.07],'Hips',glow);
+    }
+  }
+  if (id==='spider') {
+    for(let side of [-1,1]) for(let i=0;i<4;i++) {
+      const x=side*(0.37+i*0.06), z=0.24-i*0.18;
+      cone([x*1.7,0.57,z],[0.055,0.22,0.055],side<0?'SpiderLegL0':'SpiderLegR0',edge,[0,0,side*(0.3+i*0.12)]);
+    }
+    sphere([0,0.83,0.42],[0.24,0.16,0.16], 'Head',dark);
+    for(let side of [-1,1]) for(let i=0;i<3;i++) sphere([side*(0.08+i*0.06),0.88,0.56],[0.025,0.025,0.018],'Head',glow);
+  }
+  if (id==='flyer') {
+    for(let side of [-1,1]) {
+      cone([side*0.64,1.03,-0.12],[0.15,0.42,0.08],side<0?'Wing_L':'Wing_R',edge,[0,0,side*0.5]);
+      for(let i=0;i<3;i++) cone([side*(0.48+i*0.13),0.99,-0.19-i*0.05],[0.04,0.24,0.04],side<0?'Wing_L':'Wing_R',glow,[0,0,side*0.4]);
+    }
+  }
+  if (id==='warMachine'||id==='aetherTank') {
+    for(let side of [-1,1]) {
+      box([side*0.46,1.52,0.03],[0.34,0.28,0.4],side<0?'Arm_L':'Arm_R',dark);
+      for(let i=0;i<3;i++) box([side*0.46,1.46+i*0.06,0.25],[0.23,0.025,0.025],side<0?'Arm_L':'Arm_R',glow);
+      cyl([side*0.49,1.16,0.14],[0.09,0.28,0.09],side<0?'Hand_L':'Hand_R',edge,[Math.PI/2,0,0]);
+    }
+    sphere([0,1.04,0.29],[0.18,0.2,0.06],'Spine',glow);
+    if(id==='warMachine') {
+      box([0,1.7,-0.12],[0.48,0.11,0.25],'Head',dark);
+      for(let i=0;i<3;i++) cone([(i-1)*0.15,1.78,-0.12],[0.06,0.18,0.06],'Head',edge);
+    }
+  }
+  if (id==='smallDragon'||id==='blackDragon') {
+    for(let side of [-1,1]) {
+      cone([side*0.27,1.31,0.49],[0.08,0.29,0.08],'Head',edge,[0,0,side*0.35]);
+      for(let i=0;i<4;i++) cone([side*(0.42+i*0.06),1.0-i*0.04,-0.05-i*0.16],[0.045,0.22,0.045],side<0?'Wing_L':'Wing_R',i%2?glow:edge,[0,0,side*0.4]);
+    }
+    for(let i=0;i<3;i++) cone([0,0.78-i*0.1,-0.78-i*0.12],[0.07-i*0.01,0.22,0.08],'TailTip',edge,[0.2,0,0]);
+  }
+  if (id==='crystalMonster') {
+    for(let i=0;i<9;i++) {
+      const a=i*Math.PI*2/9;
+      cone([Math.cos(a)*0.43,0.9+(i%4)*0.15,Math.sin(a)*0.3],[0.06,0.28+(i%3)*0.08,0.06],'Spine',i%3===0?glow:edge,[0,0,-a]);
+    }
+    box([0,1.04,0.25],[0.24,0.31,0.07],'Spine',glow);
+  }
+  if (id==='hunter') {
+    // Distinct hunter crossbow and side quiver, attached to animated hands.
+    box([0.58,1.18,0.06],[0.38,0.12,0.08],'Hand_R',dark,[0,0,-0.15]);
+    cyl([0.58,1.18,0.06],[0.045,0.55,0.045],'Hand_R',edge,[0,0,-0.15]);
+    for(let side of [-1,1]) cone([0.58+side*0.2,1.25,0.06],[0.04,0.15,0.04],'Hand_R',glow,[0,0,side*0.6]);
+    box([-0.23,1.0,-0.24],[0.17,0.34,0.12],'Spine',dark,[0.12,0,0.1]);
+  }
+  if (id==='destroyer'||id==='annihilator') {
+    for(let side of [-1,1]) {
+      box([side*0.51,1.05,0.08],[0.32,0.42,0.14],side<0?'Hand_L':'Hand_R',dark,[0,0,side*0.1]);
+      cone([side*0.56,0.88,0.17],[0.12,0.42,0.08],side<0?'Hand_L':'Hand_R',edge,[0,0,side*0.14]);
+      for(let i=0;i<3;i++) cone([side*(0.47+i*0.07),1.45,-0.05],[0.055,0.2,0.055],side<0?'Arm_L':'Arm_R',i===1?glow:edge,[0,0,side*0.25]);
+    }
+    if(id==='annihilator') {
+      sphere([0,0.97,0.28],[0.24,0.27,0.08],'Spine',glow);
+      for(let i=0;i<4;i++) box([0,0.78+i*0.1,0.24],[0.42-i*0.04,0.035,0.04],'Spine',edge);
+    }
+  }
+  if (id==='spirit') {
+    for(let side of [-1,1]) {
+      cone([side*0.3,1.0,-0.1],[0.11,0.46,0.08],'Tail',glow,[0,0,side*0.28]);
+      sphere([side*0.12,1.1,0.22],[0.045,0.04,0.03],'Head',glow);
+    }
+    for(let i=0;i<5;i++) sphere([(i-2)*0.13,0.48-i*0.07,-0.35],[0.06,0.07,0.08],'Tail',i%2?glow:cloth);
+  }
+  if (id==='golemKing'||id==='fireGiant'||id==='iceGiant') {
+    const accentMat=glow;
+    for(let side of [-1,1]) {
+      box([side*0.7,1.55,0.08],[0.42,0.34,0.45],side<0?'Arm_L':'Arm_R',edge,[0,0,side*0.08]);
+      cone([side*0.72,1.79,0.0],[0.12,0.48,0.12],side<0?'Arm_L':'Arm_R',accentMat,[0,0,side*0.28]);
+    }
+    for(let i=0;i<5;i++) box([(i-2)*0.18,1.1,0.29],[0.13,0.12,0.07],'Spine',i%2?edge:glow);
+    if(id==='fireGiant') {
+      for(let side of [-1,1]) cone([side*0.18,1.96,0.05],[0.075,0.3,0.075],'Head',glow,[0,0,side*0.3]);
+    }
+    if(id==='iceGiant') {
+      for(let side of [-1,1]) cone([side*0.18,1.96,0.05],[0.075,0.3,0.075],'Head',edge,[0,0,side*0.3]);
+      sphere([0,1.16,0.34],[0.18,0.2,0.06],'Spine',glow);
+    }
+  }
+  if (id==='darkLord') {
+    for(let side of [-1,1]) {
+      cone([side*0.48,1.38,-0.16],[0.2,0.7,0.12],side<0?'Wing_L':'Wing_R',cloth,[0,0,side*0.16]);
+      cone([side*0.14,1.95,0.02],[0.075,0.34,0.075],'Head',glow,[0,0,side*0.22]);
+    }
+    box([0,0.92,0.28],[0.44,0.42,0.09],'Spine',glow);
+    cone([0.69,1.32,0.05],[0.13,0.86,0.07],'Hand_R',edge,[0,0,-0.1]);
+  }
+
   const materials = [
     {name:'Obsidian Armor',pbrMetallicRoughness:{baseColorFactor:clampColor(baseColor),metallicFactor:0.62,roughnessFactor:0.38}},
     {name:'Forged Edge',pbrMetallicRoughness:{baseColorFactor:[0.63,0.7,0.8,1],metallicFactor:0.88,roughnessFactor:0.24}},
