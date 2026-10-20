@@ -2,7 +2,7 @@
 // ممیزی کامل منطق پروژه — سطح‌ها / لول‌ها / قفل‌ها / سازگاری داده
 // اجرا: bun scripts/logic-audit.ts   (exit 1 = مشکل FIND)
 // ============================================================
-import { STAGES, CHAPTERS, isStageUnlocked, stageId, ACHIEVEMENTS } from '../src/game/data/campaign';
+import { STAGES, CHAPTERS, isStageUnlocked, stageId, ACHIEVEMENTS, firstPlayableStageId, nextStageId, completedStageCount } from '../src/game/data/campaign';
 import { TOWERS, isTowerUnlocked } from '../src/game/data/towers';
 import { ENEMIES, tiered } from '../src/game/data/enemies';
 import { HEROES, HERO_ROSTER, HERO_META, MAGIC } from '../src/game/data/magic';
@@ -55,6 +55,62 @@ if (!enemyIssues) ok('همه دشمنان/tier/count اشاره به ENEMIES م�
 if (!bossIssues) ok('Boss هر فصل در مرحله ۱۰ حضور دارد'); else bad(`${bossIssues} فصل بدون Boss`);
 if (!pathIssues) ok('مسیرها و توزیع گروه‌ها سازگار'); else bad(`${pathIssues} مشکل مسیر`);
 if (!ecoIssues) ok('سکه شروع/هسته همه مراحل سالم (≥۱۰۰)'); else bad(`${ecoIssues} مشکل اقتصاد پایه`);
+
+// ---------- اعتبارسنجی سخت‌گیرانه ساختار مرحله و داده‌های موج ----------
+sec('۱.۱. یکپارچگی مسیرها، اسپاون‌ها و شناسه مرحله');
+{
+  let stageIssues = 0, spawnIssues = 0, geometryIssues = 0;
+  for (const ch of CHAPTERS) {
+    for (let s = 1; s <= 10; s++) {
+      const expectedId = stageId(ch.id, s);
+      const lv = STAGES[expectedId];
+      if (!lv || lv.id !== expectedId || lv.chapter !== ch.id || lv.stage !== s) {
+        stageIssues++;
+        console.log(`      شناسه/متادیتای مرحله ناسازگار: ${expectedId}`);
+        continue;
+      }
+      if (!Number.isFinite(lv.coreHp) || !Number.isFinite(lv.startCoins) || !Number.isFinite(lv.startCrystals)
+        || lv.coreHp <= 0 || lv.startCoins < 0 || lv.startCrystals < 0
+        || lv.star2HealthPct < 0 || lv.star2HealthPct > 100) {
+        stageIssues++;
+        console.log(`      آمار مرحله نامعتبر: ${expectedId}`);
+      }
+      for (let pi = 0; pi < lv.paths.length; pi++) {
+        const path = lv.paths[pi];
+        if (path.length < 2 || path.some((p) => !Number.isFinite(p.x) || !Number.isFinite(p.z))) {
+          geometryIssues++;
+          console.log(`      مسیر خالی/مختصات نامعتبر: ${expectedId} path=${pi}`);
+        }
+      }
+      for (let wi = 0; wi < lv.waves.length; wi++) {
+        const wave = lv.waves[wi];
+        if (!Number.isFinite(wave.coinBonus) || wave.coinBonus < 0
+          || (wave.crystalBonus !== undefined && (!Number.isFinite(wave.crystalBonus) || wave.crystalBonus < 0))) {
+          spawnIssues++;
+          console.log(`      پاداش موج نامعتبر: ${expectedId} wave=${wi + 1}`);
+        }
+        for (const g of wave.groups) {
+          if (!Number.isInteger(g.count) || g.count < 1 || !Number.isFinite(g.interval) || g.interval < 0
+            || !Number.isFinite(g.delay) || g.delay < 0 || !Number.isInteger(g.tier)
+            || (g.path !== undefined && (!Number.isInteger(g.path) || g.path < 0 || g.path >= lv.paths.length))) {
+            spawnIssues++;
+            console.log(`      گروه اسپاون نامعتبر: ${expectedId} wave=${wi + 1} enemy=${g.enemy}`);
+          }
+        }
+      }
+    }
+  }
+  if (!stageIssues) ok('شناسه و متادیتای تمام مراحل سازگار و آمار عددی معتبر'); else bad(`${stageIssues} خطای متادیتای مرحله`);
+  if (!geometryIssues) ok('مختصات تمام مسیرها محدود به اعداد معتبر و حداقل دو نقطه'); else bad(`${geometryIssues} خطای هندسه مسیر`);
+  if (!spawnIssues) ok('count/tier/interval/delay/path و پاداش همه موج‌ها معتبر'); else bad(`${spawnIssues} خطای گروه اسپاون/پاداش`);
+
+  const emptySave = { levels: {} } as unknown as SaveData;
+  const first = firstPlayableStageId(emptySave);
+  const allDone = { levels: Object.fromEntries(Object.keys(STAGES).map((id) => [id, { completed: true, stars: 3, bestHealthPct: 100 }])) } as unknown as SaveData;
+  if (first === 'c1s1' && completedStageCount(allDone) === 100 && nextStageId(10, 10) === null)
+    ok('Continue/save progression: سیو خالی، کمپین کامل و پایان فصل آخر درست');
+  else bad(`Continue/save progression ناسازگار: first=${first}, completed=${completedStageCount(allDone)}, finalNext=${nextStageId(10, 10)}`);
+}
 
 // منحنی رشد HP هسته و سکه
 const coreHp = CHAPTERS.flatMap((c) => Array.from({ length: 10 }, (_, i) => STAGES[stageId(c.id, i + 1)].coreHp));
