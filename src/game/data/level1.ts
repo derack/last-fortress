@@ -1,11 +1,11 @@
-import type { LevelData, AchievementDef, PlayerStats } from './types';
+import type { LegacyLevelData, AchievementDef, PlayerStats } from './types';
 
 // ============================================================
 // مرحله ۱ — دشت‌های سبز (Vertical Slice) — ۱۰ موج + Boss
 // مسیر از دروازه تاریکی در جنوب‌غرب تا هسته آذر
 // ============================================================
 
-export const LEVEL_1: LevelData = {
+export const LEVEL_1: LegacyLevelData = {
   id: 'l1',
   region: 1,
   nameKey: 'region1',

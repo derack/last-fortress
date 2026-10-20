@@ -179,6 +179,32 @@ export interface LevelData {
 
 // ---------------------------- منطقه ----------------------------
 
+/** Legacy six-region campaign schema retained for migration and old-save tooling. */
+export interface LegacyLevelData {
+  id: string;
+  region: number;
+  nameKey: string;
+  descKey: string;
+  coreHp: number;
+  startCoins: number;
+  startCrystals: number;
+  waves: WaveData[];
+  timeOfDay: 'day' | 'night';
+  env: RegionEnv;
+  path: Vec2[];
+  star2HealthPct: number;
+  star3ChallengeKey: string;
+}
+
+/** Metadata for the legacy six-region campaign. */
+export interface RegionDef {
+  id: number;
+  levelId: string;
+  nameKey: string;
+  env: RegionEnv;
+  tagKey: string;
+}
+
 export interface ChapterDef {
   id: number; // ۱..۱۰
   nameKey: string;
@@ -247,4 +273,7 @@ export interface SaveData {
   selectedHero: string;
   /** کوره اثیر — سطح هر مسیر ارتقای دائمی (۰ تا ۲۰) */
   forge: Record<string, number>;
+  /** ارتقاهای دائمی نسخه‌های قبلی؛ برای حفظ پیشرفت ذخیره‌های قدیمی */
+  heroUpgrades: Record<string, number>;
+  towerUpgrades: Record<string, number>;
 }

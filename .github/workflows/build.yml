@@ -2,17 +2,18 @@ name: Game Build (بیلد بازی)
 
 on:
   push:
-    branches: [main, graphics-upgrade-2026-10-18]
+    branches: [main, graphics-upgrade-2026-10-18, 'feat/**']
   pull_request:
     branches: [main]
   workflow_dispatch:
 
+# CI only needs to read source and publish workflow artifacts.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   web-build:
-    name: Web Build (Next.js)
+    name: Web Build (Next.js + asset validation)
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: file:./db/custom.db
@@ -26,10 +27,18 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Prisma generate + sync db
+      - name: Generate Prisma client and sync ephemeral CI database
         run: |
           bunx prisma generate
-          bunx prisma db push --skip-generate --accept-data-loss
+          # This database is created only for this CI job. Do not use
+          # --accept-data-loss: schema changes should fail visibly, not hide destructive drift.
+          bunx prisma db push --skip-generate
+
+      - name: Strict TypeScript check
+        run: bun run typecheck
+
+      - name: Audit campaign and game data invariants
+        run: bun run audit:logic
 
       - name: Build web
         run: bun run build
@@ -43,9 +52,10 @@ jobs:
           name: Last-Fortress-art-readiness
           path: asset-art-readiness.json
           if-no-files-found: error
+          retention-days: 14
 
   android-apk:
-    name: Android APK (debug)
+    name: Android APKs (debug + release)
     runs-on: ubuntu-latest
     needs: web-build
     env:
@@ -61,26 +71,48 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
+          cache: gradle
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Prisma generate + sync db
+      - name: Generate Prisma client and sync ephemeral CI database
         run: |
           bunx prisma generate
-          bunx prisma db push --skip-generate --accept-data-loss
+          bunx prisma db push --skip-generate
 
       - name: Build web export (CAP_BUILD)
         run: bun run build:cap
 
-      - name: Sync Capacitor android
+      - name: Sync Capacitor Android
         run: bunx cap sync android
 
       - name: Build debug APK
         run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
 
-      - name: Upload APK artifact
+      - name: Build release APK (signed only when protected keystore config is available)
+        run: cd android && ./gradlew assembleRelease --no-daemon
+
+      - name: Verify APK outputs are present and non-empty
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          compgen -G 'android/app/build/outputs/apk/release/*.apk' >/dev/null
+          find android/app/build/outputs/apk -type f -name '*.apk' -size +0c -print
+
+      - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: Last-Fortress-debug-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Last-Fortress-release-APK
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14

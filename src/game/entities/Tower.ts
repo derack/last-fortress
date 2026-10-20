@@ -29,6 +29,8 @@ export class Tower implements TowerLike {
   /** هاله تقویت محلی (از آذرگاه) */
   private localBuffPct = 0;
   private localBuffUntil = 0;
+  /** Clock follows the simulation (including pause/speed semantics), never wall-clock time. */
+  private simTime = 0;
   private auraPulse = 0;
   private scene: THREE.Scene;
   private ctx: GameContext;
@@ -70,13 +72,20 @@ export class Tower implements TowerLike {
   }
 
   private timeNow() {
-    return performance.now() / 1000;
+    return this.simTime;
   }
 
-  /** دریافت هاله تقویت از آذرگاه */
-  applyLocalBuff(pct: number, duration: number) {
+  /** دریافت هاله تقویت از آذرگاه؛ expiry is measured in simulation seconds. */
+  applyLocalBuff(pct: number, duration: number, now = this.simTime) {
+    if (!Number.isFinite(pct) || pct <= 0 || !Number.isFinite(duration) || duration <= 0 || !Number.isFinite(now)) return;
+    // A new buff after expiry must not inherit the previous buff's stronger percentage.
+    if (this.localBuffUntil <= now) {
+      this.localBuffPct = pct;
+      this.localBuffUntil = now + duration;
+      return;
+    }
     this.localBuffPct = Math.max(this.localBuffPct, pct);
-    this.localBuffUntil = Math.max(this.localBuffUntil, this.timeNow() + duration);
+    this.localBuffUntil = Math.max(this.localBuffUntil, now + duration);
   }
 
   /** از کار انداختن موقت برج توسط Boss (فاز ۲) */
@@ -150,7 +159,7 @@ export class Tower implements TowerLike {
 
     switch (this.towerId) {
       case 'sentinel': {
-        // باران گلوله — سه برابر سرعت شلیک
+        // باران گلوله — افزایش متعادل سرعت شلیک برای پنجره کوتاه
         this.rateBuffTime = 5;
         this.ctx.vfx.ring(pos, this.data.color, this.range, 0.5);
         this.ctx.audio.play('upgrade');
@@ -175,10 +184,10 @@ export class Tower implements TowerLike {
         break;
       }
       case 'ice': {
-        // زمستان ابدی — کندی شدید همه
+        // زمستان ابدی — کندی شدید و آسیب متناسب با سطح ارتقای برج
         for (const e of inRange) {
           e.applySlow(0.22, 5);
-          e.takeDamage(30, 'ice');
+          e.takeDamage(this.damage * 0.8, 'ice');
         }
         this.ctx.vfx.ring(pos, this.data.color, this.range + 2, 0.8);
         this.ctx.vfx.burst(pos.clone().add(new THREE.Vector3(0, 1, 0)), 0x7dd3fc, 40, { speed: 9, life: 0.9, size: 0.6, gravity: 2, up: 0.9 });
@@ -272,10 +281,12 @@ export class Tower implements TowerLike {
       case 'void': {
         // دهانه تهی — بلع دشمنان ضعیف
         const threshold = this.data.executeThreshold ?? 0.35;
+        const executeMultiplier = this.data.executeMultiplier ?? 2.2;
         let devoured = 0;
         for (const e of inRange) {
-          if (e.hpRatio <= threshold + 0.15 && !e.data.boss) {
-            e.takeDamage(this.damage * 5, 'shadow');
+          // Respect the authored threshold/multiplier; do not silently execute at 50% HP for 5x damage.
+          if (e.hpRatio <= threshold && !e.data.boss) {
+            e.takeDamage(this.damage * executeMultiplier, 'shadow');
             devoured++;
           } else {
             e.takeDamage(this.damage * 1.5, 'shadow');
@@ -310,6 +321,7 @@ export class Tower implements TowerLike {
   }
 
   update(dt: number, time: number, enemies: DamageableEnemy[]) {
+    this.simTime = time;
     this.abilityCd = Math.max(0, this.abilityCd - dt);
     this.rateBuffTime = Math.max(0, this.rateBuffTime - dt);
     this.cooldown -= dt;
@@ -337,7 +349,7 @@ export class Tower implements TowerLike {
         for (const t of this.ctx.towers) {
           if (t.id === this.id) continue;
           if (t.position.distanceTo(this.position) <= radius) {
-            (t as Tower).applyLocalBuff(this.data.buffRatePct, 0.7);
+            (t as Tower).applyLocalBuff(this.data.buffRatePct, 0.7, time);
           }
         }
       }

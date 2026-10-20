@@ -71,6 +71,8 @@ export function defaultSave(): SaveData {
     unlockedHeroes: ['arman'],
     selectedHero: 'arman',
     forge: {},
+    heroUpgrades: {},
+    towerUpgrades: {},
   };
 }
 

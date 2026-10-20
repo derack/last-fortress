@@ -54,7 +54,8 @@ export class InputController {
   };
 
   private onDown = (e: PointerEvent) => {
-    this.dom.setPointerCapture(e.pointerId);
+    // Pointer capture can fail if the canvas is detached during a route transition.
+    try { this.dom.setPointerCapture(e.pointerId); } catch { /* transient DOM teardown */ }
     this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (this.pointers.size === 1) {
       this.startX = this.lastX = e.clientX;
@@ -97,7 +98,7 @@ export class InputController {
       const [a, b] = [...this.pointers.values()];
       const dist = Math.hypot(a.x - b.x, a.y - b.y);
       if (this.pinchStartDist > 0 && Math.abs(dist - this.pinchStartDist) > 4) {
-        this.cameraCtrl.zoom(this.pinchStartDist / dist);
+        if (dist > 0) this.cameraCtrl.zoom(this.pinchStartDist / dist);
         this.pinchStartDist = dist;
         this.pinchMoved = true;
       }
@@ -105,10 +106,17 @@ export class InputController {
   };
 
   private onCancel = (e: PointerEvent) => {
+    if (!this.pointers.has(e.pointerId)) return;
     this.pointers.delete(e.pointerId);
+    // A cancelled touch/gesture must never degrade into a tap on the remaining finger.
+    this.moved = true;
+    this.pinchMoved = true;
+    if (this.pointers.size === 0) this.pinchStartDist = 0;
   };
 
   private onUp = (e: PointerEvent) => {
+    // Ignore stale pointerup events after cancellation; they must not trigger a gameplay tap.
+    if (!this.pointers.has(e.pointerId)) return;
     const wasTwo = this.pointers.size === 2;
     this.pointers.delete(e.pointerId);
     if (wasTwo) {
@@ -128,6 +136,7 @@ export class InputController {
   /** فقط نقطه زمین — بدون برخورد با اشیاء (سبک، برای hover هر حرکت) */
   private pickGround(clientX: number, clientY: number): THREE.Vector3 | null {
     const rect = this.dom.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
     const ndc = new THREE.Vector2(
       ((clientX - rect.left) / rect.width) * 2 - 1,
       -((clientY - rect.top) / rect.height) * 2 + 1
@@ -140,6 +149,7 @@ export class InputController {
   /** پرتاب پرتو: نقطه زمین + برخورد با اشیاء قابل انتخاب */
   private pick(clientX: number, clientY: number): TapHit | null {
     const rect = this.dom.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return null;
     const ndc = new THREE.Vector2(
       ((clientX - rect.left) / rect.width) * 2 - 1,
       -((clientY - rect.top) / rect.height) * 2 + 1
