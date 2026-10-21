@@ -92,7 +92,7 @@ export function loadSave(): SaveData {
     const unlockedHeroes = [...new Set(['arman', ...storedUnlocked])];
     const selectedHero = typeof data.selectedHero === 'string' && unlockedHeroes.includes(data.selectedHero)
       ? data.selectedHero
-      : unlockedHeroes[0];
+      : (unlockedHeroes[0] ?? 'arman');
     const merged: SaveData = {
       ...base,
       ...data,
