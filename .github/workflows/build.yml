@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# Avoid wasting runners on superseded commits while preserving independent PR builds.
+concurrency:
+  group: last-fortress-build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   web-build:
     name: Web Build (Next.js + asset validation)
