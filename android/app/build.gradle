@@ -18,8 +18,8 @@ android {
         applicationId "com.lastfortress.ariana"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 8
-        versionName "1.6"
+        versionCode 9
+        versionName "1.7"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -43,6 +43,9 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             if (keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
+            } else {
+                // بدون امضا APK نصب‌نشدنی است — بیلد باید زودتر fail شود، نه سکوت
+                throw new GradleException('RELEASE BUILD WITHOUT SIGNING: android/keystore.properties not found — refusing to produce an unsigned release APK')
             }
         }
     }

@@ -1,4 +1,4 @@
-import type { LevelData, AchievementDef, PlayerStats } from './types';
+import type { LevelData } from './types';
 
 // ============================================================
 // مرحله ۱ — دشت‌های سبز (Vertical Slice) — ۱۰ موج + Boss
@@ -102,41 +102,4 @@ export const LEVEL_1: LevelData = {
 };
 
 // مناطق و مراحل در levels.ts — LEVEL_1 به‌عنوان منطقه ۱ آنجا ثبت شده است
-// (این فایل: مرحله ۱ + دستاوردها)
-
-// ============================================================
-// دستاوردها — ۳۰ دستاورد Data-Driven
-// ============================================================
-
-export const ACHIEVEMENTS: AchievementDef[] = [
-  { id: 'first_fortress', nameKey: 'achFirstFortress', descKey: 'achFirstFortressDesc', crystalReward: 10, check: (s) => s.victories >= 1 },
-  { id: 'commander', nameKey: 'achCommander', descKey: 'achCommanderDesc', crystalReward: 20, check: (s) => s.victories >= 3 },
-  { id: 'legend', nameKey: 'achLegend', descKey: 'achLegendDesc', crystalReward: 100, check: (s) => s.victories >= 10 },
-  { id: 'mage', nameKey: 'achMage', descKey: 'achMageDesc', crystalReward: 10, check: (s) => s.magicCasts >= 10 },
-  { id: 'archmage', nameKey: 'achArchmage', descKey: 'achArchmageDesc', crystalReward: 30, check: (s) => s.magicCasts >= 50 },
-  { id: 'slayer', nameKey: 'achSlayer', descKey: 'achSlayerDesc', crystalReward: 10, check: (s) => s.kills >= 50 },
-  { id: 'exterminator', nameKey: 'achExterminator', descKey: 'achExterminatorDesc', crystalReward: 40, check: (s) => s.kills >= 500 },
-  { id: 'wave_breaker', nameKey: 'achWaveBreaker', descKey: 'achWaveBreakerDesc', crystalReward: 15, check: (s) => s.wavesSurvived >= 25 },
-  { id: 'veteran', nameKey: 'achVeteran', descKey: 'achVeteranDesc', crystalReward: 60, check: (s) => s.wavesSurvived >= 100 },
-  { id: 'giant_slayer', nameKey: 'achGiantSlayer', descKey: 'achGiantSlayerDesc', crystalReward: 25, check: (s) => s.bossKills >= 1 },
-  { id: 'titan_bane', nameKey: 'achTitanBane', descKey: 'achTitanBaneDesc', crystalReward: 50, check: (s) => s.bossKills >= 3 },
-  { id: 'architect', nameKey: 'achArchitect', descKey: 'achArchitectDesc', crystalReward: 10, check: (s) => s.towersBuilt >= 20 },
-  { id: 'master_builder', nameKey: 'achMasterBuilder', descKey: 'achMasterBuilderDesc', crystalReward: 20, check: (s) => s.upgrades >= 50 },
-  { id: 'star_seeker', nameKey: 'achStarSeeker', descKey: 'achStarSeekerDesc', crystalReward: 15, check: (s) => s.totalStars >= 5 },
-  { id: 'star_lord', nameKey: 'achStarLord', descKey: 'achStarLordDesc', crystalReward: 50, check: (s) => s.totalStars >= 15 },
-  { id: 'untouchable', nameKey: 'achUntouchable', descKey: 'achUntouchableDesc', crystalReward: 30, check: () => false }, // رویدادی
-  { id: 'perfect_defense', nameKey: 'achPerfectDefense', descKey: 'achPerfectDefenseDesc', crystalReward: 25, check: () => false }, // رویدادی
-  { id: 'last_stand', nameKey: 'achLastStand', descKey: 'achLastStandDesc', crystalReward: 40, check: () => false }, // رویدادی
-  { id: 'blitz', nameKey: 'achBlitz', descKey: 'achBlitzDesc', crystalReward: 15, check: () => false }, // رویدادی
-  { id: 'tower_master', nameKey: 'achTowerMaster', descKey: 'achTowerMasterDesc', crystalReward: 20, check: () => false }, // رویدادی
-  { id: 'maxed', nameKey: 'achMaxed', descKey: 'achMaxedDesc', crystalReward: 20, check: () => false }, // رویدادی
-  { id: 'dragon_fear', nameKey: 'achDragonFear', descKey: 'achDragonFearDesc', crystalReward: 30, check: () => false }, // رویدادی
-  { id: 'economy', nameKey: 'achEconomy', descKey: 'achEconomyDesc', crystalReward: 20, check: () => false }, // رویدادی
-  { id: 'magic_rain', nameKey: 'achMagicRain', descKey: 'achMagicRainDesc', crystalReward: 15, check: () => false }, // رویدادی
-  { id: 'rich', nameKey: 'achRich', descKey: 'achRichDesc', crystalReward: 15, check: (s: PlayerStats) => false }, // رویدادی (در نبرد بررسی می‌شود)
-  { id: 'crystal_hoarder', nameKey: 'achCrystalHoarder', descKey: 'achCrystalHoarderDesc', crystalReward: 15, check: () => false }, // رویدادی
-  { id: 'storm_caller', nameKey: 'achStormCaller', descKey: 'achStormCallerDesc', crystalReward: 30, check: () => false }, // رویدادی
-  { id: 'inferno', nameKey: 'achInferno', descKey: 'achInfernoDesc', crystalReward: 30, check: () => false }, // رویدادی
-  { id: 'guardian_angel', nameKey: 'achGuardianAngel', descKey: 'achGuardianAngelDesc', crystalReward: 30, check: () => false }, // رویدادی
-  { id: 'hero_max', nameKey: 'achNewAchievement', descKey: 'achUntouchableDesc', crystalReward: 50, check: () => false }, // جایگاه نگهدارنده
-];
+// دستاوردها — تعریف رسمی در campaign.ts است (نسخهٔ تکراری این فایل حذف شد)

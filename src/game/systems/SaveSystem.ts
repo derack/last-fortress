@@ -83,15 +83,27 @@ export function loadSave(): SaveData {
     if (!raw) return defaultSave();
     const data = JSON.parse(raw) as SaveData;
     const base = defaultSave();
+    // سخت‌سازی رکوردهای مراحل — سیو فاسد (stars=NaN/string) نباید ستاره‌ها و برج‌های ستاره‌ای را مسموم کند
+    const levels: SaveData['levels'] = {};
+    for (const [id, rec] of Object.entries(data.levels ?? {})) {
+      if (!rec || typeof rec !== 'object') continue;
+      const stars = Math.max(0, Math.min(3, Math.floor(Number((rec as { stars?: unknown }).stars) || 0)));
+      const hp = Math.max(0, Math.min(100, Math.floor(Number((rec as { bestHealthPct?: unknown }).bestHealthPct) || 0)));
+      levels[id] = { stars, bestHealthPct: hp, completed: !!(rec as { completed?: unknown }).completed };
+    }
+    const clampCur = (v: unknown) => Math.max(0, Math.floor(Number(v) || 0));
     const merged: SaveData = {
       ...base,
       ...data,
       settings: { ...base.settings, ...data.settings },
       stats: { ...base.stats, ...data.stats },
-      levels: data.levels ?? {},
-      achievements: data.achievements ?? [],
+      levels,
+      achievements: Array.isArray(data.achievements) ? data.achievements.filter((a) => typeof a === 'string') : [],
+      // اقتصاد — مقادیر منفی/NaN از دستکاری سیو عبور نمی‌کنند
+      crystals: clampCur(data.crystals),
+      knowledge: clampCur(data.knowledge),
       // مهاجرت ذخیره‌های قدیمی — قهرمانان
-      unlockedHeroes: data.unlockedHeroes?.length ? data.unlockedHeroes : ['arman'],
+      unlockedHeroes: data.unlockedHeroes?.length ? data.unlockedHeroes.filter((h) => typeof h === 'string') : ['arman'],
       selectedHero: data.selectedHero ?? 'arman',
       // کوره اثیر — مقادیر نامعتبر پاک می‌شوند
       forge: { ...(data.forge ?? {}) },
@@ -99,6 +111,10 @@ export function loadSave(): SaveData {
       heroUpgrades: { ...(data.heroUpgrades ?? {}) },
       towerUpgrades: { ...(data.towerUpgrades ?? {}) },
     };
+    // قهرمان انتخابی باید واقعاً باز باشد — سیو دستکاری‌شده بازیکن را به قهرمان قفل نمی‌برد
+    if (!merged.unlockedHeroes.includes(merged.selectedHero)) {
+      merged.selectedHero = merged.unlockedHeroes.includes('arman') ? 'arman' : (merged.unlockedHeroes[0] ?? 'arman');
+    }
     // مهاجرت نسخه ۱ → ۲ — کمپین ۱۰۰ مرحله‌ای
     if (!data.version || data.version < 2) {
       migrateV1toV2(merged);
@@ -107,6 +123,8 @@ export function loadSave(): SaveData {
     if (!data.version || data.version < 3) {
       return migrateV2toV3(merged);
     }
+    // بازمحاسبه ستاره‌ها از رکوردهای پاک‌سازی‌شده
+    merged.stats.totalStars = Object.values(merged.levels).reduce((s, l) => s + l.stars, 0);
     return merged;
   } catch {
     return defaultSave();

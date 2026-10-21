@@ -51,20 +51,24 @@ export class Tower implements TowerLike {
   }
 
   get damage(): number {
-    // کوره اثیر + بافرها — ضریب دائمی × ضریب نبرد
+    // کوره اثیر + آهنگری آذر + بافرها — دائمی × نبردی
     return this.data.levels[this.level - 1].damage
       * (1 + this.ctx.heroDamageBuff)
-      * (1 + this.ctx.towerDamageBuff);
+      * (1 + this.ctx.towerDamageBuff)
+      * (1 + this.ctx.towerMetaDamage(this.towerId));
   }
 
   get range(): number {
-    return this.data.levels[this.level - 1].range * (1 + this.ctx.towerRangeBuff);
+    return this.data.levels[this.level - 1].range
+      * (1 + this.ctx.towerRangeBuff)
+      * (1 + this.ctx.towerMetaRange(this.towerId));
   }
 
   get fireRate(): number {
     let rate = this.data.levels[this.level - 1].fireRate;
     if (this.rateBuffTime > 0) rate *= 1.6;
     if (this.ctx.towerRateBuff > 0) rate *= 1 + this.ctx.towerRateBuff;
+    if (this.ctx.towerMetaRate(this.towerId) > 0) rate *= 1 + this.ctx.towerMetaRate(this.towerId);
     if (this.localBuffUntil > this.timeNow() && this.localBuffPct > 0) rate *= 1 + this.localBuffPct;
     return rate;
   }

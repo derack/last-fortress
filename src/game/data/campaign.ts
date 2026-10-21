@@ -520,6 +520,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'inferno', nameKey: 'achInferno', descKey: 'achInfernoDesc', crystalReward: 30, check: (s) => s.fireRainCasts >= 50 },
   { id: 'guardian_angel', nameKey: 'achGuardianAngel', descKey: 'achGuardianAngelDesc', crystalReward: 30, check: (s) => s.shieldCasts >= 20 },
   { id: 'hero_max', nameKey: 'achHeroMax', descKey: 'achHeroMaxDesc', crystalReward: 50, check: () => false }, // رویدادی — سطح ۵ قهرمان در یک نبرد
+  { id: 'forge20', nameKey: 'achForge20', descKey: 'achForge20Desc', crystalReward: 60, check: () => false }, // رویدادی — آهنگری آذر تا سطح ۲۰
 ];
 
 // سازگاری — بقیه پروژه از STAGES استفاده می‌کنند

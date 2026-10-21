@@ -69,7 +69,10 @@ export class DamageNumbers {
       el.className = e.crit ? 'dmg-float dmg-crit' : 'dmg-float';
       // project world → px
       this.tmp.copy(e.pos).project(this.camera);
-      if (this.tmp.z > 1) continue; // پشت دوربین
+      if (this.tmp.z > 1) {
+        this.pool.push(el); // المنت گم‌نشود — استخر کوچک نماند
+        continue; // پشت دوربین
+      }
       const x = (this.tmp.x * 0.5 + 0.5) * this.layer.clientWidth;
       const y = (-this.tmp.y * 0.5 + 0.5) * this.layer.clientHeight;
       el.style.left = `${Math.round(x)}px`;

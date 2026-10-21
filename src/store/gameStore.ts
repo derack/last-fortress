@@ -96,6 +96,8 @@ interface GameState {
   setScreen: (s: Screen) => void;
   initSave: () => SaveData;
   updateSave: (fn: (s: SaveData) => void) => void;
+  /** همگام‌سازی سیو از موتور بعد از پیروزی/شکست — موتور مالک شیء سیو در طول نبرد است */
+  syncEngineSave: (s: SaveData) => void;
   setLanguage: (l: Language) => void;
   setQuality: (q: Quality) => void;
   setBattleActive: (v: boolean) => void;
@@ -165,6 +167,11 @@ export const useGameStore = create<GameState>((set, get) => ({
     fn(save);
     persistSave(save);
     set({ save: { ...save } });
+  },
+
+  syncEngineSave: (s) => {
+    set({ save: s });
+    persistSave(s);
   },
 
   setLanguage: (l) => {

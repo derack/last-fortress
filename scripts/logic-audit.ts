@@ -165,11 +165,11 @@ sec('۵. قهرمانان، جادوها، کوره اثیر');
 }
 
 // ---------- ۶) دستاوردها ----------
-sec('۶. دستاوردها — ۳۰ دستاورد داده‌محور');
+sec('۶. دستاوردها — دستاوردهای داده‌محور');
 {
   const idsA = ACHIEVEMENTS.map((a) => a.id);
   const uniq = new Set(idsA).size === idsA.length;
-  if (idsA.length === 30 && uniq) ok('۳۰ دستاورد با شناسه یکتا'); else bad(`${idsA.length} دستاورد، یکتا=${uniq}`);
+  if (idsA.length >= 30 && uniq) ok(`${idsA.length} دستاورد با شناسه یکتا`); else bad(`${idsA.length} دستاورد، یکتا=${uniq}`);
   const granted = ['untouchable', 'perfect_defense', 'last_stand'];
   const missingG = granted.filter((g) => !idsA.includes(g));
   if (!missingG.length) ok('دستاوردهای اعطاشده در Game (untouchable/perfect_defense/last_stand) تعریف دارند'); else bad(`اعطای دستاورد ناموجود: ${missingG.join('،')}`);

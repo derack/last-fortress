@@ -91,6 +91,19 @@ export interface GameContext {
   critMult: number;
   /** بخش ۱۴ — عدد آسیب شناور — تجمیع per-enemy در موتور */
   showDamage(enemyId: number, pos: THREE.Vector3, amount: number, crit: boolean): void;
+  /** زمان بازی (ثانیه از شروع نبرد) — پایهٔ زمانی یکسان همهٔ افکت‌های موقتی (کندی/سوزش/شکستن زره) */
+  gameTime: number;
+  // —— آهنگری آذر: ارتقاهای دائمی از سیو (۰ بدون ارتقا — اثر فقط با خرید در پنل آهنگری) ——
+  /** ضریب آسیب دائمی هر برج از سطح آهنگری (۰٫۰۶ در هر سطح) */
+  towerMetaDamage: (towerId: string) => number;
+  /** ضریب نرخ شلیک دائمی هر برج (۰٫۰۳ در هر سطح) */
+  towerMetaRate: (towerId: string) => number;
+  /** ضریب برد دائمی هر برج (۰٫۰۲ در هر سطح) */
+  towerMetaRange: (towerId: string) => number;
+  /** ضریب آسیب دائمی قهرمان (۰٫۰۸ در هر سطح) */
+  heroMetaDamage: (heroId: string) => number;
+  /** ضریب تندرستی دائمی قهرمان (۰٫۰۸ در هر سطح) */
+  heroMetaHp: (heroId: string) => number;
 }
 
 export interface TowerLike {

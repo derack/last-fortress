@@ -1,6 +1,6 @@
 import { HEROES } from './magic';
 import { TOWERS, TOWER_BUILD_ORDER } from './towers';
-import { ACHIEVEMENTS } from './level1';
+import { ACHIEVEMENTS } from './campaign';
 import type { SaveData } from './types';
 
 // ============================================================

@@ -6,6 +6,8 @@ const config: CapacitorConfig = {
   webDir: 'out',
   android: {
     allowMixedContent: false,
+    // پس‌زمینهٔ تیره — جلوی فلش سفید قبل از اولین paint پوستهٔ تاریک بازی
+    backgroundColor: '#07090d',
   },
 };
 

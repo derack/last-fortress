@@ -48,6 +48,36 @@ function kindGeometry(kind: string): THREE.BufferGeometry {
   }
 }
 
+/**
+ * کش هندسه/متریال پرتابه — هر شلیک قبلاً buffer GPU جدید می‌ساخت (ده‌ها alloc/free در ثانیه).
+ * کلید = kind:color — مجموعه محدود (هر برج رنگ ثابت) → کش کوچک و ماندگار بین نبردها.
+ */
+const kindAssets = new Map<string, { geo: THREE.BufferGeometry; mat: THREE.MeshStandardMaterial }>();
+function getKindAssets(kind: string, color: number, emissiveIntensity: number) {
+  const key = `${kind}:${color}`;
+  let a = kindAssets.get(key);
+  if (!a) {
+    const geo = kindGeometry(kind);
+    const mat = new THREE.MeshStandardMaterial({
+      color,
+      emissive: color,
+      emissiveIntensity,
+      roughness: 0.4,
+    });
+    // منابع مشترک بین نبردها — dispose صحنه نباید نابودشان کند
+    geo.userData.sharedAssetResource = true;
+    mat.userData.sharedAssetResource = true;
+    a = { geo, mat };
+    kindAssets.set(key, a);
+  }
+  return a;
+}
+
+// وکتورهای scratch — حذف تخصیص per-frame در مسیر داغ حرکت پرتابه
+const SCRATCH_AIM = new THREE.Vector3();
+const SCRATCH_DIR = new THREE.Vector3();
+const UP_Y = new THREE.Vector3(0, 1, 0);
+
 export class Projectile {
   private mesh: THREE.Mesh;
   private target: DamageableEnemy | null;
@@ -72,14 +102,8 @@ export class Projectile {
     this.speed = KIND_SPEED[kind] ?? 25;
     this.life = 4;
 
-    const geo = kindGeometry(kind);
     const emissive = kind === 'fireball' || kind === 'cannonball' ? 2.2 : 1.6;
-    const mat = new THREE.MeshStandardMaterial({
-      color: opts.color,
-      emissive: opts.color,
-      emissiveIntensity: emissive,
-      roughness: 0.4,
-    });
+    const { geo, mat } = getKindAssets(kind, opts.color, emissive);
     this.mesh = new THREE.Mesh(geo, mat);
     this.mesh.position.copy(from);
     scene.add(this.mesh);
@@ -97,21 +121,27 @@ export class Projectile {
       return;
     }
 
-    const aim = this.target && this.target.alive ? this.target.getPos().clone().add(new THREE.Vector3(0, 1, 0)) : this.lastTargetPos;
-    this.lastTargetPos.copy(aim);
-    const dir = aim.clone().sub(this.mesh.position);
+    // هدف زنده؟ نقطه نشانه‌گیری بالای تنش — وگرنه آخرین موقعیت (بدون تخصیص جدید)
+    if (this.target && this.target.alive) {
+      SCRATCH_AIM.copy(this.target.getPos());
+      SCRATCH_AIM.y += 1;
+    } else {
+      SCRATCH_AIM.copy(this.lastTargetPos);
+    }
+    this.lastTargetPos.copy(SCRATCH_AIM);
+    const dir = SCRATCH_DIR.copy(SCRATCH_AIM).sub(this.mesh.position);
     const dist = dir.length();
     dir.normalize();
 
     if (dist < Math.max(0.6, this.speed * dt)) {
-      this.impact(scene, aim);
+      this.impact(scene, SCRATCH_AIM);
       return;
     }
     this.velocity.copy(dir).multiplyScalar(this.speed);
     this.mesh.position.addScaledVector(this.velocity, dt);
 
     // جهت‌گیری پیکان بالیستا
-    if (this.kind === 'bolt') this.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+    if (this.kind === 'bolt') this.mesh.quaternion.setFromUnitVectors(UP_Y, dir);
 
     // دنباله
     const trailRate = this.kind === 'bullet' ? 0 : this.kind === 'venom' ? 40 : 30;
@@ -157,7 +187,6 @@ export class Projectile {
   private destroy(scene: THREE.Scene) {
     this.alive = false;
     scene.remove(this.mesh);
-    this.mesh.geometry.dispose();
-    (this.mesh.material as THREE.Material).dispose();
+    // هندسه/متریال در کش مشترک‌اند — dispose نمی‌شوند (استفادهٔ مجدد بین نبردها)
   }
 }

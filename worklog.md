@@ -685,3 +685,31 @@ Stage Summary:
 - download/Last-Fortress-v1.6-release.apk (37.7MB) — رفع کامل خطاها + وضوح آینه‌ای + قفل/تعادل سالم
 - لینک: https://uploadkon.ir/uploads/763320_26LF-v1-6.zip
 - نکته برای AI دیگر: اگر باز push گرفت Push Protection را چک کند — هیچ secret نباید commit شود
+
+---
+Task ID: 31
+Agent: main
+Task: آنالیز کامل پروژه + پیدا کردن و رفع مشکلات + بیلد v1.7
+
+Work Log:
+- همگام‌سازی: merge کامیت امنیتی 56ed21c (حذف restore-toolchain.sh) + commit خودکار sandbox؛ GLBهای ریگ‌شده با نسخه فعلی ژنراتور sync و کامیت شدند
+- ممیزی چهارلایه: tsc (صفر خطا) + logic-audit (31✅) + balance-audit (منحنی نرم 87.5%→295.8%) + ۳ ایجنت کاوش موازی (رندر/منطق/اندروید)
+- 🩸 باگ بحرانی ۱ — کندی/سوزش هرگز منقضی نمی‌شد: slowUntil/burnUntil با performance.now (epoch) ست و با زمان بازی مقایسه می‌شد → یخ/زهر/آتش دائماً فعال؛ پایهٔ زمانی یکسان (ctx.gameTime) + slam setTimeout → بازی‌محور
+- 🩸 بحرانی ۲ — دابل‌تپ Play دو موتور هم‌زمان: dispose قبلی در effect GameShell + cleanup؛ پاداش دوبله رفع شد
+- 🩸 بحرانی ۳ — اکسپلویت کریستال: startCrystals در برد و باخت به stash برمی‌گشت (فارم بی‌نهایت با باخت عمدی)؛ commitCrystals = stash + earned − spent؛ وام مرحله‌ای فقط همان نبرد
+- major — fork سیو: تغییر تنظیمات وسط نبرد پاداش‌ها را گم می‌کرد → syncEngineSave روی victory/defeat
+- major — وضوح: resize() مرده بود (چرخش صفحه = تصویر کشیده/تار) → listener resize/orientation در GameShell؛ DPR تطبیقی یک‌طرفه بود (avg<14.5 روی 60Hz غیرممکن) → آستانه vsync-آگاه (تخمین از min frame) + دو پنجره سالم برای بازگشت رزولوشن
+- major — پرتابه‌ها geometry/material جدید در هر شلیک → کش ماژولی kind:color + scratch vectorها؛ کش‌های CharacterFactory هم sharedAssetResource شدند
+- امنیت — postMessage startBattle بدون چک origin/آنلاک → هر دو گارد اضافه شد؛ سیو سخت‌سازی شد (stars 0..3، clamp اقتصاد، selectedHero باید باز باشد، بازمحاسبه totalStars)
+- اقتصاد — دستاورد forge20 بدون پاداش/غایب + دو لیست ACHIEVEMENTS موازی → نسخه level1 حذف، meta از campaign می‌خواند، forge20 با کلید i18n اضافه شد
+- آهنگری آذر wired شد: ضریب‌های towerMeta/heroMeta در ctx → Tower.damage/range/fireRate و Hero.maxHp/damage (تا الان پنل وعده می‌داد ولی موتور نمی‌خواند!)
+- perf — prewarm نورهای فلش VFX (جلوگیری از recompile شیدر وسط نبرد)، شیدر آسمان/ذرات tonemapping+colorspace گرفتند (هم‌راستایی رنگ با ACES)
+- flush سیو روی visibilitychange/pagehide (کشتن WebView دیگر پیشرفت نمی‌بُرد)
+- APK −48MB: 25 فایل .gltf مرده (46MB) + dirs heroes/enemies/bosses قدیمی حذف (3d: 110M→64M)
+- gradle: بدون keystore.properties حالا fail می‌شود (قبلاً APK unsigned ساکت تولید می‌شد)؛ capacitor backgroundColor تیره؛ CI: bun پین 1.3.14 + concurrency
+- verify-balance.mjs و check-stages.mjs (API قدیمی levels.ts، خراب/ساکت) حذف شدند — balance-audit.ts مرجع است
+- DamageNumbers: المنت پشت دوربین به استخر برمی‌گردد (نشتی DOM)
+- tsc صفر خطا + eslint پاک + هر ۳ audit سبز؛ versionCode 9 / versionName 1.7
+
+Stage Summary:
+- v1.7 در حال بیلد — تغییرات معطوف به: عدالت بازی (کندی/اکسپلویت/دوبله)، وضوح پایدار بعد از چرخش، پایداری سیو، −۴۸MB حجم APK

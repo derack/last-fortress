@@ -89,6 +89,12 @@ export class BattleScene {
   private lastRenderAt = 0;
   private perfAccum = 0;
   private perfFrames = 0;
+  /** کمترین زمان فریم مشاهده‌شده در پنجره — تخمین بازهٔ vsync (مقاوم به لگ) */
+  private perfMin = 1000;
+  /** بازهٔ vsync تخمینی (ms) — ۶۰هرتز≈۱۶٫۷، ۱۲۰هرتز≈۸٫۳ */
+  private vsyncMs = 16.7;
+  /** پنجره‌های پیوسته سالم برای بازگشت رزولوشن (جلوگیری از نوسان) */
+  private upStreak = 0;
   private debugOverlay: HTMLDivElement | null = null;
   private debugFrames = 0;
   private debugWindowStart = 0;
@@ -114,6 +120,8 @@ export class BattleScene {
     this.targetRatio = pixelRatio;
     this.currentRatio = pixelRatio;
     this.lastRenderAt = performance.now();
+    // تلف‌شدن کانتکست WebGL: three.js هندلر داخلی preventDefault/بازآپلود دارد؛
+    // dt هم در Game.update به ۰٫۰۵s محدود می‌شود — پس ریکاوری خودکار و بدون سیاهی است
     this.renderer.shadowMap.enabled = quality !== 'low';
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -258,6 +266,8 @@ export class BattleScene {
         void main() {
           float h = clamp(normalize(vPos).y, 0.0, 1.0);
           gl_FragColor = vec4(mix(bottomColor, topColor, pow(h, 0.65)), 1.0);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
         }`,
     });
     const dome = new THREE.Mesh(new THREE.SphereGeometry(300, 24, 14), mat);
@@ -1076,18 +1086,34 @@ Quality: ${this.quality}   Pixel ratio: ${this.currentRatio.toFixed(2)}`;
     // نمونه‌گیری هر ~۱ ثانیه — بالا/پایین کردن تدریجی رزولوشن
     if (frameMs > 0 && frameMs < 1000) {
       this.perfAccum += frameMs;
+      if (frameMs < this.perfMin) this.perfMin = frameMs;
       this.perfFrames++;
     }
     if (this.perfFrames >= 50) {
       const avg = this.perfAccum / this.perfFrames;
+      const min = this.perfMin;
       this.perfAccum = 0;
       this.perfFrames = 0;
-      if (avg > 24 && this.currentRatio > 1.25) {
+      this.perfMin = 1000;
+      // به‌روزرسانی تخمین vsync — فقط مقادیر منطقی (۳..۴۰ms)
+      if (min >= 3 && min <= 40) this.vsyncMs = this.vsyncMs * 0.85 + min * 0.15;
+      // آستانه‌ها نسبت به vsync دستگاه — روی ۶۰هرتز بازگشت رزولوشن ممکن می‌شود
+      // (آستانه قدیمی avg<۱۴٫۵ روی ۶۰هرتز هرگز فعال نمی‌شد → تاری یک‌طرفه)
+      const healthy = avg <= this.vsyncMs * 1.08;
+      const struggling = avg > this.vsyncMs * 1.45;
+      if (struggling && this.currentRatio > 1.25) {
         this.currentRatio = Math.max(1.25, this.currentRatio - 0.15);
         this.renderer.setPixelRatio(this.currentRatio);
-      } else if (avg < 14.5 && this.currentRatio < this.targetRatio) {
-        this.currentRatio = Math.min(this.targetRatio, this.currentRatio + 0.15);
-        this.renderer.setPixelRatio(this.currentRatio);
+        this.upStreak = 0;
+      } else if (healthy && this.currentRatio < this.targetRatio) {
+        this.upStreak++;
+        if (this.upStreak >= 2) { // دو پنجره پیوسته سالم → ریکاوری رزولوشن
+          this.currentRatio = Math.min(this.targetRatio, this.currentRatio + 0.15);
+          this.renderer.setPixelRatio(this.currentRatio);
+          this.upStreak = 0;
+        }
+      } else {
+        this.upStreak = 0;
       }
     }
   }

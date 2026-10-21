@@ -84,6 +84,8 @@ export class VFXSystem {
           float d = length(gl_PointCoord - vec2(0.5));
           float a = smoothstep(0.5, 0.05, d);
           gl_FragColor = vec4(vColor, a);
+          #include <tonemapping_fragment>
+          #include <colorspace_fragment>
         }`,
       vertexColors: true,
     });
@@ -216,6 +218,15 @@ export class VFXSystem {
   }
 
   // ------------------- فلش نور -------------------
+
+  /** پیش‌گرمایش نورهای فلش — افزودن نور وسط نبرد باعث کامپایل مجدد شیدر و پرش فریم می‌شود */
+  prewarmFlashLights(count = 3) {
+    for (let i = 0; i < count; i++) {
+      const l = new THREE.PointLight(0xffffff, 0, 20, 1.8);
+      this.scene.add(l);
+      this.flashPool.push(l);
+    }
+  }
 
   private flash(pos: THREE.Vector3, color: number, intensity: number) {
     const l = this.flashPool.pop() ?? (() => {
@@ -351,7 +362,14 @@ export class VFXSystem {
       this.boltPool.push(b);
     });
     this.bolts.length = 0;
-    [...this.circles].forEach((c) => this.scene.remove(c.mesh));
+    [...this.circles].forEach((c) => {
+      // dispose کامل — هم‌سطح مسیر عادی انقضا (بالای این فایل)
+      const m = (c.mesh.children[0] as THREE.Mesh).material as THREE.MeshBasicMaterial;
+      m.map?.dispose();
+      m.dispose();
+      (c.mesh.children[0] as THREE.Mesh).geometry.dispose();
+      this.scene.remove(c.mesh);
+    });
     this.circles.length = 0;
   }
 }

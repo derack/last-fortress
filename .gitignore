@@ -61,3 +61,4 @@ android/keystore/
 download/keystore/
 .env
 wt-graphics/
+tool-results/

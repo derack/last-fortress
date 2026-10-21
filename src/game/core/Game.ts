@@ -4,6 +4,7 @@ import { TOWERS, isTowerUnlocked } from '../data/towers';
 import { ENEMIES } from '../data/enemies';
 import { MAGIC } from '../data/magic';
 import { forgePct } from '../data/forge';
+import { heroMetaLevel, towerMetaLevel, heroMetaPct, towerMetaPct, TOWER_META_RATE_RATIO, TOWER_META_RANGE_RATIO } from '../data/meta';
 import { BattleScene } from '../scene/BattleScene';
 import { CameraController } from './CameraController';
 import { InputController, TapHit } from './InputController';
@@ -71,7 +72,7 @@ export class Game {
     this.save.achievements.push(id);
     // پاداش — به استخر نبرد هم اضافه می‌شود تا در پیروزی/باخت/خروج همگام بماند
     this.crystals += def.crystalReward;
-    this.save.crystals += def.crystalReward;
+    this.crystalsEarned += def.crystalReward;
     this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
     this.bus.emit('toast', { key: def.nameKey, type: 'success' });
   }
@@ -114,6 +115,16 @@ export class Game {
   private uiTimer = 0;
   private disposed = false;
   private save: SaveData;
+  /** ذخیرهٔ پایدار در لحظهٔ شروع نبرد — مبنای نهایی‌سازی اقتصاد کریستال */
+  private stashAtStart: number;
+  /** کریستال کسب‌شده در این نبرد (کشتن/موج/دستاورد/پاداش برد) */
+  private crystalsEarned = 0;
+  /** کریستال خرج‌شده در این نبرد (جادوها) */
+  private crystalsSpent = 0;
+  /** دسترسی GameShell برای همگام‌سازی سیو پس از پایان نبرد */
+  get engineSave(): SaveData {
+    return this.save;
+  }
   private totalWavesSurvivedAtStart: number;
 
   constructor(canvas: HTMLCanvasElement, level: LevelData, quality: string, save: SaveData, language: 'fa' | 'en', heroId = 'arman') {
@@ -123,6 +134,7 @@ export class Game {
     // کوره اثیر — ضرایب دائمی اقتصاد و هسته
     this.coins = Math.round(level.startCoins * (1 + forgePct(save, 'economy')));
     this.crystals = level.startCrystals + save.crystals;
+    this.stashAtStart = save.crystals;
     this.coreHp = Math.round(level.coreHp * (1 + forgePct(save, 'coreFort')));
     this.coreMaxHp = this.coreHp;
     this.totalWavesSurvivedAtStart = save.stats.wavesSurvived;
@@ -137,6 +149,7 @@ export class Game {
     this.cameraCtrl.setBounds(34);
     this.cameraCtrl.desiredTarget.set(-4, 0, 3);
     this.vfx = new VFXSystem(this.scene3d.scene);
+    this.vfx.prewarmFlashLights(3); // جلوگیری از کامپایل مجدد شیدر در اولین انفجارها
     this.vfx.particleScale = quality === 'low' ? 0.4 : quality === 'medium' ? 0.8 : 1.2;
     this.damageNums = new DamageNumbers(this.cameraCtrl.camera, canvas.parentElement ?? document.body);
 
@@ -175,6 +188,13 @@ export class Game {
       critChance: 0.1,
       critMult: 2,
       showDamage: (enemyId, pos, amount, crit) => this.damageNums.add(enemyId, pos, amount, crit),
+      gameTime: 0,
+      // آهنگری آذر — ارتقاهای دائمی سیو (سطح ۰ = بدون اثر)
+      towerMetaDamage: (tid) => towerMetaPct(towerMetaLevel(save, tid)),
+      towerMetaRate: (tid) => towerMetaPct(towerMetaLevel(save, tid)) * TOWER_META_RATE_RATIO,
+      towerMetaRange: (tid) => towerMetaPct(towerMetaLevel(save, tid)) * TOWER_META_RANGE_RATIO,
+      heroMetaDamage: (hid) => heroMetaPct(heroMetaLevel(save, hid)),
+      heroMetaHp: (hid) => heroMetaPct(heroMetaLevel(save, hid)),
     };
 
     this.hero = new Hero(heroId, this.scene3d.scene, this.ctx);
@@ -223,6 +243,7 @@ export class Game {
 
   private update(dt: number) {
     this.time += dt;
+    this.ctx.gameTime = this.time; // پایهٔ زمانی افکت‌های موقتی (کندی/سوزش/شکستن زره)
 
     // دستاوردهای وضعی نبرد — بررسی سبک هر فریم (grantAchievement خودش idempotent است)
     if (!this.gameOver) {
@@ -397,6 +418,7 @@ export class Game {
 
     // پاداش کریستال موج
     this.crystals += 5;
+    this.crystalsEarned += 5;
     this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
 
     // آموزش
@@ -475,7 +497,9 @@ export class Game {
   private handleKill(e: Enemy) {
     this.coins += e.reward;
     this.coinsEarned += e.reward;
-    this.crystals += e.data.crystalReward ?? 0;
+    const killCrystals = e.data.crystalReward ?? 0;
+    this.crystals += killCrystals;
+    this.crystalsEarned += killCrystals;
     this.killsThisLevel++;
     this.save.stats.kills++;
     if (e.data.boss) {
@@ -778,6 +802,7 @@ export class Game {
     if (this.magicCd[id] > 0 || this.crystals < m.crystalCost) return false;
 
     this.crystals -= m.crystalCost;
+    this.crystalsSpent += m.crystalCost;
     this.magicCd[id] = m.cooldown;
     this.magicCastThisLevel++;
     this.save.stats.magicCasts++;
@@ -1028,6 +1053,15 @@ export class Game {
 
   // ===================== پایان بازی =====================
 
+  /**
+   * نهایی‌سازی اقتصاد کریستال — اکسپلویت فارم بسته می‌شود:
+   * وام مرحله‌ای (startCrystals) متعلق به همین نبرد است و به ذخیرهٔ پایدار منتقل نمی‌شود؛
+   * فقط کسب واقعی (کشتن/موج/دستاورد/پاداش) منهای خرج جادوها به ذخیره اضافه می‌شود.
+   */
+  private commitCrystals() {
+    this.save.crystals = Math.max(0, this.stashAtStart + this.crystalsEarned - this.crystalsSpent);
+  }
+
   private doVictory() {
     this.gameOver = true;
     const healthPct = (this.coreHp / this.coreMaxHp) * 100;
@@ -1041,7 +1075,8 @@ export class Game {
     let rewardShards = 5 + stars * 2 + (this.level.chapter ?? 1);
     if (this.level.stage === 10) rewardShards *= 2;
     this.crystals += rewardCrystals;
-    this.save.crystals = this.crystals;
+    this.crystalsEarned += rewardCrystals;
+    this.commitCrystals();
     this.save.knowledge += rewardShards;
     this.save.stats.victories++;
     // دستاوردهای رویدادی پیروزی — با پاداش کریستال (قبلاً بدون پاداش بودند)
@@ -1072,7 +1107,7 @@ export class Game {
 
   private doDefeat() {
     this.gameOver = true;
-    this.save.crystals = this.crystals; // همگام‌سازی کریستال باقی‌مانده
+    this.commitCrystals(); // کسب واقعی نبرد می‌ماند — وام مرحله‌ای برنمی‌گردد
     this.audio.play('defeat');
     this.audio.setBossMode(false);
     this.cameraCtrl.shake(1);

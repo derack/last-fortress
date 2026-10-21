@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Swords, Map as MapIcon, Users, Trophy, Settings, Gem, X, Flame } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { t, faNum } from '@/game/data/i18n';
+import { STAGES, isStageUnlocked, completedStageIds } from '@/game/data/campaign';
 
 // ============================================================
 // صفحه اصلی — مرکز فرماندهی فانتزی مدرن با هسته آذر
@@ -42,17 +43,25 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
     });
   }, []);
 
-  // پل پیام از صفحات iframe
+  // پل پیام از صفحات iframe — فقط از مبدأ خود صفحه (جلوگیری از دستور بیرونی)
   useEffect(() => {
     const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
       const data = e.data as { type?: string; levelId?: string; page?: PageId };
       if (!data?.type) return;
       switch (data.type) {
-        case 'startBattle':
-          if (data.levelId) useGameStore.getState().setPendingLevel(data.levelId);
+        case 'startBattle': {
+          if (data.levelId) {
+            // دروازهٔ آنلاک — پیام iframe نباید مرحلهٔ قفل را دور بزند
+            const save = useGameStore.getState().save;
+            const stage = STAGES[data.levelId];
+            if (stage && save && !isStageUnlocked(stage.chapter ?? 1, stage.stage ?? 1, completedStageIds(save))) return;
+            useGameStore.getState().setPendingLevel(data.levelId);
+          }
           closePage();
           onStart();
           break;
+        }
         case 'saveChanged':
           useGameStore.getState().initSave();
           break;

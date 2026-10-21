@@ -34,6 +34,8 @@ export class Enemy implements DamageableEnemy {
   shieldHp = 0;
   slowFactor = 1;
   slowUntil = 0;
+  /** انقضای تقویت سرعت ضربهٔ زمین باس (زمان بازی) */
+  private slamBuffUntil = 0;
   burnDps = 0;
   burnUntil = 0;
   shieldTimer = 0;
@@ -190,24 +192,27 @@ export class Enemy implements DamageableEnemy {
     return this.shieldHp > 0;
   }
 
+  /** پایهٔ زمانی مشترک همهٔ افکت‌های موقتی = زمان بازی کانتکست (نه epoch مرورگر) */
+  private get gameNow(): number {
+    return this.ctx.gameTime;
+  }
+
   applySlow(factor: number, duration: number) {
     if (this.slowImmune) return; // بدن مذاب غول آتش / تجسم سرمای غول یخ
-    if (factor < this.slowFactor || this.slowUntil < this.now() + duration * 0.5) {
-      this.slowFactor = Math.min(this.slowFactor === 1 ? 99 : this.slowFactor, factor);
-    }
+    // پایهٔ زمانی = زمان بازی (نه epoch مرورگر) — وگرنه کندی هرگز منقضی نمی‌شد
     this.slowFactor = Math.min(this.slowFactor, factor);
-    this.slowUntil = Math.max(this.slowUntil, this.now() + duration);
+    this.slowUntil = Math.max(this.slowUntil, this.gameNow + duration);
   }
 
   applyBurn(dps: number, duration: number) {
     this.burnDps = Math.max(this.burnDps, dps);
-    this.burnUntil = Math.max(this.burnUntil, this.now() + duration);
+    this.burnUntil = Math.max(this.burnUntil, this.gameNow + duration);
   }
 
   /** شکستن زره — زهرخانه/مه سمی */
   applyShred(amount: number, duration: number) {
     this.shredAmount = Math.max(this.shredAmount, amount);
-    this.shredUntil = Math.max(this.shredUntil, this.now() + duration);
+    this.shredUntil = Math.max(this.shredUntil, this.gameNow + duration);
   }
 
   /** ترمیم توسط شفادهنده */
@@ -218,13 +223,9 @@ export class Enemy implements DamageableEnemy {
 
   /** زره مؤثر پس از شکستن */
   private get effArmor(): number {
-    return this.now() < this.shredUntil
+    return this.gameNow < this.shredUntil
       ? Math.max(0, this.armor - this.shredAmount)
       : this.armor;
-  }
-
-  private now() {
-    return performance.now() / 1000;
   }
 
   /** آسیب بزن — true یعنی دشمن مرد */
@@ -498,6 +499,10 @@ export class Enemy implements DamageableEnemy {
     }
 
     // وضعیت‌ها
+    if (this.slamBuffUntil > 0 && this.gameNow >= this.slamBuffUntil) {
+      this.speed /= 1.35; // انقضای تقویت ضربهٔ زمین — همگام با توقف/سرعت ۲x
+      this.slamBuffUntil = 0;
+    }
     if (this.slowUntil < time) this.slowFactor = 1;
     if (this.burnUntil > time) {
       this.hp -= this.burnDps * dt;
@@ -687,11 +692,9 @@ export class Enemy implements DamageableEnemy {
         0xf59e0b, 10, { speed: 5, life: 0.4, size: 0.5, gravity: 6 },
       );
     }
-    // تقویت سرعت موقت
+    // تقویت سرعت موقت — بر پایهٔ زمان بازی (setTimeOut با توقف/سرعت ۲x همگام نمی‌ماند)
     this.speed *= 1.35;
-    setTimeout(() => {
-      if (this.alive) this.speed /= 1.35;
-    }, 3000);
+    this.slamBuffUntil = this.gameNow + 3;
   }
 
   private giveShields() {

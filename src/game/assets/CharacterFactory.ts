@@ -39,6 +39,7 @@ const TOWER_UDATA_KEYS = ['turret', 'muzzle', 'spinCrystal', 'spinRing', 'ember'
 
 // Shared one-draw-call upgrade ornaments keep GLB towers visually progressing
 // from level 1 to 5 without replacing the authored base model on every upgrade.
+// کش‌های ماژولی — dispose صحنه نباید نابودشان کند (دوباره‌سازی GPU در هر نبرد گران است)
 const towerUpgradeGeometry = new Map<string, THREE.BufferGeometry>();
 const towerUpgradeMaterials = new Map<number, THREE.MeshStandardMaterial>();
 const contactShadowGeometry = new THREE.CircleGeometry(1, 32);
@@ -197,6 +198,7 @@ function getTowerUpgradeGeometry(towerId: string, level: number): THREE.BufferGe
   const merged = mergeGeometries(parts, false);
   for (const part of parts) part.dispose();
   const geometry = merged ?? new THREE.OctahedronGeometry(0.1, 0);
+  geometry.userData.sharedAssetResource = true; // کش ماژولی — dispose صحنه نباید نابودش کند
   towerUpgradeGeometry.set(key, geometry);
   return geometry;
 }
@@ -210,6 +212,7 @@ function addTowerUpgradeOrnament(root: THREE.Group, entry: CharacterAssetEntry, 
       color, emissive: color, emissiveIntensity: 0.16,
       metalness: 0.5, roughness: 0.36,
     });
+    material.userData.sharedAssetResource = true; // کش ماژولی
     towerUpgradeMaterials.set(color, material);
   }
   const ornament = new THREE.Mesh(getTowerUpgradeGeometry(entry.id, level), material);
@@ -248,6 +251,7 @@ function propagateTowerUdataFromGlb(model: THREE.Object3D, root: THREE.Object3D)
 }
 
 const towerSpinRingGeometry = new THREE.TorusGeometry(0.82, 0.04, 6, 28);
+towerSpinRingGeometry.userData.sharedAssetResource = true; // کش ماژولی
 
 function ensureTowerSpinRing(root: THREE.Object3D, entry: CharacterAssetEntry) {
   const turret = root.userData.turret as THREE.Object3D | undefined;

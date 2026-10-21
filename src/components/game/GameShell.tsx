@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
 import { Game } from '@/game/core/Game';
 import { audioSystem } from '@/game/systems/AudioSystem';
+import { persistSave } from '@/game/systems/SaveSystem';
 import { ACHIEVEMENTS, LEVELS, STAGES, firstPlayableStageId } from '@/game/data/campaign';
 import { assetManager, sliceAssetEntries } from '@/game/assets';
 import { t, faNum } from '@/game/data/i18n';
@@ -114,6 +115,10 @@ export function GameShell() {
 
   /** ساخت موتور بازی روی canvas تازه */
   useEffect(() => {
+    // محافظ دابل‌تپ: هر موتور قبلی (rAF فعال) باید پیش از ساخت موتور جدید نابود شود —
+    // وگرنه دو نبرد هم‌زمان شبیه‌سازی می‌شود (پاداش/آمار دوبله)
+    gameRef.current?.dispose();
+    gameRef.current = null;
     if (!pendingStart.current) return;
     pendingStart.current = false;
     const canvas = canvasRef.current;
@@ -129,6 +134,11 @@ export function GameShell() {
     const level = LEVELS[store.pendingLevelId] ?? STAGES[firstPlayableStageId(save)];
     const heroId = save.selectedHero ?? 'arman';
     const game = new Game(canvas, level, save.settings.quality, save, save.settings.language, heroId);
+    // همگام‌سازی سیو از موتور در پایان نبرد — پیش از هر handleEvent/updateSave بعدی؛
+    // بدون این، تغییر تنظیمات وسط نبرد شیء سیو را fork می‌کرد و پاداش‌ها گم می‌شدند
+    const syncEngine = () => useGameStore.getState().syncEngineSave(game.engineSave);
+    game.bus.on('victory', syncEngine);
+    game.bus.on('defeat', syncEngine);
     for (const ev of BUS_EVENTS) {
       game.bus.on(ev, (payload) => {
         useGameStore.getState().handleEvent(ev, payload);
@@ -151,7 +161,49 @@ export function GameShell() {
     }
     store.setBattleActive(true);
     store.setScreen('battle');
+
+    // پاکسازی هنگام remount یا unmount — نشت rAF/حافظه ممکن نمی‌شود
+    return () => {
+      gameRef.current?.dispose();
+      gameRef.current = null;
+    };
   }, [battleKey]);
+
+  /** چرخش/تغییر اندازهٔ صفحه — بدون این، بافر رندر قدیمی می‌ماند و تصویر کشیده/تار می‌شود */
+  useEffect(() => {
+    let queued = false;
+    const onResize = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(() => {
+        queued = false;
+        gameRef.current?.resize();
+      });
+    };
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
+    };
+  }, []);
+
+  /** flush سیو هنگام مینیمایز/بسته‌شدن اپ — اندروید ممکن است WebView را بکشد */
+  useEffect(() => {
+    const flush = () => {
+      const s = useGameStore.getState().save;
+      if (s) persistSave(s);
+    };
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('pagehide', flush);
+    };
+  }, []);
 
   /** درخواست شروع نبرد — remount canvas سپس ساخت موتور */
   const requestBattle = useCallback(() => {

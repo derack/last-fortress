@@ -50,10 +50,10 @@ export class Hero {
   constructor(heroId: string, scene: THREE.Scene, ctx: GC) {
     this.ctx = ctx;
     this.data = HEROES[heroId] ?? HEROES.arman;
-    // کوره اثیر — ضریب‌های دائمی روی مشخصات پایه
-    this.maxHp = Math.round(this.data.hp * (1 + ctx.forgeHeroHp));
+    // کوره اثیر + آهنگری آذر — ضریب‌های دائمی روی مشخصات پایه
+    this.maxHp = Math.round(this.data.hp * (1 + ctx.forgeHeroHp) * (1 + ctx.heroMetaHp(this.data.id)));
     this.hp = this.maxHp;
-    this.damage = Math.round(this.data.damage * (1 + ctx.forgeHeroDamage));
+    this.damage = Math.round(this.data.damage * (1 + ctx.forgeHeroDamage) * (1 + ctx.heroMetaDamage(this.data.id)));
     // Asset Pipeline — مدل واقعی GLB به‌محض آماده شدن درجا سوار می‌شود
     this.handle = characterFactory.createHeroHandle(this.data.id);
     this.mesh = this.handle.root;
