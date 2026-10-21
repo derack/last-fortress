@@ -40,6 +40,9 @@ jobs:
       - name: Audit campaign and game data invariants
         run: bun run audit:logic
 
+      - name: Audit wave economy and difficulty progression
+        run: bun scripts/balance-audit.ts
+
       - name: Build web
         run: bun run build
 
