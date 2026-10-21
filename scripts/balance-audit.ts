@@ -33,12 +33,13 @@ function stageRow(cIdx: number, s: number): Row {
   const ch = CHAPTERS[cIdx];
   const lv = STAGES[`c${ch.id}s${s}`];
   const waveHp: number[] = [];
+  const waveIndices: number[] = []; // indexes in the original wave list, including boss waves
+  const waveEconomy: Array<{ index: number; killIncome: number; coinBonus: number }> = [];
   let bossWaveHp = 0, bossHp = 0, totalHp = 0;
   const kinds = new Set<string>();
-  let killIncome = 0;
-  const perWaveKill: number[] = [];
 
-  for (const w of lv.waves) {
+  for (let wi = 0; wi < lv.waves.length; wi++) {
+    const w = lv.waves[wi];
     let hp = 0, income = 0;
     for (const g of w.groups) {
       const data = ENEMIES[g.enemy];
@@ -49,23 +50,28 @@ function stageRow(cIdx: number, s: number): Row {
       income += g.count * t.reward;
       kinds.add(g.enemy);
     }
+    waveEconomy.push({ index: wi, killIncome: income, coinBonus: w.coinBonus ?? 0 });
     if (w.boss) {
       bossWaveHp = hp;
       const bg = w.groups.find((g) => ENEMIES[g.enemy]?.boss);
       bossHp = bg ? tiered(ENEMIES[bg.enemy], bg.tier).hp : 0;
     } else {
       waveHp.push(hp);
-      perWaveKill.push(income);
+      waveIndices.push(wi);
     }
     totalHp += hp;
-    killIncome += income;
   }
 
   const peakIdx = waveHp.reduce((m, v, i) => (v > waveHp[m] ? i : m), 0);
   const peakHp = waveHp[peakIdx];
-  let incomeBeforePeak = lv.startCoins + killIncome;
-  // پاداش موج‌ها تا قبل از موج اوج (پاداش موج در ابتدای همان موج داده می‌شود)
-  for (let i = 0; i < peakIdx; i++) incomeBeforePeak += lv.waves[i].coinBonus ?? 0;
+  const peakWaveIndex = waveIndices[peakIdx] ?? 0;
+  // Only count rewards that are actually available by the start of the peak wave:
+  // kills from earlier waves, plus coin bonuses granted at the start of waves through the peak.
+  let incomeBeforePeak = lv.startCoins;
+  for (const wave of waveEconomy) {
+    if (wave.index < peakWaveIndex) incomeBeforePeak += wave.killIncome;
+    if (wave.index <= peakWaveIndex) incomeBeforePeak += wave.coinBonus;
+  }
 
   return {
     id: lv.id, D: (ch.id - 1) * 10 + s, paths: lv.paths.length,
