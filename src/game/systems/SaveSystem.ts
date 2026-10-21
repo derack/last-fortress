@@ -1,4 +1,5 @@
 import type { SaveData, Language, Quality } from '../data/types';
+import { HEROES } from '../data/magic';
 
 // ============================================================
 // سیستم ذخیره‌سازی — Offline با localStorage
@@ -83,16 +84,27 @@ export function loadSave(): SaveData {
     if (!raw) return defaultSave();
     const data = JSON.parse(raw) as SaveData;
     const base = defaultSave();
+    // Validate the roster before restoring it. A stale/corrupt save must never
+    // select a locked or nonexistent hero, and the starter hero remains available.
+    const storedUnlocked = Array.isArray(data.unlockedHeroes)
+      ? data.unlockedHeroes.filter((id): id is string => typeof id === 'string' && Object.prototype.hasOwnProperty.call(HEROES, id))
+      : [];
+    const unlockedHeroes = [...new Set(['arman', ...storedUnlocked])];
+    const selectedHero = typeof data.selectedHero === 'string' && unlockedHeroes.includes(data.selectedHero)
+      ? data.selectedHero
+      : unlockedHeroes[0];
     const merged: SaveData = {
       ...base,
       ...data,
-      settings: { ...base.settings, ...data.settings },
-      stats: { ...base.stats, ...data.stats },
-      levels: data.levels ?? {},
-      achievements: data.achievements ?? [],
-      // مهاجرت ذخیره‌های قدیمی — قهرمانان
-      unlockedHeroes: data.unlockedHeroes?.length ? data.unlockedHeroes : ['arman'],
-      selectedHero: data.selectedHero ?? 'arman',
+      settings: { ...base.settings, ...(data.settings ?? {}) },
+      stats: { ...base.stats, ...(data.stats ?? {}) },
+      levels: data.levels && typeof data.levels === 'object' ? data.levels : {},
+      achievements: Array.isArray(data.achievements) ? data.achievements : [],
+      unlockedHeroes,
+      selectedHero,
+      // New fields were introduced after older saves existed; always backfill them.
+      heroUpgrades: { ...(data.heroUpgrades ?? {}) },
+      towerUpgrades: { ...(data.towerUpgrades ?? {}) },
       // کوره اثیر — مقادیر نامعتبر پاک می‌شوند
       forge: { ...(data.forge ?? {}) },
     };
