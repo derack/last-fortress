@@ -731,3 +731,28 @@ Stage Summary:
 - download/Last-Fortress-v1.7-release.apk
 - لینک: https://uploadkon.ir/uploads/2c4721_26LF-v1-7.zip
 - ⚠️ نکته امنیتی برای آینده: گواهی ریلیز در تاریخچه عمومی گیت هست (327863e) — قبل از انتشار در استور باید keystore چرخانده شود وگرنه هرکس می‌تواند APK جعلی هم‌امضا بسازد
+
+---
+Task ID: 32
+Agent: main
+Task: دو باگ گزارش کاربر روی v1.7 — (۱) ظاهر همه برج‌ها حتی در لول ۱ شبیه مکس (۲) دکمه‌های پایین منو هر بار لودینگ اولیه را اجرا می‌کردند + بیلد v1.8
+
+Work Log:
+- 🩸 باگ ۱ — ریشه: GLBهای ۱۰ برج (دستی authored در 7d4297d) یک مدل کامل «مکس» بودند؛ _swapIn مدل پروسیجرالِ سطح‌دار را با همان GLB کامل جایگزین می‌کرد — فقط ornament ریز L2+ تفاوت بود. hidden-node در runtime ممکن نبود چون optimizeStaticAsset گره‌های detail را در BatchedTowerStaticGeometry ادغام می‌کند
+- راه‌حل: scripts/generate-tower-levels.mjs — از هر GLB برج ۵ واریانت هرس‌شده ({id}_l1..l5.glb) با قواعد نام‌محور تولید می‌کند: L1 هسته، L2 +پرچ/طوقه، L3 +شیار بدنه، L4 +زره/سپر/تاج، L5 +شکوه (OrbitShard/FireEmber/VoidCrown/...)؛ BIN chunk از نو بازسازی می‌شود (accessor فشرده + min/max محاسبه‌ای برای frustum culling)؛ گره‌های gameplay (turret/muzzle/spinCrystal/spinRing/ember) همیشه حفظ
+- ۵۰ فایل جدید (۱.۶MB) — نردبان مثلث واقعی: sentinel 520→12872، arcane 416→10432، L5 sanity = منبع ✓؛ validate-glb-assets: هر ۸۵ GLB پاس
+- مانیفست: TOWER_BASES + towerLevelEntries (id: `${id}_l${lv}`)؛ L1 phase slice (preload)، L2-5 future (on-demand هنگام ارتقا)؛ ASSETS.towers بعد از تعریف پایه پر می‌شود (TDZ)
+- CharacterFactory.createTowerHandle: entry سطحی + heightScale = 1+0.03×(lv−1) → L5 ≈ ۱۲٪ بلندتر؛ ornament L2+ سر جایش
+- 🩸 باگ ۲ — ریشه: هر دکمه پایین منو یک iframe به /page/{id}/ باز می‌کرد = سند کامل Next.js با کل باندل (three.js و...) دوباره بوت می‌شد → «لودینگ اولیه» با هر لمس + PageLoading کریستالی + مصارف postMessage/localStorage پل
+- راه‌حل: حذف کامل iframe — پنل‌ها inline در MainMenu رندر می‌شوند و همان لحظه باز می‌شوند؛ PageShellContext (close/startBattle) جایگزین پل پیام؛ useStandaloneBack و CampaignMap context-aware (رفتار قدیمی setScreen/postMessage حفظ برای سازگاری)؛ dataset.standalone در useLayoutEffect (بدون فلش هدر دوبل)؛ پنل‌ها mounted می‌مانند → سوییچ تب ۰ms؛ store مشترک = sync سیو آنی
+- حذف: StandaloneScreen.tsx + src/app/page/[screen]/ (خروجی استاتیک دیگر /page/* ندارد)؛ i18n: menuPagesHint نو (fa/en)، کلیدهای مرده pageLoading/pageError/pageRetry حذف از هر دو زبان — parity 423/423
+- تست مرورگر: ۰ iframe، ۰ spinner، باز شدن نقشه/قهرمانان فوری، پنل قبلی در DOM می‌ماند؛ assets-preview: sentinel_l1 = 520 tris رندر vs sentinel_l5 = 12872 tris (۲۵×)
+- auditها: tsc صفر (بعد از پاک‌کردن .next/types کهنده)، eslint فایل‌های تغییر‌یافته پاک، logic-audit 31✅/0❌، balance-audit منحنی نرم، audit-i18n 0 گم‌شده
+- بیلد: versionCode 10 / versionName 1.8؛ build:cap ✓ → cap sync ✓ → gradle ✓ (8s)؛ APK 18,681,463 bytes (+0.5MB از ۵۰ GLB سطحی)؛ 85 GLB + 22 mp3؛ امضای همان 5ee184e5...
+- push: 1e98d0e (+ chore حذف اسکرین‌شات‌های QA از ریپو) → CI
+- اسکرین‌شات QA: scripts/tower-l1.png، scripts/tower-l5.png، scripts/fix2-*.png (گیت‌ایگنور شد)
+
+Stage Summary:
+- download/Last-Fortress-v1.8-release.apk
+- لینک: https://uploadkon.ir/uploads/68c321_26LF-v1-8.zip (18.7MB، تایید content-type)
+- هر دو باگ ریشه‌ای حل شد: برج‌ها واقعاً با هر ارتقا تغییر شکل می‌دهند (۵ واریانت GLB + رشد ارتفاع) و تب‌های منو بدون هیچ بارگذاری باز می‌شوند
