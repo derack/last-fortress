@@ -62,3 +62,4 @@ download/keystore/
 .env
 wt-graphics/
 tool-results/
+scripts/*.png
