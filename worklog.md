@@ -713,3 +713,21 @@ Work Log:
 
 Stage Summary:
 - v1.7 در حال بیلد — تغییرات معطوف به: عدالت بازی (کندی/اکسپلویت/دوبله)، وضوح پایدار بعد از چرخش، پایداری سیو، −۴۸MB حجم APK
+
+---
+Task ID: 31-b
+Agent: main
+Task: بیلد و انتشار v1.7
+
+Work Log:
+- scripts/restore-local-toolchain.sh (لوکال، بدون secret — keystore از تاریخچه 327863e)؛ نکته: پوشه داخلی build-tools 36 همان android-16 است — پچ شد
+- build:cap ✓ → cap sync ✓ → gradle assembleRelease ✓
+- APK: 18,169,622 bytes (v1.6: 37.7MB → 39٪ سبک‌تر از حذف دارایی مرده) — 35 GLB + 22 mp3
+- امضا: SHA-256 5ee184e5... (همان گواهی همهٔ نسخه‌ها — زنجیره آپدیت سالم)
+- versionCode 9 / versionName 1.7؛ push: eb22067 + ea893c6 → CI
+- آپلود uploadkon تایید (content-length دقیق)
+
+Stage Summary:
+- download/Last-Fortress-v1.7-release.apk
+- لینک: https://uploadkon.ir/uploads/2c4721_26LF-v1-7.zip
+- ⚠️ نکته امنیتی برای آینده: گواهی ریلیز در تاریخچه عمومی گیت هست (327863e) — قبل از انتشار در استور باید keystore چرخانده شود وگرنه هرکس می‌تواند APK جعلی هم‌امضا بسازد
