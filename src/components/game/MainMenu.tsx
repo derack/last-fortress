@@ -1,19 +1,26 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useLayoutEffect, useState } from 'react';
 import { Swords, Map as MapIcon, Users, Trophy, Settings, Gem, X, Flame } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { t, faNum } from '@/game/data/i18n';
 import { STAGES, isStageUnlocked, completedStageIds } from '@/game/data/campaign';
+import { PageShellContext } from './standalone';
+import { CampaignMap } from './CampaignMap';
+import { HeroesPanel } from './HeroesPanel';
+import { ForgePanel } from './ForgePanel';
+import { AchievementsPanel } from './AchievementsPanel';
+import { SettingsPanel } from './SettingsPanel';
 
 // ============================================================
 // صفحه اصلی — مرکز فرماندهی فانتزی مدرن با هسته آذر
 // ------------------------------------------------------------
-// ناوبری صفحات با iframe — هر صفحه (/page/...) در قاب مستقل
-// سوار می‌شود و با پیام با پنجره اصلی صحبت می‌کند:
+// ناوبری صفحات — هر پنل به‌صورت inline داخل قاب خودش رندر می‌شود
+// (بدون iframe). قبلاً هر تب یک سند کامل Next.js را داخل iframe
+// دوباره بوت می‌کرد — لودینگ اولیه بازی با هر لمس تکرار می‌شد.
+// حالا تب‌ها همان لحظه باز می‌شوند و Zustand store مشترک است:
 //   startBattle → شروع نبرد با منطقه انتخاب‌شده در نقشه
-//   saveChanged → همگام‌سازی ذخیره (قهرمان/تنظیمات)
-//   openPage / closePage → باز و بستن صفحات از داخل iframe
+//   closePage   → بستن صفحه فعال
 // ============================================================
 
 type PageId = 'map' | 'heroes' | 'forge' | 'achievements' | 'settings';
@@ -43,39 +50,35 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
     });
   }, []);
 
-  // پل پیام از صفحات iframe — فقط از مبدأ خود صفحه (جلوگیری از دستور بیرونی)
-  useEffect(() => {
-    const onMessage = (e: MessageEvent) => {
-      if (e.origin !== window.location.origin) return;
-      const data = e.data as { type?: string; levelId?: string; page?: PageId };
-      if (!data?.type) return;
-      switch (data.type) {
-        case 'startBattle': {
-          if (data.levelId) {
-            // دروازهٔ آنلاک — پیام iframe نباید مرحلهٔ قفل را دور بزند
-            const save = useGameStore.getState().save;
-            const stage = STAGES[data.levelId];
-            if (stage && save && !isStageUnlocked(stage.chapter ?? 1, stage.stage ?? 1, completedStageIds(save))) return;
-            useGameStore.getState().setPendingLevel(data.levelId);
-          }
-          closePage();
-          onStart();
-          break;
-        }
-        case 'saveChanged':
-          useGameStore.getState().initSave();
-          break;
-        case 'closePage':
-          closePage();
-          break;
-        case 'openPage':
-          if (data.page) openPage(data.page);
-          break;
-      }
+  // حالت «صفحه باز» — هدر داخلی پنل‌ها مخفی می‌شود (تیتر روی قاب والد هست)
+  // useLayoutEffect تا قبل از اولین paint اعمال شود — بدون فلش هدر دوبل
+  useLayoutEffect(() => {
+    if (activePage) document.documentElement.dataset.standalone = '1';
+    else delete document.documentElement.dataset.standalone;
+    return () => {
+      delete document.documentElement.dataset.standalone;
     };
-    window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, [onStart, closePage, openPage]);
+  }, [activePage]);
+
+  // شروع نبرد از نقشه — با همان گیت آنلاک پل پیام قدیمی
+  const startBattle = useCallback(() => {
+    const store = useGameStore.getState();
+    const levelId = store.pendingLevelId;
+    if (levelId) {
+      const stage = STAGES[levelId];
+      const current = store.save;
+      if (stage && current && !isStageUnlocked(stage.chapter ?? 1, stage.stage ?? 1, completedStageIds(current))) return;
+      store.setPendingLevel(levelId);
+    }
+    closePage();
+    onStart();
+  }, [closePage, onStart]);
+
+  // پل صفحه — پنل‌های جاسازی‌شده برای بستن/شروع از این استفاده می‌کنند
+  const pageShell = useCallback(() => ({
+    close: closePage,
+    startBattle,
+  }), [closePage, startBattle]);
 
   return (
     <div className="absolute inset-0 z-20 overflow-hidden">
@@ -129,7 +132,7 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
         </div>
       </div>
 
-      {/* ================= نوار صفحات — همیشه بالای iframe و قابل کلیک ================= */}
+      {/* ================= نوار صفحات — همیشه روی پنل‌ها و قابل کلیک ================= */}
       <div className="absolute inset-x-0 bottom-0 z-40 px-4 pb-4">
         <div className="mx-auto flex max-w-md items-stretch justify-center gap-1.5 rounded-2xl border border-slate-600/40
           bg-black/70 p-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-md">
@@ -152,7 +155,7 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
         </div>
       </div>
 
-      {/* ================= قاب صفحات iframe — نوار تب پایین آزاد می‌ماند ================= */}
+      {/* ================= قاب صفحات — پنل‌ها inline و بدون بارگذاری مجدد ================= */}
       {openPages.map((id) => {
         const active = activePage === id;
         const label = t(PAGES.find((p) => p.id === id)?.labelKey ?? id);
@@ -170,12 +173,16 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            {/* قاب صفحه — اسلش انتهایی برای سازگاری خروجی استاتیک (Capacitor) */}
-            <iframe
-              src={`/page/${id}/`}
-              title={label}
-              className="h-full w-full flex-1 bg-[#0b0f1c]"
-            />
+            {/* پنل — همان لحظه رندر می‌شود؛ بازگشت به تب فوری است (بدون unmount) */}
+            <div className="relative flex-1 overflow-hidden">
+              <PageShellContext.Provider value={pageShell()}>
+                {id === 'map' && <CampaignMap onStart={startBattle} />}
+                {id === 'heroes' && <HeroesPanel />}
+                {id === 'forge' && <ForgePanel />}
+                {id === 'achievements' && <AchievementsPanel />}
+                {id === 'settings' && <SettingsPanel />}
+              </PageShellContext.Provider>
+            </div>
           </div>
         );
       })}

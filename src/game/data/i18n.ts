@@ -164,11 +164,8 @@ const fa: Record<string, string> = {
   // باز شدن تدریجی برج‌ها
   towerLocked: 'این برج هنوز قفل است — در کمپین ستاره جمع کن!',
 
-  // منوی صفحات iframe
-  menuPagesHint: 'صفحات از همین‌جا در قاب خودشان باز می‌شوند',
-  pageLoading: 'در حال بارگذاری…',
-  pageError: 'خطا در نمایش صفحه',
-  pageRetry: 'تلاش دوباره',
+  // منوی صفحات — تب‌ها بدون بارگذاری، همان لحظه باز می‌شوند
+  menuPagesHint: 'صفحات با یک لمس و بدون بارگذاری همین‌جا باز می‌شوند',
 
   towerSentinel: 'نگهبان',
   towerSentinelDesc: 'توپ مسلسل پیشرفته با شلیک سریع — تعادل کامل',
@@ -600,11 +597,8 @@ const en: Record<string, string> = {
   // Progressive tower unlock
   towerLocked: 'This tower is still locked — earn campaign stars!',
 
-  // iframe page menu
-  menuPagesHint: 'Pages open right here inside their own frames',
-  pageLoading: 'Loading…',
-  pageError: 'Page failed to render',
-  pageRetry: 'Try again',
+  // Page menu — tabs open instantly, no reload
+  menuPagesHint: 'Pages open right here with one tap — no loading',
 
   towerSentinel: 'Sentinel',
   towerSentinelDesc: 'Advanced gatling turret with rapid fire — perfectly balanced',

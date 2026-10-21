@@ -410,8 +410,12 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
     },
   ],
 
-  // ---------------------------- برج‌ها (اختیاری — GLB جایگزین) ----------------------------
-  towers: [
+  // ---------------------------- برج‌ها (پایه + سطح‌ها — پایین پر می‌شود) ----------------------------
+  towers: [],
+};
+
+/** پایه ۱۰ برج — مدل مرجع کامل (گالری) */
+const TOWER_BASES: CharacterAssetEntry[] = [
     {
       id: 'sentinel',
       category: 'towers',
@@ -552,8 +556,27 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
       specId: 'void',
       estSizeMB: 2,
     },
-  ],
-};
+];
+
+/**
+ * ورودی‌های سطحی برج — تولیدشده توسط scripts/generate-tower-levels.mjs
+ * هر برج ۵ واریانت دارد ({id}_l1..l5.glb). لول ۱ در preload است؛
+ * لول‌های ۲..۵ هنگام ارتقا on-demand بارگذاری می‌شوند (فایل‌های چند-KB).
+ */
+function towerLevelEntries(base: CharacterAssetEntry): CharacterAssetEntry[] {
+  return ([1, 2, 3, 4, 5] as const).map((lv) => ({
+    ...base,
+    id: `${base.id}_l${lv}`,
+    file: `/assets/3d/towers/${base.id}_l${lv}.glb`,
+    tier: `Tower L${lv}`,
+    animations: [],
+    phase: lv === 1 ? ('slice' as const) : ('future' as const),
+    estSizeMB: 0.05,
+  }));
+}
+
+// ورودی‌های نهایی برج — پایه مرجع + ۵ واریانت سطحی برای هر برج
+ASSETS.towers = [...TOWER_BASES, ...TOWER_BASES.flatMap(towerLevelEntries)];
 
 /** همه ورودی‌ها به‌صورت تخت */
 export function allAssetEntries(): CharacterAssetEntry[] {

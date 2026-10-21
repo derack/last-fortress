@@ -11,6 +11,7 @@ import { CHAPTERS, STAGES, stageId, isStageUnlocked, isChapterUnlocked, chapterS
 import { ENEMIES } from '@/game/data/enemies';
 import { TOWERS, TOWER_BUILD_ORDER, isTowerUnlocked, starsUntilTower } from '@/game/data/towers';
 import { t, faNum } from '@/game/data/i18n';
+import { usePageShell } from './standalone';
 
 // ============================================================
 // نقشه Campaign — ۱۰ فصل × ۱۰ مرحله = ۱۰۰ مرحله
@@ -41,11 +42,16 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
   const setPendingLevel = useGameStore((s) => s.setPendingLevel);
   const [briefingId, setBriefingId] = useState<string | null>(null);
   const [openChapter, setOpenChapter] = useState<number>(1);
-  // حالت مستقل (iframe) — دکمه بازگشت/شروع به پنجره والد پیام می‌دهند
-  const standalone = typeof window !== 'undefined' && window.self !== window.top;
+  // حالت جاسازی‌شده (داخل قاب منو) — دکمه بازگشت/شروع به والد سپرده می‌شود
+  const shell = usePageShell();
+  const embedded = shell !== null;
+  // سازگاری با routeهای مستقل قدیمی
+  const standalone = embedded || (typeof window !== 'undefined' && window.self !== window.top);
 
   const goBack = () => {
-    if (standalone && typeof window !== 'undefined') {
+    if (shell) {
+      shell.close();
+    } else if (typeof window !== 'undefined' && window.self !== window.top) {
       window.parent.postMessage({ type: 'closePage' }, '*');
     } else {
       setScreen('menu');

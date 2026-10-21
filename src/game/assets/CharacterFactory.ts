@@ -652,11 +652,13 @@ export class CharacterFactory {
   // ------------------------- برج (GLB اختیاری) -------------------------
 
   createTowerHandle(towerId: string, level: number): CharacterHandle {
-    const entry = findAssetEntry(towerId) ?? findAssetEntry('sentinel')!;
-    const fb = createTowerFallback(towerId, level);
+    // واریانت سطحی — هر سطح GLB هرس‌شدهٔ خودش را دارد (scripts/generate-tower-levels.mjs)
+    const lv = Math.min(5, Math.max(1, Math.floor(level || 1)));
+    const entry = findAssetEntry(`${towerId}_l${lv}`) ?? findAssetEntry(towerId) ?? findAssetEntry('sentinel')!;
+    const fb = createTowerFallback(towerId, lv);
 
     const root = new THREE.Group();
-    root.name = `tower_${entry.id}_l${level}`;
+    root.name = `tower_${towerId}_l${lv}`;
     addCharacterContactShadow(root, entry);
     root.add(fb.group);
     root.userData.characterSource = 'procedural';
@@ -675,7 +677,8 @@ export class CharacterFactory {
       []
     );
 
-    void this.requestSwap(handle, entry, 1);
+    // رشد جسمی ملایم با هر ارتقا — لول ۵ ≈ ۱۲٪ بلندتر از لول ۱
+    void this.requestSwap(handle, entry, 1 + 0.03 * (lv - 1));
     return handle;
   }
 
