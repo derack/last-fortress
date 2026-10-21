@@ -20,6 +20,7 @@ jobs:
   web-build:
     name: Web Build (Next.js + asset validation)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       DATABASE_URL: file:./db/custom.db
     steps:
@@ -66,6 +67,7 @@ jobs:
     name: Android APKs (debug + release)
     runs-on: ubuntu-latest
     needs: web-build
+    timeout-minutes: 45
     env:
       DATABASE_URL: file:./db/custom.db
     steps:
