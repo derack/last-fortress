@@ -41,7 +41,10 @@ const TOWER_UDATA_KEYS = ['turret', 'muzzle', 'spinCrystal', 'spinRing', 'ember'
 // from level 1 to 5 without replacing the authored base model on every upgrade.
 // کش‌های ماژولی — dispose صحنه نباید نابودشان کند (دوباره‌سازی GPU در هر نبرد گران است)
 const towerUpgradeGeometry = new Map<string, THREE.BufferGeometry>();
-const towerUpgradeMaterials = new Map<number, THREE.MeshStandardMaterial>();
+/** کش متریال ornament — کلید `${color}:${level}` چون شدت هاله به سطح وابسته است */
+const towerUpgradeMaterials = new Map<string, THREE.MeshStandardMaterial>();
+/** شدت هالهٔ نور قطعات ارتقا بر حسب سطح برج (index = level−1) — L1 بی‌ornament */
+const TOWER_LEVEL_GLOW = [0.16, 0.38, 0.62, 0.95, 1.45] as const;
 const contactShadowGeometry = new THREE.CircleGeometry(1, 32);
 contactShadowGeometry.userData.sharedAssetResource = true;
 let contactShadowMaterial: THREE.MeshBasicMaterial | null = null;
@@ -206,15 +209,7 @@ function getTowerUpgradeGeometry(towerId: string, level: number): THREE.BufferGe
 function addTowerUpgradeOrnament(root: THREE.Group, entry: CharacterAssetEntry, level: number) {
   if (level < 2) return;
   const color = TOWER_ACCENTS[entry.id] ?? 0x9bdcff;
-  let material = towerUpgradeMaterials.get(color);
-  if (!material) {
-    material = new THREE.MeshStandardMaterial({
-      color, emissive: color, emissiveIntensity: 0.16,
-      metalness: 0.5, roughness: 0.36,
-    });
-    material.userData.sharedAssetResource = true; // کش ماژولی
-    towerUpgradeMaterials.set(color, material);
-  }
+  const material = getTowerGlowMaterial(color, level);
   const ornament = new THREE.Mesh(getTowerUpgradeGeometry(entry.id, level), material);
   ornament.name = 'towerUpgradeOrnament';
   ornament.scale.setScalar(entry.targetHeight / 3.5);
@@ -222,6 +217,27 @@ function addTowerUpgradeOrnament(root: THREE.Group, entry: CharacterAssetEntry, 
   ornament.receiveShadow = false;
   ornament.frustumCulled = true;
   root.add(ornament);
+}
+
+/** متریال درخشان ornament — شدت emissive با سطح برج بالا می‌رود (تفکیک پررنگ لول‌ها) */
+function getTowerGlowMaterial(color: number, level: number): THREE.MeshStandardMaterial {
+  const lv = Math.max(1, Math.min(5, level));
+  const key = `${color}:${lv}`;
+  let material = towerUpgradeMaterials.get(key);
+  if (!material) {
+    material = new THREE.MeshStandardMaterial({
+      color, emissive: color, emissiveIntensity: TOWER_LEVEL_GLOW[lv - 1],
+      metalness: 0.5, roughness: 0.36,
+    });
+    material.userData.sharedAssetResource = true; // کش ماژولی
+    towerUpgradeMaterials.set(key, material);
+  }
+  return material;
+}
+
+/** سطح برج از نام ریشه (مثل sentinel_l3) */
+function towerLevelFromRoot(root: THREE.Object3D): number {
+  return Number(root.name.match(/_l(\d+)/)?.[1] ?? 1);
 }
 
 /** انتقال userData سازنده برج از گروه داخلی به ریشه (Gameplay به این کلیدها تکیه دارد) */
@@ -257,14 +273,7 @@ function ensureTowerSpinRing(root: THREE.Object3D, entry: CharacterAssetEntry) {
   const turret = root.userData.turret as THREE.Object3D | undefined;
   if (!turret) return;
   const color = TOWER_ACCENTS[entry.id] ?? 0x9bdcff;
-  let material = towerUpgradeMaterials.get(color);
-  if (!material) {
-    material = new THREE.MeshStandardMaterial({
-      color, emissive: color, emissiveIntensity: 0.16,
-      metalness: 0.5, roughness: 0.36,
-    });
-    towerUpgradeMaterials.set(color, material);
-  }
+  const material = getTowerGlowMaterial(color, towerLevelFromRoot(root));
   let ring = root.userData.spinRing as THREE.Mesh | undefined;
   // Placeholder nodes survive in userData when root.clear() removes their parent.
   // Reuse only a ring that is actually attached to the mounted GLB turret.

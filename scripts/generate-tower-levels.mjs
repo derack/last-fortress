@@ -42,6 +42,60 @@ function nodeTier(name) {
   return 1;
 }
 
+// ---------------------------- LEVEL LOOKS ----------------------------
+// جدول قواعد ظاهری هر سطح — برای تنظیم فقط همین جدول را ویرایش کنید.
+//   desat      = چقدر رنگ به خاکستری نزدیک شود (0=رنگ کامل، 1=خاکستری)
+//   tint       = ضریب RGB روی رنگ بدنه
+//   brightness = ضریب روشنایی کل بدنه
+//   mix / mixAmount = رنگ امضای لول که با این نسبت مستقیم در بدنه مخلوط
+//       می‌شود (حتی روی پالت خنثی هم هویت رنگی لول را تضمین می‌کند)
+//   emissiveMul= ضریب تشدید نور قطعات درخشان (کریستال/رُن/آتش)
+//   metalMul / roughAdd = فلزی‌تر و صیقلی‌تر شدن تدریجی
+const LEVEL_LOOKS = [
+  /* L1 — سنگ خام */   { desat: 0.55, tint: [0.97, 0.97, 0.97], brightness: 0.85, mix: [0.62, 0.63, 0.66], mixAmount: 0.10, emissiveMul: 0.15, metalMul: 0.75, roughAdd: +0.12 },
+  /* L2 — شنی گرم */   { desat: 0.35, tint: [1.05, 0.99, 0.92], brightness: 0.95, mix: [0.85, 0.72, 0.55], mixAmount: 0.09, emissiveMul: 0.45, metalMul: 0.90, roughAdd: +0.05 },
+  /* L3 — برنز */      { desat: 0.18, tint: [1.10, 0.95, 0.78], brightness: 1.02, mix: [0.72, 0.45, 0.20], mixAmount: 0.16, emissiveMul: 0.75, metalMul: 1.00, roughAdd:  0.00 },
+  /* L4 — فولاد آبی */ { desat: 0.08, tint: [0.88, 1.00, 1.18], brightness: 1.06, mix: [0.55, 0.75, 1.00], mixAmount: 0.14, emissiveMul: 1.10, metalMul: 1.06, roughAdd: -0.04 },
+  /* L5 — طلایی افسانه‌ای */ { desat: 0.00, tint: [1.14, 1.05, 0.85], brightness: 1.14, mix: [1.00, 0.80, 0.42], mixAmount: 0.22, emissiveMul: 2.20, metalMul: 1.10, roughAdd: -0.08 },
+];
+
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+/** اعمال قواعد سطح روی یک متریال (کپی عمیق — منبع دست‌نخورده می‌ماند) */
+function applyLevelLook(srcMat, level) {
+  const look = LEVEL_LOOKS[level - 1];
+  if (!look) return srcMat;
+  const mat = JSON.parse(JSON.stringify(srcMat));
+  mat.name = `${srcMat.name ?? 'mat'}_L${level}`;
+  const pbr = mat.pbrMetallicRoughness ?? (mat.pbrMetallicRoughness = {});
+  // قطعات درخشان فقط تشدید نور می‌گیرند — رنگشان با قواعد بدنه عوض نمی‌شود
+  const isGlow = Array.isArray(mat.emissiveFactor) && mat.emissiveFactor.some((v) => v > 0);
+  if (Array.isArray(pbr.baseColorFactor) && !isGlow) {
+    const c = pbr.baseColorFactor;
+    const lum = 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2];
+    for (let i = 0; i < 3; i++) {
+      const desat = c[i] * (1 - look.desat) + lum * look.desat;
+      const mixed = desat * (1 - look.mixAmount) + look.mix[i] * look.mixAmount;
+      c[i] = clamp01(mixed * look.tint[i] * look.brightness);
+    }
+  }
+  if (Number.isFinite(pbr.metallicFactor)) pbr.metallicFactor = clamp01(pbr.metallicFactor * look.metalMul);
+  if (Number.isFinite(pbr.roughnessFactor)) pbr.roughnessFactor = clamp01(pbr.roughnessFactor + look.roughAdd);
+  // قطعات درخشان: emissiveFactor بالای 1 با KHR_materials_emissive_strength
+  if (isGlow) {
+    const peak = Math.max(...mat.emissiveFactor);
+    const strength = peak * look.emissiveMul;
+    mat.emissiveFactor = mat.emissiveFactor.map((v) => clamp01(v * look.emissiveMul));
+    if (strength > 1) {
+      mat.extensions = { ...(mat.extensions ?? {}), KHR_materials_emissive_strength: { emissiveStrength: strength } };
+      docUsesEmissiveStrength = true;
+    }
+  }
+  return mat;
+}
+
+let docUsesEmissiveStrength = false;
+
 // ---------------------------- GLB I/O ----------------------------
 function parseGlb(file) {
   const bytes = fs.readFileSync(file);
@@ -129,6 +183,7 @@ function triCount(doc) {
  * واسطه حذف‌شده pull-up می‌شوند و bin فقط شامل accessorهای زنده است.
  */
 function buildLevelVariant(srcDoc, srcBin, level) {
+  docUsesEmissiveStrength = false; // فلگ per-variant — نشت بین برج‌ها ممنوع
   const newNodes = [];
 
   const buildSubtreeInto = (oldIdx, outList) => {
@@ -207,7 +262,7 @@ function buildLevelVariant(srcDoc, srcBin, level) {
   const matRemap = new Map();
   for (const oldMat of [...usedMaterials].sort((a, b) => a - b)) {
     matRemap.set(oldMat, newMaterials.length);
-    newMaterials.push(srcDoc.materials[oldMat]);
+    newMaterials.push(applyLevelLook(srcDoc.materials[oldMat], level));
   }
   const meshRemap = new Map();
   for (const [i, m] of newMeshes.entries()) meshRemap.set([...usedMeshes].sort((a, b) => a - b)[i], i);
@@ -221,8 +276,13 @@ function buildLevelVariant(srcDoc, srcBin, level) {
     }
   }
 
+  const extensionsUsed = [...(srcDoc.extensionsUsed ?? [])];
+  if (docUsesEmissiveStrength && !extensionsUsed.includes('KHR_materials_emissive_strength')) {
+    extensionsUsed.push('KHR_materials_emissive_strength');
+  }
   const outDoc = {
     asset: { ...srcDoc.asset, generator: 'Last Fortress Tower Level Pipeline' },
+    ...(extensionsUsed.length ? { extensionsUsed } : {}),
     scene: 0,
     scenes: [{ name: srcDoc.scenes[0]?.name, nodes: newSceneRoots }],
     nodes: newNodes,

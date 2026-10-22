@@ -52,7 +52,9 @@ for (const url of refs) {
       if (png.readUInt32BE(16) < 32 || png.readUInt32BE(20) < 32) throw new Error('image '+ii+' resolution unexpectedly small');
       const width = png.readUInt32BE(16), height = png.readUInt32BE(20);
       if (process.env.CAP_BUILD === '1') {
-        const mobileMax = isLargeAsset ? 256 : 128;
+        // Mobile tier raised with the v1.9 quality pass: hero/boss 384px,
+        // standard 192px, emissive 128px (previously 256/128 hard caps).
+        const mobileMax = isLargeAsset ? 384 : 192;
         if (width > mobileMax || height > mobileMax) {
           throw new Error('mobile texture budget exceeded by image '+ii+' ('+width+'x'+height+', max '+mobileMax+')');
         }

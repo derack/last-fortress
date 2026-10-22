@@ -45,16 +45,16 @@ function encodePng(width,height,rgba) {
 function makePbrImages(baseColor,accent,style,category='enemies') {
   // Build-specific, seamless material atlases: each surface gets its own
   // albedo; normal/MR/AO maps are shared per character to keep memory bounded.
-  // Desktop keeps richer textures; Android builds use a deliberately smaller
-  // texture tier to reduce decoded/GPU texture memory by roughly 4x.
+  // Desktop keeps richer textures; the mobile tier was raised from 192/96px to
+  // 384/192px (4x texels per surface) after user feedback that units read as
+  // blurry on Android. Emissive maps use a 128px mobile tier / 256px desktop.
   const mobileProfile = process.env.CAP_BUILD === '1' || process.env.ASSET_TEXTURE_PROFILE === 'mobile';
   const isLargeAsset = category === 'heroes' || category === 'bosses';
-  // High-detail desktop/web tier: 640px hero/boss atlases (56% more texels
-  // than 512px) and 256px standard units. Mobile remains 192px/96px to protect
-  // decoded GPU memory and frame-time budgets on Android. Emissive maps use a
-  // separate 256px desktop tier and a compact 64px mobile tier.
-  const size = mobileProfile ? (isLargeAsset ? 192 : 96) : (isLargeAsset ? 640 : 256);
-  const emissiveSize = mobileProfile ? 64 : 256;
+  // High-detail desktop/web tier: 640px hero/boss atlases and 256px standard
+  // units. Mobile: 384px hero/boss + 192px standard — sharp enough at typical
+  // phone viewing distance while staying within decoded-GPU memory budgets.
+  const size = mobileProfile ? (isLargeAsset ? 384 : 192) : (isLargeAsset ? 640 : 256);
+  const emissiveSize = mobileProfile ? 128 : 256;
   const albedos=Array.from({length:5},()=>new Uint8Array(size*size*4));
   const normal=new Uint8Array(size*size*4), mr=new Uint8Array(size*size*4);
   const ao=new Uint8Array(size*size*4), emissive=new Uint8Array(emissiveSize*emissiveSize*4);
@@ -823,7 +823,7 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
   for (const [materialName,mat] of [['armor',materials[0]],['edge',materials[1]],['cloth',materials[2]],['glow',materials[3]],['dark',materials[4]]]) {
     mat.pbrMetallicRoughness.baseColorTexture={index:albedoTextureIndex[materialName]};
     mat.pbrMetallicRoughness.metallicRoughnessTexture={index:6};
-    mat.normalTexture={index:5,scale:0.7};
+    mat.normalTexture={index:5,scale:0.9};
     mat.occlusionTexture={index:7,strength:0.28};
   }
   materials[3].emissiveTexture={index:8};
@@ -859,8 +859,10 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
       for(const f of faces) for(let i=0;i<6;i+=3) pushTri(v[f[i]],v[f[i+1]],v[f[i+2]]);
     } else if(piece.kind==='sphere') {
       // Indexed smooth sphere: reuse vertices instead of duplicating every triangle corner.
-      const baseLat=(category==='heroes'||category==='bosses')?16:12;
-      const baseLon=(category==='heroes'||category==='bosses')?24:18;
+      // Tessellation raised (18/26 hero-boss, 14/20 standard) for smoother
+      // silhouettes on big-screen units; LODs still subtract from these bases.
+      const baseLat=(category==='heroes'||category==='bosses')?18:14;
+      const baseLon=(category==='heroes'||category==='bosses')?26:20;
       const lat=Math.max(4,baseLat-lodLevel*2);
       const lon=Math.max(6,baseLon-lodLevel*4);
       const base=pos.length/3, points=[];
@@ -883,7 +885,7 @@ function makeCharacter(id, category, baseColor, accent, styleInput) {
         indices.push(a,b,d,b,c,d);
       }
     } else {
-      const baseSegments=(category==='heroes'||category==='bosses')?(piece.kind==='cone'?12:16):(piece.kind==='cone'?10:12);
+      const baseSegments=(category==='heroes'||category==='bosses')?(piece.kind==='cone'?13:18):(piece.kind==='cone'?11:14);
       const segments=Math.max(piece.kind==='cone'?6:8,baseSegments-lodLevel*3);
       const topR=piece.kind==='cone'?0:0.5, botR=0.5;
       for(let i=0;i<segments;i++) {

@@ -463,6 +463,23 @@ class AssetManagerImpl {
         scene.traverse((node) => {
           if (/_LOD[12]$/i.test(node.name)) node.visible = false;
         });
+        // تکسچرهای GLB به‌طور پیش‌فرض anisotropy=1 دارند → در زوایای مایل
+        // (دوربین تاکتیکی ~۵۰°) سطح‌ها تار دیده می‌شوند. اینجا یک‌بار هنگام لود
+        // روی همهٔ مپ‌های PBR تنظیم می‌شود؛ چون تکسچرها بین کلون‌ها مشترک‌اند
+        // همین یک traverse کافی است.
+        const maxAniso = MOBILE_ASSET_BUDGET ? 4 : 8;
+        scene.traverse((node) => {
+          const mesh = node as THREE.Mesh;
+          if (!mesh.isMesh) return;
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          for (const mat of mats) {
+            if (!mat) continue;
+            for (const key of ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'aoMap', 'emissiveMap'] as const) {
+              const tex = (mat as THREE.MeshStandardMaterial)[key];
+              if (tex && tex.anisotropy < maxAniso) tex.anisotropy = maxAniso;
+            }
+          }
+        });
         optimizeStaticAsset(scene, entry.category);
         const runtimeClips = (gltf.animations ?? []).length > 0 ? gltf.animations : createStaticCharacterClips(scene, entry.category);
         scene.visible = true;
