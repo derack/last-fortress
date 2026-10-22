@@ -44,7 +44,7 @@ const towerUpgradeGeometry = new Map<string, THREE.BufferGeometry>();
 /** کش متریال ornament — کلید `${color}:${level}` چون شدت هاله به سطح وابسته است */
 const towerUpgradeMaterials = new Map<string, THREE.MeshStandardMaterial>();
 /** شدت هالهٔ نور قطعات ارتقا بر حسب سطح برج (index = level−1) — L1 بی‌ornament */
-const TOWER_LEVEL_GLOW = [0.16, 0.38, 0.62, 0.95, 1.45] as const;
+const TOWER_LEVEL_GLOW = [0.22, 0.58, 0.95, 1.45, 2.15] as const;
 const contactShadowGeometry = new THREE.CircleGeometry(1, 32);
 contactShadowGeometry.userData.sharedAssetResource = true;
 let contactShadowMaterial: THREE.MeshBasicMaterial | null = null;
@@ -227,7 +227,7 @@ function getTowerGlowMaterial(color: number, level: number): THREE.MeshStandardM
   if (!material) {
     material = new THREE.MeshStandardMaterial({
       color, emissive: color, emissiveIntensity: TOWER_LEVEL_GLOW[lv - 1],
-      metalness: 0.5, roughness: 0.36,
+      metalness: 0.85, roughness: 0.22, envMapIntensity: 1.25,
     });
     material.userData.sharedAssetResource = true; // کش ماژولی
     towerUpgradeMaterials.set(key, material);

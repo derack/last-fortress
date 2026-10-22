@@ -50,7 +50,15 @@ export class AudioSystem {
       this.ctx = new Ctor();
       this.master = this.ctx.createGain();
       this.master.gain.value = 1;
-      this.master.connect(this.ctx.destination);
+      // v2 — کمپرسور نرم glue: پیک‌های تیز لحظه‌ای را روی اسپیکر گوشی گرد می‌کند (بدون حس فشردگی)
+      const glue = this.ctx.createDynamicsCompressor();
+      glue.threshold.value = -16;
+      glue.knee.value = 26;
+      glue.ratio.value = 3.2;
+      glue.attack.value = 0.004;
+      glue.release.value = 0.18;
+      this.master.connect(glue);
+      glue.connect(this.ctx.destination);
       this.musicGain = this.ctx.createGain();
       this.musicGain.gain.value = this.musicVol * 0.35;
       this.musicGain.connect(this.master);

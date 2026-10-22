@@ -52,11 +52,11 @@ function nodeTier(name) {
 //   emissiveMul= ضریب تشدید نور قطعات درخشان (کریستال/رُن/آتش)
 //   metalMul / roughAdd = فلزی‌تر و صیقلی‌تر شدن تدریجی
 const LEVEL_LOOKS = [
-  /* L1 — سنگ خام */   { desat: 0.55, tint: [0.97, 0.97, 0.97], brightness: 0.85, mix: [0.62, 0.63, 0.66], mixAmount: 0.10, emissiveMul: 0.15, metalMul: 0.75, roughAdd: +0.12 },
-  /* L2 — شنی گرم */   { desat: 0.35, tint: [1.05, 0.99, 0.92], brightness: 0.95, mix: [0.85, 0.72, 0.55], mixAmount: 0.09, emissiveMul: 0.45, metalMul: 0.90, roughAdd: +0.05 },
-  /* L3 — برنز */      { desat: 0.18, tint: [1.10, 0.95, 0.78], brightness: 1.02, mix: [0.72, 0.45, 0.20], mixAmount: 0.16, emissiveMul: 0.75, metalMul: 1.00, roughAdd:  0.00 },
-  /* L4 — فولاد آبی */ { desat: 0.08, tint: [0.88, 1.00, 1.18], brightness: 1.06, mix: [0.55, 0.75, 1.00], mixAmount: 0.14, emissiveMul: 1.10, metalMul: 1.06, roughAdd: -0.04 },
-  /* L5 — طلایی افسانه‌ای */ { desat: 0.00, tint: [1.14, 1.05, 0.85], brightness: 1.14, mix: [1.00, 0.80, 0.42], mixAmount: 0.22, emissiveMul: 2.20, metalMul: 1.10, roughAdd: -0.08 },
+  /* L1 — سنگ خام */   { desat: 0.52, tint: [0.97, 0.97, 0.97], brightness: 0.85, mix: [0.62, 0.63, 0.66], mixAmount: 0.10, emissiveMul: 0.22, metalMul: 0.75, roughAdd: +0.12 },
+  /* L2 — مسی گرم */   { desat: 0.28, tint: [1.08, 0.98, 0.90], brightness: 0.97, mix: [0.94, 0.60, 0.32], mixAmount: 0.16, emissiveMul: 0.75, metalMul: 0.92, roughAdd: +0.03 },
+  /* L3 — برنز کهربایی */ { desat: 0.12, tint: [1.12, 0.94, 0.76], brightness: 1.04, mix: [0.84, 0.44, 0.13], mixAmount: 0.24, emissiveMul: 1.15, metalMul: 1.05, roughAdd: -0.02 },
+  /* L4 — فولاد یاقوتی */ { desat: 0.05, tint: [0.86, 1.00, 1.22], brightness: 1.08, mix: [0.36, 0.66, 1.00], mixAmount: 0.22, emissiveMul: 1.70, metalMul: 1.10, roughAdd: -0.06 },
+  /* L5 — طلایی افسانه‌ای */ { desat: 0.00, tint: [1.16, 1.04, 0.82], brightness: 1.20, mix: [1.00, 0.74, 0.26], mixAmount: 0.32, emissiveMul: 3.40, metalMul: 1.15, roughAdd: -0.12 },
 ];
 
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
