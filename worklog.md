@@ -756,3 +756,27 @@ Stage Summary:
 - download/Last-Fortress-v1.8-release.apk
 - لینک: https://uploadkon.ir/uploads/68c321_26LF-v1-8.zip (18.7MB، تایید content-type)
 - هر دو باگ ریشه‌ای حل شد: برج‌ها واقعاً با هر ارتقا تغییر شکل می‌دهند (۵ واریانت GLB + رشد ارتفاع) و تب‌های منو بدون هیچ بارگذاری باز می‌شوند
+
+---
+Task ID: 33
+Agent: main
+Task: درخواست کاربر — «مدل‌ها بی‌کیفیت‌اند (تاور/هیرو/باس/دشمن)؛ کیفیت و وضوح بیشتر + تفکیک ظاهری لول‌ها پررنگ‌تر (رنگ بدنه هر لول/افکت نور)» + بیلد v1.9
+
+Work Log:
+- تحلیل ترکیب GLB موبایل (اسکریپت جدید analyze-glb-size.mjs): علت «بی‌کیفیت بودن» هندسه نبود (آرمان ۳۶K تری) — تکسچر موبایل فقط 192/96px و anisotropy=1 بود
+- ژنراتور ریگ: تیر موبایل 4x تکسل شد (هیرو/باس 192→384، دشمن 96→192، امیسیو 64→128)؛ تسلاسیون کره 18/26 و 14/20، استوانه/مخروط 18/13 و 14/11؛ normalTexture scale 0.7→0.9؛ والیدیتور با سقف جدید 384/192 هماهنگ شد
+- AssetManager: anisotropy=4 موبایل / 8 دسکتاپ روی همهٔ مپ‌های PBR همهٔ GLBها هنگام لود (رفع تاری زوایای مایل دوربین تاکتیکی)
+- generate-tower-levels.mjs: جدول قواعد LEVEL_LOOKS (جدول مستقل برای تیون آسان — «فقط یک خط») — رنگ امضای هر لول مستقیم در بدنه مخلوط می‌شود: L1 سنگ خام(desat 0.55، نور 0.15x) → L2 شنی → L3 برنز → L4 فولادآبی → L5 طلایی افسانه‌ای(emissiveMul 2.2 با KHR_materials_emissive_strength)؛ قطعات درخشان فقط نور می‌گیرند، رنگ‌شان ثابت
+- CharacterFactory: هالهٔ ornament و حلقهٔ چرخان حالا per-level است (TOWER_LEVEL_GLOW = 0.16/0.38/0.62/0.95/1.45؛ کش متریال با کلید color:level)
+- QA بصری گالری: آرمان (22.5K تری/8 مپ PBR) شارپ؛ sentinel L1=520 تری سنگی خام vs L5=12,872 تری طلایی — تفکیک بدون ابهام؛ fire_l5 شعلهٔ white-hot با emissiveStrength ✓
+- ممیزی: tsc صفر خطا، logic-audit 31✅/0❌، balance-audit منحنی نرم (151%→296% فصل 5→10)، eslint پاک
+- بیلد: restore-local-toolchain (TOOLCHAIN READY) → build:cap ✓ → cap sync ✓ → gradle 2m28s ✓ → versionCode 11 / versionName 1.9
+- APK: 30,390,443 bytes (29MB؛ v1.8: 18.7MB → +10.3MB ناشی از 4x تکسل تکسچر — PNG فشرده‌نشدنی است)؛ 85 GLB + 22 mp3؛ امضای همان گواهی 5ee184e5...
+- push FAILED: ~/.git-credentials با پاک‌سازی sandbox از بین رفت و از تاریخچهٔ گیت قابل بازیابی نیست (نسخهٔ قدیمی اسکریپت قبل از push عفونی شده بود) → دو کامیت آمادهٔ push روی main محلی است (651274c + 8320491)؛ برای push نیاز به توکن تازه از کاربر است
+
+Stage Summary:
+- download/Last-Fortress-v1.9-release.apk (29MB)
+- لینک: https://uploadkon.ir/uploads/9deb22_26LF-v1-9.zip
+- کیفیت مدل‌ها: تکسچر 4x تکسل + تسلاسیون بالاتر + anisotropy — وضوح «آینه‌ای» روی دستگاه واقعی
+- تفکیک لول برج: رنگ امضای هر لول + نور رشدی + هالهٔ ornament — L1 با L5 حتی از دور اشتباه نمی‌شود
+- ⚠️ برای AI بعدی: push گیت‌هاب تا زمان دریافت توکن تازه معلق است؛ commits آماده‌اند
