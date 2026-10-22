@@ -4,7 +4,7 @@ import { TOWERS, isTowerUnlocked } from '../data/towers';
 import { ENEMIES } from '../data/enemies';
 import { MAGIC } from '../data/magic';
 import { forgePct } from '../data/forge';
-import { heroMetaLevel, towerMetaLevel, heroMetaPct, towerMetaPct, TOWER_META_RATE_RATIO, TOWER_META_RANGE_RATIO } from '../data/meta';
+import { heroMetaLevel, towerMetaLevel, heroMetaPct, towerMetaPct, TOWER_META_RATE_RATIO, TOWER_META_RANGE_RATIO, heroPowerUnlocked } from '../data/meta';
 import { BattleScene } from '../scene/BattleScene';
 import { CameraController } from './CameraController';
 import { InputController, TapHit } from './InputController';
@@ -17,7 +17,9 @@ import { Enemy } from '../entities/Enemy';
 import { Tower } from '../entities/Tower';
 import { Projectile } from '../entities/Projectile';
 import { Hero } from '../entities/Hero';
-import { rollChest } from '../data/chest';
+import { rollChest, rollChallengeChest, payChestCards } from '../data/chest';
+import type { DailyModifier } from '../data/daily';
+import { isChallengeDoneToday, todayKey } from '../data/daily';
 import { characterFactory } from '../assets';
 import type { DamageableEnemy, GameContext } from '../entities/context';
 
@@ -127,13 +129,17 @@ export class Game {
   private totalWavesSurvivedAtStart: number;
   /** v2.1 — آیا باس این مرحله برای اولین بار کشته می‌شود؟ (پاداش الماس بزرگ فقط فتح اول) */
   private bossFirstKill: boolean;
+  /** v2.3 — مادی‌فایر چالش روزانه (null = نبرد عادی) */
+  private dailyMul: DailyModifier | null;
 
-  constructor(canvas: HTMLCanvasElement, level: LevelData, quality: string, save: SaveData, language: 'fa' | 'en', heroId: string | null = null) {
+  constructor(canvas: HTMLCanvasElement, level: LevelData, quality: string, save: SaveData, language: 'fa' | 'en', heroId: string | null = null, daily: DailyModifier | null = null) {
     this.canvas = canvas;
     this.level = level;
     this.save = save;
     // کوره اثیر — ضرایب دائمی اقتصاد و هسته
-    this.coins = Math.round(level.startCoins * (1 + forgePct(save, 'economy')));
+    // v2.3 — چالش روزانه: بودجهٔ شروع با coinMul مادی‌فایر تنظیم می‌شود
+    this.dailyMul = daily;
+    this.coins = Math.round(level.startCoins * (1 + forgePct(save, 'economy')) * (daily?.coinMul ?? 1));
     // v2.2 — الماس در نبرد خرج نمی‌شود (جادو سکه‌ای است)؛ شمارندهٔ نبرد از صفر شروع می‌شود
     // و فقط «درآمد این نبرد» (باس/دستاورد) در پایان به خزانه اضافه می‌شود
     this.crystals = 0;
@@ -223,6 +229,10 @@ export class Game {
   // ===================== چرخه اصلی =====================
 
   start() {
+    // v2.3 — بنر ورود به چالش روزانه (مادی‌فایر فعال است)
+    if (this.dailyMul) {
+      this.bus.emit('toast', { key: 'challengeActive', type: 'info' });
+    }
     this.lastFrame = performance.now();
     const loop = (t: number) => {
       if (this.disposed) return;
@@ -463,6 +473,12 @@ export class Game {
     const data = ENEMIES[enemyId];
     if (!data) return;
     const enemy = new Enemy(data, tier, this.scene3d.scene, this.ctx, pathIndex);
+    // v2.3 — مادی‌فایر چالش روزانه: جان/سرعت دشمنان تقویت می‌شود (پاداش دریافتی دست‌نخورده)
+    if (this.dailyMul) {
+      enemy.maxHp = Math.round(enemy.maxHp * this.dailyMul.hpMul);
+      enemy.hp = enemy.maxHp;
+      enemy.speed *= this.dailyMul.speedMul;
+    }
     this.enemies.push(enemy);
     this.vfx.burst(enemy.getPos().clone().add(new THREE.Vector3(0, 1.5, 0)), data.accent, 10, { speed: 4, life: 0.5, size: 0.5, gravity: 3 });
     if (data.boss) {
@@ -929,6 +945,7 @@ export class Game {
         level: 0, xpPct: 0, abilityCd: 0, abilityMax: 0, deployed: false,
         hp: 0, maxHp: 0, dead: false, respawnIn: 0,
         heroId: '', nameKey: '', titleKey: '',
+        abilityLocked: true,
       };
     }
     const data = this.hero.data;
@@ -945,6 +962,7 @@ export class Game {
       heroId: data.id,
       nameKey: data.nameKey,
       abilityNameKey: data.abilityNameKey,
+      abilityLocked: !heroPowerUnlocked(this.save, data.id),
     };
   }
 
@@ -1079,6 +1097,12 @@ export class Game {
 
   useHeroAbility(): boolean {
     if (!this.hero) return false;
+    // v2.3 — قدرت ویژهٔ قهرمان با سطح ۵ آهنگری همان قهرمان باز می‌شود
+    if (!heroPowerUnlocked(this.save, this.hero.data.id)) {
+      this.bus.emit('toast', { key: 'heroPowerLocked', type: 'error' });
+      this.audio.play('error');
+      return false;
+    }
     const ok = this.hero.useAbility();
     if (ok) this.bus.emit('hero', this.heroState());
     return ok;
@@ -1112,11 +1136,17 @@ export class Game {
 
     const prev = this.save.levels[this.level.id];
     // v2.1 — جعبهٔ غنیمت: سکه به کیف پول متا + کارت برج برای آهنگری (فتح اول = جعبه بزرگ)
+    // v2.3 — نبرد چالش روزانه: جعبهٔ «کارت تضمینی» جای جعبهٔ عادی — فقط اولین پیروزی روز
     const firstClear = !prev?.completed;
-    const chest = rollChest(this.level.chapter ?? 1, stars, firstClear);
+    const challengeReward = this.dailyMul !== null && !isChallengeDoneToday(this.save);
+    const chest = challengeReward
+      ? rollChallengeChest(this.level.chapter ?? 1)
+      : rollChest(this.level.chapter ?? 1, stars, firstClear);
     this.save.coins = Math.max(0, Math.floor((this.save.coins ?? 0) + chest.coins));
-    for (const card of chest.cards) {
-      this.save.towerCards[card.towerId] = Math.min(9999, (this.save.towerCards[card.towerId] ?? 0) + card.count);
+    // v2.3 — کارت برج مکس خودکار به سکه فروخته می‌شود (کارت مرده انباشته نمی‌شود)
+    const cardsSoldCoins = payChestCards(this.save, chest.cards);
+    if (challengeReward) {
+      this.save.dailyChallenge = { date: todayKey(), stars };
     }
     // دستاوردهای رویدادی پیروزی — با پاداش کریستال (قبلاً بدون پاداش بودند)
     if (this.leaks === 0) this.grantAchievement('untouchable');
@@ -1141,6 +1171,9 @@ export class Game {
       healthPct: Math.round(healthPct),
       rewards: { crystals: 0, knowledge: rewardShards, coins: this.coinsEarned },
       chest,
+      // v2.3 — نشانه‌های چالش روزانه + فروش خودکار کارت برج مکس
+      challengeReward,
+      cardsSoldCoins,
     });
   }
 

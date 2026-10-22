@@ -10,9 +10,10 @@ import { useStandaloneBack } from './standalone';
 import { HEROES } from '@/game/data/magic';
 import { TOWERS, isTowerUnlocked, starsUntilTower } from '@/game/data/towers';
 import {
-  META_MAX_LEVEL, HERO_META_STEP, TOWER_META_STEP,
+  META_MAX_LEVEL, HERO_META_STEP, TOWER_META_STEP, CARD_SELL_PRICE,
   heroMetaLevel, towerMetaLevel, heroMetaPct, towerMetaPct,
   heroUpgradeCost, towerCardCost, towerCoinCost, towerCardCount, META_TOWER_IDS, grantForgeAchievements,
+  sellExtraTowerCards, heroPowerUnlocked, HERO_POWER_META_LEVEL,
 } from '@/game/data/meta';
 import { t, faNum } from '@/game/data/i18n';
 
@@ -36,7 +37,11 @@ const HERO_ROLE_COLORS: Record<string, string> = {
 
 type ForgeTab = 'heroes' | 'towers';
 
-export function UpgradesPanel() {
+/**
+ * آهنگری آذر — قهرمانان (دانش) + برج‌ها (کارت + سکه)
+ * v2.3 — داخل ForgePanel به‌صورت تب «کارت» جاسازی می‌شود (embedded)
+ */
+export function UpgradesPanel({ embedded = false }: { embedded?: boolean }) {
   const goBack = useStandaloneBack();
   const save = useGameStore((s) => s.save);
   const updateSave = useGameStore((s) => s.updateSave);
@@ -66,7 +71,9 @@ export function UpgradesPanel() {
         s2.knowledge -= cost;
         grantForgeAchievements(s2);
       });
-      store.pushToast('forgeUpgraded', 'success');
+      // v2.3 — رسیدن به سطح ۵ آهنگری قهرمان = آزادشدن قدرت ویژهٔ او
+      const newLvl = heroMetaLevel(useGameStore.getState().save ?? sv, id);
+      store.pushToast(newLvl === HERO_POWER_META_LEVEL ? 'heroPowerUnlocked' : 'forgeUpgraded', 'success');
       return;
     }
     // برج — کارت + سکه (سبک Clash Royale)
@@ -90,16 +97,29 @@ export function UpgradesPanel() {
     store.pushToast('forgeUpgraded', 'success');
   };
 
+  /** v2.3 — فروش کارت‌های اضافی برج مکس به سکه */
+  const doSellExtra = (id: string) => {
+    const store = useGameStore.getState();
+    if (!store.save) return;
+    let sold = 0;
+    store.updateSave((s2) => {
+      sold = sellExtraTowerCards(s2, id);
+    });
+    if (sold > 0) store.pushToast('cardsSoldToast', 'success');
+  };
+
   const pct = (p: number) => `+${faNum(Math.round(p * 100))}٪`;
 
   return (
     <div className="absolute inset-0 z-30 flex flex-col bg-gradient-to-b from-[#0b0f1c] to-[#101828]">
-      {/* هدر */}
+      {/* هدر — در حالت جاسازی‌شده داخل ForgePanel دکمهٔ بازگشت حذف می‌شود */}
       <div className="panel-header flex items-center gap-3 border-b border-amber-400/20 bg-black/40 px-4 py-3">
-        <button onClick={goBack}
-          className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-600/50 bg-black/40 text-slate-300 active:scale-95">
-          <ArrowRight className="h-5 w-5" />
-        </button>
+        {!embedded && (
+          <button onClick={goBack}
+            className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-600/50 bg-black/40 text-slate-300 active:scale-95">
+            <ArrowRight className="h-5 w-5" />
+          </button>
+        )}
         <Hammer className="h-5 w-5 text-orange-400" />
         <h2 className="text-xl font-black text-amber-200">{t('forgeTitle')}</h2>
       </div>
@@ -171,8 +191,21 @@ export function UpgradesPanel() {
 
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     <ForgeStat icon={Heart} label={t('forgeHeroBonus')} value={pct(curPct)} color="text-rose-400" />
-                    <ForgeStat icon={Swords} label={t('level')} value={`${t('forgeLevel')} ${faNum(lvl)}`} color="text-amber-400" />
+                    <ForgeStat icon={Swords} label={t('forgeLevel')} value={`${t('forgeLevel')} ${faNum(lvl)}`} color="text-amber-400" />
                     <ForgeStat icon={Sparkles} label={t('forgeNext')} value={maxed ? t('forgeMax') : pct(nextPct)} color="text-violet-300" />
+                  </div>
+
+                  {/* v2.3 — قدرت ویژهٔ قهرمان: با سطح ۵ آهنگری باز می‌شود */}
+                  <div className={`mt-3 flex items-center gap-2 rounded-xl border px-2.5 py-1.5
+                    ${heroPowerUnlocked(save, id)
+                    ? 'border-emerald-500/40 bg-emerald-500/10'
+                    : 'border-slate-700/60 bg-black/40'}`}>
+                    {heroPowerUnlocked(save, id)
+                      ? <Sparkles className="h-4 w-4 text-emerald-400" />
+                      : <Lock className="h-4 w-4 text-slate-500" />}
+                    <span className={`text-[10px] font-bold leading-4 ${heroPowerUnlocked(save, id) ? 'text-emerald-300' : 'text-slate-500'}`}>
+                      {t('heroPowerForgeStatus', faNum(HERO_POWER_META_LEVEL))}
+                    </span>
                   </div>
 
                   {/* اقدام ارتقا */}
@@ -252,8 +285,19 @@ export function UpgradesPanel() {
 
                     {unlocked ? (
                       maxed ? (
-                        <div className="mt-3 rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2 text-center text-sm font-black text-emerald-300">
-                          {t('forgeMax')}
+                        <div className="mt-3 space-y-2">
+                          <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-2 text-center text-sm font-black text-emerald-300">
+                            {t('forgeMax')}
+                          </div>
+                          {/* v2.3 — فروش کارت‌های اضافی برج مکس به سکه */}
+                          {towerCardCount(save, id) > 0 && (
+                            <button onClick={() => doSellExtra(id)}
+                              className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-sky-400/50
+                              bg-gradient-to-b from-sky-500/70 to-cyan-700/80 py-2 text-xs font-black text-white active:scale-95">
+                              <Coins className="h-4 w-4" />
+                              {t('cardSellButton', faNum(towerCardCount(save, id)), faNum(towerCardCount(save, id) * CARD_SELL_PRICE))}
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div className="mt-3 flex items-center justify-between gap-2">

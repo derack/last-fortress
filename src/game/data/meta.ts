@@ -78,6 +78,66 @@ export function towerCardCount(save: { towerCards?: Record<string, number> }, to
   return Math.max(0, Math.floor(save.towerCards?.[towerId] ?? 0));
 }
 
+// ============================================================
+// فروش کارت اضافی — v2.3
+// برجی که آهنگری‌اش مکس (سطح ۲۰) شده دیگر کارت لازم ندارد؛
+// کارت‌های اضافی آن به‌ازای هر کارت به سکهٔ کیف پول فروخته می‌شود.
+// ============================================================
+
+/** قیمت فروش هر کارت اضافی برج مکس (سکه) */
+export const CARD_SELL_PRICE = 40;
+
+/** آیا آهنگری این برج مکس شده؟ */
+export function isTowerMetaMaxed(save: { towerUpgrades?: Record<string, number> }, towerId: string): boolean {
+  return towerMetaLevel(save, towerId) >= META_MAX_LEVEL;
+}
+
+/**
+ * افزودن کارت به سیو — اگر برج مکس باشد کارت‌ها خودکار به سکه فروخته می‌شوند
+ * و تعداد سکهٔ فروخته‌شده برمی‌گردد (برای toast). همهٔ منابع کارت (جعبهٔ پیروزی/
+ * جعبهٔ روزانه/چالش روزانه) از این مسیر پرداخت می‌شوند تا کارت مرده انباشته نشود.
+ */
+export function awardTowerCards(
+  save: SaveData,
+  towerId: string,
+  count: number,
+): number {
+  const n = Math.max(0, Math.floor(count));
+  if (n === 0) return 0;
+  if (isTowerMetaMaxed(save, towerId)) {
+    const coins = n * CARD_SELL_PRICE;
+    save.coins = Math.max(0, Math.floor((save.coins ?? 0) + coins));
+    return coins;
+  }
+  save.towerCards[towerId] = Math.min(9999, (save.towerCards[towerId] ?? 0) + n);
+  return 0;
+}
+
+/** فروش دستی کارت‌های اضافی برج مکس — تعداد سکهٔ به‌دست‌آمده (۰ یعنی چیزی برای فروش نبود) */
+export function sellExtraTowerCards(save: SaveData, towerId: string): number {
+  if (!isTowerMetaMaxed(save, towerId)) return 0;
+  const have = towerCardCount(save, towerId);
+  if (have <= 0) return 0;
+  save.towerCards[towerId] = 0;
+  const coins = have * CARD_SELL_PRICE;
+  save.coins = Math.max(0, Math.floor((save.coins ?? 0) + coins));
+  return coins;
+}
+
+// ============================================================
+// قدرت ویژهٔ قهرمان — v2.3
+// قرینهٔ قاعدهٔ برج (قدرت در سطح ۵ مکس برج): قدرت ویژهٔ هر قهرمان
+// با رسیدن آهنگری همان قهرمان به سطح ۵ باز می‌شود.
+// ============================================================
+
+/** سطح آهنگری قهرمان که قدرت ویژه در آن آزاد می‌شود */
+export const HERO_POWER_META_LEVEL = 5;
+
+/** آیا قدرت ویژهٔ این قهرمان باز شده؟ */
+export function heroPowerUnlocked(save: { heroUpgrades?: Record<string, number> }, heroId: string): boolean {
+  return heroMetaLevel(save, heroId) >= HERO_POWER_META_LEVEL;
+}
+
 /** سطح ارتقای ذخیره‌شدهٔ قهرمان — ۰ اگر ثبت نشده */
 export function heroMetaLevel(save: { heroUpgrades?: Record<string, number> }, heroId: string): number {
   const lvl = save.heroUpgrades?.[heroId] ?? 0;

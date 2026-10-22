@@ -48,6 +48,8 @@ export interface HeroInfo {
   maxHp: number;
   dead: boolean;
   respawnIn: number;
+  /** v2.3 — قدرت ویژه با سطح ۵ آهنگری قهرمان باز می‌شود */
+  abilityLocked: boolean;
 }
 
 export interface VictoryInfo {
@@ -56,6 +58,10 @@ export interface VictoryInfo {
   rewards: { crystals: number; knowledge: number; coins: number };
   /** v2.1 — جعبهٔ غنیمت پیروزی (سکه کیف پول + کارت برج) */
   chest?: ChestContents;
+  /** v2.3 — این پیروزی پاداش چالش روزانه را گرفت */
+  challengeReward?: boolean;
+  /** v2.3 — سکهٔ حاصل از فروش خودکار کارت‌های برج مکس */
+  cardsSoldCoins?: number;
 }
 
 interface GameState {
@@ -94,6 +100,8 @@ interface GameState {
   battleActive: boolean;
   /** مرحله در انتظار شروع — پیش‌فرض منطقه ۱ */
   pendingLevelId: string;
+  /** v2.3 — نبردِ در انتظار، چالش روزانه است (مادی‌فایر فعال) */
+  pendingDaily: boolean;
   /** قهرمان انتخابی برای نبرد بعدی */
   selectedHero: string;
 
@@ -111,6 +119,7 @@ interface GameState {
   pushToast: (key: string, type: string) => void;
   resetAll: () => void;
   setPendingLevel: (id: string) => void;
+  setPendingDaily: (v: boolean) => void;
   setSelectedHero: (id: string) => void;
   unlockHero: (id: string, cost: number) => boolean;
   /** خرید یک سطح ارتقای کوره اثیر — false یعنی ذرات ناکافی یا حداکثر */
@@ -151,6 +160,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   toasts: [],
   battleActive: false,
   pendingLevelId: 'c1s1',
+  pendingDaily: false,
   selectedHero: '',
 
   setScreen: (s) => set({ screen: s }),
@@ -321,6 +331,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   setPendingLevel: (id) => set({ pendingLevelId: id }),
+
+  setPendingDaily: (v) => set({ pendingDaily: v }),
 
   setSelectedHero: (id) => {
     set({ selectedHero: id });

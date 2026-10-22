@@ -6,6 +6,7 @@ import { Game } from '@/game/core/Game';
 import { audioSystem } from '@/game/systems/AudioSystem';
 import { persistSave } from '@/game/systems/SaveSystem';
 import { ACHIEVEMENTS, LEVELS, STAGES, firstPlayableStageId, continueStageId } from '@/game/data/campaign';
+import { getDailyChallenge } from '@/game/data/daily';
 import { assetManager, sliceAssetEntries } from '@/game/assets';
 import { t, faNum } from '@/game/data/i18n';
 import { MainMenu } from './MainMenu';
@@ -133,9 +134,12 @@ export function GameShell() {
 
     // v2.1 — دکمهٔ ادامه: آخرین مرحلهٔ بازی‌شده / مرحلهٔ بعدش / اولین آزاد
     const level = LEVELS[store.pendingLevelId] ?? STAGES[continueStageId(save)] ?? STAGES[firstPlayableStageId(save)];
+    // v2.3 — چالش روزانه: مادی‌فایر سختیِ امروز (یک‌بار مصرف)
+    const daily = store.pendingDaily ? getDailyChallenge(save).modifier : null;
+    store.setPendingDaily(false);
     // v2.1 — قهرمان فقط اگر باز شده باشد؛ وگرنه نبرد بدون قهرمان (خریدنی از پنل قهرمانان)
     const heroId = save.selectedHero && save.unlockedHeroes.includes(save.selectedHero) ? save.selectedHero : null;
-    const game = new Game(canvas, level, save.settings.quality, save, save.settings.language, heroId);
+    const game = new Game(canvas, level, save.settings.quality, save, save.settings.language, heroId, daily);
     // ثبت آخرین مرحله برای دکمهٔ ادامهٔ منو
     store.updateSave((s) => { s.lastStageId = level.id; });
     // همگام‌سازی سیو از موتور در پایان نبرد — پیش از هر handleEvent/updateSave بعدی؛

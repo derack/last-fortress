@@ -261,4 +261,10 @@ export interface SaveData {
   towerUpgrades: Record<string, number>;
   /** کارت‌های برج — از جعبه‌ها؛ ارتقای برج = کارت + سکه */
   towerCards: Record<string, number>;
+  /** v2.3 — آخرین روزِ دریافت جعبهٔ روزانه (YYYY-MM-DD محلی) */
+  lastDailyClaim: string;
+  /** v2.3 — زنجیرهٔ ورود پیوسته برای جعبهٔ روزانه */
+  dailyStreak: number;
+  /** v2.3 — چالش روزانه: آخرین روزِ پاداش‌گرفته + ستاره‌ها */
+  dailyChallenge?: { date: string; stars: number };
 }

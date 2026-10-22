@@ -1,10 +1,12 @@
 'use client';
 
-import { ArrowRight, Swords, Heart, Flame, Crosshair, Coins, ShieldCheck, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Swords, Heart, Flame, Crosshair, Coins, ShieldCheck, Sparkles, Layers } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { useStandaloneBack } from './standalone';
 import { FORGE_TRACKS, FORGE_MAX, forgeLevel, forgeNextCost, forgeTotalLevels, type ForgeTrack, type ForgeTrackId } from '@/game/data/forge';
 import { t, faNum } from '@/game/data/i18n';
+import { UpgradesPanel } from './UpgradesPanel';
 
 // ============================================================
 // کوره اثیر — ارتقاهای دائمی ۲۰ سطحی
@@ -32,6 +34,9 @@ export function ForgePanel() {
   const save = useGameStore((s) => s.save);
   const buyForgeLevel = useGameStore((s) => s.buyForgeLevel);
   const pushToast = useGameStore((s) => s.pushToast);
+  // v2.3 — دو تب: کوره اثیر (دانش) + آهنگری کارت (کارت برج + سکه) —
+  // قبلاً آهنگری کارت هیچ‌جا رندر نمی‌شد و کارت‌ها بی‌استفاده می‌ماندند
+  const [tab, setTab] = useState<'aether' | 'cards'>('aether');
   if (!save) return null;
 
   const shards = save.knowledge;
@@ -64,6 +69,31 @@ export function ForgePanel() {
         <div className="mt-0.5 text-[10px] leading-4 text-violet-300/70">{t('forgePermanent')}</div>
       </div>
 
+      {/* v2.3 — تب کوره اثیر / آهنگری کارت */}
+      <div className="mx-4 mt-3 flex gap-2">
+        {([
+          { id: 'aether' as const, label: t('forgeAetherTab'), Icon: Sparkles },
+          { id: 'cards' as const, label: t('forgeCardsTab'), Icon: Layers },
+        ]).map(({ id, label, Icon }) => (
+          <button key={id} onClick={() => setTab(id)}
+            className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2 text-xs font-black transition-all active:scale-95
+              ${tab === id
+              ? 'border-violet-400/60 bg-violet-500/20 text-violet-200 shadow-[0_0_14px_rgba(139,92,246,0.25)]'
+              : 'border-slate-700/50 bg-black/40 text-slate-400'}`}>
+            <Icon className="h-4 w-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'cards' && (
+        <div className="relative flex-1 overflow-hidden">
+          <UpgradesPanel embedded />
+        </div>
+      )}
+
+      {tab === 'aether' && (
+      <>
       {/* پیشرفت کل */}
       <div className="mx-4 mt-3 rounded-2xl border border-violet-400/20 bg-black/40 p-3">
         <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
@@ -90,6 +120,8 @@ export function ForgePanel() {
           ))}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

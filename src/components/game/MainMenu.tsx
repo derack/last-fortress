@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useLayoutEffect, useState } from 'react';
-import { Swords, Map as MapIcon, Users, Trophy, Settings, Gem, X, Flame, Coins, BookOpen, Play } from 'lucide-react';
+import { Swords, Map as MapIcon, Users, Trophy, Settings, Gem, X, Flame, Coins, BookOpen, Play, Gift, Check, Sparkles } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { t, faNum } from '@/game/data/i18n';
 import { STAGES, isStageUnlocked, completedStageIds, continueStageId } from '@/game/data/campaign';
+import { dailyChestState, claimDailyChest, getDailyChallenge } from '@/game/data/daily';
+import type { ChestContents } from '@/game/data/chest';
 import { PageShellContext } from './standalone';
 import { CampaignMap } from './CampaignMap';
 import { HeroesPanel } from './HeroesPanel';
@@ -34,6 +36,8 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
   const save = useGameStore((s) => s.save);
   const [openPages, setOpenPages] = useState<PageId[]>([]);
   const [activePage, setActivePage] = useState<PageId | null>(null);
+  // v2.3 — جعبهٔ روزانه: محتوای تازه‌دریافت‌شده برای نمایش reveal
+  const [dailyReveal, setDailyReveal] = useState<{ chest: ChestContents; streak: number } | null>(null);
 
   const openPage = useCallback((id: PageId) => {
     setOpenPages((prev) => (prev.includes(id) ? prev : [...prev, id]));
@@ -60,6 +64,9 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
   const continueTarget = save ? continueStageId(save) : 'c1s1';
   const targetStage = STAGES[continueTarget];
   const isNewGame = !!save && !save.lastStageId;
+  // v2.3 — وضعیت جعبهٔ روزانه و چالش امروز
+  const dState = save ? dailyChestState(save) : null;
+  const challenge = save ? getDailyChallenge(save) : null;
 
   // شروع نبرد از دکمهٔ بزرگ — همان گیت آنلاک پل قدیمی
   const startBattle = useCallback(() => {
@@ -79,9 +86,33 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
   const startContinue = useCallback(() => {
     const store = useGameStore.getState();
     store.setPendingLevel(continueTarget);
+    store.setPendingDaily(false);
     closePage();
     onStart();
   }, [closePage, onStart, continueTarget]);
+
+  // v2.3 — دریافت جعبهٔ روزانه (سیو + reveal)
+  const claimDaily = useCallback(() => {
+    const store = useGameStore.getState();
+    if (!store.save) return;
+    let result: { chest: ChestContents; streak: number; soldCoins: number } | null = null;
+    store.updateSave((s) => {
+      result = claimDailyChest(s);
+    });
+    const out = result as { chest: ChestContents; streak: number; soldCoins: number } | null;
+    if (out) setDailyReveal({ chest: out.chest, streak: out.streak });
+  }, []);
+
+  // v2.3 — شروع چالش روزانه (مادی‌فایر + کارت تضمینی)
+  const startChallenge = useCallback(() => {
+    if (!save) return;
+    const store = useGameStore.getState();
+    const ch = getDailyChallenge(store.save ?? save);
+    store.setPendingLevel(ch.stageId);
+    store.setPendingDaily(true);
+    closePage();
+    onStart();
+  }, [closePage, onStart, save]);
 
   // پل صفحه — پنل‌های جاسازی‌شده برای بستن/شروع از این استفاده می‌کنند
   const pageShell = useCallback(() => ({
@@ -123,6 +154,28 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
         </div>
       )}
 
+      {/* ================= جعبهٔ روزانه — v2.3 (ریتنشن) ================= */}
+      {save && dState && (
+        <div className="absolute left-3 top-3 z-30">
+          <button onClick={dState.claimable ? claimDaily : undefined} disabled={!dState.claimable}
+            className={`relative flex items-center gap-2 rounded-2xl border px-3 py-2 shadow-lg backdrop-blur-md transition-all
+              ${dState.claimable
+              ? 'animate-pulse border-amber-400/70 bg-gradient-to-b from-amber-500/30 to-amber-800/40 shadow-[0_0_22px_rgba(245,158,11,0.35)] active:scale-95'
+              : 'border-slate-600/40 bg-black/70 opacity-80'}`}>
+            <Gift className={`h-6 w-6 ${dState.claimable ? 'text-amber-300 drop-shadow-[0_0_10px_rgba(245,158,11,0.7)]' : 'text-slate-500'}`} />
+            <span className="flex flex-col items-start leading-tight">
+              <span className={`text-[11px] font-black ${dState.claimable ? 'text-amber-200' : 'text-slate-400'}`}>
+                {dState.claimable ? t('dailyChestClaim') : t('dailyChestClaimed')}
+              </span>
+              <span className="flex items-center gap-1 text-[9px] font-bold text-amber-300/80">
+                <Flame className="h-3 w-3" />
+                {t('dailyStreakShort', faNum(dState.streak))}
+              </span>
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* محتوا */}
       <div className="relative z-10 flex h-full flex-col items-center justify-between pb-28 pt-8">
         <div className="mt-14 text-center">
@@ -155,6 +208,25 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
               </span>
             )}
           </button>
+          {/* ================= چالش روزانه — v2.3: کارت تضمینی ================= */}
+          {challenge && (
+            <button onClick={startChallenge}
+              className={`group relative w-full overflow-hidden rounded-2xl border px-4 py-2.5 text-center transition-all active:translate-y-0.5
+                ${challenge.done
+                ? 'border-slate-600/50 bg-black/60'
+                : 'border-violet-400/60 bg-gradient-to-b from-violet-600/70 to-purple-800/80 shadow-[0_6px_18px_rgba(139,92,246,0.35),inset_0_2px_0_rgba(255,255,255,0.25)]'}`}>
+              <span className="flex items-center justify-center gap-2 text-sm font-black text-white drop-shadow-[0_1px_2px_rgba(46,16,101,0.9)]">
+                {challenge.done ? <Check className="h-4 w-4 text-emerald-400" /> : <Swords className="h-4 w-4 text-violet-200" />}
+                {t('challengeTitle')}
+                {!challenge.done && <Sparkles className="h-3.5 w-3.5 text-amber-300" />}
+              </span>
+              <span className="mt-0.5 block text-[10px] font-bold leading-4 text-violet-200/90">
+                {t('menuStageInfo', faNum(challenge.chapter), faNum(challenge.stage))}
+                {' · '}{t(challenge.modifier.nameKey)}
+                {challenge.done ? ` · ${t('challengeDoneShort')}` : ` · ${t('challengeGuaranteedShort')}`}
+              </span>
+            </button>
+          )}
           <p className="text-center text-[11px] leading-5 text-slate-500">
             {t('menuPagesHint')}
           </p>
@@ -220,6 +292,64 @@ export function MainMenu({ onStart }: { onStart: () => void }) {
           </div>
         );
       })}
+
+      {/* ================= مودال جعبهٔ روزانه — v2.3 ================= */}
+      {dailyReveal && (
+        <DailyChestModal data={dailyReveal} onClose={() => setDailyReveal(null)} />
+      )}
+    </div>
+  );
+}
+
+/** مودال reveal جعبهٔ روزانه — صندوق بسته «لمس کن» → سکه + کارت‌ها + زنجیره */
+function DailyChestModal({ data, onClose }: {
+  data: { chest: ChestContents; streak: number };
+  onClose: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const { chest, streak } = data;
+  return (
+    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/85 p-6" onClick={open ? onClose : undefined}>
+      <div className="w-full max-w-xs rounded-3xl border border-amber-400/40 bg-gradient-to-b from-[#1d1508] to-[#0b0f1c] p-5 text-center shadow-[0_0_50px_rgba(245,158,11,0.25)]"
+        onClick={(e) => e.stopPropagation()}>
+        <div className="text-base font-black text-amber-200">{t('dailyChestTitle')}</div>
+        <div className="mt-0.5 flex items-center justify-center gap-1 text-[10px] font-bold text-amber-300/80">
+          <Flame className="h-3 w-3" />
+          {t('dailyStreakShort', faNum(streak))}
+        </div>
+
+        {!open ? (
+          <button onClick={() => setOpen(true)}
+            className="group mt-4 flex w-full flex-col items-center gap-1.5 rounded-2xl border border-amber-400/50
+            bg-gradient-to-b from-amber-900/50 to-black/50 px-4 py-6 active:scale-95"
+            style={{ animation: 'chestPulse 1.6s ease-in-out infinite' }}>
+            <Gift className="h-14 w-14 text-amber-300 drop-shadow-[0_0_18px_rgba(245,158,11,0.7)] transition-transform group-active:scale-75" />
+            <span className="text-sm font-black text-amber-200">{t('chestTapToOpen')}</span>
+          </button>
+        ) : (
+          <div className="chest-pop mt-4">
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/40 bg-black/50 px-3 py-2">
+              <Coins className="h-5 w-5 text-amber-400" />
+              <span className="text-lg font-black text-amber-300">+{faNum(chest.coins)}</span>
+              <span className="text-[10px] font-bold text-slate-500">{t('coins')}</span>
+            </div>
+            <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+              {chest.cards.map((card, i) => (
+                <div key={i} className="flex items-center gap-1 rounded-xl border border-sky-500/40 bg-sky-950/40 px-2 py-1.5 card-pop"
+                  style={{ animationDelay: `${i * 0.14}s` }}>
+                  <Swords className="h-3.5 w-3.5 text-sky-300" />
+                  <span className="text-[10px] font-black text-sky-200">×{faNum(card.count)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 text-[9px] font-bold text-slate-500">{t('dailyChestComeBack')}</div>
+            <button onClick={onClose}
+              className="mt-3 w-full rounded-xl border border-amber-400/60 bg-gradient-to-b from-amber-400/90 to-orange-600/90 py-2 text-sm font-black text-white active:scale-95">
+              {t('dailyChestOk')}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

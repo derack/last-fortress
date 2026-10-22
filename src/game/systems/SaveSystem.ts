@@ -11,6 +11,18 @@ const LEGACY_LEVEL_TO_CHAPTER: Record<string, number> = {
   l1: 1, l2: 2, l3: 3, l4: 4, l5: 5, l6: 10,
 };
 
+/** مهاجرت ذخیره نسخه ۴ → نسخه ۵ — چرخهٔ روزانه (جعبهٔ روزانه + چالش روزانه) */
+function migrateV4toV5(data: SaveData): SaveData {
+  if (typeof data.lastDailyClaim !== 'string') data.lastDailyClaim = '';
+  if (!Number.isFinite(data.dailyStreak) || (data.dailyStreak ?? 0) < 0) data.dailyStreak = 0;
+  else data.dailyStreak = Math.min(999, Math.floor(data.dailyStreak ?? 0));
+  if (data.dailyChallenge && (typeof data.dailyChallenge.date !== 'string' || !Number.isFinite(data.dailyChallenge.stars))) {
+    data.dailyChallenge = undefined;
+  }
+  data.version = 5;
+  return data;
+}
+
 /** مهاجرت ذخیره نسخه ۳ → نسخه ۴ — اقتصاد کارت/جعبه + قهرمان خریدنی + دکمه ادامه */
 function migrateV3toV4(data: SaveData): SaveData {
   // کیف پول سکه و کارت‌های برج — از صفر شروع می‌شوند
@@ -71,7 +83,7 @@ function migrateV1toV2(data: SaveData): SaveData {
 
 export function defaultSave(): SaveData {
   return {
-    version: 4,
+    version: 5,
     settings: { language: 'fa', quality: 'medium', music: 0.6, sfx: 0.8, haptics: true },
     levels: {},
     crystals: 0,
@@ -100,6 +112,8 @@ export function defaultSave(): SaveData {
     heroUpgrades: {},
     towerUpgrades: {},
     towerCards: {},
+    lastDailyClaim: '',
+    dailyStreak: 0,
   };
 }
 
@@ -134,6 +148,13 @@ export function loadSave(): SaveData {
       selectedHero: typeof data.selectedHero === 'string' ? data.selectedHero : '',
       coins: clampCur(data.coins),
       lastStageId: typeof data.lastStageId === 'string' ? data.lastStageId : '',
+      // v2.3 — چرخهٔ روزانه
+      lastDailyClaim: typeof data.lastDailyClaim === 'string' ? data.lastDailyClaim : '',
+      dailyStreak: clampCur(data.dailyStreak),
+      dailyChallenge:
+        data.dailyChallenge && typeof data.dailyChallenge.date === 'string'
+          ? { date: data.dailyChallenge.date, stars: clampCur(data.dailyChallenge.stars) }
+          : undefined,
       // کوره اثیر — مقادیر نامعتبر پاک می‌شوند
       forge: { ...(data.forge ?? {}) },
       // آهنگری — ارتقاهای دائمی قهرمان/برج (مهاجرت ذخیره‌های قدیمی)
@@ -155,7 +176,11 @@ export function loadSave(): SaveData {
     }
     // مهاجرت نسخه ۳ → ۴ — اقتصاد کارت/جعبه + قهرمان خریدنی
     if (!data.version || data.version < 4) {
-      return migrateV3toV4(merged);
+      migrateV3toV4(merged);
+    }
+    // مهاجرت نسخه ۴ → ۵ — چرخهٔ روزانه
+    if (!data.version || data.version < 5) {
+      migrateV4toV5(merged);
     }
     // بازمحاسبه ستاره‌ها از رکوردهای پاک‌سازی‌شده
     merged.stats.totalStars = Object.values(merged.levels).reduce((s, l) => s + l.stars, 0);

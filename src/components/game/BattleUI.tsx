@@ -278,11 +278,18 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
             ${!st.selectedHero ? 'border-slate-600/50 bg-slate-800/40 opacity-75' :
             !st.hero?.deployed ? 'border-amber-400/50 bg-amber-600/30' :
             st.hero.dead ? 'border-red-500/70 bg-red-950/70' :
+            st.hero.abilityLocked ? 'border-slate-600/60 bg-slate-900/70' :
             st.hero.abilityCd <= 0 ? 'border-amber-300/70 bg-amber-500/25 shadow-[0_0_18px_rgba(245,158,11,0.35)]' : 'border-slate-700/60 bg-black/70 opacity-70'}`}>
           <User className={`h-6 w-6 ${!st.selectedHero ? 'text-slate-400' : st.hero?.dead ? 'text-red-400' : 'text-amber-300'}`} />
           <span className={`text-[9px] font-black ${!st.selectedHero ? 'text-slate-400' : 'text-amber-200'}`}>
-            {!st.selectedHero ? t('heroLockedShort') : !st.hero?.deployed ? t('deployHero').split(' ')[0] : `${t('heroLevel', faNum(st.hero.level))}`}
+            {!st.selectedHero ? t('heroLockedShort') : !st.hero?.deployed ? t('deployHero').split(' ')[0] : st.hero.abilityLocked ? t('heroPowerShort') : `${t('heroLevel', faNum(st.hero.level))}`}
           </span>
+          {/* v2.3 — نشان قفل قدرت ویژهٔ قهرمان (باز می‌شود با سطح ۵ آهنگری) */}
+          {st.hero?.deployed && !st.hero.dead && st.hero.abilityLocked && (
+            <div className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-slate-500/60 bg-black/90">
+              <Lock className="h-2.5 w-2.5 text-slate-300" />
+            </div>
+          )}
           {/* مرگ — شمارش معکوس ریسپاون */}
           {st.hero?.deployed && st.hero.dead && (
             <div className="absolute inset-0 flex flex-col items-center justify-center rounded-2xl bg-black/75">
@@ -290,8 +297,8 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
               <span className="text-[7px] font-bold text-slate-300">{t('heroRespawnShort')}</span>
             </div>
           )}
-          {/* سرد توانایی */}
-          {st.hero?.deployed && !st.hero.dead && st.hero.abilityCd > 0 && (
+          {/* سرد توانایی — فقط وقتی قدرت باز است */}
+          {st.hero?.deployed && !st.hero.dead && !st.hero.abilityLocked && st.hero.abilityCd > 0 && (
             <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/60 text-xs font-black text-white">
               {faNum(Math.ceil(st.hero.abilityCd))}
             </div>
@@ -399,6 +406,8 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
             { icon: Sparkles, value: faNum(st.victory.rewards.knowledge), label: t('knowledge'), color: 'text-violet-400' },
           ]}
           chest={st.victory.chest}
+          challengeReward={st.victory.challengeReward}
+          cardsSoldCoins={st.victory.cardsSoldCoins}
           actions={actions}
         />
       )}
@@ -514,7 +523,7 @@ function TowerPanel({ actions }: { actions: BattleActions }) {
 // ---------------------------- پایان بازی ----------------------------
 
 /** جعبهٔ غنیمت پیروزی — بسته: صندوق پالس‌دار «لمس کن»؛ باز: سکه + کارت‌های برج */
-function VictoryChest({ chest }: { chest: ChestContents }) {
+function VictoryChest({ chest, challengeReward, cardsSoldCoins }: { chest: ChestContents; challengeReward?: boolean; cardsSoldCoins?: number }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="mt-4">
@@ -526,6 +535,11 @@ function VictoryChest({ chest }: { chest: ChestContents }) {
           {chest.firstClear && (
             <span className="absolute -top-2 right-3 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black text-amber-950 shadow-lg">
               {t('chestFirstClear')}
+            </span>
+          )}
+          {challengeReward && (
+            <span className="absolute -top-2 left-3 rounded-full bg-violet-500 px-2 py-0.5 text-[9px] font-black text-white shadow-lg">
+              {t('challengeChestBadge')}
             </span>
           )}
           <Gift className="h-10 w-10 text-amber-300 drop-shadow-[0_0_14px_rgba(245,158,11,0.6)] transition-transform group-active:scale-75" />
@@ -545,7 +559,17 @@ function VictoryChest({ chest }: { chest: ChestContents }) {
               <span className="text-sm font-black text-amber-300">+{faNum(chest.coins)}</span>
               <span className="text-[9px] font-bold text-slate-500">{t('coins')}</span>
             </div>
+            {!!cardsSoldCoins && cardsSoldCoins > 0 && (
+              <div className="flex items-center gap-1.5 rounded-xl border border-emerald-500/40 bg-black/50 px-3 py-1.5">
+                <Coins className="h-4 w-4 text-emerald-400" />
+                <span className="text-sm font-black text-emerald-300">+{faNum(cardsSoldCoins)}</span>
+                <span className="text-[9px] font-bold text-slate-500">{t('cardsSoldShort')}</span>
+              </div>
+            )}
           </div>
+          {challengeReward && (
+            <div className="mt-1.5 text-center text-[10px] font-black text-violet-300">{t('challengeGuaranteed')}</div>
+          )}
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">
             {chest.cards.map((card, i) => {
               const Icon = TOWER_ICONS[card.towerId] ?? Crosshair;
@@ -567,13 +591,15 @@ function VictoryChest({ chest }: { chest: ChestContents }) {
   );
 }
 
-function EndOverlay({ title, titleClass, subtitle, stars, rewards, chest, actions }: {
+function EndOverlay({ title, titleClass, subtitle, stars, rewards, chest, challengeReward, cardsSoldCoins, actions }: {
   title: string;
   titleClass: string;
   subtitle: string;
   stars: number;
   rewards?: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; value: string; label: string; color: string }[];
   chest?: ChestContents;
+  challengeReward?: boolean;
+  cardsSoldCoins?: number;
   actions: BattleActions;
 }) {
   const save = useGameStore((s) => s.save);
@@ -652,7 +678,7 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, chest, action
         )}
 
         {/* ================= جعبهٔ غنیمت — v2.1: سکه کیف پول + کارت برج ================= */}
-        {chest && <VictoryChest chest={chest} />}
+        {chest && <VictoryChest chest={chest} challengeReward={challengeReward} cardsSoldCoins={cardsSoldCoins} />}
 
         {/* آمار شکست — موج رسیده و سلامت هسته (بخش ۵۳) */}
         {!rewards && defeatInfo && (
