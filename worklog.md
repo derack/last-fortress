@@ -780,3 +780,26 @@ Stage Summary:
 - کیفیت مدل‌ها: تکسچر 4x تکسل + تسلاسیون بالاتر + anisotropy — وضوح «آینه‌ای» روی دستگاه واقعی
 - تفکیک لول برج: رنگ امضای هر لول + نور رشدی + هالهٔ ornament — L1 با L5 حتی از دور اشتباه نمی‌شود
 - ⚠️ برای AI بعدی: push گیت‌هاب تا زمان دریافت توکن تازه معلق است؛ commits آماده‌اند
+
+---
+Task ID: 34
+Agent: main
+Task: درخواست کاربر — «رنگ‌های لول‌ها باکیفیت‌تر و درخشان‌تر + صداهای جذاب‌تر (تیز و رو مخ نباشند)» + بیلد v2.0
+
+Work Log:
+- 🎨 رنگ لول‌ها — LEVEL_LOOKS در generate-tower-levels.mjs ارتقا: رنگ‌های امضای جواهری اشباع‌تر (L2 مسی [0.94,0.60,0.32] mixAmount 0.16 / L3 برنز کهربایی [0.84,0.44,0.13] 0.24 / L4 یاقوتی آبی [0.36,0.66,1.00] 0.22 / L5 طلایی [1.00,0.74,0.26] 0.32) + emissiveMul پلکانی 0.22→3.40 + فلز صیقلی‌تر؛ ۵۰ GLB سطحی بازتولید و validate ✓
+- 🎨 CharacterFactory: TOWER_LEVEL_GLOW [0.16,0.38,0.62,0.95,1.45]→[0.22,0.58,0.95,1.45,2.15] + متریال ornament فلزی‌تر (metalness 0.85، roughness 0.22، envMapIntensity 1.25)
+- QA بصری: اسکرین‌شات sentinel L1 (سنگ تیره خام ۵۲۰ تری) / L3 (برنز کهربایی) / L5 (طلایی درخشان ۱۲,۸۷۲ تری) — تفکیک بی‌ابهام ✓
+- 🔊 صدا — ریشه‌های تیزی: موج مربع np.sign در death/bossRoar/waveStart/error + نویز خام های‌پس در shoot/lightning/snare/crash + کرکره‌های ۲.۴-۳.۵kHz + نرمالایز 0.92/0.95 + نبود ریورب
+- gen_music.py v2: زنجیره mastering گرم روی همه خروجی‌ها (فیلتر هوا ۱۰٫۵kHz + ریورب کنولوشن overlap-add با IR سینتتیک ۱٫۱۵s + soft-knee)؛ موسیقی پیک 0.80 با دینامیک حفظ‌شده (crest 15.4dB)؛ SFX نرمالایز به پیک هدف per-file (vol = پیک خروجی؛ crest 8-16.5dB، پیک‌ها 0.52-0.78 بدون کلپ)
+- بازطراحی ۲۱ افکت: tap چوبی گرم ۸۲۰Hz (جای کلیک ۱۶۰۰/۲۴۰۰)؛ shoot باندپس ۳۵۰-۳۸۰۰ (جای هیس)؛ lightning = بدنه رعد لوپس ۸۵۰ + کرک نرم ۵٫۲k (جای های‌پس ۱۲۰۰)؛ death مثلثی (جای مربع)؛ bossRoar اره فیلترشده + ساب (جای مربع)؛ error تام بم سینوسی؛ waveStart شیپور اره لوپس ۱۱۰۰؛ victory فانفار برنجی (ساب+اره لوپس)؛ sell/upgrade/magic/reward با bell_note هارمونیک غیرهارمونیک و باندهای ۲۵-۳۵٪ پایین‌تر؛ freeze/deepFreeze یک‌سوم گرم‌تر
+- AudioSystem: کمپرسور glue نرم روی master (threshold -16dB، knee 26، ratio 3.2، attack 4ms) — پیک‌های لحظه‌ای روی اسپیکر گوشی گرد می‌شوند
+- ممیزی: tsc صفر، logic-audit 31✅/0❌، balance-audit منحنی نرم (فصل ۱۰: R میانگین ۲۹۵٫۸٪ حداکثر ۳۴۶٫۸٪)، i18n parity کامل
+- بیلد: TOOLCHAIN READY → build:cap ✓ → cap sync ✓ → gradle 7s ✓ → versionCode 12 / versionName 2.0
+- APK: 30,391,243 bytes (29MB)، 22 mp3 جدید (music.mp3 = 3,121,154 بایت نسخه گرم) + 85 GLB (sentinel_l5 = 41,012 بایت نسخه درخشان)، امضای همان گواهی 5ee184e5...
+- uploadkon: content-length دقیق تایید؛ push FAILED — ~/.git-credentials از session قبل نیست و توکن جدیدی در محیط نیست → ۴ کامیت (v1.9 ×۲ + v2.0) روی main محلی آماده push است
+
+Stage Summary:
+- download/Last-Fortress-v2.0-release.apk (29MB) — رنگ‌های لول درخشان جواهری + صداهای گرم جذاب
+- لینک: https://uploadkon.ir/uploads/e96822_26LF-v2-0.zip
+- ⚠️ برای AI بعدی: push هنوز معلق است (۴ کامیت local: 651274c, 8320491, 427101f, 27bd832) — به توکن تازه از کاربر نیاز است؛ قبل از انتشار استور keystore باید چرخانده شود (گواهی در تاریخچه عمومی گیت است)
