@@ -59,7 +59,8 @@ const POOL_COMP: Record<number, number> = (() => {
 // بخش ۲۱ — منحنی هدف فشار موج: رشد نمایی کمپین (برج‌های بازیکن هم قوی می‌شوند)
 // + tier پیوسته + intensity + جبران استخر — نتیجه: منحنی صعودی بدون پرتگاه
 const WAVE_BASE = 2900;
-const CAMPAIGN_GROWTH = 1.021; // ×۸ در طول ۱۰۰ مرحله
+// v2.1 — منحنی سخت‌تر به درخواست کاربر («به مرور سخت‌تر»): رشد فشار ×۹٫۶ در ۱۰۰ مرحله
+const CAMPAIGN_GROWTH = 1.0235;
 const growAt = (D: number) => Math.pow(CAMPAIGN_GROWTH, D);
 
 // ---------------------------- قالب‌های مسیر ----------------------------
@@ -253,9 +254,11 @@ function buildWaves(chapter: ChapterDef, stage: number, pathCount: number): Wave
   const pool = CHAPTER_POOLS[chapter.id];
   const comp = POOL_COMP[chapter.id];
   // بخش ۲۱ — tier پیوسته: HP نرم رشد می‌کند (بدون پرتگاه ×۱٫۶۵ در مرز فصل)
+  // v2.1 — شیب tier مثل قبل می‌ماند (عبور از مرز صحیح tier = پرش پاداش/زره → افت R)
+  // سختی اضافه از CAMPAIGN_GROWTH و intensity می‌آید
   const tFrac = Math.round((1 + D * 0.0265) * 100) / 100;
   const tierMult = 1 + 0.65 * (tFrac - 1);
-  const intensity = 0.8 + D * 0.006; // ۰٫۸ تا ۱٫۴
+  const intensity = 0.85 + D * 0.0085; // ۰٫۸۵ تا ۱٫۷ — فشار موج‌ها صعودی‌تر
   const waves: WaveData[] = [];
 
   for (let w = 0; w < 10; w++) {
@@ -269,13 +272,14 @@ function buildWaves(chapter: ChapterDef, stage: number, pathCount: number): Wave
       const escorts = pool.filter((e) => roleOf(e) !== 'utility');
       const e1 = escorts[Math.floor(rng() * escorts.length)];
       const e2 = escorts[Math.floor(rng() * escorts.length)];
-      const eCount = Math.round(6 + D * 0.06);
+      const eCount = Math.round(6 + D * 0.085);
       groups.push({ enemy: e1, count: eCount, interval: Math.max(1.4, 3.2 - D * 0.012), delay: 12, tier: tFrac });
-      if (D > 35) {
+      if (D > 28) {
         groups.push({ enemy: e2, count: Math.max(3, Math.round(eCount * 0.6)), interval: Math.max(1.8, 3.6 - D * 0.012), delay: 20, tier: tFrac });
       }
       // بخش ۲۱ — نرمال‌سازی موج Boss (Boss ثابت؛ محافظ‌ها با کف ۴۰٪ حفظ می‌شوند)
-      const bossTarget = WAVE_BASE * growAt(D) * intensity * 1.23 * tierMult * comp * 1.55;
+      // v2.1 — اوج Boss پررنگ‌تر: ×۱٫۷۲ (بود ×۱٫۵۵)
+      const bossTarget = WAVE_BASE * growAt(D) * intensity * 1.23 * tierMult * comp * 1.72;
       normalizeWave(groups, bossTarget, true, Math.max(2, Math.floor(eCount * 0.4)));
       waves.push({
         coinBonus: Math.round(230 + D * 2.3),
@@ -417,6 +421,7 @@ function buildAllStages(): Record<string, LevelData> {
   for (const ch of CHAPTERS) {
     for (let s = 1; s <= 10; s++) {
       const D = (ch.id - 1) * 10 + s;
+      // v2.1 — اقتصاد آهسته‌تر از فشار رشد می‌کند (۰٫۰۱۱۷ → ۰٫۰۱۰۲) → صعود سختی واقعی
       const target = ref * Math.pow(1.0117, D - 1); // منحنی درآمد کمپین
       const incomeComp = Math.min(2.0, Math.max(0.6, target / incomes[i++]));
       levels[stageId(ch.id, s)] = buildStage(ch, s, incomeComp);
@@ -462,6 +467,24 @@ export function nextStageId(chapter: number, stage: number): string | null {
   if (stage < 10) return stageId(chapter, stage + 1);
   if (chapter < 10) return stageId(chapter + 1, 1);
   return null;
+}
+
+/**
+ * مرحلهٔ «ادامه» — مبنای دکمهٔ شروع منو:
+ * آخرین مرحلهٔ بازی‌شده اگر تمام نشده؛ اگر تمام شده مرحلهٔ بعدش؛ وگرنه اولین مرحلهٔ آزاد.
+ */
+export function continueStageId(save: SaveData): string {
+  const last = save.lastStageId && STAGES[save.lastStageId] ? save.lastStageId : '';
+  if (last) {
+    const rec = save.levels[last];
+    if (!rec?.completed) return last;
+    const st = STAGES[last];
+    const nxt = nextStageId(st.chapter ?? 1, st.stage ?? 1);
+    if (nxt && STAGES[nxt] && isStageUnlocked(STAGES[nxt].chapter ?? 1, STAGES[nxt].stage ?? 1, completedStageIds(save))) {
+      return nxt;
+    }
+  }
+  return firstPlayableStageId(save);
 }
 
 /** مجموع ستاره‌های یک فصل */

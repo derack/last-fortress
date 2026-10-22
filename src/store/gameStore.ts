@@ -2,6 +2,7 @@
 
 import { create } from 'zustand';
 import type { Language, Quality, SaveData, MagicId } from '@/game/data/types';
+import type { ChestContents } from '@/game/data/chest';
 import { loadSave, persistSave, resetSave } from '@/game/systems/SaveSystem';
 import { setLanguage } from '@/game/data/i18n';
 import { FORGE_MAX, forgeNextCost, type ForgeTrackId } from '@/game/data/forge';
@@ -51,6 +52,8 @@ export interface VictoryInfo {
   stars: number;
   healthPct: number;
   rewards: { crystals: number; knowledge: number; coins: number };
+  /** v2.1 — جعبهٔ غنیمت پیروزی (سکه کیف پول + کارت برج) */
+  chest?: ChestContents;
 }
 
 interface GameState {
@@ -146,7 +149,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   toasts: [],
   battleActive: false,
   pendingLevelId: 'c1s1',
-  selectedHero: 'arman',
+  selectedHero: '',
 
   setScreen: (s) => set({ screen: s }),
 

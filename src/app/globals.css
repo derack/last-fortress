@@ -242,6 +242,48 @@ body {
   }
 }
 
+/* ================= جعبهٔ غنیمت — v2.1 ================= */
+@keyframes chestPulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transform: scale(1.03);
+  }
+}
+
+.chest-pop {
+  animation: chestPop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes chestPop {
+  from {
+    opacity: 0;
+    transform: scale(0.7) rotate(-3deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.card-pop {
+  animation: cardPop 0.5s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+
+@keyframes cardPop {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .tutorial-anim {
   animation: tutPulse 2s ease-in-out infinite;
 }

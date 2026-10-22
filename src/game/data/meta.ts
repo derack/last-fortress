@@ -58,6 +58,26 @@ export function towerUpgradeCost(currentLevel: number): number {
   return metaUpgradeCost(currentLevel, TOWER_UPGRADE_BASE_COST);
 }
 
+// ============================================================
+// اقتصاد کارت برج — کارت از جعبهٔ پیروزی + سکه از کیف پول
+// ارتقای هر برج = کارت آن برج + سکه (سبک Clash Royale)
+// ============================================================
+
+/** کارت لازم برای ارتقا از «سطح» فعلی به بعد — سطح ۰→۱: ۲ کارت … ۱۹→۲۰: ۵۹ کارت */
+export function towerCardCost(currentLevel: number): number {
+  return 2 + currentLevel * 3;
+}
+
+/** سکه لازم برای ارتقا از «سطح» فعلی به بعد — سطح ۰→۱: ۱۵۰ … ۱۹→۲۰: ۴۹۰۰ */
+export function towerCoinCost(currentLevel: number): number {
+  return 150 + currentLevel * 250;
+}
+
+/** کارت‌های موجود یک برج در سیو */
+export function towerCardCount(save: { towerCards?: Record<string, number> }, towerId: string): number {
+  return Math.max(0, Math.floor(save.towerCards?.[towerId] ?? 0));
+}
+
 /** سطح ارتقای ذخیره‌شدهٔ قهرمان — ۰ اگر ثبت نشده */
 export function heroMetaLevel(save: { heroUpgrades?: Record<string, number> }, heroId: string): number {
   const lvl = save.heroUpgrades?.[heroId] ?? 0;

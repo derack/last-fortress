@@ -242,17 +242,23 @@ export interface SaveData {
   levels: Record<string, LevelRecord>;
   crystals: number;
   knowledge: number;
+  /** کیف پول سکه‌های متا — از جعبه‌های پیروزی پر می‌شود (اقتصاد کارت/سکه) */
+  coins: number;
   stats: PlayerStats;
   achievements: string[];
   tutorialDone: boolean;
-  /** قهرمانان باز‌شده — پیش‌فرض فقط آرمان */
+  /** قهرمانان باز‌شده — پیش‌فرض خالی؛ قهرمان با کریستال (پاداش باس) خریداری می‌شود */
   unlockedHeroes: string[];
-  /** قهرمان انتخابی برای نبرد */
+  /** قهرمان انتخابی برای نبرد — رشتهٔ خالی = هیچ قهرمانی باز نیست */
   selectedHero: string;
+  /** آخرین مرحلهٔ بازی‌شده — دکمهٔ ادامهٔ منو از این استفاده می‌کند */
+  lastStageId: string;
   /** کوره اثیر — سطح هر مسیر ارتقای دائمی (۰ تا ۲۰) */
   forge: Record<string, number>;
   /** آهنگری — سطح ارتقای دائمی هر قهرمان (۰ تا ۲۰) */
   heroUpgrades: Record<string, number>;
   /** آهنگری — سطح ارتقای دائمی هر برج (۰ تا ۲۰) */
   towerUpgrades: Record<string, number>;
+  /** کارت‌های برج — از جعبه‌ها؛ ارتقای برج = کارت + سکه */
+  towerCards: Record<string, number>;
 }

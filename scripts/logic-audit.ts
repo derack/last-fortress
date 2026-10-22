@@ -147,10 +147,12 @@ sec('۵. قهرمانان، جادوها، کوره اثیر');
 {
   const hids = Object.keys(HEROES);
   if (hids.length >= 4 && hids.length === HERO_ROSTER.length && hids.every((h) => HERO_ROSTER.some((r) => r.id === h))) ok(`${hids.length} قهرمان با رستر کامل: ${hids.join('، ')}`); else bad(`قهرمان/رستر: ${hids.length}/${HERO_ROSTER.length}`);
-  if (HEROES.arman.unlockCost === 0 && hids.every((h) => HEROES[h].unlockCost >= 0)) ok('آرمان رایگان، بقیه با هزینه کریستال قفل');
+  // v2.1 — قهرمان خریدنی: همه با هزینهٔ کریستال، نردبان صعودی، آرمان ارزان‌ترین
+  const heroCosts = hids.map((h) => HEROES[h].unlockCost ?? 0);
+  if (HEROES.arman.unlockCost > 0 && Math.min(...heroCosts) === HEROES.arman.unlockCost && heroCosts.every((c) => c > 0)) ok(`همهٔ ${hids.length} قهرمان خریدنی با کریستال (نردبان صعودی، آرمان ${HEROES.arman.unlockCost})`);
   else bad('قفل قهرمانان خراب');
-  const rosterMatch = HERO_ROSTER.every((r) => !!HEROES[r.id]) && HERO_ROSTER[0].unlocked && HERO_ROSTER.slice(1).every((r) => !r.unlocked);
-  if (rosterMatch) ok('HERO_ROSTER با HEROES سازگار (فقط آرمان باز)'); else bad('HERO_ROSTER ناسازگار');
+  const rosterMatch = HERO_ROSTER.every((r) => !!HEROES[r.id]) && HERO_ROSTER.every((r) => !r.unlocked);
+  if (rosterMatch) ok('HERO_ROSTER با HEROES سازگار (هیچ قهرمانی پیش‌فرض باز نیست)'); else bad('HERO_ROSTER ناسازگار');
   const metaOk = Object.keys(HERO_META).every((k) => !!HEROES[k]);
   if (metaOk) ok('HERO_META اشاره به قهرمان معتبر'); else bad('HERO_META یتیم');
   const mids = Object.keys(MAGIC);

@@ -107,7 +107,7 @@ export const HEROES: Record<string, HeroData> = {
     abilityDuration: 8,
     abilityBuff: 40,
     abilityKind: 'battleCommand',
-    unlockCost: 0,
+    unlockCost: 100,
   },
   aria: {
     id: 'aria',
@@ -189,7 +189,8 @@ export const HEROES: Record<string, HeroData> = {
 };
 
 export const HERO_ROSTER = [
-  { id: 'arman', unlocked: true },
+  // v2.1 — هیچ قهرمانی رایگان نیست؛ همه با کریستال (پاداش باس) خریداری می‌شوند
+  { id: 'arman', unlocked: false },
   { id: 'aria', unlocked: false },
   { id: 'radin', unlocked: false },
   { id: 'nila', unlocked: false },

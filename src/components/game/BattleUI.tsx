@@ -4,11 +4,12 @@ import { useState } from 'react';
 import {
   Heart, Coins, Gem, Play, Pause, FastForward, Zap, Flame, Shield, Snowflake,
   Crosshair, X, Star, Home, RotateCcw, Settings, User, Sparkles, ArrowUpCircle,
-  Trash2, Target, Clock, FlaskConical, MoveDiagonal, Sun, Moon, Lock, Swords, Trophy,
+  Trash2, Target, Clock, FlaskConical, MoveDiagonal, Sun, Moon, Lock, Swords, Trophy, Gift,
 } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { TOWERS, TOWER_BUILD_ORDER, isTowerUnlocked, starsUntilTower } from '@/game/data/towers';
 import { nextStageId } from '@/game/data/campaign';
+import type { ChestContents } from '@/game/data/chest';
 import { MAGIC } from '@/game/data/magic';
 import { HEROES } from '@/game/data/magic';
 import { t, faNum } from '@/game/data/i18n';
@@ -62,7 +63,6 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
   const game = actions.get();
 
   const corePct = Math.round((st.coreHp / st.coreMaxHp) * 100);
-  const heroData = HEROES[st.selectedHero] ?? HEROES.arman;
 
   const togglePause = (p: boolean) => {
     game?.setPaused(p);
@@ -261,6 +261,11 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
       {/* ================= قهرمان (بالای شبکه جادو) — فاز ۸: hud-hero ================= */}
       <div className="hud-hero absolute pointer-events-auto">
         <button onClick={() => {
+          // v2.1 — قهرمان خریدنی است؛ اگر باز نشده راهنمای خرید
+          if (!st.selectedHero) {
+            useGameStore.getState().pushToast('heroLockedHint', 'info');
+            return;
+          }
           if (!st.hero?.deployed) {
             useGameStore.getState().pushToast('deployHint', 'info');
             game?.selectHeroMode(true);
@@ -268,14 +273,15 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
             game?.useHeroAbility();
           }
         }}
-          disabled={!!st.hero?.deployed && (st.hero.dead || st.hero.abilityCd > 0)}
+          disabled={!st.selectedHero || (!!st.hero?.deployed && (st.hero.dead || st.hero.abilityCd > 0))}
           className={`relative flex h-14 w-14 flex-col items-center justify-center rounded-2xl border backdrop-blur-sm active:scale-90
-            ${!st.hero?.deployed ? 'border-amber-400/50 bg-amber-600/30' :
+            ${!st.selectedHero ? 'border-slate-600/50 bg-slate-800/40 opacity-75' :
+            !st.hero?.deployed ? 'border-amber-400/50 bg-amber-600/30' :
             st.hero.dead ? 'border-red-500/70 bg-red-950/70' :
             st.hero.abilityCd <= 0 ? 'border-amber-300/70 bg-amber-500/25 shadow-[0_0_18px_rgba(245,158,11,0.35)]' : 'border-slate-700/60 bg-black/70 opacity-70'}`}>
-          <User className={`h-6 w-6 ${st.hero?.dead ? 'text-red-400' : 'text-amber-300'}`} />
-          <span className="text-[9px] font-black text-amber-200">
-            {!st.hero?.deployed ? t('deployHero').split(' ')[0] : `${t('heroLevel', faNum(st.hero.level))}`}
+          <User className={`h-6 w-6 ${!st.selectedHero ? 'text-slate-400' : st.hero?.dead ? 'text-red-400' : 'text-amber-300'}`} />
+          <span className={`text-[9px] font-black ${!st.selectedHero ? 'text-slate-400' : 'text-amber-200'}`}>
+            {!st.selectedHero ? t('heroLockedShort') : !st.hero?.deployed ? t('deployHero').split(' ')[0] : `${t('heroLevel', faNum(st.hero.level))}`}
           </span>
           {/* مرگ — شمارش معکوس ریسپاون */}
           {st.hero?.deployed && st.hero.dead && (
@@ -390,9 +396,9 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
           stars={st.victory.stars}
           rewards={[
             { icon: Coins, value: faNum(st.victory.rewards.coins), label: t('coins'), color: 'text-amber-400' },
-            { icon: Gem, value: faNum(st.victory.rewards.crystals), label: t('crystal'), color: 'text-cyan-400' },
             { icon: Sparkles, value: faNum(st.victory.rewards.knowledge), label: t('knowledge'), color: 'text-violet-400' },
           ]}
+          chest={st.victory.chest}
           actions={actions}
         />
       )}
@@ -502,12 +508,67 @@ function TowerPanel({ actions }: { actions: BattleActions }) {
 
 // ---------------------------- پایان بازی ----------------------------
 
-function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
+/** جعبهٔ غنیمت پیروزی — بسته: صندوق پالس‌دار «لمس کن»؛ باز: سکه + کارت‌های برج */
+function VictoryChest({ chest }: { chest: ChestContents }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-4">
+      {!open ? (
+        <button onClick={() => setOpen(true)}
+          className="group relative mx-auto flex w-full flex-col items-center gap-1.5 rounded-2xl border border-amber-400/50
+          bg-gradient-to-b from-amber-900/50 to-black/50 px-4 py-4 active:scale-95"
+          style={{ animation: 'chestPulse 1.6s ease-in-out infinite' }}>
+          {chest.firstClear && (
+            <span className="absolute -top-2 right-3 rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black text-amber-950 shadow-lg">
+              {t('chestFirstClear')}
+            </span>
+          )}
+          <Gift className="h-10 w-10 text-amber-300 drop-shadow-[0_0_14px_rgba(245,158,11,0.6)] transition-transform group-active:scale-75" />
+          <span className="text-sm font-black text-amber-200">{t('chestTitle')}</span>
+          <span className="text-[10px] font-bold text-slate-400">{t('chestTapToOpen')}</span>
+        </button>
+      ) : (
+        <div className="rounded-2xl border border-amber-400/40 bg-gradient-to-b from-amber-950/40 to-black/40 px-3 py-3 chest-pop">
+          <div className="mb-2 flex items-center justify-center gap-2 text-xs font-black text-amber-200">
+            <Gift className="h-4 w-4 text-amber-300" />
+            {t('chestTitle')}
+            {chest.firstClear && <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[9px] text-amber-950">{t('chestFirstClear')}</span>}
+          </div>
+          <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-xl border border-amber-500/40 bg-black/50 px-3 py-1.5">
+              <Coins className="h-4 w-4 text-amber-400" />
+              <span className="text-sm font-black text-amber-300">+{faNum(chest.coins)}</span>
+              <span className="text-[9px] font-bold text-slate-500">{t('coins')}</span>
+            </div>
+          </div>
+          <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+            {chest.cards.map((card, i) => {
+              const Icon = TOWER_ICONS[card.towerId] ?? Crosshair;
+              const tower = TOWERS[card.towerId];
+              return (
+                <div key={i} className="flex items-center gap-1.5 rounded-xl border border-sky-500/40 bg-sky-950/40 px-2.5 py-1.5 card-pop"
+                  style={{ animationDelay: `${i * 0.14}s` }}>
+                  <Icon className="h-4 w-4 text-sky-300" />
+                  <span className="text-[11px] font-black text-sky-200">{tower ? t(tower.nameKey) : card.towerId}</span>
+                  <span className="rounded-md bg-sky-500/30 px-1.5 text-[10px] font-black text-sky-100">×{faNum(card.count)}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-2 text-center text-[9px] font-bold text-slate-500">{t('chestCardHint')}</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EndOverlay({ title, titleClass, subtitle, stars, rewards, chest, actions }: {
   title: string;
   titleClass: string;
   subtitle: string;
   stars: number;
   rewards?: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; value: string; label: string; color: string }[];
+  chest?: ChestContents;
   actions: BattleActions;
 }) {
   const save = useGameStore((s) => s.save);
@@ -584,6 +645,9 @@ function EndOverlay({ title, titleClass, subtitle, stars, rewards, actions }: {
             )}
           </div>
         )}
+
+        {/* ================= جعبهٔ غنیمت — v2.1: سکه کیف پول + کارت برج ================= */}
+        {chest && <VictoryChest chest={chest} />}
 
         {/* آمار شکست — موج رسیده و سلامت هسته (بخش ۵۳) */}
         {!rewards && defeatInfo && (

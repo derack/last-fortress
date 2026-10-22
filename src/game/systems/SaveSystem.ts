@@ -11,6 +11,29 @@ const LEGACY_LEVEL_TO_CHAPTER: Record<string, number> = {
   l1: 1, l2: 2, l3: 3, l4: 4, l5: 5, l6: 10,
 };
 
+/** مهاجرت ذخیره نسخه ۳ → نسخه ۴ — اقتصاد کارت/جعبه + قهرمان خریدنی + دکمه ادامه */
+function migrateV3toV4(data: SaveData): SaveData {
+  // کیف پول سکه و کارت‌های برج — از صفر شروع می‌شوند
+  if (!Number.isFinite(data.coins) || data.coins < 0) data.coins = 0;
+  if (!data.towerCards || typeof data.towerCards !== 'object') data.towerCards = {};
+  for (const k of Object.keys(data.towerCards)) {
+    const v = data.towerCards[k];
+    if (typeof v !== 'number' || !Number.isFinite(v) || v < 0) delete data.towerCards[k];
+    else data.towerCards[k] = Math.min(9999, Math.floor(v));
+  }
+  if (typeof data.lastStageId !== 'string') data.lastStageId = '';
+  // قهرمان دیگر رایگان نیست — در اقتصاد جدید باید با کریستال خریداری شود.
+  // برای اینکه پیشرفت قبلی بی‌عدالت از دست نرود، ۱۵۰ کریستال جبران داده می‌شود
+  // (قهرمان آرمان ۱۰۰ کریستال — باقی برای جادو/بازکردن بعدی)
+  if (data.unlockedHeroes.length > 0 || data.selectedHero) {
+    data.crystals += 150;
+  }
+  data.unlockedHeroes = [];
+  data.selectedHero = '';
+  data.version = 4;
+  return data;
+}
+
 /** مهاجرت ذخیره نسخه ۲ → نسخه ۳ — افزودن کوره اثیر (ارتقاهای دائمی) */
 function migrateV2toV3(data: SaveData): SaveData {
   if (!data.forge || typeof data.forge !== 'object') data.forge = {};
@@ -48,11 +71,12 @@ function migrateV1toV2(data: SaveData): SaveData {
 
 export function defaultSave(): SaveData {
   return {
-    version: 3,
+    version: 4,
     settings: { language: 'fa', quality: 'medium', music: 0.6, sfx: 0.8, haptics: true },
     levels: {},
     crystals: 0,
     knowledge: 0,
+    coins: 0,
     stats: {
       kills: 0,
       bossKills: 0,
@@ -68,11 +92,14 @@ export function defaultSave(): SaveData {
     },
     achievements: [],
     tutorialDone: false,
-    unlockedHeroes: ['arman'],
-    selectedHero: 'arman',
+    // قهرمان رایگان نیست — با پاداش کریستال باس‌ها خریداری می‌شود (پیشرفت تدریجی)
+    unlockedHeroes: [],
+    selectedHero: '',
+    lastStageId: '',
     forge: {},
     heroUpgrades: {},
     towerUpgrades: {},
+    towerCards: {},
   };
 }
 
@@ -102,18 +129,21 @@ export function loadSave(): SaveData {
       // اقتصاد — مقادیر منفی/NaN از دستکاری سیو عبور نمی‌کنند
       crystals: clampCur(data.crystals),
       knowledge: clampCur(data.knowledge),
-      // مهاجرت ذخیره‌های قدیمی — قهرمانان
-      unlockedHeroes: data.unlockedHeroes?.length ? data.unlockedHeroes.filter((h) => typeof h === 'string') : ['arman'],
-      selectedHero: data.selectedHero ?? 'arman',
+      // مهاجرت ذخیره‌های قدیمی — قهرمانان (آرایه خالی = هنوز قهرمانی خریداری نشده)
+      unlockedHeroes: Array.isArray(data.unlockedHeroes) ? data.unlockedHeroes.filter((h) => typeof h === 'string') : [],
+      selectedHero: typeof data.selectedHero === 'string' ? data.selectedHero : '',
+      coins: clampCur(data.coins),
+      lastStageId: typeof data.lastStageId === 'string' ? data.lastStageId : '',
       // کوره اثیر — مقادیر نامعتبر پاک می‌شوند
       forge: { ...(data.forge ?? {}) },
       // آهنگری — ارتقاهای دائمی قهرمان/برج (مهاجرت ذخیره‌های قدیمی)
       heroUpgrades: { ...(data.heroUpgrades ?? {}) },
       towerUpgrades: { ...(data.towerUpgrades ?? {}) },
+      towerCards: { ...(data.towerCards ?? {}) },
     };
     // قهرمان انتخابی باید واقعاً باز باشد — سیو دستکاری‌شده بازیکن را به قهرمان قفل نمی‌برد
     if (!merged.unlockedHeroes.includes(merged.selectedHero)) {
-      merged.selectedHero = merged.unlockedHeroes.includes('arman') ? 'arman' : (merged.unlockedHeroes[0] ?? 'arman');
+      merged.selectedHero = merged.unlockedHeroes[0] ?? '';
     }
     // مهاجرت نسخه ۱ → ۲ — کمپین ۱۰۰ مرحله‌ای
     if (!data.version || data.version < 2) {
@@ -121,7 +151,11 @@ export function loadSave(): SaveData {
     }
     // مهاجرت نسخه ۲ → ۳ — کوره اثیر
     if (!data.version || data.version < 3) {
-      return migrateV2toV3(merged);
+      migrateV2toV3(merged);
+    }
+    // مهاجرت نسخه ۳ → ۴ — اقتصاد کارت/جعبه + قهرمان خریدنی
+    if (!data.version || data.version < 4) {
+      return migrateV3toV4(merged);
     }
     // بازمحاسبه ستاره‌ها از رکوردهای پاک‌سازی‌شده
     merged.stats.totalStars = Object.values(merged.levels).reduce((s, l) => s + l.stars, 0);

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import {
   ArrowRight, Hammer, Lock, User, Swords, Shield, Flame, Snowflake, Zap, Target,
-  FlaskConical, MoveDiagonal, Sparkles, Sun, Moon, BookOpen, Check, Gem, Heart, Star,
+  FlaskConical, MoveDiagonal, Sparkles, Sun, Moon, BookOpen, Check, Gem, Heart, Star, Coins, Layers,
 } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { useStandaloneBack } from './standalone';
@@ -12,7 +12,7 @@ import { TOWERS, isTowerUnlocked, starsUntilTower } from '@/game/data/towers';
 import {
   META_MAX_LEVEL, HERO_META_STEP, TOWER_META_STEP,
   heroMetaLevel, towerMetaLevel, heroMetaPct, towerMetaPct,
-  heroUpgradeCost, towerUpgradeCost, META_TOWER_IDS, grantForgeAchievements,
+  heroUpgradeCost, towerCardCost, towerCoinCost, towerCardCount, META_TOWER_IDS, grantForgeAchievements,
 } from '@/game/data/meta';
 import { t, faNum } from '@/game/data/i18n';
 
@@ -45,7 +45,7 @@ export function UpgradesPanel() {
 
   if (!save) return null;
 
-  /** ارتقای دائمی — پرداخت با دانش باستانی و ثبت در ذخیره */
+  /** ارتقای دائمی — قهرمان با دانش باستانی، برج با کارت + سکه (v2.1) */
   const doUpgrade = (kind: ForgeTab, id: string) => {
     const store = useGameStore.getState();
     const sv = store.save;
@@ -55,20 +55,39 @@ export function UpgradesPanel() {
       store.pushToast('forgeMaxedToast', 'info');
       return;
     }
-    const cost = kind === 'heroes' ? heroUpgradeCost(lvl) : towerUpgradeCost(lvl);
-    if (sv.knowledge < cost) {
-      store.pushToast('forgeNotEnoughKnowledge', 'error');
+    if (kind === 'heroes') {
+      const cost = heroUpgradeCost(lvl);
+      if (sv.knowledge < cost) {
+        store.pushToast('forgeNotEnoughKnowledge', 'error');
+        return;
+      }
+      store.updateSave((s2) => {
+        s2.heroUpgrades[id] = (s2.heroUpgrades[id] ?? 0) + 1;
+        s2.knowledge -= cost;
+        grantForgeAchievements(s2);
+      });
+      store.pushToast('forgeUpgraded', 'success');
+      return;
+    }
+    // برج — کارت + سکه (سبک Clash Royale)
+    const cardsNeeded = towerCardCost(lvl);
+    const coinsNeeded = towerCoinCost(lvl);
+    const haveCards = towerCardCount(sv, id);
+    if (haveCards < cardsNeeded) {
+      store.pushToast('forgeNeedCards', 'error');
+      return;
+    }
+    if ((sv.coins ?? 0) < coinsNeeded) {
+      store.pushToast('forgeNeedCoins', 'error');
       return;
     }
     store.updateSave((s2) => {
-      if (kind === 'heroes') s2.heroUpgrades[id] = (s2.heroUpgrades[id] ?? 0) + 1;
-      else s2.towerUpgrades[id] = (s2.towerUpgrades[id] ?? 0) + 1;
-      s2.knowledge -= cost; // پرداخت دانش باستانی
-      // دستاوردهای آهنگری — سطح ۱۰ و ۲۰ (idempotent)
+      s2.towerUpgrades[id] = (s2.towerUpgrades[id] ?? 0) + 1;
+      s2.towerCards[id] = Math.max(0, (s2.towerCards[id] ?? 0) - cardsNeeded);
+      s2.coins = Math.max(0, (s2.coins ?? 0) - coinsNeeded);
       grantForgeAchievements(s2);
     });
     store.pushToast('forgeUpgraded', 'success');
-    // اگر دستاوردی فعال شده باشد پاداشش در همان updateSave ثبت شده است
   };
 
   const pct = (p: number) => `+${faNum(Math.round(p * 100))}٪`;
@@ -87,12 +106,17 @@ export function UpgradesPanel() {
 
       <div className="px-4 pt-3 text-center text-xs font-bold leading-5 text-slate-400">{t('forgeDesc')}</div>
 
-      {/* نوار موجودی دانش + تب‌ها — همیشه مرئی حتی در حالت iframe */}
+      {/* نوار موجودی دانش + سکه + تب‌ها — همیشه مرئی حتی در حالت iframe */}
       <div className="mx-auto mt-3 flex w-full max-w-md items-center gap-2 px-4">
         <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-violet-400/40 bg-violet-500/10 py-2.5 text-base font-black text-violet-300">
           <BookOpen className="h-5 w-5" />
           {faNum(save.knowledge)}
           <span className="text-xs font-bold text-violet-300/70">{t('knowledge')}</span>
+        </div>
+        <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-amber-400/40 bg-amber-500/10 py-2.5 text-base font-black text-amber-300">
+          <Coins className="h-5 w-5" />
+          {faNum(save.coins ?? 0)}
+          <span className="text-xs font-bold text-amber-300/70">{t('coins')}</span>
         </div>
       </div>
 
@@ -173,13 +197,19 @@ export function UpgradesPanel() {
 
           {tab === 'towers' && (
             <>
+              {/* راهنمای اقتصاد کارت — v2.1 */}
+              <div className="rounded-xl border border-sky-500/30 bg-sky-950/30 px-3 py-2 text-center text-[11px] font-bold leading-5 text-sky-200/90">
+                {t('forgeCardEconomyHint')}
+              </div>
               {META_TOWER_IDS.map((id) => {
                 const tw = TOWERS[id];
                 const unlocked = isTowerUnlocked(save, id);
                 const lvl = towerMetaLevel(save, id);
                 const maxed = lvl >= META_MAX_LEVEL;
-                const cost = towerUpgradeCost(lvl);
-                const affordable = save.knowledge >= cost;
+                const cardsNeeded = towerCardCost(lvl);
+                const coinsNeeded = towerCoinCost(lvl);
+                const haveCards = towerCardCount(save, id);
+                const affordable = haveCards >= cardsNeeded && (save.coins ?? 0) >= coinsNeeded;
                 const Icon = TOWER_ICONS[id] ?? Shield;
                 const accent = '#' + tw.color.toString(16).padStart(6, '0');
                 const dmgPct = Math.round(lvl * TOWER_META_STEP * 100);
@@ -227,10 +257,21 @@ export function UpgradesPanel() {
                         </div>
                       ) : (
                         <div className="mt-3 flex items-center justify-between gap-2">
-                          <div className="flex-1 rounded-xl border border-violet-400/30 bg-violet-950/30 px-3 py-2 text-center text-xs font-bold text-violet-300">
-                            {t('forgeNext')}: +{faNum(nextDmg)}٪ {t('forgeTowerDamageBonus')}
+                          <div className="flex-1 rounded-xl border border-slate-700/50 bg-black/40 px-2 py-1.5">
+                            <div className="flex items-center justify-center gap-1 text-[11px] font-black">
+                              <Layers className={`h-3.5 w-3.5 ${haveCards >= cardsNeeded ? 'text-sky-300' : 'text-red-400'}`} />
+                              <span className={haveCards >= cardsNeeded ? 'text-sky-200' : 'text-red-300'}>
+                                {faNum(haveCards)}/{faNum(cardsNeeded)}
+                              </span>
+                              <span className="text-slate-500">·</span>
+                              <Coins className={`h-3.5 w-3.5 ${(save.coins ?? 0) >= coinsNeeded ? 'text-amber-300' : 'text-red-400'}`} />
+                              <span className={(save.coins ?? 0) >= coinsNeeded ? 'text-amber-200' : 'text-red-300'}>{faNum(coinsNeeded)}</span>
+                            </div>
+                            <div className="mt-0.5 text-center text-[10px] font-bold text-violet-300/80">
+                              {t('forgeNext')}: +{faNum(nextDmg)}٪
+                            </div>
                           </div>
-                          <UpgradeButton cost={cost} affordable={affordable} onClick={() => doUpgrade('towers', id)} compact />
+                          <TowerUpgradeButton affordable={affordable} onClick={() => doUpgrade('towers', id)} />
                         </div>
                       )
                     ) : (
@@ -294,6 +335,19 @@ function UpgradeButton({ cost, affordable, onClick, compact }: {
       <span className="mx-0.5 opacity-60">·</span>
       {faNum(cost)}
       <Gem className="h-3 w-3 opacity-70" />
+    </button>
+  );
+}
+
+/** دکمهٔ ارتقای برج — با کارت + سکه (v2.1) */
+function TowerUpgradeButton({ affordable, onClick }: { affordable: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} disabled={!affordable}
+      className={`flex items-center justify-center gap-1.5 rounded-xl border px-3.5 py-2.5 text-sm font-black
+        ${affordable
+        ? 'border-amber-400/60 bg-gradient-to-b from-amber-400/90 to-orange-600/90 text-white shadow-[0_0_18px_rgba(245,158,11,0.35)] active:scale-95'
+        : 'cursor-not-allowed border-slate-700/60 bg-black/50 text-slate-500 opacity-70'}`}>
+      {t('forgeUpgrade')}
     </button>
   );
 }

@@ -17,6 +17,7 @@ import { Enemy } from '../entities/Enemy';
 import { Tower } from '../entities/Tower';
 import { Projectile } from '../entities/Projectile';
 import { Hero } from '../entities/Hero';
+import { rollChest } from '../data/chest';
 import { characterFactory } from '../assets';
 import type { DamageableEnemy, GameContext } from '../entities/context';
 
@@ -42,7 +43,7 @@ export class Game {
   private damageNums: DamageNumbers;
   // فاز ۶ — صدا مشترک بین نبردهاست (موسیقی پیوسته) — دیگر per-battle ساخته/بسته نمی‌شود
   readonly audio: AudioSystem = audioSystem;
-  private hero: Hero;
+  private hero: Hero | null;
   private ctx: GameContext;
 
   private enemies: Enemy[] = [];
@@ -126,8 +127,10 @@ export class Game {
     return this.save;
   }
   private totalWavesSurvivedAtStart: number;
+  /** v2.1 — آیا باس این مرحله برای اولین بار کشته می‌شود؟ (پاداش الماس بزرگ فقط فتح اول) */
+  private bossFirstKill: boolean;
 
-  constructor(canvas: HTMLCanvasElement, level: LevelData, quality: string, save: SaveData, language: 'fa' | 'en', heroId = 'arman') {
+  constructor(canvas: HTMLCanvasElement, level: LevelData, quality: string, save: SaveData, language: 'fa' | 'en', heroId: string | null = null) {
     this.canvas = canvas;
     this.level = level;
     this.save = save;
@@ -138,6 +141,8 @@ export class Game {
     this.coreHp = Math.round(level.coreHp * (1 + forgePct(save, 'coreFort')));
     this.coreMaxHp = this.coreHp;
     this.totalWavesSurvivedAtStart = save.stats.wavesSurvived;
+    // v2.1 — پاداش بزرگ الماس باس فقط در اولین فتح مرحله
+    this.bossFirstKill = !save.levels[level.id]?.completed;
     for (const m of Object.values(MAGIC)) this.magicCd[m.id] = 0;
 
     const w = canvas.clientWidth || window.innerWidth;
@@ -197,8 +202,9 @@ export class Game {
       heroMetaHp: (hid) => heroMetaPct(heroMetaLevel(save, hid)),
     };
 
-    this.hero = new Hero(heroId, this.scene3d.scene, this.ctx);
-    // دشمنان از طریق ctx قهرمان را هدف می‌گیرند
+    // v2.1 — قهرمان خریدنی است؛ اگر باز نشده باشد نبرد بدون قهرمان انجام می‌شود
+    this.hero = heroId ? new Hero(heroId, this.scene3d.scene, this.ctx) : null;
+    // دشمنان از طریق ctx قهرمان را هدف می‌گیرند (null = بدون قهرمان)
     this.ctx.heroRef = this.hero;
     this.input = new InputController(canvas, this.cameraCtrl, (hit) => this.handleTap(hit), this.scene3d.scene);
     // پیش‌نمایش محل ساخت — حرکت موس/درگ انگشت
@@ -250,7 +256,7 @@ export class Game {
       if (this.coins >= 2000) this.grantAchievement('rich');
       if (this.crystals >= 100) this.grantAchievement('crystal_hoarder');
       if (this.coinsEarned >= 3000) this.grantAchievement('economy');
-      if (this.hero.level >= 5) this.grantAchievement('hero_max');
+      if ((this.hero?.level ?? 0) >= 5) this.grantAchievement('hero_max');
     }
 
     // موج — شمارش معکوس شروع خودکار
@@ -319,22 +325,26 @@ export class Game {
       (this.ghostRing!.material as THREE.MeshBasicMaterial).color.setHex(color);
     }
 
-    // قهرمان
-    this.hero.updateLod(this.cameraCtrl.camera.position);
-    this.hero.update(dt, this.time);
-    // حلقه پالس حالت جابجایی — زیر قهرمان تا کاربر بداند کجا تپ کند
-    if (this.heroSelectMode && this.hero.alive) {
-      this.heroMovePulse -= dt;
-      if (this.heroMovePulse <= 0) {
-        this.heroMovePulse = 0.55;
-        this.vfx.ring(this.hero.getPos(), 0xffb020, 2.2, 0.5);
+    // قهرمان — اگر باز نشده باشد null است و کل بلوک اجرا نمی‌شود
+    if (this.hero) {
+      this.hero.updateLod(this.cameraCtrl.camera.position);
+      this.hero.update(dt, this.time);
+      // حلقه پالس حالت جابجایی — زیر قهرمان تا کاربر بداند کجا تپ کند
+      if (this.heroSelectMode && this.hero.alive) {
+        this.heroMovePulse -= dt;
+        if (this.heroMovePulse <= 0) {
+          this.heroMovePulse = 0.55;
+          this.vfx.ring(this.hero.getPos(), 0xffb020, 2.2, 0.5);
+        }
       }
+      const commandBuff = this.hero.data.abilityKind === 'battleCommand' && this.hero.abilityActiveTime > 0
+        ? this.hero.data.abilityBuff / 100 : 0;
+      const blessingBuff = this.time < this.blessingUntil
+        ? (MAGIC.azarBlessing.rateBuffPct ?? 0) : 0;
+      this.ctx.towerRateBuff = commandBuff + blessingBuff;
+    } else {
+      this.ctx.towerRateBuff = this.time < this.blessingUntil ? (MAGIC.azarBlessing.rateBuffPct ?? 0) : 0;
     }
-    const commandBuff = this.hero.data.abilityKind === 'battleCommand' && this.hero.abilityActiveTime > 0
-      ? this.hero.data.abilityBuff / 100 : 0;
-    const blessingBuff = this.time < this.blessingUntil
-      ? (MAGIC.azarBlessing.rateBuffPct ?? 0) : 0;
-    this.ctx.towerRateBuff = commandBuff + blessingBuff;
 
     // رگبار آتش/تیر
     this.barrageTimer -= dt;
@@ -416,11 +426,7 @@ export class Game {
       this.towersBuiltBeforeBoss = this.towersBuilt;
     }
 
-    // پاداش کریستال موج
-    this.crystals += 5;
-    this.crystalsEarned += 5;
-    this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
-
+    // v2.1 — پاداش کریستال موج حذف شد: الماس فقط از کشتن باس
     // آموزش
     if (!this.save.tutorialDone) this.bus.emit('tutorial', 'upgrade');
   }
@@ -500,13 +506,21 @@ export class Game {
     const killCrystals = e.data.crystalReward ?? 0;
     this.crystals += killCrystals;
     this.crystalsEarned += killCrystals;
+    // v2.1 — الماس فقط از کشتن باس (نه یونیت‌های ساده): فتح اول بزرگ، تکرار کوچک
+    if (e.data.boss) {
+      const ch = this.level.chapter ?? 1;
+      const bossCrystals = this.bossFirstKill ? 70 + ch * 25 : 6 + ch * 2;
+      this.crystals += bossCrystals;
+      this.crystalsEarned += bossCrystals;
+      this.bus.emit('toast', { key: this.bossFirstKill ? 'bossCrystalFirst' : 'bossCrystalReplay', type: 'success' });
+    }
     this.killsThisLevel++;
     this.save.stats.kills++;
     if (e.data.boss) {
       this.save.stats.bossKills++;
       this.audio.setBossMode(false);
     }
-    this.hero.gainXp(e.data.boss ? 200 : 12);
+    this.hero?.gainXp(e.data.boss ? 200 : 12);
     this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
   }
 
@@ -900,6 +914,14 @@ export class Game {
   }
 
   private heroState() {
+    // نبرد بدون قهرمان — وضعیت قفل برای HUD
+    if (!this.hero) {
+      return {
+        level: 0, xpPct: 0, abilityCd: 0, abilityMax: 0, deployed: false,
+        hp: 0, maxHp: 0, dead: false, respawnIn: 0,
+        heroId: '', nameKey: '', titleKey: '',
+      };
+    }
     const data = this.hero.data;
     return {
       level: this.hero.level,
@@ -988,7 +1010,7 @@ export class Game {
         return;
       }
       // قهرمان؟ — تپ روی هیرو = ورود به حالت جابجایی
-      if (root === this.hero.mesh || (root.parent && root.parent === this.hero.mesh)) {
+      if (this.hero && (root === this.hero.mesh || (root.parent && root.parent === this.hero.mesh))) {
         if (this.hero.alive) {
           this.buildMode = null;
           this.clearGhost();
@@ -1022,7 +1044,7 @@ export class Game {
     }
 
     // حرکت/استقرار قهرمان
-    if (this.heroSelectMode) {
+    if (this.heroSelectMode && this.hero) {
       if (!this.hero.deployed) {
         this.deployHero(hit.ground);
       } else {
@@ -1039,6 +1061,7 @@ export class Game {
 
   // پیاده‌سازی قهرمان
   deployHero(point: THREE.Vector3) {
+    if (!this.hero) return;
     const x = Math.round(point.x / 2) * 2;
     const z = Math.round(point.z / 2) * 2;
     this.hero.deploy(new THREE.Vector3(x, 0, z));
@@ -1046,6 +1069,7 @@ export class Game {
   }
 
   useHeroAbility(): boolean {
+    if (!this.hero) return false;
     const ok = this.hero.useAbility();
     if (ok) this.bus.emit('hero', this.heroState());
     return ok;
@@ -1070,21 +1094,26 @@ export class Game {
     const star3 = this.leaks === 0;
     const stars = (star1 ? 1 : 0) + (star2 ? 1 : 0) + (star3 ? 1 : 0);
 
-    // پاداش‌ها — کریستال + ذرات اثیر (بر اساس فصل و ستاره؛ Boss دوبرابر)
-    const rewardCrystals = 10 + stars * 5;
+    // پاداش‌ها — v2.1: کریستال فقط از باس؛ اینجا دانش + جعبه (سکه + کارت برج)
     let rewardShards = 5 + stars * 2 + (this.level.chapter ?? 1);
     if (this.level.stage === 10) rewardShards *= 2;
-    this.crystals += rewardCrystals;
-    this.crystalsEarned += rewardCrystals;
     this.commitCrystals();
     this.save.knowledge += rewardShards;
     this.save.stats.victories++;
+
+    const prev = this.save.levels[this.level.id];
+    // v2.1 — جعبهٔ غنیمت: سکه به کیف پول متا + کارت برج برای آهنگری (فتح اول = جعبه بزرگ)
+    const firstClear = !prev?.completed;
+    const chest = rollChest(this.level.chapter ?? 1, stars, firstClear);
+    this.save.coins = Math.max(0, Math.floor((this.save.coins ?? 0) + chest.coins));
+    for (const card of chest.cards) {
+      this.save.towerCards[card.towerId] = Math.min(9999, (this.save.towerCards[card.towerId] ?? 0) + card.count);
+    }
     // دستاوردهای رویدادی پیروزی — با پاداش کریستال (قبلاً بدون پاداش بودند)
     if (this.leaks === 0) this.grantAchievement('untouchable');
     if (this.coreHp === this.coreMaxHp) this.grantAchievement('perfect_defense');
     if (healthPct < 10) this.grantAchievement('last_stand');
 
-    const prev = this.save.levels[this.level.id];
     const bestStars = Math.max(prev?.stars ?? 0, stars);
     this.save.levels[this.level.id] = {
       stars: bestStars,
@@ -1101,7 +1130,8 @@ export class Game {
     this.bus.emit('victory', {
       stars,
       healthPct: Math.round(healthPct),
-      rewards: { crystals: rewardCrystals, knowledge: rewardShards, coins: this.coinsEarned },
+      rewards: { crystals: 0, knowledge: rewardShards, coins: this.coinsEarned },
+      chest,
     });
   }
 
@@ -1157,7 +1187,7 @@ export class Game {
     this.audio.setBossMode(false);
     this.audio.setSceneMode('menu');
     this.damageNums.dispose();
-    this.hero.dispose();
+    this.hero?.dispose();
     for (const e of this.enemies) e.remove();
     this.clearGhost();
     if (this.buildGrid) {

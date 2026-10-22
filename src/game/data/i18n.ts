@@ -167,6 +167,22 @@ const fa: Record<string, string> = {
   // منوی صفحات — تب‌ها بدون بارگذاری، همان لحظه باز می‌شوند
   menuPagesHint: 'صفحات با یک لمس و بدون بارگذاری همین‌جا باز می‌شوند',
 
+  // v2.1 — دکمهٔ ادامه + اقتصاد جدید
+  menuContinue: 'ادامه نبرد',
+  menuStartFresh: 'شروع نبرد',
+  menuStageInfo: 'فصل {0} · مرحله {1}',
+  heroLockedShort: 'قفل',
+  heroLockedHint: 'قهرمانی باز نشده — از پنل قهرمانان با کریستال باز کن',
+  bossCrystalFirst: 'پاداش الماس باس — فتح اول!',
+  bossCrystalReplay: 'پاداش کوچک باس',
+  chestTitle: 'جعبهٔ غنیمت',
+  chestTapToOpen: 'برای باز کردن لمس کن',
+  chestFirstClear: 'جعبهٔ فتح اول',
+  chestCardHint: 'کارت‌ها در آهنگری برای ارتقای برج با سکه مصرف می‌شوند',
+  forgeNeedCards: 'کارت کافی نداری — جعبه‌های پیروزی کارت می‌دهند',
+  forgeNeedCoins: 'سکه کافی نداری',
+  forgeCardEconomyHint: 'ارتقای برج = کارت (از جعبهٔ پیروزی) + سکه — قهرمان با کریستال باز می‌شود',
+
   towerSentinel: 'نگهبان',
   towerSentinelDesc: 'توپ مسلسل پیشرفته با شلیک سریع — تعادل کامل',
   towerSentinelAbility: 'باران گلوله',
@@ -599,6 +615,22 @@ const en: Record<string, string> = {
 
   // Page menu — tabs open instantly, no reload
   menuPagesHint: 'Pages open right here with one tap — no loading',
+
+  // v2.1 — continue button + new economy
+  menuContinue: 'Continue Battle',
+  menuStartFresh: 'Start Battle',
+  menuStageInfo: 'Chapter {0} · Stage {1}',
+  heroLockedShort: 'Locked',
+  heroLockedHint: 'No hero unlocked — buy one with crystals in the Heroes panel',
+  bossCrystalFirst: 'Boss crystal bounty — first clear!',
+  bossCrystalReplay: 'Small boss bounty',
+  chestTitle: 'Loot Chest',
+  chestTapToOpen: 'Tap to open',
+  chestFirstClear: 'First-clear chest',
+  chestCardHint: 'Spend cards + coins in the Forge to upgrade towers',
+  forgeNeedCards: 'Not enough cards — victory chests give cards',
+  forgeNeedCoins: 'Not enough coins',
+  forgeCardEconomyHint: 'Tower upgrade = cards (from victory chest) + coins — heroes unlock with crystals',
 
   towerSentinel: 'Sentinel',
   towerSentinelDesc: 'Advanced gatling turret with rapid fire — perfectly balanced',

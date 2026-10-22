@@ -5,7 +5,7 @@ import { useGameStore } from '@/store/gameStore';
 import { Game } from '@/game/core/Game';
 import { audioSystem } from '@/game/systems/AudioSystem';
 import { persistSave } from '@/game/systems/SaveSystem';
-import { ACHIEVEMENTS, LEVELS, STAGES, firstPlayableStageId } from '@/game/data/campaign';
+import { ACHIEVEMENTS, LEVELS, STAGES, firstPlayableStageId, continueStageId } from '@/game/data/campaign';
 import { assetManager, sliceAssetEntries } from '@/game/assets';
 import { t, faNum } from '@/game/data/i18n';
 import { MainMenu } from './MainMenu';
@@ -131,9 +131,13 @@ export function GameShell() {
     // ریست state نبرد قبلی
     store.resetBattleState();
 
-    const level = LEVELS[store.pendingLevelId] ?? STAGES[firstPlayableStageId(save)];
-    const heroId = save.selectedHero ?? 'arman';
+    // v2.1 — دکمهٔ ادامه: آخرین مرحلهٔ بازی‌شده / مرحلهٔ بعدش / اولین آزاد
+    const level = LEVELS[store.pendingLevelId] ?? STAGES[continueStageId(save)] ?? STAGES[firstPlayableStageId(save)];
+    // v2.1 — قهرمان فقط اگر باز شده باشد؛ وگرنه نبرد بدون قهرمان (خریدنی از پنل قهرمانان)
+    const heroId = save.selectedHero && save.unlockedHeroes.includes(save.selectedHero) ? save.selectedHero : null;
     const game = new Game(canvas, level, save.settings.quality, save, save.settings.language, heroId);
+    // ثبت آخرین مرحله برای دکمهٔ ادامهٔ منو
+    store.updateSave((s) => { s.lastStageId = level.id; });
     // همگام‌سازی سیو از موتور در پایان نبرد — پیش از هر handleEvent/updateSave بعدی؛
     // بدون این، تغییر تنظیمات وسط نبرد شیء سیو را fork می‌کرد و پاداش‌ها گم می‌شدند
     const syncEngine = () => useGameStore.getState().syncEngineSave(game.engineSave);
