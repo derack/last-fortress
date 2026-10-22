@@ -846,3 +846,30 @@ Work Log:
 Stage Summary:
 - download/Last-Fortress-v2.2-release.apk (29MB) — هر ارز یک نقش: الماس=فقط متا (باس/دستاورد→قهرمان)، سکه=نبرد (ساخت/ارتقا/جادو)، جعبه=کیف سکه+کارت→آهنگری، قدرت ویژه=پاداش رسیدن برج به مکس
 - پیشنهادهای داده‌شده به کاربر برای آینده (پیاده‌نشده): فروش کارت اضافی به سکه، جعبه روزانه، قدرت ویژه هیرو با ارتقای متا، چالش روزانه
+
+---
+Task ID: 37
+Agent: main
+Task: چهار قابلیت تأییدشده کاربر («همشو») — فروش کارت اضافی برج مکس، جعبه روزانه، قدرت ویژه قهرمان با آهنگری، چالش روزانه با کارت تضمینی + بیلد v2.3
+
+Work Log:
+- محیط بعد از ریست به v1.8 (Task 32) برگشته بود ولی origin/main تا v2.2 (Task 33-36) جلوتر بود → hard reset به origin/main + push با توکن جدید — کل تاریخچه بازیابی شد
+- 🩸 کشف باگ بحرانی v2.1: UpgradesPanel (آهنگری کارت — ارتقای برج با کارت+سکه) هرگز رندر نمی‌شد (dead code) → بازیکن کارت جمع می‌کرد ولی نمی‌توانست خرج کند! ForgePanel اکنون دو تب دارد: «کوره اثیر» + «آهنگری کارت» (UpgradesPanel embedded با هدر بدون دکمه بازگشت)
+- فروش کارت اضافی (meta.ts): CARD_SELL_PRICE=40 سکه/کارت؛ awardTowerCards() — همه منابع کارت (جعبه پیروزی/روزانه/چالش) اگر برج مکس باشد خودکار به سکه فروخته می‌شود؛ sellExtraTowerCards() دکمه دستی در تب برج‌های مکس + ردیف «+X فروش کارت مکس» در جعبه پیروزی
+- جعبه روزانه (daily.ts جدید): todayKey محلی YYYY-MM-DD + زنجیره ورود (ادامه اگر دیروز گرفته باشد)؛ rollDailyChest — سکه ۱۲۰+۴۰×زنجیره (سقف ۷ روز)، ۴ قرعه + پاداش زنجیره ۳/۵/۷ روز؛ دکمه پالس‌دار بالا-چپ منو + مودال reveal (صندوق بسته→محتوا)؛ سیو: lastDailyClaim/dailyStreak
+- چالش روزانه: getDailyChallenge قطعی از هش تاریخ — فصل بالاترین آزاد، مرحله ترجیحی ۷..۱۰ (fallback مرز پیشرفت)؛ ۴ مادی‌فایر (hardened hp×1.35 / swift speed×1.22 / siege hp×1.25+coin×0.8 / famine coin×0.7)؛ Game constructor پارامتر DailyModifier → spawnEnemy ضریب hp/speed + startCoins×coinMul؛ پیروزی → rollChallengeChest (سکه ۱۲۰+فصل×۲۰، ۵ قرعه تضمینی ۳۵٪ دوبل) جای جعبه عادی، فقط اولین پیروزی روز (save.dailyChallenge)؛ toast «چالش روزانه فعال است» هنگام شروع
+- قدرت ویژه قهرمان: HERO_POWER_META_LEVEL=5 (قرینه سطح ۵ برج)؛ heroPowerUnlocked در meta.ts؛ Game.useHeroAbility گیت + toast خطا؛ heroState.abilityLocked → HUD قفل روی دکمه قهرمان (نشان Lock + «قفل»)؛ رسیدن به سطح ۵ در آهنگری → toast جشن «قدرت ویژه قهرمان آزاد شد!»؛ ردیف وضعیت قدرت در کارت قهرمان آهنگری
+- اقتصاد کارت مکس: payChestCards در chest.ts همه پرداخت‌ها را متمرکز می‌کند
+- SaveSystem v5: مهاجرت v4→v5 (فیلدهای روزانه) + سخت‌سازی merged fields
+- i18n: ۴۸ کلید جدید fa/en (جعبه روزانه/چالش/مادی‌فایرها/فروش کارت/قدرت قهرمان + ۱۵ کلید UpgradesPanel که از v2.1 هرگز تعریف نشده بودند) — parity کامل
+- تست مرورگر (390×844): منو با دکمه جعبه روزانه پالس‌دار + چالش روزانه بنفش + نوار ارز ✓؛ claim روزانه → مودال +۱۶۰ سکه + ۳ گروه کارت + زنجیره ۱ ✓؛ ریلود → «امروز دریافت شد» پابرجا ✓؛ تب آهنگری کارت باز می‌شود (باگ dead-code رفع) ✓؛ شروع چالش → toast فعال + سکه شروع ۱۹۴ = ۲۴۳×۰٫۸ (مادی‌فایر siege دقیق) ✓؛ کنسول صفر error
+- audits: tsc صفر / logic-audit 31✅0❌ / balance-audit منحنی سالم / audit-i18n 0 گم‌شده (از ۱۳ به ۱ — فقط false positive 'quality' از string concat)
+- بیلد: versionCode 15 / versionName 2.3؛ build:cap ✓ (asset generators + validate + next build) → cap sync جداگانه ✓ → gradle assembleRelease (4m18s) ✓؛ APK 30,401,735 bytes؛ امضای 5ee184e5 (همان گواهی)؛ 107 mp3/GLB داخل بسته
+- push: 694f18f → origin/main (bff1c1e..694f18f)
+- آپلود: https://uploadkon.ir/uploads/4baf22_26Last-Fortress-v2-3.zip (content-type zip، content-length دقیق)
+
+Stage Summary:
+- download/Last-Fortress-v2.3-release.apk (30.4MB)
+- لینک: https://uploadkon.ir/uploads/4baf22_26Last-Fortress-v2-3.zip
+- هر ۴ قابلیت «همشو» پیاده شد + باگ بحرانی آهنگری کارت (dead code از v2.1) رفع شد — کارت‌ها حالا هم قابل خرج‌اند، هم برج مکس آنها به سکه تبدیل می‌شود
+- اقتصاد حلقه ریتنشن کامل شد: جعبه روزانه (بازگشت روزانه) + چالش روزانه (هدف روزانه) + فروش کارت مکس (کارت مرده صفر)
