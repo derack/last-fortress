@@ -827,3 +827,22 @@ Stage Summary:
 - download/Last-Fortress-v2.1-release.apk (29MB) — اقتصاد پیشرفت کامل: باس=الماس، پیروزی=جعبه کارتی، برج=کارت+سکه، قهرمان=خرید
 - لینک: https://uploadkon.ir/uploads/e0a122_26LF-v21.zip
 - نکته: سیو قدیمی کاربر پس از آپدیت: +150 کریستال جبران و بدون قهرمان — آرمان با ۱۰۰ کریستال بلافاصله قابل خرید است
+
+---
+Task ID: 36
+Agent: main
+Task: درخواست کاربر — «قدرتی‌ها هم قفل بشن با تاور مکس باز بشن» + «پیشنهاد دیگه برای منطقی شدن بازی؟» + بیلد v2.2
+
+Work Log:
+- 🔒 قفل قدرت ویژه برج تا سطح ۵: Tower.abilityLocked (level<5) + گارد useAbility + گارد Game.useTowerAbility با توست powerLocked؛ رسوندن به L5 = جشن طلایی (دو حلقه + ۴۰ ذره) + توست powerUnlocked؛ دکمه پنل برج با Lock icon و برچسب «سطح ۵» غیرفعال؛ TowerInfo.abilityLocked
+- 💰 جداسازی اقتصاد جادو از الماس (پیشنهاد منطقی‌سازی #۱): جادوها اکنون با سکه نبرد پرداخت می‌شوند (skyLightning 60، fireRain 100، arianaShield 80، deepFreeze 75، azarBlessing 90، coreMend 80) — قبلاً الماس می‌سوزاند که همان ارز خرید قهرمان بود و با «الماس فقط باس» تناقض داشت؛ MagicData.crystalCost→coinCost؛ نشان هزینه جادو کهربایی شد
+- 🏦 شمارنده الماس نبرد از ۰ شروع می‌شود و فقط درآمد همین نبرد (باس/دستاورد) در پایان به خزانه اضافه می‌شود (commitCrystals = stash + earned)؛ startCrystals و loan/save-mixing حذف شد (types/levels/level1/campaign)؛ briefing نقشه «بودجه شروع» سکه‌ای
+- 🎁 جعبه ۳ ستاره (پیشنهاد #۲): تکرار با ۳ ستاره = ۳ قرعه کارت (قبلاً ۲) — فتح اول همچنان ۴
+- تست: tsc صفر؛ logic-audit 31✅/0❌ (بررسی coinCost)؛ balance-audit بدون تغییر منحنی؛ i18n parity کامل؛ test-v22.ts با ۱۲ تست واحد سبز (شامل abilityLocked با صدا زدن getter روی prototype و گارد useAbility بدون WebGL)
+- تست مرورگر (390×844): منو ✓ → نبرد ✓ → ساخت نگهبان با تپ سینتتیک pointerdown/up (بایپس setPointerCapture + تپ ترکیبی eval — dt<400ms با دو CLI جدا رد می‌شد) → پنل برج: «ارتقا — ۱۰۰» + «🔒 سطح ۵» disabled ✓ → سکه ۲۴۰→۱۴۰ ✓ → جادوها با نشان سکه ۶۰-۱۰۰ ✓؛ توست invalidSpot روی مسیر تأیید شد
+- بیلد: versionCode 14 / 2.2؛ gradle 7s؛ APK 30,394,943 bytes؛ 22 mp3 (مسیر public/assets/audio) + 85 GLB؛ امضای 5ee184e5 همان گواهی؛ push: 4be03ba ✓
+- لینک: https://uploadkon.ir/uploads/eac222_26LF-v2-2.zip (content-length تأیید شد)
+
+Stage Summary:
+- download/Last-Fortress-v2.2-release.apk (29MB) — هر ارز یک نقش: الماس=فقط متا (باس/دستاورد→قهرمان)، سکه=نبرد (ساخت/ارتقا/جادو)، جعبه=کیف سکه+کارت→آهنگری، قدرت ویژه=پاداش رسیدن برج به مکس
+- پیشنهادهای داده‌شده به کاربر برای آینده (پیاده‌نشده): فروش کارت اضافی به سکه، جعبه روزانه، قدرت ویژه هیرو با ارتقای متا، چالش روزانه
