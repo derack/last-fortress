@@ -4,7 +4,7 @@ import { useState } from 'react';
 import {
   ArrowRight, Lock, Star, Play, Heart, Swords, Shield, Gem, Check, Ghost, Bug, Bird, Zap,
   Flame, Snowflake, Crown, Crosshair, Cog, Wand2, Axe, Target, FlaskConical, MoveDiagonal,
-  Sparkles, Sun, Moon, Route, ChevronDown, MapPin, Trophy,
+  Sparkles, Sun, Moon, Route, ChevronDown, MapPin, Trophy, Coins,
 } from 'lucide-react';
 import { useGameStore } from '@/store/gameStore';
 import { CHAPTERS, STAGES, stageId, isStageUnlocked, isChapterUnlocked, chapterStars, completedStageCount } from '@/game/data/campaign';
@@ -286,9 +286,9 @@ export function CampaignMap({ onStart }: { onStart: () => void }) {
               <Play className="h-6 w-6" />
               {t('startBattle')}
             </button>
-            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-cyan-300/70">
-              <Gem className="h-3.5 w-3.5" />
-              {faNum(briefing.startCrystals)} {t('crystal')} + {faNum(briefing.startCoins)} {t('coins')}
+            <div className="mt-3 flex items-center justify-center gap-2 text-xs text-amber-300/80">
+              <Coins className="h-3.5 w-3.5" />
+              {t('startBudget')}: {faNum(briefing.startCoins)} {t('coins')}
             </div>
           </div>
         </div>

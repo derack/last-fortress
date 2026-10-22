@@ -157,7 +157,7 @@ sec('۵. قهرمانان، جادوها، کوره اثیر');
   if (metaOk) ok('HERO_META اشاره به قهرمان معتبر'); else bad('HERO_META یتیم');
   const mids = Object.keys(MAGIC);
   let mBad = 0;
-  for (const id of mids) { const m = MAGIC[id]; if (!(m.cooldown > 0 && m.crystalCost > 0)) { mBad++; console.log(`      ${id}: cooldown/mana غلط`); } }
+  for (const id of mids) { const m = MAGIC[id]; if (!(m.cooldown > 0 && m.coinCost > 0)) { mBad++; console.log(`      ${id}: cooldown/coinCost غلط`); } }
   if (!mBad) ok(`${mids.length} جادو با cooldown/mana معتبر: ${mids.join('، ')}`); else bad(`${mBad} جادو خراب`);
   if (FORGE_TRACKS.length === 6 && FORGE_TRACKS.every((t) => t.maxLevel === FORGE_MAX)) ok(`کوره اثیر: ${FORGE_TRACKS.length} مسیر × ${FORGE_MAX} سطح`);
   else bad('مسیرهای کوره ناقص');

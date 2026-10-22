@@ -118,10 +118,8 @@ export class Game {
   private save: SaveData;
   /** ذخیرهٔ پایدار در لحظهٔ شروع نبرد — مبنای نهایی‌سازی اقتصاد کریستال */
   private stashAtStart: number;
-  /** کریستال کسب‌شده در این نبرد (کشتن/موج/دستاورد/پاداش برد) */
+  /** کریستال کسب‌شده در این نبرد (فقط باس/دستاورد — v2.2: شمارندهٔ این نبرد، نه موجودی خزانه) */
   private crystalsEarned = 0;
-  /** کریستال خرج‌شده در این نبرد (جادوها) */
-  private crystalsSpent = 0;
   /** دسترسی GameShell برای همگام‌سازی سیو پس از پایان نبرد */
   get engineSave(): SaveData {
     return this.save;
@@ -136,7 +134,9 @@ export class Game {
     this.save = save;
     // کوره اثیر — ضرایب دائمی اقتصاد و هسته
     this.coins = Math.round(level.startCoins * (1 + forgePct(save, 'economy')));
-    this.crystals = level.startCrystals + save.crystals;
+    // v2.2 — الماس در نبرد خرج نمی‌شود (جادو سکه‌ای است)؛ شمارندهٔ نبرد از صفر شروع می‌شود
+    // و فقط «درآمد این نبرد» (باس/دستاورد) در پایان به خزانه اضافه می‌شود
+    this.crystals = 0;
     this.stashAtStart = save.crystals;
     this.coreHp = Math.round(level.coreHp * (1 + forgePct(save, 'coreFort')));
     this.coreMaxHp = this.coreHp;
@@ -729,6 +729,8 @@ export class Game {
     this.upgradesCount++;
     this.save.stats.upgrades++;
     this.audio.play('upgrade');
+    // v2.2 — رسیدن به سطح ۵ = آزادسازی قدرت ویژه
+    if (t.level === 5) this.bus.emit('toast', { key: 'powerUnlocked', type: 'success' });
     this.bus.emit('resources', { coins: this.coins, crystals: this.crystals });
     this.emitTowerInfo();
     if (t.level === 5) this.grantAchievement('maxed');
@@ -752,6 +754,12 @@ export class Game {
   useTowerAbility(towerId: number): boolean {
     const t = this.towers.find((x) => x.id === towerId);
     if (!t) return false;
+    // v2.2 — قدرت ویژه تا سطح ۵ (مکس) قفل است
+    if (t.abilityLocked) {
+      this.audio.play('error');
+      this.bus.emit('toast', { key: 'powerLocked', type: 'error' });
+      return false;
+    }
     return t.useAbility(this.enemies);
   }
 
@@ -778,6 +786,7 @@ export class Game {
       targeting: t.targeting,
       abilityCd: t.abilityCd,
       abilityMax: t.data.abilityCooldown,
+      abilityLocked: t.abilityLocked,
       abilityNameKey: t.data.abilityNameKey,
     });
   }
@@ -791,9 +800,9 @@ export class Game {
         this.bus.emit('toast', { key: 'magicCooldown', type: 'error' });
         return;
       }
-      if (this.crystals < m.crystalCost) {
+      if (this.coins < m.coinCost) {
         this.audio.play('error');
-        this.bus.emit('toast', { key: 'notEnoughCrystals', type: 'error' });
+        this.bus.emit('toast', { key: 'notEnoughCoins', type: 'error' });
         return;
       }
       // جادوی بدون هدف — بلافاصله اجرا شود (سپر آریانا)
@@ -813,10 +822,10 @@ export class Game {
   private castMagic(id: MagicId, point: THREE.Vector3): boolean {
     const m = MAGIC[id];
     if (!m) return false;
-    if (this.magicCd[id] > 0 || this.crystals < m.crystalCost) return false;
+    // v2.2 — جادو با سکهٔ نبرد پرداخت می‌شود (الماس فقط ارز متا: قهرمان/دستاورد/باس)
+    if (this.magicCd[id] > 0 || this.coins < m.coinCost) return false;
 
-    this.crystals -= m.crystalCost;
-    this.crystalsSpent += m.crystalCost;
+    this.coins -= m.coinCost;
     this.magicCd[id] = m.cooldown;
     this.magicCastThisLevel++;
     this.save.stats.magicCasts++;
@@ -908,8 +917,8 @@ export class Game {
       id: m.id,
       cd: Math.round(this.magicCd[m.id] * 10) / 10,
       cdMax: m.cooldown,
-      cost: m.crystalCost,
-      affordable: this.crystals >= m.crystalCost && this.magicCd[m.id] <= 0,
+      cost: m.coinCost,
+      affordable: this.coins >= m.coinCost && this.magicCd[m.id] <= 0,
     }));
   }
 
@@ -1078,12 +1087,12 @@ export class Game {
   // ===================== پایان بازی =====================
 
   /**
-   * نهایی‌سازی اقتصاد کریستال — اکسپلویت فارم بسته می‌شود:
-   * وام مرحله‌ای (startCrystals) متعلق به همین نبرد است و به ذخیرهٔ پایدار منتقل نمی‌شود؛
-   * فقط کسب واقعی (کشتن/موج/دستاورد/پاداش) منهای خرج جادوها به ذخیره اضافه می‌شود.
+   * نهایی‌سازی اقتصاد کریستال — v2.2:
+   * نبرد دیگر خزانه را خرج نمی‌کند (جادو سکه‌ای است)؛ فقط درآمد واقعی این نبرد
+   * (کشتن باس/دستاورد) به خزانهٔ پایدار اضافه می‌شود.
    */
   private commitCrystals() {
-    this.save.crystals = Math.max(0, this.stashAtStart + this.crystalsEarned - this.crystalsSpent);
+    this.save.crystals = Math.max(0, this.stashAtStart + this.crystalsEarned);
   }
 
   private doVictory() {
@@ -1137,7 +1146,7 @@ export class Game {
 
   private doDefeat() {
     this.gameOver = true;
-    this.commitCrystals(); // کسب واقعی نبرد می‌ماند — وام مرحله‌ای برنمی‌گردد
+    this.commitCrystals(); // درآمد الماس این نبرد (باس/دستاورد) حفظ می‌شود
     this.audio.play('defeat');
     this.audio.setBossMode(false);
     this.cameraCtrl.shake(1);

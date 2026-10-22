@@ -22,7 +22,8 @@ export interface ChestContents {
 /**
  * محتویات جعبهٔ یک پیروزی — خالص و قابل‌تست (rng تزریقی)
  * سکه: ۵۵ + فصل×۱۸ + ستاره×۱۲ (اولین فتح ×۲)
- * کارت: اولین فتح ۴ قرعه، تکرار ۲ قرعه — برج‌های ابتدایی رایج‌تر (وزن نزولی)
+ * کارت: اولین فتح ۴ قرعه، تکرار با ۳ ستاره ۳ قرعه، تکرار معمولی ۲ قرعه — برج‌های ابتدایی رایج‌تر (وزن نزولی)
+ * v2.2 — اجرای بی‌نقص (۳ ستاره) در تکرار هم جعبهٔ بهتر می‌دهد
  */
 export function rollChest(
   chapter: number,
@@ -35,7 +36,7 @@ export function rollChest(
   // وزن هر برج بر اساس جایگاه در نردبان باز شدن — برج‌های ابتدایی رایج‌تر
   const weights = TOWER_BUILD_ORDER.map((_, i) => Math.max(1.2, 10 - i * 0.85));
   const totalW = weights.reduce((a, b) => a + b, 0);
-  const draws = firstClear ? 4 : 2;
+  const draws = firstClear ? 4 : stars >= 3 ? 3 : 2;
   const cardMap = new Map<string, number>();
   for (let d = 0; d < draws; d++) {
     let r = rng() * totalW;

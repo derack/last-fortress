@@ -130,6 +130,12 @@ export class Tower implements TowerLike {
     // جلوه ارتقا
     this.ctx.vfx.ring(this.position, this.data.color, 4, 0.6);
     this.ctx.vfx.burst(this.position.clone().add(new THREE.Vector3(0, 2, 0)), this.data.color, 22, { speed: 5, life: 0.7, size: 0.5, gravity: 3, up: 1 });
+    // v2.2 — سطح ۵: جشن آزادسازی قدرت ویژه (طلایی و باشکوه)
+    if (this.level === 5) {
+      this.ctx.vfx.ring(this.position, 0xfbbf24, 6.5, 1.1);
+      this.ctx.vfx.ring(this.position.clone().add(new THREE.Vector3(0, 0.4, 0)), this.data.color, 4.5, 0.9);
+      this.ctx.vfx.burst(this.position.clone().add(new THREE.Vector3(0, 2.4, 0)), 0xfcd34d, 40, { speed: 7, life: 1.2, size: 0.65, gravity: 2, up: 1.4 });
+    }
     return true;
   }
 
@@ -145,9 +151,14 @@ export class Tower implements TowerLike {
     return this.abilityCd <= 0;
   }
 
+  /** v2.2 — قدرت ویژه فقط در سطح ۵ (مکس) برج آزاد می‌شود */
+  get abilityLocked(): boolean {
+    return this.level < 5;
+  }
+
   /** قدرت ویژه — هر برج رفتار خودش */
   useAbility(enemies: DamageableEnemy[]): boolean {
-    if (this.abilityCd > 0) return false;
+    if (this.abilityLocked || this.abilityCd > 0) return false;
     this.abilityCd = this.data.abilityCooldown;
     const pos = this.position;
     const inRange = enemies.filter((e) => e.alive && e.getPos().distanceTo(pos) <= this.range + 2);

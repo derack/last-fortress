@@ -12,7 +12,6 @@ export const LEVEL_1: LevelData = {
   descKey: 'storyIntro3',
   coreHp: 100,
   startCoins: 240,
-  startCrystals: 30,
   timeOfDay: 'day',
   env: 'plains',
   star2HealthPct: 70,

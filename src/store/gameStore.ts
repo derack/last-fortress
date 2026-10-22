@@ -25,6 +25,8 @@ export interface TowerInfo {
   targeting: string;
   abilityCd: number;
   abilityMax: number;
+  /** v2.2 — قدرت ویژه تا سطح ۵ (مکس) برج قفل است */
+  abilityLocked: boolean;
   abilityNameKey: string;
 }
 

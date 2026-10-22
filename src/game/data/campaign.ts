@@ -397,7 +397,6 @@ export function buildStage(chapter: ChapterDef, stage: number, incomeComp = 1): 
     descKey: chapter.descKey,
     coreHp: Math.round(100 + (chapter.id - 1) * 6 + (stage - 1) * 2),
     startCoins: Math.round(220 + chapter.id * 14 + stage * 6),
-    startCrystals: Math.round(28 + chapter.id * 2 + (stage - 1) * 0.5),
     timeOfDay: chapter.timeOfDay,
     env: chapter.env,
     star2HealthPct: 70,

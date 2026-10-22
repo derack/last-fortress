@@ -151,6 +151,10 @@ const fa: Record<string, string> = {
   fireRate: 'سرعت شلیک',
   notEnoughCoins: 'سکه کافی نیست!',
   invalidSpot: 'اینجا نمی‌توان ساخت!',
+  startBudget: 'بودجه شروع',
+  powerLocked: 'قدرت ویژه در سطح ۵ آزاد می‌شود!',
+  powerLockedShort: 'سطح ۵',
+  powerUnlocked: 'قدرت ویژه آزاد شد!',
 
   // فاز ۲ اختصاصی Bossها
   bossPhaseTitle: 'فاز دوم',
@@ -600,6 +604,10 @@ const en: Record<string, string> = {
   fireRate: 'Fire Rate',
   notEnoughCoins: 'Not enough coins!',
   invalidSpot: 'Cannot build here!',
+  startBudget: 'Starting budget',
+  powerLocked: 'Special power unlocks at level 5!',
+  powerLockedShort: 'Lv 5',
+  powerUnlocked: 'Special power unlocked!',
 
   // Boss-specific phase two
   bossPhaseTitle: 'PHASE TWO',

@@ -108,7 +108,8 @@ export interface MagicData {
   id: MagicId;
   nameKey: string;
   descKey: string;
-  crystalCost: number;
+  /** v2.2 — هزینهٔ جادو با سکهٔ نبرد (الماس دیگر در نبرد خرج نمی‌شود) */
+  coinCost: number;
   cooldown: number;
   radius: number;
   damage?: number;
@@ -167,7 +168,6 @@ export interface LevelData {
   descKey: string;
   coreHp: number;
   startCoins: number;
-  startCrystals: number;
   waves: WaveData[];
   timeOfDay: 'day' | 'night';
   env: RegionEnv;

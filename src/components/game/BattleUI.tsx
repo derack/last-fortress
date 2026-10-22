@@ -242,8 +242,8 @@ export function BattleUI({ actions }: { actions: BattleActions }) {
                   m.affordable ? 'border-amber-400/50 bg-black/70 shadow-[0_0_15px_rgba(245,158,11,0.25)]' :
                   'border-slate-700/60 bg-black/70 opacity-60'}`}>
               <Icon className="h-6 w-6" style={{ color: M.color }} />
-              {/* هزینه کریستال */}
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-black/80 px-1.5 text-[9px] font-black text-cyan-300">
+              {/* v2.2 — هزینه سکه‌ای جادو */}
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-black/80 px-1.5 text-[9px] font-black text-amber-300">
                 {faNum(m.cost)}
               </span>
               {/*Cooldown */}
@@ -472,12 +472,17 @@ function TowerPanel({ actions }: { actions: BattleActions }) {
           <ArrowUpCircle className="h-4 w-4" />
           {maxed ? t('maxLevel') : `${t('upgrade')} — ${faNum(info.upgradeCost)}`}
         </button>
-        <button onClick={() => game?.useTowerAbility(info.id)} disabled={info.abilityCd > 0}
+        {/* v2.2 — قدرت ویژه تا سطح ۵ قفل است */}
+        <button
+          onClick={() => game?.useTowerAbility(info.id)}
+          disabled={info.abilityLocked || info.abilityCd > 0}
           className={`relative flex w-24 items-center justify-center gap-1 rounded-xl px-2 py-2.5 text-xs font-black active:scale-95
-            ${info.abilityCd <= 0 ? 'border border-violet-400/50 bg-violet-600/30 text-violet-200 shadow-[0_0_12px_rgba(139,92,246,0.3)]' : 'bg-slate-800 text-slate-500'}`}>
-          <Sparkles className="h-4 w-4" />
-          {t(info.abilityNameKey)}
-          {info.abilityCd > 0 && (
+            ${info.abilityLocked ? 'border border-slate-700/80 bg-black/50 text-slate-500' :
+            info.abilityCd <= 0 ? 'border border-violet-400/50 bg-violet-600/30 text-violet-200 shadow-[0_0_12px_rgba(139,92,246,0.3)]' : 'bg-slate-800 text-slate-500'}`}
+        >
+          {info.abilityLocked ? <Lock className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+          {info.abilityLocked ? t('powerLockedShort') : t(info.abilityNameKey)}
+          {!info.abilityLocked && info.abilityCd > 0 && (
             <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/70 text-sm font-black text-white">
               {faNum(Math.ceil(info.abilityCd))}
             </span>
