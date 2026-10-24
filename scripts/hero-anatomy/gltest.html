@@ -1,0 +1,13 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"></head><body>
+<script>
+try {
+  const c = document.createElement('canvas');
+  const gl = c.getContext('webgl2') || c.getContext('webgl');
+  if (!gl) { document.title = 'WEBGL-FAIL'; }
+  else {
+    gl.clearColor(0.2, 0.4, 0.8, 1); gl.clear(gl.COLOR_BUFFER_BIT);
+    document.title = 'WEBGL-OK ' + gl.getParameter(gl.VERSION);
+  }
+} catch (e) { document.title = 'WEBGL-EXC ' + e.message; }
+document.body.appendChild(document.createTextNode(document.title));
+</script></body></html>
