@@ -873,3 +873,28 @@ Stage Summary:
 - لینک: https://uploadkon.ir/uploads/4baf22_26Last-Fortress-v2-3.zip
 - هر ۴ قابلیت «همشو» پیاده شد + باگ بحرانی آهنگری کارت (dead code از v2.1) رفع شد — کارت‌ها حالا هم قابل خرج‌اند، هم برج مکس آنها به سکه تبدیل می‌شود
 - اقتصاد حلقه ریتنشن کامل شد: جعبه روزانه (بازگشت روزانه) + چالش روزانه (هدف روزانه) + فروش کارت مکس (کارت مرده صفر)
+
+---
+Task ID: 38
+Agent: main
+Task: نصب و تحلیل اسکیل anatomy + ساخت هیروی آناتومیک جدید (آرمان) با کیفیت مدل‌سازی بالاتر + بیلد v2.4
+
+Work Log:
+- درخواست کاربر: نصب `wheresryan22/anatomy` و ساخت همه مدل‌های سه‌بعدی با آن. npx تایم‌اوت شد → کلون دستی از GitHub به skills/anatomy
+- تحلیل اسکیل: anatomy سازنده اشکال SVG ایزومتریک دوبعدی برای مستندات است (نه مدل GLB) → صادقانه به کاربر اعلام شد؛ به‌جایش اصول craft آن اسکیل (هر قطعه روی قطعه دیگر، چند-tone shading، هیچ هندسه شناور) + آناتومی واقعی اعمال شد
+- scripts/hero-anatomy/: core-a (ریگ آناتومیک + پریمیتیوهای smooth: taper لاته با نرمال واقعی، ellipsoid عضلانی)؛ core-b (۱۹۰ قطعه آرمان: عضلات دلتوئید/پکتورال/چهارسر/دوقلو، زره لایه‌لایه پولدرن ۳لایه، فولد شش‌پاره، شنل فن‌دار ۷تیغه، خودکلاه آرمانی با تاج‌پر، چشم‌های emissive)؛ core-c (شمشیر آذرخش با فولر و خطوط emissive + سپر ایجیس با چشم کریستالی؛ ۹ متریال با تینت grayscale)؛ core-d (۱۸ کلیپ انیمیشن با baseline لگن 0.98)؛ فرگمنت‌های texture/packglb از ژنراتور v2.3 استخراج شد (سازگاری تیر 384px موبایل)
+- ریگ آناتومیک جدید: لگن 0.98 / کمر 1.17 / سینه 1.42 / شانه 1.50 / سر 1.74 / زانو 0.50 — نسبت ~۷ سر (قبلی ~۳ سر چیبی)؛ قرارداد نام مفصل‌ها و VFX نقاط و LOD حفظ شد
+- QA بدون مرورگر: کرومیوم هدلس روی GLB قفل می‌شود (createImageBitmap/data-URI) → رسترایزر نرم‌افزاری Node نوشته شد (qa-raster.mjs: z-buffer، سه نور، پوز Walk/Attack با FK ساده) → ۳ دور تکرار اصلاح (دوربین معکوس، شمشیر کوتاه‌تر/پهن‌تر، پاهای قوی‌تر، شنل پارچه‌ای، پرینه لاجوردی)
+- ⚠️ کشف مهم: محیط لوکال اسنپ‌شات v1.8 بود و کارهای v2.0-v2.3 گم شده بود؛ با fetch توکن جدید پیدا شد که origin/main همه را دارد (v2.0 صدا/رنگ، v2.1 اقتصادی ۱۴مورد، v2.2 قدرت‌ها، v2.3 چرخه روزانه) → sync به origin/main و ادامه از آنجا
+- باگ بیلد: build:cap همه کاراکترها را بازتولید می‌کرد و arman آناتومیک را بازنویسی می‌کرد → ژنراتور هیرو به پایپ‌لاین اضافه شد (CAP_BUILD=1 node scripts/generate-hero-anatomy.mjs بعد از generate-rigged-characters)؛ + فهم زنجیره public→out→android
+- 429 Maven Central → init-script آینه Aliyun در ~/.gradle/init.d (بدون تغییر فایل پروژه)
+- اعتبارسنجی: validate-rigged-characters — arman صفر خطا (۲۴ خطای pre-existing باس‌ها کمتر از ۲۵ قبلی)؛ validate-glb-assets ۸۵ فایل پاس
+- بیلد: versionCode 16 / versionName 2.4 → build:cap → cap sync → gradle BUILD SUCCESSFUL → APK 30.8MB امضاشده با گواهی 5ee184e5 (جarsigner «unsigned» فقط به‌دلیل v2-scheme؛ apksigner تأیید)
+- آپلود: https://uploadkon.ir/uploads/4b4024_26LF-v24.zip (content-length دقیق 30,832,911)
+- AssetManifest: estSizeMB arman 4→6.5 (دسکتاپ 6.5MB / موبایل 5.2MB داخل APK)
+
+Stage Summary:
+- download/Last-Fortress-v2.4-release.apk (30.8MB) — آرمان آناتومیک در بازی
+- لینک: https://uploadkon.ir/uploads/4b4024_26LF-v24.zip
+- اسکریپت‌ها: scripts/generate-hero-anatomy.mjs (نسل جدید مدل‌سازی) — برای هیروهای بعدی (aria/radin/nila) فقط core-b جدید لازم است
+- یادآوری امنیتی: keystore همچنان در تاریخچه گیت عمومی است — قبل از انتشار استور باید چرخانده شود

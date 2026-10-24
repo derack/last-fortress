@@ -61,7 +61,7 @@ export const ASSETS: { heroes: CharacterAssetEntry[]; enemies: CharacterAssetEnt
       vfxPoints: ['muzzlePoint', 'weaponPoint', 'chestPoint', 'headPoint', 'hitPoint'],
       phase: 'slice',
       specId: 'arman',
-      estSizeMB: 4,
+      estSizeMB: 6.5,
     },
     {
       id: 'aria',
