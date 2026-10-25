@@ -898,3 +898,28 @@ Stage Summary:
 - لینک: https://uploadkon.ir/uploads/4b4024_26LF-v24.zip
 - اسکریپت‌ها: scripts/generate-hero-anatomy.mjs (نسل جدید مدل‌سازی) — برای هیروهای بعدی (aria/radin/nila) فقط core-b جدید لازم است
 - یادآوری امنیتی: keystore همچنان در تاریخچه گیت عمومی است — قبل از انتشار استور باید چرخانده شود
+
+---
+Task ID: 39
+Agent: main
+Task: ساخت مدل‌های سه‌بعدی بازی با TRELLIS / Hunyuan3D از Hugging Face + اعمال در بازی + بیلد نهایی v2.5
+
+Work Log:
+- جستجوی اسپیس‌ها: microsoft/TRELLIS و JeffreyXiang/TRELLIS هر دو CONFIG_ERROR (مرده)؛ سه اسپیس رسمی Tencent زنده: Hunyuan3D-2، 2mv، 2.1 (همه ZeroGPU)
+- کشف قراردادهای بازی: ModelNormalizer ارتفاع/جهت را runtime نرمال می‌کند؛ ProceduralAnimationController برای GLBهای استاتیک (بدون skin) طراحی شده → مدل‌های AI کاملاً سازگارند؛ نقاط VFX سینتتیک fallback دارند؛ validate-glb-assets فقط ساختار GLB را چک می‌کند
+- سهمیه ZeroGPU ناشناس: pool محدود روزانه (~۱۳۰s باقی در لحظات طلایی) + سقف per-call؛ generation_all هر سه اسپیس (۱۳۵-۲۷۰s) رد شد؛ shape_generation (60-100s) دو بار موفق اجرا شد (arman via mv front-view، ~18s)
+- sf3d مرور شد: stable-fast-3d باگ State-passing سرور (image→str)؛ InstantMesh مراحل State بین GPU دارد و flaky؛ EmbodiedGen /backproject_texture_v2 (mesh+img→textured) کشف شد ولی سهمیه دقیقاً همان لحظه تمام شد
+- پیام نهایی سهمیه: «exceeded ZeroGPU runs limit — Authenticate with HF token» — ریست ~۱۶h
+- پایپلاین لوکال جایگزین (بدون سهمیه) نوشته شد: gen-concepts.mjs (۳۶ کانسپت استایل‌دار ۱۰۰٪ تولید شد) + gen-views.mjs (۴ نمای arman) + preprocess.py (rembg u2net + فریم 512²) + gltfpack دسییمیشن (398k→10k tri) + xatlas UV + texture_bake.py (بیک ۴نما: هر مثلث از نمای غالب نرمالش پروجکت، inpaint پس‌زمینه، dilate ۲۴ پاس) + render_qa.py (رندر نرم‌افزاری z-buffer ۴نما)
+- دیباگ‌های اصلی: xatlas tuple order (vmap,faces,uvs)؛ UV↔vertex alignment بعد از chart-duplication؛ embed تکسچر باید داخل PBRMaterial.baseColorTexture باشد؛ باگ V-flip رندرر (شیشه‌شکسته) — همه فیکس و داکیومنت شد
+- خروجی پایلوت: raw/arman_textured.glb (1.9MB، 10k tri، آتلَس 1024، متریال PBR doubleSided) — QA بصری: زره لاجوردی-طلایی، چهره/ریش، سپر تزئینی، پتک — forward=+Z با قرارداد بازی ✓
+- نصب: originals بک‌آپ شد؛ build:cap → install-ai-models.mjs + validate-glb-assets (ژنراتورهای procedural حذف شدند — GLBها کامیت‌شده‌اند)؛ فالبک ProceduralAnimationController برای مدل استاتیک خودکار است
+- بیلد: versionCode 17 / versionName 2.5 → build:cap ✓ → cap sync ✓ → gradle BUILD SUCCESSFUL ✓ → APK 30,735,943B امضای 5ee184e5؛ آرمان جدید (1,920,236B) داخل بسته تأیید شد
+- push: 4391ad7..2df920c → origin/main (کامیت معلق v2.4 هم رفت)
+- آپلود: https://uploadkon.ir/uploads/ae2025_26LF-v25.zip (content-length دقیق)
+
+Stage Summary:
+- download/Last-Fortress-v2.5-release.apk (30.7MB) — آرمان تمام‌AI در بازی
+- لینک: https://uploadkon.ir/uploads/ae2025_26LF-v25.zip
+- پایپلاین کامل AI→بازی اثبات و اتومات شد؛ برای ۳۵ مدل باقی‌مانده فقط سهمیه GPU لازم است (اسکریپت‌ها آماده: hunyuan3d.py → texture_bake.py → install-ai-models.mjs با افزودن id به targets)
+- گزینه‌های ادامه: (۱) HF token رایگان کاربر → سهمیه چند بربر، (۲) ریست روزانه ZeroGPU، (۳) EmbodiedGen backproject به‌عنوان تکسچر سروری جایگزین بیک لوکال
