@@ -1,0 +1,72 @@
+{
+  "microsoft/TRELLIS": {
+    "ok": false,
+    "error": "The current space is in the invalid state: CONFIG_ERROR. Please contact the owner to fix this."
+  },
+  "JeffreyXiang/TRELLIS": {
+    "ok": false,
+    "error": "The current space is in the invalid state: CONFIG_ERROR. Please contact the owner to fix this."
+  },
+  "tencent/Hunyuan3D-2": {
+    "ok": true,
+    "endpoints": [
+      "/lambda",
+      "/lambda_1",
+      "/shape_generation",
+      "/lambda_2",
+      "/lambda_3",
+      "/generation_all",
+      "/lambda_4",
+      "/lambda_5",
+      "/on_gen_mode_change",
+      "/on_decode_mode_change",
+      "/lambda_6",
+      "/on_export_click"
+    ]
+  },
+  "tencent/Hunyuan3D-2mini": {
+    "ok": false,
+    "error": "401 Client Error. (Request ID: Root=1-6add3e0e-766298d14e89e5460a6667fd;34368a0c-fec9-448f-8c7b-e339f26a6021)  Repository Not Found for url: https://huggingface.co/api/spaces/tence"
+  },
+  "tencent/Hunyuan3D-2mv": {
+    "ok": true,
+    "endpoints": [
+      "/lambda",
+      "/lambda_1",
+      "/shape_generation",
+      "/lambda_2",
+      "/lambda_3",
+      "/generation_all",
+      "/lambda_4",
+      "/lambda_5",
+      "/on_gen_mode_change",
+      "/on_decode_mode_change",
+      "/lambda_6",
+      "/on_export_click"
+    ]
+  },
+  "tencent/Hunyuan3D-2.1": {
+    "ok": true,
+    "endpoints": [
+      "/lambda",
+      "/shape_generation",
+      "/lambda_1",
+      "/lambda_2",
+      "/generation_all",
+      "/lambda_3",
+      "/lambda_4",
+      "/on_gen_mode_change",
+      "/on_decode_mode_change",
+      "/lambda_5",
+      "/on_export_click"
+    ]
+  },
+  "vast-ai/TripoSR": {
+    "ok": false,
+    "error": "401 Client Error. (Request ID: Root=1-6add3e13-61de891c4427bf291a85e9ca;1537825a-f48e-4346-a064-15e53f60c398)  Repository Not Found for url: https://huggingface.co/api/spaces/vast-"
+  },
+  "stabilityai/TripoSR": {
+    "ok": false,
+    "error": "The current space is in the invalid state: RUNTIME_ERROR. Please contact the owner to fix this."
+  }
+}
