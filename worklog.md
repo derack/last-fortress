@@ -942,3 +942,31 @@ Stage Summary:
 - download/Last-Fortress-v2.6-release.apk — ۱۰ کاراکتر AI-generated (۴ قهرمان + ۵ باس + shadow) از Hunyuan3D-2 روی Hugging Face
 - اینونتوری AI: scripts/hf3d/raw/*_textured.glb + shapeهای خام scripts/hf_raw/*_shape.glb
 - ادامه پس از ریست سهمیه: python3 scripts/hf_batch_shapes.py (۱۵ دشمن) → python3 scripts/bake_and_install.py → bump نسخه
+
+---
+Task ID: 41
+Agent: main
+Task: تکمیل مدل‌سازی سه‌بعدی با Hunyuan3D روی Hugging Face (۱۵ دشمن باقی‌مانده) + کشف و رفع باگ سیاهی مدل‌های AI + بیلد v2.7
+
+Work Log:
+- سندباکس به v1.8 برگشته بود (بعد از v2.6 روی ریموت) → hard reset به origin/main (0b82e78) و ادامه از v2.6
+- hf_raw خالی بود (gitignored + ریست) → لیست PRIORITY بچ به فقط ۱۵ دشمن محدود شد تا باس‌ها/قهرمانان دوباره نسوزند
+- کانسپت گم‌شده spirit با همان STYLE lock تولید شد (gen_concepts.mjs، ۷۱KB)
+- ZeroGPU: warrior+golem با پارامتر معمول ساخته شدند؛ سپس «60s requested vs 55s left» → کشف ترفند squeeze: پارامترهای سبک (steps 20 / octree 192 / chunks 2000) spider را زیر سهمیه باقی‌مانده رساند؛ ولی بعداً مشخص شد duration=60 در @spaces.GPU اسپیس hardcode شده و پارامتر کلاینت اثر ندارد — سهمیه (۵۸ث مانده) تا ریست ۵.۵ ساعته قفل بود
+- اسپیس‌های جایگزین پروب شدند: 2mv و 2.1 و TripoSG زنده ولی همان سهمیه مشترک ZeroGPU (2mv: 60s، TripoSG: 90s)؛ TRELLIS رسمی هنوز CONFIG_ERROR؛ stability/TripoSR گیت ۴۰۱
+- 🩸🩸 باگ بحرانی تاریخ پروژه: astype(uint8) مستقیم روی float 0-1 در bake_colors → ۹۵-۹۹٪ ورتکس‌های همه مدل‌های vertex-bake (۱۰ مدل v2.6: باس‌ها + ۳ قهرمان + shadow) تقریباً سیاه مطلق بودند (p50=0.000)؛ رندر موتور هرگز بصری QA نشده بود (CDP timeout در Task 40)
+- فیکس: clip(x*255+0.5) قبل از uint8 + تابع project_colors (پروجکشن بدون چرخش برای rebake) + rebake_existing() — ۱۲ مدل روی mesh سالمِ موجود rebake شدند (arman مستثنا — مسیر آتلَس v2.5)؛ meanLum سالم 0.05-0.31 (shadow عمداً تیره)
+- QA بصری رندر نرم‌افزاری ۴نما (render_qa_vc.py جدید برای vertex-color): warrior زره فولادی+سپر+شمشیر، golem سنگ خزه‌ای+گدازه، darkLord شنل بنفش+شاخ+چشم سرخ، aria/nila/radin مطابق کانسپت، ۴ باس کامل — همه تأیید شد
+- pymeshlab: libopengl0 دوباره لازم شد (apt-get download + dpkg -x در scripts/tmp/extracted — LD_LIBRARY_PATH)
+- بیلد: versionCode 19 / versionName 2.7 → build:cap ✓ (install-ai-models: ۱۳ مدل) → cap sync جداگانه ✓ → gradle BUILD SUCCESSFUL (3m56s) ✓
+- APK 19,553,667B — 85 GLB — امضای 5ee184e5 (زنجیره سالم) — مدل‌های AI داخل بسته تأیید شد (warrior 321KB / golem 441KB / spider 290KB / darkLord 560KB / ...)
+- آپلود uploadkon + تأیید HTTP 206 سر و ته فایل
+- push: 82fb6a1 + 339df53 → origin/main (توکن بعد از push از remote URL پاک شد)
+- محدودیت سشن: پروسه‌های پس‌زمینه سندباکس بعد از چند دقیقه reaped می‌شوند (بچ ۳ بار مرد)؛ سهمیه ZeroGPU ناشناس IP-محور است و ریستش ~16:45 است → ۱۲ دشمن (warlock, flyer, warMachine, aetherTank, smallDragon, crystalMonster, hunter, destroyer, summoner, spirit, shadowSoldier, annihilator) با مدل procedural rigged سالم در بازی ماندند
+- اسکریپت‌ها آماده سشن بعد: hf_batch_shapes.py (سبک + مقاوم) → bake_and_install.py (فیکس‌شده) → افزودن خودکار با install-ai-models.mjs (targets از قبل ثبت شده)
+
+Stage Summary:
+- download/Last-Fortress-v2.7-release.apk (19.5MB) — ۱۳ مدل AI با رنگ سالم + فیکس بحرانی سیاهی
+- لینک: https://uploadkon.ir/uploads/5f0026_26LF-v27.zip
+- 🩸 مهم‌ترین دستاورد: مدل‌های AI نسخه‌های قبلی در موتور واقعاً سیاه بودند؛ v2.7 اولین بیلدی است که کاراکترهای AI را آن‌طور که QA شدند نشان می‌دهد
+- باقی‌مانده: ۱۲ shape دشمن پس از ریست سهمیه (اسکریپت آماده، فقط اجرا + bake + بیلد)
