@@ -1,28 +1,28 @@
-"""Probe HF Spaces: TRELLIS / Hunyuan3D availability via gradio_client."""
-import sys, traceback
+"""hf_probe.py — پروب سریع چند اسپیس 3D برای یافتن یکی زنده با GPU آزاد"""
+import sys, time
 from gradio_client import Client
 
-CANDIDATES = [
-    "microsoft/TRELLIS",
-    "tencent/Hunyuan3D-2",
-    "tencent/Hunyuan3D-2mini",
-    "tencent/Hunyuan3D-2mv",
-    "wendyliu/Hunyuan3D-2mini",  # fallback mirror
+SPACES = [
+    ('tencent/Hunyuan3D-2', 'tencent/Hunyuan3D-2'),
+    ('tencent/Hunyuan3D-2mv', 'tencent/Hunyuan3D-2mv'),
+    ('tencent/Hunyuan3D-2.1', 'tencent/Hunyuan3D-2.1'),
+    ('mytreillis/TRELLIS', 'TRELLIS community'),
+    ('JeffreyXiang/TRELLIS', 'TRELLIS official'),
+    ('microsoft/TRELLIS', 'TRELLIS microsoft'),
+    ('JunhaoZhuang/TRELLIS-Codec', 'TRELLIS-Codec'),
+    ('VAST-AI/TripoSG', 'TripoSG'),
+    ('zxhezexin/OpenLRM', 'OpenLRM'),
+    ('Stable-X/StablePointAware3D', 'SF3D'),
 ]
 
-results = []
-for name in CANDIDATES:
+for sid, label in SPACES:
     try:
-        c = Client(name, verbose=False)
-        api = c.view_api(return_format="dict")
-        endpoints = list(api.get("named_endpoints", {}).keys())
-        results.append((name, "OK", endpoints))
-        print(f"[OK] {name}: {endpoints}")
+        t0 = time.time()
+        c = Client(sid, verbose=False)
+        # فچ کانفیگ = اسپیس زنده است
+        views = [v.get('api_name') for v in c.view_api(return_format='dict').get('named_endpoints', {})] \
+            if hasattr(c, 'view_api') else []
+        print(f'[ALIVE] {sid} ({label}) config OK in {time.time()-t0:.1f}s', flush=True)
     except Exception as e:
-        msg = str(e)[:300]
-        results.append((name, "FAIL", msg))
-        print(f"[FAIL] {name}: {msg}")
-
-print("\n=== SUMMARY ===")
-for r in results:
-    print(r[0], "->", r[1])
+        msg = str(e).replace('\n', ' ')[:110]
+        print(f'[DEAD] {sid} ({label}): {msg}', flush=True)

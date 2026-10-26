@@ -21,6 +21,22 @@ const targets = [
   ['iceGiant', 'public/assets/3d/rigged/iceGiant.glb'],
   ['blackDragon', 'public/assets/3d/rigged/blackDragon.glb'],
   ['shadow', 'public/assets/3d/rigged/shadow.glb'],
+  // v2.7 — Hunyuan3D-2 shapes (ZeroGPU, light params) + single-view vertex bake
+  ['warrior', 'public/assets/3d/rigged/warrior.glb'],
+  ['golem', 'public/assets/3d/rigged/golem.glb'],
+  ['spider', 'public/assets/3d/rigged/spider.glb'],
+  ['warlock', 'public/assets/3d/rigged/warlock.glb'],
+  ['flyer', 'public/assets/3d/rigged/flyer.glb'],
+  ['warMachine', 'public/assets/3d/rigged/warMachine.glb'],
+  ['aetherTank', 'public/assets/3d/rigged/aetherTank.glb'],
+  ['smallDragon', 'public/assets/3d/rigged/smallDragon.glb'],
+  ['crystalMonster', 'public/assets/3d/rigged/crystalMonster.glb'],
+  ['hunter', 'public/assets/3d/rigged/hunter.glb'],
+  ['destroyer', 'public/assets/3d/rigged/destroyer.glb'],
+  ['summoner', 'public/assets/3d/rigged/summoner.glb'],
+  ['spirit', 'public/assets/3d/rigged/spirit.glb'],
+  ['shadowSoldier', 'public/assets/3d/rigged/shadowSoldier.glb'],
+  ['annihilator', 'public/assets/3d/rigged/annihilator.glb'],
 ];
 
 let installed = 0;

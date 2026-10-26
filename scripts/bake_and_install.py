@@ -22,6 +22,12 @@ TARGETS = {
     'arman': 24000, 'aria': 24000, 'radin': 24000, 'nila': 24000,
     'darkLord': 28000, 'golemKing': 28000, 'fireGiant': 28000, 'iceGiant': 28000, 'blackDragon': 28000,
     'shadow': 14000,
+    # v2.7 — دشمنان (سنگین‌ها بیشتر، موجودات کوچک/شفاف کمتر)
+    'golem': 22000, 'aetherTank': 22000, 'warMachine': 22000,
+    'annihilator': 20000, 'destroyer': 20000, 'crystalMonster': 18000,
+    'warrior': 16000, 'warlock': 16000, 'summoner': 16000, 'hunter': 16000,
+    'spider': 14000, 'smallDragon': 14000, 'flyer': 12000,
+    'shadowSoldier': 14000, 'spirit': 10000,
 }
 
 def local_decimate(shape_path: str, target: int, tmp_dir='scripts/tmp') -> str:
@@ -142,13 +148,77 @@ def bake_colors(tm: trimesh.Trimesh, cid: str, back_dark=0.55):
     colors *= shade[:, None]
     colors = np.clip(colors, 0, 1)
 
-    rgba = np.concatenate([colors, np.ones((len(colors), 1))], axis=1).astype(np.uint8)
+    # 🩸 FIX v2.7: قبلاً astype(uint8) مستقیم روی float 0-1 اعمال می‌شد → تقریباً همه صفر
+    # می‌شد (۹۹٪ ورتکس‌های مدل‌های v2.6 سیاه بودند). تبدیل صحیح: ×255 سپس گرد کردن
+    rgb255 = np.concatenate([colors, np.ones((len(colors), 1))], axis=1)
+    rgba = np.clip(rgb255 * 255.0 + 0.5, 0, 255).astype(np.uint8)
     tm2.visual = trimesh.visual.ColorVisuals(mesh=tm2, vertex_colors=rgba)
     if tm2.visual.kind != 'vertex':
         raise RuntimeError(f'unexpected visual kind={tm2.visual.kind}')
     if len(tm2.visual.vertex_colors) != len(tm2.vertices):
         raise RuntimeError(f'color len={len(tm2.visual.vertex_colors)} vs verts={len(tm2.vertices)}')
     return tm2
+
+
+def project_colors(tm: trimesh.Trimesh, cid: str):
+    """پروجکشن رنگ کانسپت روی مشِ از-قبل-چرخیده (بدون چرخش ۱۸۰°) — برای rebake."""
+    grid, vmask, (w, h) = load_image_grid(cid)
+    bx0, by0, bx1, by1 = concept_char_bbox(vmask, w, h)
+    tm = tm.copy()
+    bmin, bmax = tm.bounds
+    size = bmax - bmin
+    vs = tm.vertices.copy()
+    u = (vs[:, 0] - bmin[0]) / max(size[0], 1e-6)
+    v = 1.0 - (vs[:, 1] - bmin[1]) / max(size[1], 1e-6)
+    px = np.clip((bx0 + u * (bx1 - bx0)).astype(int), 0, w - 1)
+    py = np.clip((by0 + v * (by1 - by0)).astype(int), 0, h - 1)
+    colors = grid[py, px] / 255.0
+    colors = np.clip(colors * 1.35, 0, 1) ** 0.90
+    tm2 = tm.copy()
+    face_n = tm2.face_normals
+    vert_n = np.zeros_like(vs)
+    np.add.at(vert_n, tm2.faces, face_n[:, None, :])
+    norm = np.linalg.norm(vert_n, axis=1, keepdims=True)
+    vert_n = vert_n / np.maximum(norm, 1e-9)
+    zc = vert_n[:, 2]
+    shade = np.ones(len(vs), np.float32)
+    shade[zc < -0.15] = 0.62
+    side = (zc >= -0.15) & (zc < 0.25)
+    shade[side] = 0.80 + 0.20 * (zc[side] + 0.15) / 0.40
+    colors *= shade[:, None]
+    colors = np.clip(colors, 0, 1)
+    rgb255 = np.concatenate([colors, np.ones((len(colors), 1))], axis=1)
+    rgba = np.clip(rgb255 * 255.0 + 0.5, 0, 255).astype(np.uint8)
+    tm2.visual = trimesh.visual.ColorVisuals(mesh=tm2, vertex_colors=rgba)
+    return tm2
+
+
+def rebake_existing():
+    """بیک مجدد رنگ کانسپت روی GLBهای نصب‌شده (mesh سالم، رنگ خراب v2.6)."""
+    fixed = []
+    for path in sorted(glob.glob(f'{OUT_DIR}/*_textured.glb')):
+        cid = os.path.basename(path).replace('_textured.glb', '')
+        if not os.path.exists(f'{CONCEPT_DIR}/{cid}.png'):
+            continue
+        if cid == 'arman':
+            print(f'[skip] {cid} (v2.5 atlas-texture pipeline — not vertex-baked)', flush=True)
+            continue
+        try:
+            scene = trimesh.load(path, force='scene')
+            geo = max(scene.geometry.values(), key=lambda g: len(g.faces))
+            tm = trimesh.Trimesh(vertices=geo.vertices, faces=geo.faces, process=False)
+            tm.merge_vertices()
+            fixed_tm = project_colors(tm, cid)
+            fixed_tm.export(path, file_type='glb')
+            patch_glb_material(path, f'Hunyuan3D-2 shape + vertex-bake FIXED (Last Fortress v2.7) [{cid}]')
+            vc = np.asarray(fixed_tm.visual.vertex_colors, dtype=np.float32)[:, :3]
+            lum = (vc / 255.0) @ np.array([0.299, 0.587, 0.114])
+            fixed.append((cid, len(fixed_tm.faces), os.path.getsize(path) // 1024, f'{lum.mean():.3f}'))
+            print(f'[REBAKE] {cid}: faces={len(fixed_tm.faces)} '
+                  f'{os.path.getsize(path)//1024}KB meanLum={lum.mean():.3f}', flush=True)
+        except Exception as e:
+            print(f'[FAIL] rebake {cid}: {str(e)[:150]}', flush=True)
+    return fixed
 
 
 def patch_glb_material(path: str, generator_tag: str):
