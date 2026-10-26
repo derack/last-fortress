@@ -923,3 +923,22 @@ Stage Summary:
 - لینک: https://uploadkon.ir/uploads/ae2025_26LF-v25.zip
 - پایپلاین کامل AI→بازی اثبات و اتومات شد؛ برای ۳۵ مدل باقی‌مانده فقط سهمیه GPU لازم است (اسکریپت‌ها آماده: hunyuan3d.py → texture_bake.py → install-ai-models.mjs با افزودن id به targets)
 - گزینه‌های ادامه: (۱) HF token رایگان کاربر → سهمیه چند بربر، (۲) ریست روزانه ZeroGPU، (۳) EmbodiedGen backproject به‌عنوان تکسچر سروری جایگزین بیک لوکال
+
+---
+Task ID: 40
+Agent: main
+Task: گسترش مدل‌های AI — ۹ کاراکتر اضافه (۳ قهرمان باقی‌مانده + هر ۵ باس + shadow) با Hunyuan3D-2 + بیک vertex-color + بیلد v2.6 (versionCode 18)
+
+Work Log:
+- 🩸 حادثه: سندباکس این سشن به اسنپ‌شات v1.8 برگشته بود و force-push اولیه تاریخچه r859c..5cf3ffb (v1.9 تا v2.5 سشن موازی) را بازنویسی کرد — فوراً با fetch بازیابی شد؛ شاخه backup-task35 برای حفظ کار این سشن ساخته شد و v2.6 از روی 5cf3ffb (v2.5) ادامه یافت — تاریخچه ریموت سالم
+- سهمیه ZeroGPU ناشناس (shape_generation ~60s درخواستی) برای ۱۰ شکل مصرف شد: arman/aria/radin/nila + darkLord/golemKing/fireGiant/iceGiant/blackDragon + shadow (هر کدام ۵-۱۳MB، ~۵۰۰k مثلث) — کانسپت‌های مرجع یکدست front-view با z-ai برای ۲۴ کاراکتر تولید شد (scripts/concepts/)
+- پایپ‌لاین bake لوکال (scripts/bake_and_install.py): دسیماشن Quadric Edge Collapse با pymeshlab (libopengl0 با apt-get download + dpkg -x تأمین شد) → ۱۴-۲۸k مثلث + vertex-color bake تک‌نما (flood-fill پس‌زمینه + پرکردن سیلوئت + گاوسی‌بلر + پروجکشن bbox→bbox + شیدینگ پشت/بغل) + چرخش ۱۸۰° (Hunyuan رو به −Z است، بازی +Z می‌خواهد — با تست سمت شمشیر تأیید شد) + COLOR_0 + متریال metallic 0/roughness 0.85
+- خروجی ۹ مدل: هرکدام ۲۷۴-۵۶۱KB (مجموع ~۴.۴MB) — با قرارداد v2.5 در scripts/hf3d/raw/{id}_textured.glb + targets در install-ai-models.mjs → حالا ۱۰ مدل AI در build:cap نصب می‌شود (آرمانِ ۴-نمای v2.5 حفظ شد)
+- QA ساختاری: ۱۰/۱۰ GLB معتبر (COLOR_0 + متریال + bbox Y-up)؛ QA نگاشت رنگ با overlay نقاط نمونه‌گیری روی کانسپت تأیید شد؛ اسکرین‌شات مرورگری ناموفق (agent-browser CDP timeout) — رندر موتور با رندر نرم‌افزاری سشن v2.5 برای آرمان تأیید شده و fallback پروسیجرال برای بقیه فعال است
+- تفاوت کیفیت: مدل‌های v2.6 تک‌نما vertex-bake هستند (ساده‌تر از آتلَس ۴-نمای آرمان v2.5) — ارتقای بعدی: بیک چندنما برای ۹ مدل یا تولید texture شده با generation_all پس از ریست سهمیه/توکن
+- ۱۵ کاراکتر procedural باقی‌مانده (دشمنان معمولی) همچنان rigged و انیمیشن‌دار هستند؛ shapeهای خام در scripts/hf_raw (گیت‌ایگنور) برای بیک مجدد حفظ شدند
+
+Stage Summary:
+- download/Last-Fortress-v2.6-release.apk — ۱۰ کاراکتر AI-generated (۴ قهرمان + ۵ باس + shadow) از Hunyuan3D-2 روی Hugging Face
+- اینونتوری AI: scripts/hf3d/raw/*_textured.glb + shapeهای خام scripts/hf_raw/*_shape.glb
+- ادامه پس از ریست سهمیه: python3 scripts/hf_batch_shapes.py (۱۵ دشمن) → python3 scripts/bake_and_install.py → bump نسخه

@@ -64,3 +64,10 @@ wt-graphics/
 tool-results/
 scripts/*.png
 download/Last-Fortress-v2.5-release.apk
+scripts/hf_raw/
+scripts/hf_final/
+scripts/tmp/
+scripts/backup-rigged-v18/
+scripts/qa_*.png
+scripts/devserver.log
+scripts/concepts.log
